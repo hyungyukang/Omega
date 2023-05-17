@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OMEGA Requirements and Design:</title>
+  <title>MachineEnv</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -20,8 +20,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="OMEGA Requirements and Design:" href="TimeMgr.html" />
-    <link rel="prev" title="OMEGA Requirements and Design:" href="Logging.html" />
+    <link rel="next" title="TimeManager" href="TimeMgr.html" />
+    <link rel="prev" title="Logging" href="Logging.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -61,15 +61,12 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="Broadcast.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Config.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Config.html#config"><em>Config</em></a></li>
-<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="DataTypes.html#datatypes"><em>DataTypes</em></a></li>
-<li class="toctree-l1"><a class="reference internal" href="Halo.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Logging.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#machineenv"><em>MachineEnv</em></a><ul>
+<li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Broadcast</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Config.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">DataTypes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Halo.html">Halo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Logging.html">Logging</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">MachineEnv</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">1 Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#requirements">2 Requirements</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#requirement-initialize-mpi-in-standalone">2.1 Requirement: Initialize MPI in Standalone</a></li>
@@ -110,7 +107,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">OMEGA Requirements and Design:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">TimeManager</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Reductions.html">Global Reductions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="OmegaDesignTemplate.html">Template: MyClassOrModuleName</a></li>
 </ul>
@@ -129,7 +126,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">OMEGA Requirements and Design:</li>
+      <li class="breadcrumb-item active">MachineEnv</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/design/MachEnv.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -139,12 +136,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <!--- OMEGA Machine Environment Requirements and Design ----------------------->
-<section class="tex2jax_ignore mathjax_ignore" id="omega-requirements-and-design">
-<h1>OMEGA Requirements and Design:<a class="headerlink" href="#omega-requirements-and-design" title="Permalink to this heading"></a></h1>
-</section>
-<section class="tex2jax_ignore mathjax_ignore" id="machineenv">
-<h1><em>MachineEnv</em><a class="headerlink" href="#machineenv" title="Permalink to this heading"></a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="machineenv">
+<span id="omega-design-machine-env"></span><h1>MachineEnv<a class="headerlink" href="#machineenv" title="Permalink to this heading"></a></h1>
 <section id="overview">
 <h2>1 Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
 <p>On startup, OMEGA will need to initialize the message-passing and other
@@ -237,20 +230,20 @@ and 1 for GPU builds to maximize parallelism.</p>
 <p>There will be a simple class MachEnv. We use a class here rather than
 a struct so that we can make members private to prevent overwriting
 these variables.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>class MachEnv {
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MachEnv</span><span class="w"> </span><span class="p">{</span>
 
-   private:
-      int mComm;      ///&lt; MPI communicator for this environment
-      int mMyRank;    ///&lt; rank ID for local MPI rank
-      int mNumRanks;  ///&lt; total number of MPI ranks
-      int mMasterRank;///&lt; rank ID for master rank
-      bool mIsMaster; ///&lt; true if the local rank is the master
+<span class="w">   </span><span class="k">private</span><span class="o">:</span>
+<span class="w">      </span><span class="kt">int</span><span class="w"> </span><span class="n">mComm</span><span class="p">;</span><span class="w">      </span><span class="c1">///&lt; MPI communicator for this environment</span>
+<span class="w">      </span><span class="kt">int</span><span class="w"> </span><span class="n">mMyRank</span><span class="p">;</span><span class="w">    </span><span class="c1">///&lt; rank ID for local MPI rank</span>
+<span class="w">      </span><span class="kt">int</span><span class="w"> </span><span class="n">mNumRanks</span><span class="p">;</span><span class="w">  </span><span class="c1">///&lt; total number of MPI ranks</span>
+<span class="w">      </span><span class="kt">int</span><span class="w"> </span><span class="n">mMasterRank</span><span class="p">;</span><span class="c1">///&lt; rank ID for master rank</span>
+<span class="w">      </span><span class="kt">bool</span><span class="w"> </span><span class="n">mIsMaster</span><span class="p">;</span><span class="w"> </span><span class="c1">///&lt; true if the local rank is the master</span>
 
-   public:
+<span class="w">   </span><span class="k">public</span><span class="o">:</span>
 
-      // Methods
-      [define methods here - see below]
-}
+<span class="w">      </span><span class="c1">// Methods</span>
+<span class="w">      </span><span class="p">[</span><span class="n">define</span><span class="w"> </span><span class="n">methods</span><span class="w"> </span><span class="n">here</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">see</span><span class="w"> </span><span class="n">below</span><span class="p">]</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </section>
@@ -270,12 +263,12 @@ defining routines or sub-components.</p>
 these two must be called as early as possible in OMEGA initialization
 (typically the first call). Both forms will return an integer
 error code and will define the default environment <code class="docutils literal notranslate"><span class="pre">OMEGA::defaultEnv</span></code>.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>// Initialization - standalone
-int MachEnvInit();
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Initialization - standalone</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">MachEnvInit</span><span class="p">();</span>
 
-// Initialization - coupled
-int MachEnvInit(int inCommunicator, ///&lt; [in] parent MPI communicator 
-                );
+<span class="c1">// Initialization - coupled</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">MachEnvInit</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">inCommunicator</span><span class="p">,</span><span class="w"> </span><span class="c1">///&lt; [in] parent MPI communicator </span>
+<span class="w">                </span><span class="p">);</span>
 </pre></div>
 </div>
 </section>
@@ -284,37 +277,37 @@ int MachEnvInit(int inCommunicator, ///&lt; [in] parent MPI communicator
 <p>We provide several constructors for creating instances of the environment.
 These will be used primarily by the above initialization routine, though
 can also be used to create additional environments per requirement 2.7.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>// Generic constructor that uses `MPI_COMM_WORLD`
-MachEnv();
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Generic constructor that uses `MPI_COMM_WORLD`</span>
+<span class="n">MachEnv</span><span class="p">();</span>
 
-// Constructor that uses an assigned communicator (eg from coupler)
-MachEnv(const int inCommunicator ///&lt; [in] parent MPI communicator
-        );
+<span class="c1">// Constructor that uses an assigned communicator (eg from coupler)</span>
+<span class="n">MachEnv</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">inCommunicator</span><span class="w"> </span><span class="c1">///&lt; [in] parent MPI communicator</span>
+<span class="w">        </span><span class="p">);</span>
 
-// Create a new environment from a contiguous subset of an
-// existing environment
-MachEnv(const int inCommunicator,///&lt; [in] parent MPI communicator
-        const int newSize        ///&lt; [in] use first newSize ranks
-        );
+<span class="c1">// Create a new environment from a contiguous subset of an</span>
+<span class="c1">// existing environment</span>
+<span class="n">MachEnv</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">inCommunicator</span><span class="p">,</span><span class="c1">///&lt; [in] parent MPI communicator</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">newSize</span><span class="w">        </span><span class="c1">///&lt; [in] use first newSize ranks</span>
+<span class="w">        </span><span class="p">);</span>
 
-// Create a new environment from a strided subset of an
-// existing environment
-MachEnv(const int inCommunicator,///&lt; [in] parent MPI communicator
-        const int newSize,       ///&lt; [in] num ranks in new env
-        const int begin,         ///&lt; [in] starting parent rank
-        const int stride         ///&lt; [in] stride for ranks to incl
-        );
+<span class="c1">// Create a new environment from a strided subset of an</span>
+<span class="c1">// existing environment</span>
+<span class="n">MachEnv</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">inCommunicator</span><span class="p">,</span><span class="c1">///&lt; [in] parent MPI communicator</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">newSize</span><span class="p">,</span><span class="w">       </span><span class="c1">///&lt; [in] num ranks in new env</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">begin</span><span class="p">,</span><span class="w">         </span><span class="c1">///&lt; [in] starting parent rank</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">stride</span><span class="w">         </span><span class="c1">///&lt; [in] stride for ranks to incl</span>
+<span class="w">        </span><span class="p">);</span>
 
-// Create a new environment from a custome subset of an
-// existing environment, supplying list of parent ranks to include
-MachEnv(const int inCommunicator ///&lt; [in] parent MPI communicator
-        const int newSize,       ///&lt; [in] num ranks in new env
-        const int ranks[]        ///&lt; [in] vector of parent ranks to incl
-        );
+<span class="c1">// Create a new environment from a custome subset of an</span>
+<span class="c1">// existing environment, supplying list of parent ranks to include</span>
+<span class="n">MachEnv</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">inCommunicator</span><span class="w"> </span><span class="c1">///&lt; [in] parent MPI communicator</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">newSize</span><span class="p">,</span><span class="w">       </span><span class="c1">///&lt; [in] num ranks in new env</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">ranks</span><span class="p">[]</span><span class="w">        </span><span class="c1">///&lt; [in] vector of parent ranks to incl</span>
+<span class="w">        </span><span class="p">);</span>
 </pre></div>
 </div>
 <p>In standalone mode, the simple constructor would be used:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>MachEnv omegaEnv(); // Initialize MPI and machine environment
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">MachEnv</span><span class="w"> </span><span class="nf">omegaEnv</span><span class="p">();</span><span class="w"> </span><span class="c1">// Initialize MPI and machine environment</span>
 </pre></div>
 </div>
 <p>and would define <code class="docutils literal notranslate"><span class="pre">MPI_COMM_WORLD</span></code> as the communicator as well
@@ -332,23 +325,23 @@ a vector of specific ranks of the parent to include in the new environment.</p>
 <h4>4.2.2 Get/Retrieval<a class="headerlink" href="#get-retrieval" title="Permalink to this heading"></a></h4>
 <p>We provide specific retrieval functions for each class member to mimic
 using this environment as a struct:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>int Comm() const;      ///&lt; returns MPI communicator for this environment
-int MyRank() const;    ///&lt; returns local MPI rank
-int NumRanks() const;  ///&lt; total number of MPI ranks 
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">Comm</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w">      </span><span class="c1">///&lt; returns MPI communicator for this environment</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">MyRank</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w">    </span><span class="c1">///&lt; returns local MPI rank</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">NumRanks</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w">  </span><span class="c1">///&lt; total number of MPI ranks </span>
 </pre></div>
 </div>
 <p>In typical use, these would look like:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>myRank = OMEGA::defaultEnv.MyRank(); // retrieve local rank id
-if (OMEGA::defaultEnv.IsMaster()){
-   // do stuff on master rank
-}
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">myRank</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">defaultEnv</span><span class="p">.</span><span class="n">MyRank</span><span class="p">();</span><span class="w"> </span><span class="c1">// retrieve local rank id</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">OMEGA</span><span class="o">::</span><span class="n">defaultEnv</span><span class="p">.</span><span class="n">IsMaster</span><span class="p">()){</span>
+<span class="w">   </span><span class="c1">// do stuff on master rank</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </section>
 <section id="change-master-task">
 <h4>4.2.3 Change master task<a class="headerlink" href="#change-master-task" title="Permalink to this heading"></a></h4>
 <p>While most of the members should not be modified (read only using the get above), we will need a single set function to satisfy requirement 2.6.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>int SetMaster(const int newMasterRank);
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">SetMaster</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">newMasterRank</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>Note that this should occur as soon as possible after the environment is
@@ -420,8 +413,8 @@ propagates the value internally.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="Logging.html" class="btn btn-neutral float-left" title="OMEGA Requirements and Design:" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="TimeMgr.html" class="btn btn-neutral float-right" title="OMEGA Requirements and Design:" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="Logging.html" class="btn btn-neutral float-left" title="Logging" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="TimeMgr.html" class="btn btn-neutral float-right" title="TimeManager" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

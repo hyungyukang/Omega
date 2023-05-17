@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OMEGA Requirements and Design:</title>
+  <title>Logging</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -20,8 +20,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="OMEGA Requirements and Design:" href="MachEnv.html" />
-    <link rel="prev" title="OMEGA Requirements and Design:" href="Halo.html" />
+    <link rel="next" title="MachineEnv" href="MachEnv.html" />
+    <link rel="prev" title="Halo" href="Halo.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -61,14 +61,11 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="Broadcast.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Config.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Config.html#config"><em>Config</em></a></li>
-<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="DataTypes.html#datatypes"><em>DataTypes</em></a></li>
-<li class="toctree-l1"><a class="reference internal" href="Halo.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">OMEGA Requirements and Design:</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#omega-logging-system"><em>OMEGA logging system</em></a></li>
+<li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Broadcast</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Config.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">DataTypes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Halo.html">Halo</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Logging</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">1 Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#requirements">2 Requirements</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#requirement-basic-logging">2.1 Requirement: Basic logging</a></li>
@@ -103,9 +100,8 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="MachEnv.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MachEnv.html#machineenv"><em>MachineEnv</em></a></li>
-<li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">OMEGA Requirements and Design:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MachEnv.html">MachineEnv</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">TimeManager</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Reductions.html">Global Reductions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="OmegaDesignTemplate.html">Template: MyClassOrModuleName</a></li>
 </ul>
@@ -124,7 +120,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">OMEGA Requirements and Design:</li>
+      <li class="breadcrumb-item active">Logging</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/design/Logging.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -134,12 +130,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <!--- Omega OMEGA logging system Requirements and Design ------------------------------------>
-<section class="tex2jax_ignore mathjax_ignore" id="omega-requirements-and-design">
-<h1>OMEGA Requirements and Design:<a class="headerlink" href="#omega-requirements-and-design" title="Permalink to this heading"></a></h1>
-<section id="omega-logging-system">
-<h2><em>OMEGA logging system</em><a class="headerlink" href="#omega-logging-system" title="Permalink to this heading"></a></h2>
-</section>
+  <section class="tex2jax_ignore mathjax_ignore" id="logging">
+<span id="omega-design-logging"></span><h1>Logging<a class="headerlink" href="#logging" title="Permalink to this heading"></a></h1>
 <section id="overview">
 <h2>1 Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
 <p>The OMEGA logging system offers a standardized Application Programming
@@ -328,8 +320,8 @@ a dedicated unit test.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="Halo.html" class="btn btn-neutral float-left" title="OMEGA Requirements and Design:" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="MachEnv.html" class="btn btn-neutral float-right" title="OMEGA Requirements and Design:" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="Halo.html" class="btn btn-neutral float-left" title="Halo" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="MachEnv.html" class="btn btn-neutral float-right" title="MachineEnv" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OMEGA Requirements and Design:</title>
+  <title>Halo</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -20,8 +20,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="OMEGA Requirements and Design:" href="Logging.html" />
-    <link rel="prev" title="OMEGA Requirements and Design:" href="DataTypes.html" />
+    <link rel="next" title="Logging" href="Logging.html" />
+    <link rel="prev" title="DataTypes" href="DataTypes.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -61,13 +61,10 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="Broadcast.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Config.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Config.html#config"><em>Config</em></a></li>
-<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="DataTypes.html#datatypes"><em>DataTypes</em></a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">OMEGA Requirements and Design:</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#halo"><em>Halo</em></a></li>
+<li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Broadcast</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Config.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">DataTypes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Halo</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">1 Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#requirements">2 Requirements</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#requirement-compatible-with-all-types-of-arrays">2.1 Requirement: Compatible with all types of arrays</a></li>
@@ -106,10 +103,9 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="Logging.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MachEnv.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MachEnv.html#machineenv"><em>MachineEnv</em></a></li>
-<li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">OMEGA Requirements and Design:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Logging.html">Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MachEnv.html">MachineEnv</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">TimeManager</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Reductions.html">Global Reductions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="OmegaDesignTemplate.html">Template: MyClassOrModuleName</a></li>
 </ul>
@@ -128,7 +124,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">OMEGA Requirements and Design:</li>
+      <li class="breadcrumb-item active">Halo</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/design/Halo.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -138,12 +134,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <!-- Halo Requirements and Design --------------------------------------------->
-<section class="tex2jax_ignore mathjax_ignore" id="omega-requirements-and-design">
-<h1>OMEGA Requirements and Design:<a class="headerlink" href="#omega-requirements-and-design" title="Permalink to this heading"></a></h1>
-<section id="halo">
-<h2><em>Halo</em><a class="headerlink" href="#halo" title="Permalink to this heading"></a></h2>
-</section>
+  <section class="tex2jax_ignore mathjax_ignore" id="halo">
+<span id="omega-design-halo"></span><h1>Halo<a class="headerlink" href="#halo" title="Permalink to this heading"></a></h1>
 <section id="overview">
 <h2>1 Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
 <p>In a distributed memory parallel environment, it is necessary to regularly
@@ -250,17 +242,17 @@ necessary for performing halo exchanges.</p>
 <h4>4.1.1 Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading"></a></h4>
 <p>An enum defining mesh element types would be helpful to control which exchange
 lists to use for a particular field array:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>enum meshElement{onCell, onEdge, onVertex};
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">enum</span><span class="w"> </span><span class="nc">meshElement</span><span class="p">{</span><span class="n">onCell</span><span class="p">,</span><span class="w"> </span><span class="n">onEdge</span><span class="p">,</span><span class="w"> </span><span class="n">onVertex</span><span class="p">};</span>
 </pre></div>
 </div>
 <p>An MPI datatype <code class="docutils literal notranslate"><span class="pre">MPI_RealKind</span></code> will be defined based on whether the default
 real data type is single or double precision via the SINGLE_PRECISION compile
 time switch:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>#ifdef SINGLE_PRECISION
-MPI_Datatype MPI_RealKind = MPI_FLOAT;
-#else
-MPI_Datatype MPI_RealKind = MPI_DOUBLE;
-#endif
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#ifdef SINGLE_PRECISION</span>
+<span class="n">MPI_Datatype</span><span class="w"> </span><span class="n">MPI_RealKind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MPI_FLOAT</span><span class="p">;</span>
+<span class="cp">#else</span>
+<span class="n">MPI_Datatype</span><span class="w"> </span><span class="n">MPI_RealKind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MPI_DOUBLE</span><span class="p">;</span>
+<span class="cp">#endif</span>
 </pre></div>
 </div>
 <p>Halo exchanges will depend on the <code class="docutils literal notranslate"><span class="pre">haloWidth</span></code> parameter defined in the
@@ -271,20 +263,20 @@ decomp configuration group.</p>
 <p>The ExchList class will hold both send and receive lists. Lists are separated by
 halo layer to allow for the possibility of exchanging individual layers. Buffer
 offsets are needed to pack/unpack all the halo layers into/from the same buffer.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>class ExchList {
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ExchList</span><span class="w"> </span><span class="p">{</span>
 
-   private:
+<span class="w">   </span><span class="k">private</span><span class="o">:</span>
 
-      I4 nList[haloWidth];        ///&lt; number of mesh elements in each
-                                  ///&lt;   layer of list
-      I4 nTot;                    ///&lt; number of elements summed over layers
-      I4 offsets[haloWidth];      ///&lt; offsets for each halo layer
+<span class="w">      </span><span class="n">I4</span><span class="w"> </span><span class="n">nList</span><span class="p">[</span><span class="n">haloWidth</span><span class="p">];</span><span class="w">        </span><span class="c1">///&lt; number of mesh elements in each</span>
+<span class="w">                                  </span><span class="c1">///&lt;   layer of list</span>
+<span class="w">      </span><span class="n">I4</span><span class="w"> </span><span class="n">nTot</span><span class="p">;</span><span class="w">                    </span><span class="c1">///&lt; number of elements summed over layers</span>
+<span class="w">      </span><span class="n">I4</span><span class="w"> </span><span class="n">offsets</span><span class="p">[</span><span class="n">haloWidth</span><span class="p">];</span><span class="w">      </span><span class="c1">///&lt; offsets for each halo layer</span>
 
-      std::vector&lt;I4&gt; indices[haloWidth];   ///&lt; list of local indices
+<span class="w">      </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">I4</span><span class="o">&gt;</span><span class="w"> </span><span class="n">indices</span><span class="p">[</span><span class="n">haloWidth</span><span class="p">];</span><span class="w">   </span><span class="c1">///&lt; list of local indices</span>
 
-   friend class Neighbor;
-   friend class Halo;
-};
+<span class="w">   </span><span class="k">friend</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Neighbor</span><span class="p">;</span>
+<span class="w">   </span><span class="k">friend</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Halo</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 </div>
 <p>The Neighbor class contains all the information and buffer memory needed for
@@ -297,20 +289,20 @@ switches to control the progress of a Halo exchange. To avoid the need for
 separate integer and floating-point buffers, during the packing process integer
 values can be recast as reals in a bit-preserving manner using
 <code class="docutils literal notranslate"><span class="pre">reinterpret_cast</span></code> and then recast as integers on the receiving end.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>class Neighbor {
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Neighbor</span><span class="w"> </span><span class="p">{</span>
 
-   private:
+<span class="w">   </span><span class="k">private</span><span class="o">:</span>
 
-      I4 rankID;                           ///&lt; ID of neighboring MPI rank
-      ExchList sendLists[3], recvLists[3]; ///&lt; 0 = onCell, 1 = onEdge, 
-                                           ///&lt; 2 = onVertex
-      std::vector&lt;Real&gt; sendBuffer, recvBuffer;
-      MPI_Request rReq, sReq;              ///&lt; MPI request handles
-      bool received = false;
-      bool unpacked = false;
+<span class="w">      </span><span class="n">I4</span><span class="w"> </span><span class="n">rankID</span><span class="p">;</span><span class="w">                           </span><span class="c1">///&lt; ID of neighboring MPI rank</span>
+<span class="w">      </span><span class="n">ExchList</span><span class="w"> </span><span class="n">sendLists</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="w"> </span><span class="n">recvLists</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span><span class="w"> </span><span class="c1">///&lt; 0 = onCell, 1 = onEdge, </span>
+<span class="w">                                           </span><span class="c1">///&lt; 2 = onVertex</span>
+<span class="w">      </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Real</span><span class="o">&gt;</span><span class="w"> </span><span class="n">sendBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">recvBuffer</span><span class="p">;</span>
+<span class="w">      </span><span class="n">MPI_Request</span><span class="w"> </span><span class="n">rReq</span><span class="p">,</span><span class="w"> </span><span class="n">sReq</span><span class="p">;</span><span class="w">              </span><span class="c1">///&lt; MPI request handles</span>
+<span class="w">      </span><span class="kt">bool</span><span class="w"> </span><span class="n">received</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<span class="w">      </span><span class="kt">bool</span><span class="w"> </span><span class="n">unpacked</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
 
-   friend class Halo;
-};
+<span class="w">   </span><span class="k">friend</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Halo</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 </div>
 <p>The Halo class collects all Neighbor objects needed by an MPI rank to perform
@@ -319,21 +311,21 @@ the local rank, and the MPI communicator are saved here. The mesh element type
 for the current array being transferred is also stored here. This class will be
 the user interface for halo exchanges, it is a friend class to the subordinate
 classes so that it has access to all private data.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>class Halo {
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Halo</span><span class="w"> </span><span class="p">{</span>
 
-   private:
+<span class="w">   </span><span class="k">private</span><span class="o">:</span>
 
-      I4 nNghbr;                           ///&lt; number of neighboring ranks
-      I4 myRank                            ///&lt; local MPI rank ID
-      MPI_Comm myComm;                     ///&lt; MPI communicator handle
-      meshElement elemType;                ///&lt; index space of current array
-      std::vector&lt;Neighbor&gt; neighbors;
+<span class="w">      </span><span class="n">I4</span><span class="w"> </span><span class="n">nNghbr</span><span class="p">;</span><span class="w">                           </span><span class="c1">///&lt; number of neighboring ranks</span>
+<span class="w">      </span><span class="n">I4</span><span class="w"> </span><span class="n">myRank</span><span class="w">                            </span><span class="c1">///&lt; local MPI rank ID</span>
+<span class="w">      </span><span class="n">MPI_Comm</span><span class="w"> </span><span class="n">myComm</span><span class="p">;</span><span class="w">                     </span><span class="c1">///&lt; MPI communicator handle</span>
+<span class="w">      </span><span class="n">meshElement</span><span class="w"> </span><span class="n">elemType</span><span class="p">;</span><span class="w">                </span><span class="c1">///&lt; index space of current array</span>
+<span class="w">      </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Neighbor</span><span class="o">&gt;</span><span class="w"> </span><span class="n">neighbors</span><span class="p">;</span>
 
-   public:
+<span class="w">   </span><span class="k">public</span><span class="o">:</span>
 
-      // methods
+<span class="w">      </span><span class="c1">// methods</span>
 
-};
+<span class="p">};</span>
 </pre></div>
 </div>
 </section>
@@ -345,7 +337,7 @@ classes so that it has access to all private data.</p>
 <p>The constructor for the Halo class will be the interface for declaring an
 instance of the Halo class and instances of all associated member classes,
 and requires info from the Decomp and MachEnv objects.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Halo(Decomp inDecomp, MachEnv inEnv);
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Halo</span><span class="p">(</span><span class="n">Decomp</span><span class="w"> </span><span class="n">inDecomp</span><span class="p">,</span><span class="w"> </span><span class="n">MachEnv</span><span class="w"> </span><span class="n">inEnv</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>The constructors for Neighbor and ExchList will be called from within the Halo
@@ -361,7 +353,7 @@ the array is located in (cells, edges, or vertices) needs to be fetched from the
 metadata associated with the array stored in the Halo object to determine which
 exchange lists to use. It will return an integer error code to catch errors
 (likewise for each subprocess below).</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>int exchangeFullArrayHalo(ArrayLocDDTT &amp;array, meshElement elemType);
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">exchangeFullArrayHalo</span><span class="p">(</span><span class="n">ArrayLocDDTT</span><span class="w"> </span><span class="o">&amp;</span><span class="n">array</span><span class="p">,</span><span class="w"> </span><span class="n">meshElement</span><span class="w"> </span><span class="n">elemType</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>This will be an interface for different exchange funcitons for each type of
@@ -381,12 +373,12 @@ to host. The ordering of steps for completing a halo exchange is:</p>
 <p>A <code class="docutils literal notranslate"><span class="pre">startReceives</span></code> function will loop over all member Neighbor objects and
 call <code class="docutils literal notranslate"><span class="pre">MPI_Irecv</span></code> for each neighbor. It takes no arguments because all the
 info needed is already contained in the Halo object and its member objects.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>int StartReceives();
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">StartReceives</span><span class="p">();</span>
 </pre></div>
 </div>
 <p>Likewise, <code class="docutils literal notranslate"><span class="pre">startSends</span></code> will loop over all Neighbor objects and call
 <code class="docutils literal notranslate"><span class="pre">MPI_Isend</span></code> to send the buffers to each neighbor.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>int StartSends();
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">StartSends</span><span class="p">();</span>
 </pre></div>
 </div>
 </section>
@@ -394,7 +386,7 @@ info needed is already contained in the Halo object and its member objects.</p>
 <h4>4.2.4 Buffer pack/unpack<a class="headerlink" href="#buffer-pack-unpack" title="Permalink to this heading"></a></h4>
 <p>For each type of ArrayDDTT, there will be a buffer pack function aliased to a
 <code class="docutils literal notranslate"><span class="pre">packBuffer</span></code> interface:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>int packBuffer(ArrayDDTT array, int iNeighbor);
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">packBuffer</span><span class="p">(</span><span class="n">ArrayDDTT</span><span class="w"> </span><span class="n">array</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">iNeighbor</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>where halo elements of the potentially multidimensional array ArrayDDTT are
@@ -404,7 +396,7 @@ meshElement the array is defined on. The <code class="docutils literal notransla
 over the member neighbors and call <code class="docutils literal notranslate"><span class="pre">packBuffer</span></code> for each Neighbor.</p>
 <p>Similarly, buffer unpack functions for each ArrayDDTT type will be aliased to
 an <code class="docutils literal notranslate"><span class="pre">unpackBuffer</span></code> interface:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>int unpackBuffer(ArrayDDTT &amp;array, int iNeighbor);
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">unpackBuffer</span><span class="p">(</span><span class="n">ArrayDDTT</span><span class="w"> </span><span class="o">&amp;</span><span class="n">array</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">iNeighbor</span><span class="p">);</span>
 </pre></div>
 </div>
 </section>
@@ -431,8 +423,8 @@ would satisfy requirement 2.3 as well.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="DataTypes.html" class="btn btn-neutral float-left" title="OMEGA Requirements and Design:" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="Logging.html" class="btn btn-neutral float-right" title="OMEGA Requirements and Design:" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="DataTypes.html" class="btn btn-neutral float-left" title="DataTypes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Logging.html" class="btn btn-neutral float-right" title="Logging" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

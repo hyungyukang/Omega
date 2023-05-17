@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OMEGA Requirements and Design:</title>
+  <title>Config</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -20,8 +20,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="OMEGA Requirements and Design:" href="DataTypes.html" />
-    <link rel="prev" title="OMEGA Requirements and Design:" href="Broadcast.html" />
+    <link rel="next" title="DataTypes" href="DataTypes.html" />
+    <link rel="prev" title="Broadcast" href="Broadcast.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -61,9 +61,8 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="Broadcast.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#config"><em>Config</em></a><ul>
+<li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Broadcast</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Config</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">1 Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#requirements">2 Requirements</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#requirement-human-readability">2.1 Requirement: Human readability</a></li>
@@ -111,13 +110,11 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="DataTypes.html#datatypes"><em>DataTypes</em></a></li>
-<li class="toctree-l1"><a class="reference internal" href="Halo.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Logging.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MachEnv.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MachEnv.html#machineenv"><em>MachineEnv</em></a></li>
-<li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">OMEGA Requirements and Design:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">DataTypes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Halo.html">Halo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Logging.html">Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MachEnv.html">MachineEnv</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">TimeManager</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Reductions.html">Global Reductions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="OmegaDesignTemplate.html">Template: MyClassOrModuleName</a></li>
 </ul>
@@ -136,7 +133,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">OMEGA Requirements and Design:</li>
+      <li class="breadcrumb-item active">Config</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/design/Config.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -146,12 +143,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <!--- Omega Config Requirements and Design ------------------------------------>
-<section class="tex2jax_ignore mathjax_ignore" id="omega-requirements-and-design">
-<h1>OMEGA Requirements and Design:<a class="headerlink" href="#omega-requirements-and-design" title="Permalink to this heading"></a></h1>
-</section>
-<section class="tex2jax_ignore mathjax_ignore" id="config">
-<h1><em>Config</em><a class="headerlink" href="#config" title="Permalink to this heading"></a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="config">
+<span id="omega-design-config"></span><h1>Config<a class="headerlink" href="#config" title="Permalink to this heading"></a></h1>
 <section id="overview">
 <h2>1 Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
 <p>Model configuration refers to all of the necessary variables to configure
@@ -239,7 +232,7 @@ included in the output and become part of the provenance.</p>
 <section id="desired-automated-generation-of-default-input-and-error-checking">
 <h3>2.13 Desired: Automated generation of default input and error checking<a class="headerlink" href="#desired-automated-generation-of-default-input-and-error-checking" title="Permalink to this heading"></a></h3>
 <p>While the source code defines the configuration variables, it would
-desirable to have a means to extract from the source code what the
+be desirable to have a means to extract from the source code what the
 code is expecting into a default input config file. This would also
 enable some external error checking for missing or extra entries.</p>
 </section>
@@ -286,7 +279,7 @@ structure and manipulating afterward.</p>
 <section id="class-structs-data-types">
 <h4>4.1.2 Class/structs/data types<a class="headerlink" href="#class-structs-data-types" title="Permalink to this heading"></a></h4>
 <p>We define a Config type, which is actually an alias of YAML::node:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>using Config = YAML::node;
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="n">Config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">YAML</span><span class="o">::</span><span class="n">node</span><span class="p">;</span>
 </pre></div>
 </div>
 <p>from the yaml-cpp library. A YAML node is more fully and accurately
@@ -300,49 +293,49 @@ and is simply a collection of all those module maps. I/O stream/file
 configuration will be part of this configuration in a design TBD later
 but will be a similar hierarchy under the full omega config node.</p>
 <p>An example YAML input file might then look like:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>omega:
-   timeManagement:
-      doRestart: false
-      restartTimestampName: restartTimestamp
-      startTime: 0001-01-01_00:00:00
-      stopTime: none
-      runDuration: 0010_00:00:00
-      calendarType: noleap
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">omega</span><span class="p">:</span>
+<span class="w">   </span><span class="nt">timeManagement</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">doRestart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="nt">restartTimestampName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">restartTimestamp</span>
+<span class="w">      </span><span class="nt">startTime</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0001-01-01_00:00:00</span>
+<span class="w">      </span><span class="nt">stopTime</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">none</span>
+<span class="w">      </span><span class="nt">runDuration</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0010_00:00:00</span>
+<span class="w">      </span><span class="nt">calendarType</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">noleap</span>
 
-   [Other config options in a similar way]
+<span class="w">   </span><span class="p p-Indicator">[</span><span class="nv">Other config options in a similar way</span><span class="p p-Indicator">]</span>
 
-   hmix:
-      hmixScaleWithMesh: false
-      maxMeshDensity: -1.0
-      hmixUseRefWidth: false
-      hmixRefWidth: 30.0e3
+<span class="w">   </span><span class="nt">hmix</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">hmixScaleWithMesh</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="nt">maxMeshDensity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-1.0</span>
+<span class="w">      </span><span class="nt">hmixUseRefWidth</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="nt">hmixRefWidth</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30.0e3</span>
 
-   [more config options]
+<span class="w">   </span><span class="p p-Indicator">[</span><span class="nv">more config options</span><span class="p p-Indicator">]</span>
 
-   streams:
+<span class="w">   </span><span class="nt">streams</span><span class="p">:</span>
 
-      mesh:
-         type: input
-         filenameTemplate: mesh.nc
-         inputInterval: initial_only
+<span class="w">      </span><span class="nt">mesh</span><span class="p">:</span>
+<span class="w">         </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">input</span>
+<span class="w">         </span><span class="nt">filenameTemplate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mesh.nc</span>
+<span class="w">         </span><span class="nt">inputInterval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">initial_only</span>
 
-      output:
-         type: output
-         filenameTemplate: output/output.$Y-$M-$D_$h.$m.$s.nc
-         filenameInterval: 01-00-00_00:00:00
-         referenceTime: 0001-01-01_00:00:00
-         clobberMode: truncate
-         precision: single
-         outputInterval: 0001_00:00:00
-         contents:
-         - tracers
-         - layerThickness
-         - ssh
-         - kineticEnergyCell
-         - relativeVorticityCell
-         - [other fields]
+<span class="w">      </span><span class="nt">output</span><span class="p">:</span>
+<span class="w">         </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">output</span>
+<span class="w">         </span><span class="nt">filenameTemplate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">output/output.$Y-$M-$D_$h.$m.$s.nc</span>
+<span class="w">         </span><span class="nt">filenameInterval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">01-00-00_00:00:00</span>
+<span class="w">         </span><span class="nt">referenceTime</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0001-01-01_00:00:00</span>
+<span class="w">         </span><span class="nt">clobberMode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">truncate</span>
+<span class="w">         </span><span class="nt">precision</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">single</span>
+<span class="w">         </span><span class="nt">outputInterval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0001_00:00:00</span>
+<span class="w">         </span><span class="nt">contents</span><span class="p">:</span>
+<span class="w">         </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tracers</span>
+<span class="w">         </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">layerThickness</span>
+<span class="w">         </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ssh</span>
+<span class="w">         </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kineticEnergyCell</span>
+<span class="w">         </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">relativeVorticityCell</span>
+<span class="w">         </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">other fields</span><span class="p p-Indicator">]</span>
 
-      [other streams in similar form]
+<span class="w">      </span><span class="p p-Indicator">[</span><span class="nv">other streams in similar form</span><span class="p p-Indicator">]</span>
 </pre></div>
 </div>
 </section>
@@ -356,7 +349,7 @@ to be associated with Config.</p>
 <h4>4.2.1 File read and master config<a class="headerlink" href="#file-read-and-master-config" title="Permalink to this heading"></a></h4>
 <p>The most common use case should be creating a Config by reading a
 YAML configuration file using:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Config omegaConfig = ConfigRead(“omega.yml”);
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Config</span><span class="w"> </span><span class="n">omegaConfig</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigRead</span><span class="p">(</span><span class="s">&quot;omega.yml&quot;</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>where the argument is the name for the YAML input file. In OMEGA,
@@ -371,11 +364,11 @@ variables at the top level and we need to first retrieve the sub-config
 associated with the local module/group. In the sample above, if we need
 to retrieve a variable from the hmix group, we first retrieve the hmix
 config and then the variable using:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Config hmixConfig = ConfigGet(omegaConfig,&quot;hmix&quot;,iErr);
-Real refWidth{0.0};
-bool useRefWidth{false};
-refWidth    = ConfigGet(hmixConfig, &quot;hmixRefWidth&quot;,    iErr);
-useRefWidth = ConfigGet(hmixConfig, &quot;hmixUseRefWidth&quot;, iErr);
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Config</span><span class="w"> </span><span class="n">hmixConfig</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigGet</span><span class="p">(</span><span class="n">omegaConfig</span><span class="p">,</span><span class="s">&quot;hmix&quot;</span><span class="p">,</span><span class="n">iErr</span><span class="p">);</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">refWidth</span><span class="p">{</span><span class="mf">0.0</span><span class="p">};</span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">useRefWidth</span><span class="p">{</span><span class="nb">false</span><span class="p">};</span>
+<span class="n">refWidth</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigGet</span><span class="p">(</span><span class="n">hmixConfig</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;hmixRefWidth&quot;</span><span class="p">,</span><span class="w">    </span><span class="n">iErr</span><span class="p">);</span>
+<span class="n">useRefWidth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigGet</span><span class="p">(</span><span class="n">hmixConfig</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;hmixUseRefWidth&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">iErr</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>where there is a retrieval function for all supported Omega data types:
@@ -388,7 +381,7 @@ return with a non-zero error argument.</p>
 <p>Another interface will allow the setting of a default value if the
 variable is missing from the input config.  This interface simply
 adds the default value as an additional argument, for example:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>refWidth = ConfigGet(hmixConfig, &quot;hmixRefWidth&quot;, defaultVal, iErr);
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">refWidth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigGet</span><span class="p">(</span><span class="n">hmixConfig</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;hmixRefWidth&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">defaultVal</span><span class="p">,</span><span class="w"> </span><span class="n">iErr</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>In this case, if the variable does not exist, it will not only
@@ -401,9 +394,9 @@ being used because the entry is missing.</p>
 file read interface above, the capability modify a value is also
 required. The syntax is essentially the inverse of the get/retrieval
 above. Similar to that case, the sub-group will need to be retrieved first.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Config hmixConfig = ConfigGet(omegaConfig, &quot;hmix&quot;, iErr);
-ConfigSet(hmixConfig, &quot;hmixRefWidth&quot;, 10.0e3, iErr);
-ConfigSet(hmixConfig, &quot;hmixUseRefWidth&quot;, true, iErr);
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Config</span><span class="w"> </span><span class="n">hmixConfig</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigGet</span><span class="p">(</span><span class="n">omegaConfig</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;hmix&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">iErr</span><span class="p">);</span>
+<span class="n">ConfigSet</span><span class="p">(</span><span class="n">hmixConfig</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;hmixRefWidth&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">10.0e3</span><span class="p">,</span><span class="w"> </span><span class="n">iErr</span><span class="p">);</span>
+<span class="n">ConfigSet</span><span class="p">(</span><span class="n">hmixConfig</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;hmixUseRefWidth&quot;</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">,</span><span class="w"> </span><span class="n">iErr</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>There will be overloaded interfaces for each supported type. For
@@ -417,16 +410,16 @@ the type and only performs the type cast on retrieval).</p>
 <p>It may be necessary to build up a configuration that does not yet
 exist or add new entries to an existing group. We provide an Add
 interface to distinguish this case from the Set case above.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>// For an existing subgroup:
-Config hmixConfig = ConfigGet(omegaConfig, &quot;hmix&quot;, iErr);
-ConfigAdd(hmixConfig, &quot;hmixRefWidth&quot;, 10.0e3, iErr);
-ConfigAdd(hmixConfig, &quot;hmixUseRefWidth&quot;, true, iErr);
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// For an existing subgroup:</span>
+<span class="n">Config</span><span class="w"> </span><span class="n">hmixConfig</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigGet</span><span class="p">(</span><span class="n">omegaConfig</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;hmix&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">iErr</span><span class="p">);</span>
+<span class="n">ConfigAdd</span><span class="p">(</span><span class="n">hmixConfig</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;hmixRefWidth&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">10.0e3</span><span class="p">,</span><span class="w"> </span><span class="n">iErr</span><span class="p">);</span>
+<span class="n">ConfigAdd</span><span class="p">(</span><span class="n">hmixConfig</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;hmixUseRefWidth&quot;</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">,</span><span class="w"> </span><span class="n">iErr</span><span class="p">);</span>
 
-// To add a new subgroup:
-Config hmixConfig; // empty Config constructor
-ConfigAdd(hmixConfig, &quot;hmixRefWidth&quot;, 10.0e3, iErr); // build subgroup
-ConfigAdd(hmixConfig, &quot;hmixUseRefWidth&quot;, true, iErr);
-ConfigAdd(omegaConfig, hmixConfig); // add new subgroup to parent
+<span class="c1">// To add a new subgroup:</span>
+<span class="n">Config</span><span class="w"> </span><span class="n">hmixConfig</span><span class="p">;</span><span class="w"> </span><span class="c1">// empty Config constructor</span>
+<span class="n">ConfigAdd</span><span class="p">(</span><span class="n">hmixConfig</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;hmixRefWidth&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">10.0e3</span><span class="p">,</span><span class="w"> </span><span class="n">iErr</span><span class="p">);</span><span class="w"> </span><span class="c1">// build subgroup</span>
+<span class="n">ConfigAdd</span><span class="p">(</span><span class="n">hmixConfig</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;hmixUseRefWidth&quot;</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">,</span><span class="w"> </span><span class="n">iErr</span><span class="p">);</span>
+<span class="n">ConfigAdd</span><span class="p">(</span><span class="n">omegaConfig</span><span class="p">,</span><span class="w"> </span><span class="n">hmixConfig</span><span class="p">);</span><span class="w"> </span><span class="c1">// add new subgroup to parent</span>
 </pre></div>
 </div>
 <p>There will be overloaded interfaces for each supported type. For
@@ -442,14 +435,14 @@ Get/Set functions will perform the test internally. However, to
 satisfy requirement 2.11, we will add a function to test the
 existence of an entry, given a config or sub-config.
 Using the hmix example again:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>if (ConfigExists(hmixConfig,&quot;hmixRefWidth&quot;) {
-   // variable exists, do stuff
-}
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ConfigExists</span><span class="p">(</span><span class="n">hmixConfig</span><span class="p">,</span><span class="s">&quot;hmixRefWidth&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">   </span><span class="c1">// variable exists, do stuff</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 <p>Note that this can also be used to test the existence of a complete
 sub-group as well:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>bool hmixExists = ConfigExists(omegaConfig, &quot;hmix&quot;);
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="n">hmixExists</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigExists</span><span class="p">(</span><span class="n">omegaConfig</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;hmix&quot;</span><span class="p">);</span>
 </pre></div>
 </div>
 </section>
@@ -457,15 +450,15 @@ sub-group as well:</p>
 <h4>4.2.5 File write<a class="headerlink" href="#file-write" title="Permalink to this heading"></a></h4>
 <p>While we may decide to save provenance a different way, a write interface
 is supplied to write a configuration to an output YAML file:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>err = ConfigWrite(myConfig, “outputFileName”);
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ConfigWrite</span><span class="p">(</span><span class="n">myConfig</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;outputFileName&quot;</span><span class="p">);</span>
 </pre></div>
 </div>
 </section>
 <section id="constructor-destructor">
 <h4>4.2.6 Constructor/destructor<a class="headerlink" href="#constructor-destructor" title="Permalink to this heading"></a></h4>
 <p>A default constructor for an empty Config and destructor will be provided:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Config myConfig;
-delete myConfig;
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Config</span><span class="w"> </span><span class="n">myConfig</span><span class="p">;</span>
+<span class="k">delete</span><span class="w"> </span><span class="n">myConfig</span><span class="p">;</span>
 </pre></div>
 </div>
 <p>The destructor may be important to free up space since the Config is
@@ -478,23 +471,23 @@ likely to only be used during the init phase in the current plan.</p>
 and avoid missing or extra entries, we propose inserting a block within
 each source code header (where other interfaces will be documented).
 This block would follow Doxygen-like format and look something like:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/// \ConfigInput
-/// #
-/// # Group description (eg. hmix: the horizontal mix configuration)
-/// #
-/// groupName:
-///    #
-///    # Parameter description (eg horizontal mixing coeff)
-///    #    more description (units, acceptable values or range)
-///    #
-///    varName1: defaultValue1
-///    #
-///    # Parameter description
-///    #
-///    varName2: defaultValue2
-///    [ continue for remaining vars in this block]
-///
-/// \EndConfigInput (might not be necessary?)
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">/// \ConfigInput</span>
+<span class="c1">/// #</span>
+<span class="c1">/// # Group description (eg. hmix: the horizontal mix configuration)</span>
+<span class="c1">/// #</span>
+<span class="c1">/// groupName:</span>
+<span class="c1">///    #</span>
+<span class="c1">///    # Parameter description (eg horizontal mixing coeff)</span>
+<span class="c1">///    #    more description (units, acceptable values or range)</span>
+<span class="c1">///    #</span>
+<span class="c1">///    varName1: defaultValue1</span>
+<span class="c1">///    #</span>
+<span class="c1">///    # Parameter description</span>
+<span class="c1">///    #</span>
+<span class="c1">///    varName2: defaultValue2</span>
+<span class="c1">///    [ continue for remaining vars in this block]</span>
+<span class="c1">///</span>
+<span class="c1">/// \EndConfigInput (might not be necessary?)</span>
 </pre></div>
 </div>
 <p>The block between the ConfigInput lines could be extracted verbatim
@@ -569,8 +562,8 @@ the extra variable.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="Broadcast.html" class="btn btn-neutral float-left" title="OMEGA Requirements and Design:" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="DataTypes.html" class="btn btn-neutral float-right" title="OMEGA Requirements and Design:" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="Broadcast.html" class="btn btn-neutral float-left" title="Broadcast" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="DataTypes.html" class="btn btn-neutral float-right" title="DataTypes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

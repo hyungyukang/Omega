@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OMEGA Requirements and Design:</title>
+  <title>DataTypes</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -20,8 +20,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="OMEGA Requirements and Design:" href="Halo.html" />
-    <link rel="prev" title="OMEGA Requirements and Design:" href="Config.html" />
+    <link rel="next" title="Halo" href="Halo.html" />
+    <link rel="prev" title="Config" href="Config.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -61,11 +61,9 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="Broadcast.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Config.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Config.html#config"><em>Config</em></a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#datatypes"><em>DataTypes</em></a><ul>
+<li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Broadcast</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Config.html">Config</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">DataTypes</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">1 Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#requirements">2 Requirements</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#requirement-both-flexible-and-fixed-floating-point">2.1 Requirement: Both flexible and fixed floating point</a></li>
@@ -93,11 +91,10 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="Halo.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Logging.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MachEnv.html">OMEGA Requirements and Design:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MachEnv.html#machineenv"><em>MachineEnv</em></a></li>
-<li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">OMEGA Requirements and Design:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Halo.html">Halo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Logging.html">Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MachEnv.html">MachineEnv</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">TimeManager</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Reductions.html">Global Reductions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="OmegaDesignTemplate.html">Template: MyClassOrModuleName</a></li>
 </ul>
@@ -116,7 +113,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">OMEGA Requirements and Design:</li>
+      <li class="breadcrumb-item active">DataTypes</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/design/DataTypes.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -126,12 +123,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <!--- DataTypes Requirements and Design --------------------------------------->
-<section class="tex2jax_ignore mathjax_ignore" id="omega-requirements-and-design">
-<h1>OMEGA Requirements and Design:<a class="headerlink" href="#omega-requirements-and-design" title="Permalink to this heading"></a></h1>
-</section>
-<section class="tex2jax_ignore mathjax_ignore" id="datatypes">
-<h1><em>DataTypes</em><a class="headerlink" href="#datatypes" title="Permalink to this heading"></a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="datatypes">
+<span id="omega-design-data-types"></span><h1>DataTypes<a class="headerlink" href="#datatypes" title="Permalink to this heading"></a></h1>
 <section id="overview">
 <h2>1 Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
 <p>Data type aliases are a useful means for managing precision within OMEGA and
@@ -197,33 +190,33 @@ Otherwise, the default real will be double precision.</p>
 file DataTypes.h We will use the “using” syntax rather than
 the older typedef. For YAKL arrays, we require both device arrays (default)
 and host array types and will use C-ordering.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>// Standard integer and floating point types
-using I4 = std::int32_t;
-using I8 = std::int64_t;
-using R4 = float;
-using R8 = double;
-#ifdef SINGLE_PRECISION
-using Real = float;
-#else
-using Real = double;
-#endif
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Standard integer and floating point types</span>
+<span class="k">using</span><span class="w"> </span><span class="n">I4</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="kt">int32_t</span><span class="p">;</span>
+<span class="k">using</span><span class="w"> </span><span class="n">I8</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="kt">int64_t</span><span class="p">;</span>
+<span class="k">using</span><span class="w"> </span><span class="n">R4</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">;</span>
+<span class="k">using</span><span class="w"> </span><span class="n">R8</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">double</span><span class="p">;</span>
+<span class="cp">#ifdef SINGLE_PRECISION</span>
+<span class="k">using</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">float</span><span class="p">;</span>
+<span class="cp">#else</span>
+<span class="k">using</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">double</span><span class="p">;</span>
+<span class="cp">#endif</span>
 
-// Aliases for YAKL arrays - by default on device and in
-// C-ordering.
-using Array1DI4   = YAKL::Array&lt;I4,1,memDevice,styleC&gt;
-using Array1DI8   = YAKL::Array&lt;I8,1,memDevice,styleC&gt;
-using Array1DR4   = YAKL::Array&lt;R4,1,memDevice,styleC&gt;
-using Array1DR8   = YAKL::Array&lt;R8,1,memDevice,styleC&gt;
-using Array1DReal = YAKL::Array&lt;Real,1,memDevice,styleC&gt;
-using Array2DI4   = YAKL::Array&lt;I4,2,memDevice,styleC&gt;
-using Array2DI8   = YAKL::Array&lt;I8,2,memDevice,styleC&gt;
-using Array2DR4   = YAKL::Array&lt;R4,2,memDevice,styleC&gt;
-using Array2DR8   = YAKL::Array&lt;R8,2,memDevice,styleC&gt;
-using Array2DReal = YAKL::Array&lt;Real,2,memDevice,styleC&gt;
-// continue this pattern for higher-dimensional arrays
-// Also need similar aliases for arrays on the host
-using ArrayHost1DI4   = YAKL::Array&lt;I4,1,memHost,styleC&gt;
-// replicated as above for each type, dimension
+<span class="c1">// Aliases for YAKL arrays - by default on device and in</span>
+<span class="c1">// C-ordering.</span>
+<span class="k">using</span><span class="w"> </span><span class="n">Array1DI4</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">I4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
+<span class="k">using</span><span class="w"> </span><span class="n">Array1DI8</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">I8</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
+<span class="k">using</span><span class="w"> </span><span class="n">Array1DR4</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">R4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
+<span class="k">using</span><span class="w"> </span><span class="n">Array1DR8</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">R8</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
+<span class="k">using</span><span class="w"> </span><span class="n">Array1DReal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">Real</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
+<span class="k">using</span><span class="w"> </span><span class="n">Array2DI4</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">I4</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
+<span class="k">using</span><span class="w"> </span><span class="n">Array2DI8</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">I8</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
+<span class="k">using</span><span class="w"> </span><span class="n">Array2DR4</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">R4</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
+<span class="k">using</span><span class="w"> </span><span class="n">Array2DR8</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">R8</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
+<span class="k">using</span><span class="w"> </span><span class="n">Array2DReal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">Real</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
+<span class="c1">// continue this pattern for higher-dimensional arrays</span>
+<span class="c1">// Also need similar aliases for arrays on the host</span>
+<span class="k">using</span><span class="w"> </span><span class="n">ArrayHost1DI4</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">I4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">memHost</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
+<span class="c1">// replicated as above for each type, dimension</span>
 </pre></div>
 </div>
 </section>
@@ -270,8 +263,8 @@ way and compare values from each on the host.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="Config.html" class="btn btn-neutral float-left" title="OMEGA Requirements and Design:" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="Halo.html" class="btn btn-neutral float-right" title="OMEGA Requirements and Design:" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="Config.html" class="btn btn-neutral float-left" title="Config" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Halo.html" class="btn btn-neutral float-right" title="Halo" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

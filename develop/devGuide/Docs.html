@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Building the Documentation" href="BuildDocs.html" />
+    <link rel="prev" title="Development Conda Environment" href="CondaEnv.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            OMEGA
+          </a>
+              <div class="version">
+                develop
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User's guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/QuickStart.html">Quick Start for Users</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="QuickStart.html">Quick Start for Developers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CondaEnv.html">Development Conda Environment</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildDocs.html">Building the Documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../design/Broadcast.html">OMEGA Requirements and Design:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Config.html">OMEGA Requirements and Design:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Config.html#config"><em>Config</em></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/DataTypes.html">OMEGA Requirements and Design:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/DataTypes.html#datatypes"><em>DataTypes</em></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Halo.html">OMEGA Requirements and Design:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Logging.html">OMEGA Requirements and Design:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/MachEnv.html">OMEGA Requirements and Design:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/MachEnv.html#machineenv"><em>MachineEnv</em></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/TimeMgr.html">OMEGA Requirements and Design:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/OmegaDesignTemplate.html">Template: MyClassOrModuleName</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">OMEGA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/devGuide/Docs.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="documentation">
+<span id="omega-dev-docs"></span><h1>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading"></a></h1>
+<p>The OMEGA documentation is generated using the
+<a class="reference external" href="https://www.sphinx-doc.org/en/master/">Sphinx</a> package and is written in
+<a class="reference external" href="https://myst-parser.readthedocs.io/en/latest/syntax/syntax.html">MyST</a>
+format.  We recommend these
+<a class="reference external" href="https://myst-parser.readthedocs.io/en/latest/syntax/roles-and-directives.html#roles-directives">basic tips</a>
+on using MyST in Sphinx.</p>
+<p>Another easy way to get started is by taking a look at the existing source
+code for the documentation:</p>
+<p><a class="reference external" href="https://github.com/E3SM-Project/Omega/tree/develop/components/omega/doc">https://github.com/E3SM-Project/Omega/tree/develop/components/omega/doc</a></p>
+<p>Each time you add new features to OMEAG, the corresponding documentation must
+be included with the pull request to add the code.  This includes documentation
+for both the User’s Guide and the Developer’s Guide. We will add some examples
+as the documentation gets fleshed out.</p>
+<p>Please add anchors for internal linking to the top of every page before
+headings within the page whenever you think internal linking might be useful
+(now or in the future).  In the User’s Guide, please start each anchor with
+<code class="docutils literal notranslate"><span class="pre">omega-</span></code>:</p>
+<div class="highlight-markdown notranslate"><div class="highlight"><pre><span></span>(omega-quick-start)=
+
+<span class="gh"># Quick Start for Users</span>
+...
+</pre></div>
+</div>
+<p>This is in anticipation of a future time when the OMEGA documentation might
+be combined with other components of E3SM.</p>
+<p>In the Developer’s Guide, anchors should start with <code class="docutils literal notranslate"><span class="pre">omega-dev-</span></code>:</p>
+<div class="highlight-markdown notranslate"><div class="highlight"><pre><span></span>(omega-dev-quick-start)=
+
+<span class="gh"># Quick Start for Developers</span>
+...
+</pre></div>
+</div>
+<p>Documentation for an OMEGA feature in the User’s Guide should contain
+information that is needed for users who set up and run OMEGA, including:</p>
+<ul class="simple">
+<li><p>Background information on the feature (though not as much as in Developer’s
+Guide and not referencing code) that gives the user an understanding of
+the configurable parameters.</p></li>
+<li><p>Config options related to the feature that users can modify in a YAML file.</p></li>
+<li><p>Flags related to the feature that a user can (or must) set when building
+OMEGA.</p></li>
+</ul>
+<p>The Developer’s Guide should also serve as a reference manual.  Among other
+things, the documentation in the Developer’s Guide needs to provide an easy way
+for other developers or reviewers to verify the code against the intended
+implementation. Therefore, documentation for a new feature in the Developer’s
+Guide should:</p>
+<ul class="simple">
+<li><p>Describe the actual mathematical terms (or a reference to them).</p></li>
+<li><p>Describe the discretized form with variables close to what are used in the
+code.</p></li>
+<li><p>Provide details on unit tests that cover that feature, if applicable.</p></li>
+<li><p>Describe any polaris regression tests that cover that feature, if applicable.</p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="CondaEnv.html" class="btn btn-neutral float-left" title="Development Conda Environment" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="BuildDocs.html" class="btn btn-neutral float-right" title="Building the Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Energy Exascale Earth System Model Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quick Start for Users</title>
+  <title>Data Types and Precision</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -20,8 +20,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Data Types and Precision" href="DataTypes.html" />
-    <link rel="prev" title="OMEGA" href="../index.html" />
+    <link rel="next" title="Quick Start for Developers" href="../devGuide/QuickStart.html" />
+    <link rel="prev" title="Quick Start for Users" href="QuickStart.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -50,8 +50,8 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">User's guide</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Quick Start for Users</a></li>
-<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">Data Types and Precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="QuickStart.html">Quick Start for Users</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Data Types and Precision</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
 <ul>
@@ -93,9 +93,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Quick Start for Users</li>
+      <li class="breadcrumb-item active">Data Types and Precision</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/userGuide/QuickStart.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/userGuide/DataTypes.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -103,21 +103,25 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="quick-start-for-users">
-<span id="omega-quick-start"></span><h1>Quick Start for Users<a class="headerlink" href="#quick-start-for-users" title="Permalink to this heading"></a></h1>
-<div class="admonition-quick-start-for-users-is-coming-soon admonition">
-<p class="admonition-title">Quick Start for Users is coming soon</p>
-<p>OMEGA is still in the early stages of development, so we are not yet ready for
-outside users.  For now, please refer to the <a class="reference internal" href="../devGuide/QuickStart.html#omega-dev-quick-start"><span class="std std-ref">Quick Start for Developers</span></a>.</p>
-</div>
+  <section id="data-types-and-precision">
+<h1>Data Types and Precision<a class="headerlink" href="#data-types-and-precision" title="Permalink to this heading"></a></h1>
+<p>OMEGA supports all standard data types and uses some specific defined
+types to guarantee a specific level of precision. There is only one
+user-configurable option for precision. When a specific floating point
+precision is not required, we use a Real data type that is, by default,
+double precision (8 bytes/64-bit) but if the code is built with a
+<code class="docutils literal notranslate"><span class="pre">-DSINGLE_PRECISION</span></code> (see insert link to build system) preprocessor flag,
+the default Real becomes single precision (4-byte/32-bit). Users are
+encouraged to use the default double precision unless exploring the
+performance or accuracy characteristics of single precision.</p>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../index.html" class="btn btn-neutral float-left" title="OMEGA" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="DataTypes.html" class="btn btn-neutral float-right" title="Data Types and Precision" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="QuickStart.html" class="btn btn-neutral float-left" title="Quick Start for Users" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../devGuide/QuickStart.html" class="btn btn-neutral float-right" title="Quick Start for Developers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMake-based Omega Build</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Data Types and Precision" href="DataTypes.html" />
+    <link rel="prev" title="Quick Start for Users" href="QuickStart.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            OMEGA
+          </a>
+              <div class="version">
+                develop
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User's guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="QuickStart.html">Quick Start for Users</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">CMake-based Omega Build</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#standalone-build">Standalone Build</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#e3sm-component-build">E3SM Component Build</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#manual-preparation-for-e3sm-component-build">Manual Preparation for E3SM Component Build</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">Data Types and Precision</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/QuickStart.html">Quick Start for Developers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html">Data Types and Precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/CondaEnv.html">Development Conda Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/Docs.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/BuildDocs.html">Building the Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/CMakeBuild.html">Omega Build with CMake</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../design/Broadcast.html">Broadcast</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Config.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/DataTypes.html">DataTypes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Decomp.html">Decomp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Halo.html">Halo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Logging.html">Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/MachEnv.html">MachineEnv</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Metadata.html">Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/TimeMgr.html">TimeManager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Reductions.html">Global Reductions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/IO.html">Input/Output (IO)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/IOStreams.html">IOStreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/OmegaDesignTemplate.html">Template: MyClassOrModuleName</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">OMEGA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">CMake-based Omega Build</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/userGuide/OmegaBuild.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="cmake-based-omega-build">
+<span id="omega-user-build"></span><h1>CMake-based Omega Build<a class="headerlink" href="#cmake-based-omega-build" title="Permalink to this heading"></a></h1>
+<p>Omega’s build system is built upon the CMake build tool, which provides
+a robust foundation for managing the build process.</p>
+<p>The Omega build system supports two modes: standalone and E3SM component.</p>
+<section id="standalone-build">
+<h2>Standalone Build<a class="headerlink" href="#standalone-build" title="Permalink to this heading"></a></h2>
+<p>CMake and OMEGA prefer an out-of-source build. This enables a user to build
+and maintain multiple executables from the same source directory.
+The standard practice is for a user to create a separate directory where
+the build should take place and the commands below should be launched from
+that directory.</p>
+<p>To perform a standalone build, you need to execute the cmake command with
+the required CMake and Omega parameters. For example, you can specify the
+CC parameter as the C++ compiler and enable the ctest option to guide the
+Omega build process. The following example demonstrates building
+a standalone Omega with a test suite.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>&gt;&gt;<span class="w"> </span>cmake<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DOMEGA_BUILD_TEST<span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DOMEGA_CXX_COMPILER<span class="o">=</span>CC<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="si">${</span><span class="nv">E3SM_HOME</span><span class="si">}</span>/components/omega
+</pre></div>
+</div>
+<p>Once the <code class="docutils literal notranslate"><span class="pre">cmake</span></code> command succeeds, the directory where the command was
+executed will contain the following files and directories.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>&gt;&gt;<span class="w"> </span>ls<span class="w"> </span>-1<span class="w"> </span><span class="si">${</span><span class="nv">WORKDIR</span><span class="si">}</span>
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+CTestTestfile.cmake
+external
+Makefile
+src
+<span class="nb">test</span>
+</pre></div>
+</div>
+<p>To build the Omega, execute the <code class="docutils literal notranslate"><span class="pre">make</span></code> command in the directory.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>&gt;&gt;<span class="w"> </span>make
+Scanning<span class="w"> </span>dependencies<span class="w"> </span>of<span class="w"> </span>target<span class="w"> </span>yakl
+<span class="o">[</span><span class="w"> </span><span class="m">11</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>Fortran<span class="w"> </span>object<span class="w"> </span>external/YAKL/CMakeFiles/yakl.dir/src/YAKL_gator_mod.F90.o
+<span class="o">[</span><span class="w"> </span><span class="m">22</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>external/YAKL/CMakeFiles/yakl.dir/src/YAKL.cpp.o
+<span class="o">[</span><span class="w"> </span><span class="m">33</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>static<span class="w"> </span>library<span class="w"> </span>libyakl.a
+<span class="o">[</span><span class="w"> </span><span class="m">33</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>yakl
+<span class="o">[</span><span class="w"> </span><span class="m">44</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>src/CMakeFiles/OmegaLib.dir/ocn/ocndummy.cpp.o
+<span class="o">[</span><span class="w"> </span><span class="m">55</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>static<span class="w"> </span>library<span class="w"> </span>libOmegaLib.a
+<span class="o">[</span><span class="w"> </span><span class="m">55</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>OmegaLib
+<span class="o">[</span><span class="w"> </span><span class="m">66</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>src/CMakeFiles/omega.exe.dir/drivers/drvdummy.cpp.o
+<span class="o">[</span><span class="w"> </span><span class="m">77</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>executable<span class="w"> </span>omega.exe
+<span class="o">[</span><span class="w"> </span><span class="m">77</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>omega.exe
+<span class="o">[</span><span class="w"> </span><span class="m">88</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>test/CMakeFiles/OMEGA_TEST.dir/testdummy.cpp.o
+<span class="o">[</span><span class="m">100</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>executable<span class="w"> </span>OMEGA_TEST
+<span class="o">[</span><span class="m">100</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>OMEGA_TEST
+</pre></div>
+</div>
+<p>If the build succeeds, the Omega library and executable are created in the
+<code class="docutils literal notranslate"><span class="pre">src</span></code> sub-directory of the build directory.</p>
+<p>To specify the output directory for saving the generated output files,
+you can include the <code class="docutils literal notranslate"><span class="pre">OMEGA_INSTALL_PREFIX</span></code> variable in the <code class="docutils literal notranslate"><span class="pre">cmake</span></code> command,
+as shown below:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>...<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DOMEGA_INSTALL_PREFIX<span class="o">=</span><span class="s2">&quot;/path/to/output/directory&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="si">${</span><span class="nv">E3SM_HOME</span><span class="si">}</span>/components/omega
+<span class="w">  </span>...
+</pre></div>
+</div>
+<p>Afterwards, you can use the <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code> command to copy the Omega library
+and executable to the <code class="docutils literal notranslate"><span class="pre">lib</span></code> and <code class="docutils literal notranslate"><span class="pre">bin</span></code> sub-directories under the directory
+specified by <code class="docutils literal notranslate"><span class="pre">DOMEGA_INSTALL_PREFIX</span></code>.</p>
+<p>To run the Omega test suite, execute the <code class="docutils literal notranslate"><span class="pre">ctest</span></code> command.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>&gt;&gt;<span class="w"> </span>ctest
+Test<span class="w"> </span>project<span class="w"> </span>&lt;cmake<span class="w"> </span>working<span class="w"> </span>directory&gt;
+<span class="w">    </span>Start<span class="w"> </span><span class="m">1</span>:<span class="w"> </span>OMEGA_TEST
+<span class="m">1</span>/1<span class="w"> </span>Test<span class="w"> </span><span class="c1">#1: OMEGA_TEST .......................   Passed    0.01 sec</span>
+
+<span class="m">100</span>%<span class="w"> </span>tests<span class="w"> </span>passed,<span class="w"> </span><span class="m">0</span><span class="w"> </span>tests<span class="w"> </span>failed<span class="w"> </span>out<span class="w"> </span>of<span class="w"> </span><span class="m">1</span>
+
+Total<span class="w"> </span>Test<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="o">(</span>real<span class="o">)</span><span class="w"> </span><span class="o">=</span><span class="w">   </span><span class="m">0</span>.01<span class="w"> </span>sec
+</pre></div>
+</div>
+</section>
+<section id="e3sm-component-build">
+<h2>E3SM Component Build<a class="headerlink" href="#e3sm-component-build" title="Permalink to this heading"></a></h2>
+<p>In the E3SM component build, the compilation is triggered by
+the E3SM build system.</p>
+<section id="manual-preparation-for-e3sm-component-build">
+<h3>Manual Preparation for E3SM Component Build<a class="headerlink" href="#manual-preparation-for-e3sm-component-build" title="Permalink to this heading"></a></h3>
+<p>Although all the build configurations in the E3SM component build
+should ideally be managed through the E3SM build configuration,
+the current Omega build is not yet integrated into the E3SM build.
+Therefore, users need to make specific modifications to enable
+the Omega build within the E3SM build process.</p>
+<p>Step 1: Modify <code class="docutils literal notranslate"><span class="pre">${E3SM_ROOT}/components/CMakeLists.txt</span></code></p>
+<p>Add the lines indicated as “added” in the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>include<span class="o">(</span><span class="si">${</span><span class="nv">CMAKE_CURRENT_SOURCE_DIR</span><span class="si">}</span>/cmake/cmake_util.cmake<span class="o">)</span>
+include<span class="o">(</span><span class="si">${</span><span class="nv">CMAKE_CURRENT_SOURCE_DIR</span><span class="si">}</span>/cmake/build_mpas_model.cmake<span class="o">)</span>
+include<span class="o">(</span><span class="si">${</span><span class="nv">CMAKE_CURRENT_SOURCE_DIR</span><span class="si">}</span>/cmake/build_omega.cmake<span class="o">)</span><span class="w"> </span><span class="c1"># &lt;= added</span>
+include<span class="o">(</span><span class="si">${</span><span class="nv">CMAKE_CURRENT_SOURCE_DIR</span><span class="si">}</span>/cmake/build_eamxx.cmake<span class="o">)</span>
+include<span class="o">(</span><span class="si">${</span><span class="nv">CMAKE_CURRENT_SOURCE_DIR</span><span class="si">}</span>/cmake/build_model.cmake<span class="o">)</span>
+...
+set<span class="o">(</span>BUILDCONF<span class="w"> </span><span class="si">${</span><span class="nv">CASEROOT</span><span class="si">}</span>/Buildconf<span class="o">)</span>
+
+build_mpas_models<span class="o">()</span>
+build_omega<span class="o">()</span><span class="w"> </span><span class="c1"># &lt;= added</span>
+</pre></div>
+</div>
+<p>Step 2: Create <code class="docutils literal notranslate"><span class="pre">${E3SM_ROOT}/components/cmake/build_omega.cmake</span></code></p>
+<p>Create the <code class="docutils literal notranslate"><span class="pre">cmake</span></code> file and copy the following content into it.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">function</span><span class="p">(</span><span class="s">build_omega</span><span class="p">)</span>
+
+<span class="w">  </span><span class="c"># Set CIME source path relative to components</span>
+<span class="w">  </span><span class="nb">set</span><span class="p">(</span><span class="s">CIMESRC_PATH</span><span class="w"> </span><span class="s2">&quot;../cime/src&quot;</span><span class="p">)</span>
+
+<span class="w">  </span><span class="nb">add_subdirectory</span><span class="p">(</span><span class="s2">&quot;omega&quot;</span><span class="p">)</span>
+
+<span class="nb">endfunction</span><span class="p">(</span><span class="s">build_omega</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Step 3: Create an E3SM Case</p>
+<p>At this stage, you can create any E3SM case as usual without
+requiring any specific configuration for Omega.</p>
+<p>NOTE: In this version, the compiled library file for Omega,
+“libOmegaLib.a”, is not linked to the E3SM executable. You can
+find the Omega library file at <code class="docutils literal notranslate"><span class="pre">${E3SM_BLD_DIRECTORY}/cmake-bld/omega/src</span></code>.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="QuickStart.html" class="btn btn-neutral float-left" title="Quick Start for Users" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="DataTypes.html" class="btn btn-neutral float-right" title="Data Types and Precision" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Energy Exascale Earth System Model Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

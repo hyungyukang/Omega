@@ -303,10 +303,10 @@ local operators. The minimum is typically 3 for current
 algorithms.</p>
 <p>These parameters and the mesh input file will be read as part of
 the input configuration file in a decomp configuration group:</p>
-<div class="highlight-yakl notranslate"><div class="highlight"><pre><span></span>    decomp:
-       meshInputFilename: &#39;omegaMeshFile.nc&#39;
-       partitionMethod: &#39;MetisKWay&#39;
-       haloWidth: 3
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="nt">decomp</span><span class="p">:</span>
+<span class="w">       </span><span class="nt">meshInputFilename</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;omegaMeshFile.nc&#39;</span>
+<span class="w">       </span><span class="nt">partitionMethod</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;MetisKWay&#39;</span>
+<span class="w">       </span><span class="nt">haloWidth</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
 </pre></div>
 </div>
 <p>The Metis KWay partition method will be default and the haloWidth
@@ -347,7 +347,7 @@ of the address space.</p>
 <span class="w">          </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">I4</span><span class="o">&gt;</span><span class="p">[]</span><span class="w"> </span><span class="n">nbrStartCell</span><span class="w"> </span><span class="c1">///&lt; start addr in nbr array for cell</span>
 <span class="w">          </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">I4</span><span class="o">&gt;</span><span class="p">[]</span><span class="w"> </span><span class="n">nbrLocCell</span><span class="w">   </span><span class="c1">///&lt; list of nbr addresses</span>
 
-<span class="w">          </span><span class="p">[</span><span class="w"> </span><span class="n">repeat</span><span class="w"> </span><span class="n">identical</span><span class="w"> </span><span class="n">variables</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">edge</span><span class="w"> </span><span class="n">and</span><span class="w"> </span><span class="n">vertex</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="n">spaces</span><span class="w"> </span><span class="p">]</span>
+<span class="w">          </span><span class="p">[</span><span class="w"> </span><span class="n">repeat</span><span class="w"> </span><span class="n">identical</span><span class="w"> </span><span class="n">variables</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">edge</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">vertex</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="n">spaces</span><span class="w"> </span><span class="p">]</span>
 <span class="w"> </span>
 
 <span class="w">          </span><span class="c1">// methods described below</span>

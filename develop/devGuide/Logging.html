@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Building the Documentation</title>
+  <title>Developing Omega Logging</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -20,8 +20,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Omega Build with CMake" href="CMakeBuild.html" />
-    <link rel="prev" title="Documentation" href="Docs.html" />
+    <link rel="next" title="Broadcast" href="../design/Broadcast.html" />
+    <link rel="prev" title="Omega Build with CMake" href="CMakeBuild.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -64,9 +64,14 @@
 <li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CondaEnv.html">Development Conda Environment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Docs.html">Documentation</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Building the Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CMakeBuild.html">Omega Build with CMake</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Logging.html">Developing Omega Logging</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Developing Omega Logging</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#initializing-omega-logger">Initializing Omega Logger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#creating-logging-macros">Creating Logging Macros</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#customer-formatter-for-yakl">Customer formatter for YAKL</a></li>
+</ul>
+</li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
 <ul>
@@ -99,9 +104,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Building the Documentation</li>
+      <li class="breadcrumb-item active">Developing Omega Logging</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/devGuide/BuildDocs.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/devGuide/Logging.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -109,29 +114,55 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="building-the-documentation">
-<span id="omega-dev-building-docs"></span><h1>Building the Documentation<a class="headerlink" href="#building-the-documentation" title="Permalink to this heading"></a></h1>
-<p>As long as you have followed the procedure in <a class="reference internal" href="CondaEnv.html#omega-dev-conda-env"><span class="std std-ref">Development Conda Environment</span></a> for
-setting up your conda environment, you will already have the packages available
-that you need to build the documentation.</p>
-<p>From the root of an OMEGA branch, run the following script to build the docs:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>components/omega/docs
-make<span class="w"> </span>clean
-make<span class="w"> </span>html
-</pre></div>
-</div>
-<p>You can view the documentation by opening <code class="docutils literal notranslate"><span class="pre">_build/html/index.html</span></code> in your
-choice of browser.</p>
-<p>If you run into errors or warnings related to changes you have meade when you
-build the docs, check with the development team for help on fixing them.</p>
+  <section class="tex2jax_ignore mathjax_ignore" id="developing-omega-logging">
+<span id="omega-dev-logging"></span><h1>Developing Omega Logging<a class="headerlink" href="#developing-omega-logging" title="Permalink to this heading"></a></h1>
+<p>Omega’s logging system is built upon the
+<a class="reference external" href="https://github.com/gabime/spdlog">spdlog</a> logging tool.</p>
+<p>Logging macros and custom formatters for YAKL data types have been
+integrated into the Omega logging system via the Logging.h header file
+located in the src/infra directory. Users who wish to utilize Omega’s
+logging capabilities must include this header file in their code.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">src/infra/Logging.cpp</span></code> file encompasses various functions related
+to logging. As of the current version, this file contains the
+<code class="docutils literal notranslate"><span class="pre">OMEGA::initLogging</span></code> function, which initialize the logging process.
+It is recommended to invoke the <code class="docutils literal notranslate"><span class="pre">OMEGA::initLogging</span></code> function at the beginning
+of an Omega application to properly initialize the logging system.</p>
+<section id="initializing-omega-logger">
+<h2>Initializing Omega Logger<a class="headerlink" href="#initializing-omega-logger" title="Permalink to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">OMEGA::initLogging</span></code> function, located within the <code class="docutils literal notranslate"><span class="pre">src/infra/Logging.cpp</span></code>
+file, serves as a pivotal component for initializing the Omega logging system.</p>
+<p>The function establishes the default logger configuration, ensuring that
+logging messages are effectively saved to a designated file. The path to
+this file is determined by utilizing the <code class="docutils literal notranslate"><span class="pre">OMEGA_LOG_FILEPATH</span></code> macro, which
+allows users to specify the desired file location for logging purposes.</p>
+</section>
+<section id="creating-logging-macros">
+<h2>Creating Logging Macros<a class="headerlink" href="#creating-logging-macros" title="Permalink to this heading"></a></h2>
+<p>The Omega logging macros, denoted by the prefix <code class="docutils literal notranslate"><span class="pre">LOG_</span></code>, are defined within
+the <code class="docutils literal notranslate"><span class="pre">src/infra/Logging.h</span></code> file. These macros constitute a main part of
+the logging infrastructure, enabling users to seamlessly incorporate
+logging functionality into their Omega applications.</p>
+<p>Furthermore, the logging framework includes a distinct set of macros that
+commence with the prefix <code class="docutils literal notranslate"><span class="pre">LOGGER_</span></code>. These macros offer enhanced
+versatility by accommodating the utilization of the spdlog logger as
+their first argument. This approach facilitats the integration of various
+logger types.</p>
+</section>
+<section id="customer-formatter-for-yakl">
+<h2>Customer formatter for YAKL<a class="headerlink" href="#customer-formatter-for-yakl" title="Permalink to this heading"></a></h2>
+<p>Within the same header file, you will encounter specialized spdlog formatter
+structs designed to accommodate YAKL data types.</p>
+<p>For further information on customizing the spdlog formatter, refer to
+<a class="reference external" href="https://github.com/gabime/spdlog/wiki/3.-Custom-formatting">Custom formatting</a>.</p>
+</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="Docs.html" class="btn btn-neutral float-left" title="Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="CMakeBuild.html" class="btn btn-neutral float-right" title="Omega Build with CMake" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="CMakeBuild.html" class="btn btn-neutral float-left" title="Omega Build with CMake" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../design/Broadcast.html" class="btn btn-neutral float-right" title="Broadcast" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

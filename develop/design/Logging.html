@@ -54,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/OmegaBuild.html">CMake-based Omega Build</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/DataTypes.html">Data Types and Precision</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Logging.html">Omega Logging</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
 <ul>
@@ -65,6 +66,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/CMakeBuild.html">Omega Build with CMake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/Logging.html">Developing Omega Logging</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
 <ul class="current">
@@ -298,7 +300,7 @@ demonstrates how an argument of type <code class="docutils literal notranslate">
 message:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Array1DR8</span><span class="w"> </span><span class="n">var</span><span class="p">;</span>
 <span class="p">...</span>
-<span class="n">LOG_INFO</span><span class="p">(</span><span class="s">&quot;log message&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">var</span><span class="p">);</span>
+<span class="n">LOG_INFO</span><span class="p">(</span><span class="s">&quot;log message {}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">var</span><span class="p">);</span>
 </pre></div>
 </div>
 </section>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Data Types and Precision</title>
+  <title>Omega Logging</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -20,8 +20,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Machine Environment (MachEnv)" href="MachEnv.html" />
-    <link rel="prev" title="CMake-based Omega Build" href="OmegaBuild.html" />
+    <link rel="next" title="Quick Start for Developers" href="../devGuide/QuickStart.html" />
+    <link rel="prev" title="Machine Environment (MachEnv)" href="MachEnv.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -52,9 +52,13 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="QuickStart.html">Quick Start for Users</a></li>
 <li class="toctree-l1"><a class="reference internal" href="OmegaBuild.html">CMake-based Omega Build</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Data Types and Precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">Data Types and Precision</a></li>
 <li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Logging.html">Omega Logging</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Omega Logging</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#logging-in-standalone-build-mode">Logging in Standalone Build mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#e3sm-component-build">E3SM Component Build</a></li>
+</ul>
+</li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
 <ul>
@@ -99,9 +103,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Data Types and Precision</li>
+      <li class="breadcrumb-item active">Omega Logging</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/userGuide/DataTypes.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/userGuide/Logging.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -109,25 +113,73 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="data-types-and-precision">
-<h1>Data Types and Precision<a class="headerlink" href="#data-types-and-precision" title="Permalink to this heading"></a></h1>
-<p>OMEGA supports all standard data types and uses some specific defined
-types to guarantee a specific level of precision. There is only one
-user-configurable option for precision. When a specific floating point
-precision is not required, we use a Real data type that is, by default,
-double precision (8 bytes/64-bit) but if the code is built with a
-<code class="docutils literal notranslate"><span class="pre">-DSINGLE_PRECISION</span></code> (see insert link to build system) preprocessor flag,
-the default Real becomes single precision (4-byte/32-bit). Users are
-encouraged to use the default double precision unless exploring the
-performance or accuracy characteristics of single precision.</p>
+  <section class="tex2jax_ignore mathjax_ignore" id="omega-logging">
+<span id="omega-user-logging"></span><h1>Omega Logging<a class="headerlink" href="#omega-logging" title="Permalink to this heading"></a></h1>
+<p>Omega’s logging system is built upon the <a class="reference external" href="https://github.com/gabime/spdlog">spdlog</a>
+logging tool. As of this version, It only supports Standalone build mode.</p>
+<section id="logging-in-standalone-build-mode">
+<h2>Logging in Standalone Build mode<a class="headerlink" href="#logging-in-standalone-build-mode" title="Permalink to this heading"></a></h2>
+<p>To use Omega’s logging system in Standalone build mode, you need to include
+the Logging.h header file in your code.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;Logging.h&quot;</span>
+</pre></div>
+</div>
+<p>You can then use the following macros to write logs of different severity
+levels:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">LOG_TRACE</span><span class="w">   </span><span class="p">(</span><span class="n">logmsg</span><span class="p">);</span>
+<span class="n">LOG_DEBUG</span><span class="w">   </span><span class="p">(</span><span class="n">logmsg</span><span class="p">);</span>
+<span class="n">LOG_INFO</span><span class="w">    </span><span class="p">(</span><span class="n">logmsg</span><span class="p">);</span>
+<span class="n">LOG_WARN</span><span class="w">    </span><span class="p">(</span><span class="n">logmsg</span><span class="p">);</span>
+<span class="n">LOG_ERROR</span><span class="w">   </span><span class="p">(</span><span class="n">logmsg</span><span class="p">);</span>
+<span class="n">LOG_CRITICAL</span><span class="p">(</span><span class="n">logmsg</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The “logmsg” argument in these macros can be any string that follows the syntax
+of C++’s std::format function. For example, the following code writes a
+“Hello, World!” message as a TRACE level log:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">LOG_TRACE</span><span class="p">(</span><span class="s">&quot;Hello, {}!&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;World&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>For more information about the syntax of logmsg, please see the spdlog documentation.</p>
+<p>Here is a table that summarizes the different log severities and their meanings:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">LOG_CRITICAL</span></code>: Used to indicate a critical error or issue that requires
+immediate attention and could potentially cause data loss or application
+failure.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LOG_ERROR</span></code>: Used to indicate an error or issue that could cause
+application instability or incorrect behavior.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LOG_WARN</span></code>: Used to indicate a warning or potential issue that should be
+addressed but does not necessarily require immediate attention.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LOG_INFO</span></code>: Used to provide general informational messages about the
+application’s operation or progress.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LOG_DEBUG</span></code>: Used to provide detailed debugging information for
+developers to track down issues or analyze behavior.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LOG_TRACE</span></code>: Used to provide the most detailed level of information,
+including function calls and variable values, and is typically used for deep
+analysis and debugging.</p></li>
+</ol>
+<p>You can replace the string “World” with any variable whose type is
+a C++ basic data type, such as an int, a float, or a string. You can
+also use a limited set of YAKL variables. For example, the following code
+writes the value of the variable <code class="docutils literal notranslate"><span class="pre">MyInt</span></code> as a TRACE level log:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="n">MyInt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+<span class="n">LOG_TRACE</span><span class="p">(</span><span class="s">&quot;The value of MyInt is: {}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">MyInt</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>By default, the logfile will be created in the build directory.</p>
+</section>
+<section id="e3sm-component-build">
+<h2>E3SM Component Build<a class="headerlink" href="#e3sm-component-build" title="Permalink to this heading"></a></h2>
+<p>T.B.D.</p>
+</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="OmegaBuild.html" class="btn btn-neutral float-left" title="CMake-based Omega Build" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="MachEnv.html" class="btn btn-neutral float-right" title="Machine Environment (MachEnv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="MachEnv.html" class="btn btn-neutral float-left" title="Machine Environment (MachEnv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../devGuide/QuickStart.html" class="btn btn-neutral float-right" title="Quick Start for Developers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

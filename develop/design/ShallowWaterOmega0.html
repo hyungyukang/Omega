@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ShallowWaterOmega0</title>
+  <title>Omega v0: Shallow Water</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -22,6 +22,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="TimeManager" href="TimeMgr.html" />
+    <link rel="prev" title="Global Reductions" href="Reductions.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -69,7 +71,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Logging.html">Developing Omega Logging</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Broadcast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Config.html">Config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="DataTypes.html">DataTypes</a></li>
@@ -78,10 +80,47 @@
 <li class="toctree-l1"><a class="reference internal" href="Logging.html">Logging</a></li>
 <li class="toctree-l1"><a class="reference internal" href="MachEnv.html">MachineEnv</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Metadata.html">Metadata</a></li>
-<li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">TimeManager</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Reductions.html">Global Reductions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="IO.html">Input/Output (IO)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="IOStreams.html">IOStreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Reductions.html">Global Reductions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Omega v0: Shallow Water</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">1 Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">2 Requirements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-omega-0-will-solve-the-nonlinear-shallow-water-equations-plus-inactive-tracers">2.1 Requirement: Omega-0 will solve the nonlinear shallow water equations, plus inactive tracers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-numerical-method-will-be-the-trisk-formulation">2.2 Requirement: Numerical method will be the TRiSK formulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-omega-0-will-use-mpas-format-unstructured-mesh-domains">2.3 Requirement: Omega-0 will use MPAS format unstructured-mesh domains</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-omega-0-will-interface-with-polaris-for-preprocessing-and-postprocessing">2.4 Requirement: Omega-0 will interface with polaris for preprocessing and postprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-omega-0-will-run-portably-on-various-doe-architectures-cpu-and-gpu-nodes">2.5 Requirement: Omega-0 will run portably on various DOE architectures (CPU and GPU nodes)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-omega-0-will-run-on-multi-node-with-domain-decomposition">2.6 Requirement: Omega-0 will run on multi-node with domain decomposition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-correct-convergence-rates-of-operators-and-exact-solutions">2.7 Requirement: Correct convergence rates of operators and exact solutions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-conservation-of-volume-and-tracer">2.8 Requirement: Conservation of volume and tracer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-performance-will-be-at-least-as-good-or-better-than-mpas-ocean">2.9 Requirement: Performance will be at least as good or better than MPAS-Ocean</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-full-node-gpu-throughput-will-be-comparable-or-better-than-full-node-cpu-throughput">2.10 Requirement: Full-node GPU throughput will be comparable or better than full-node CPU throughput</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#algorithmic-formulation">3 Algorithmic Formulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#design">4 Design</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#data-types-and-parameters">4.1 Data types and parameters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#parameters">4.1.1 Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#class-structs-data-types">4.1.2 Class/structs/data types</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#methods">4.2 Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#verification-and-testing">5 Verification and Testing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#convergence-of-individual-terms">5.1 Convergence of individual terms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#inertia-gravity-wave-linearized-shallow-water-no-tracers">5.2 Inertia Gravity Wave: linearized shallow water, no tracers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#manufactured-solution-full-nonlinear-shallow-water-no-tracers">5.3 Manufactured Solution: full nonlinear shallow water, no tracers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tracer-transport-on-a-sphere">5.4 Tracer transport on a sphere</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#performance-testing">5.5 Performance testing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#shallow-water-tests-on-spherical-domains-and-with-realistic-coastlines">5.6 Shallow water tests on spherical domains and with realistic coastlines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#further-tests-for-omega-0">5.7 Further tests for Omega-0</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">TimeManager</a></li>
 <li class="toctree-l1"><a class="reference internal" href="OmegaDesignTemplate.html">Template: MyClassOrModuleName</a></li>
 </ul>
 
@@ -99,7 +138,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">ShallowWaterOmega0</li>
+      <li class="breadcrumb-item active">Omega v0: Shallow Water</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/design/ShallowWaterOmega0.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -109,8 +148,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="shallowwateromega0">
-<span id="omega-design-my-class"></span><h1>ShallowWaterOmega0<a class="headerlink" href="#shallowwateromega0" title="Permalink to this heading"></a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="omega-v0-shallow-water">
+<span id="omega-design-shallow-water-omega0"></span><h1>Omega v0: Shallow Water<a class="headerlink" href="#omega-v0-shallow-water" title="Permalink to this heading"></a></h1>
 <section id="overview">
 <h2>1 Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
 <p>This design document describes the first version of the Omega ocean model, Omega0. Overall, Omega is an unstructured-mesh ocean model based on TRiSK numerical methods (<a class="reference external" href="https://www.sciencedirect.com/science/article/pii/S0021999109004434">Thuburn et al. 2009</a>) that is specifically designed for modern exascale computing architectures. The algorithms in Omega will be nearly identical to those in MPAS-Ocean, but it will be written in c++ rather than Fortran in order to take advantage of libraries to run on GPUs, such as YAKL (Yet Another Kernel Library, <a class="reference external" href="https://link.springer.com/10.1007/s10766-022-00739-0">Norman et al. 2023</a>).</p>
@@ -393,7 +432,7 @@ interface that would be in header file). Describe typical use cases.</p>
 </section>
 <section id="tracer-transport-on-a-sphere">
 <h3>5.4 Tracer transport on a sphere<a class="headerlink" href="#tracer-transport-on-a-sphere" title="Permalink to this heading"></a></h3>
-<p>A test suite will be used to test horizontal transport schemes on the sphere comprised of test case 1 from <a class="reference external" href="https://www.sciencedirect.com/science/article/pii/S0021999105800166">Williamson et al. (1992)</a> and several tests from <a class="reference internal" href="#www.geosci-model-dev.net/5/887/2012/"><span class="xref myst">Lauritzen et al. (2012)</span></a>.
+<p>A test suite will be used to test horizontal transport schemes on the sphere comprised of test case 1 from <a class="reference external" href="https://www.sciencedirect.com/science/article/pii/S0021999105800166">Williamson et al. (1992)</a> and several tests from <a class="reference external" href="https://www.geosci-model-dev.net/5/887/2012/">Lauritzen et al. (2012)</a>.
 They test the tracer advection and tracer time stepping. Velocity and thickness are predefined fields and remain fixed, so this does not exercise those equations.</p>
 <p>Requirements for tests are:</p>
 <ul class="simple">
@@ -440,7 +479,10 @@ They test the tracer advection and tracer time stepping. Velocity and thickness 
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Reductions.html" class="btn btn-neutral float-left" title="Global Reductions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="TimeMgr.html" class="btn btn-neutral float-right" title="TimeManager" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 

@@ -63,6 +63,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/CondaEnv.html">Development Conda Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/Linting.html">Linting Code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/CMakeBuild.html">Omega Build with CMake</a></li>
@@ -281,7 +282,7 @@ error code and will define the default environment <code class="docutils literal
 <span class="kt">int</span><span class="w"> </span><span class="nf">MachEnvInit</span><span class="p">();</span>
 
 <span class="c1">// Initialization - coupled</span>
-<span class="kt">int</span><span class="w"> </span><span class="nf">MachEnvInit</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">inCommunicator</span><span class="p">,</span><span class="w"> </span><span class="c1">///&lt; [in] parent MPI communicator </span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">MachEnvInit</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">inCommunicator</span><span class="p">,</span><span class="w"> </span><span class="c1">///&lt; [in] parent MPI communicator</span>
 <span class="w">                </span><span class="p">);</span>
 </pre></div>
 </div>
@@ -341,7 +342,7 @@ a vector of specific ranks of the parent to include in the new environment.</p>
 using this environment as a struct:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">Comm</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w">      </span><span class="c1">///&lt; returns MPI communicator for this environment</span>
 <span class="kt">int</span><span class="w"> </span><span class="nf">MyRank</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w">    </span><span class="c1">///&lt; returns local MPI rank</span>
-<span class="kt">int</span><span class="w"> </span><span class="nf">NumRanks</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w">  </span><span class="c1">///&lt; total number of MPI ranks </span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">NumRanks</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w">  </span><span class="c1">///&lt; total number of MPI ranks</span>
 </pre></div>
 </div>
 <p>In typical use, these would look like:</p>

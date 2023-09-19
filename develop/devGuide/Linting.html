@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Documentation</title>
+  <title>Linting Code</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -20,8 +20,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Building the Documentation" href="BuildDocs.html" />
-    <link rel="prev" title="Linting Code" href="Linting.html" />
+    <link rel="next" title="Documentation" href="Docs.html" />
+    <link rel="prev" title="Development Conda Environment" href="CondaEnv.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -63,8 +63,14 @@
 <li class="toctree-l1"><a class="reference internal" href="DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
 <li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CondaEnv.html">Development Conda Environment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Linting.html">Linting Code</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Documentation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Linting Code</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#enabling-lint-checks">Enabling Lint Checks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bypassing-linting">Bypassing Linting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#linting-c-code">Linting C++ Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#linting-python-code">Linting Python Code</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CMakeBuild.html">Omega Build with CMake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Logging.html">Developing Omega Logging</a></li>
@@ -101,9 +107,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Documentation</li>
+      <li class="breadcrumb-item active">Linting Code</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/devGuide/Docs.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/devGuide/Linting.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -111,70 +117,78 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="documentation">
-<span id="omega-dev-docs"></span><h1>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading"></a></h1>
-<p>The OMEGA documentation is generated using the
-<a class="reference external" href="https://www.sphinx-doc.org/en/master/">Sphinx</a> package and is written in
-<a class="reference external" href="https://myst-parser.readthedocs.io/en/latest/syntax/syntax.html">MyST</a>
-format.  We recommend these
-<a class="reference external" href="https://myst-parser.readthedocs.io/en/latest/syntax/roles-and-directives.html#roles-directives">basic tips</a>
-on using MyST in Sphinx.</p>
-<p>Another easy way to get started is by taking a look at the existing source
-code for the documentation:</p>
-<p><a class="reference external" href="https://github.com/E3SM-Project/Omega/tree/develop/components/omega/doc">https://github.com/E3SM-Project/Omega/tree/develop/components/omega/doc</a></p>
-<p>Each time you add new features to OMEAG, the corresponding documentation must
-be included with the pull request to add the code.  This includes documentation
-for both the User’s Guide and the Developer’s Guide. We will add some examples
-as the documentation gets fleshed out.</p>
-<p>Please add anchors for internal linking to the top of every page before
-headings within the page whenever you think internal linking might be useful
-(now or in the future).  In the User’s Guide, please start each anchor with
-<code class="docutils literal notranslate"><span class="pre">omega-</span></code>:</p>
-<div class="highlight-markdown notranslate"><div class="highlight"><pre><span></span>(omega-quick-start)=
-
-<span class="gh"># Quick Start for Users</span>
-...
+  <section class="tex2jax_ignore mathjax_ignore" id="linting-code">
+<span id="omega-dev-linting"></span><h1>Linting Code<a class="headerlink" href="#linting-code" title="Permalink to this heading"></a></h1>
+<section id="enabling-lint-checks">
+<h2>Enabling Lint Checks<a class="headerlink" href="#enabling-lint-checks" title="Permalink to this heading"></a></h2>
+<p>First, please follow the procedure in <a class="reference internal" href="CondaEnv.html#omega-dev-conda-env"><span class="std std-ref">Development Conda Environment</span></a> to set up a
+conda environment for linting the code and building the docs.</p>
+<p>Once on each machine you are developing on, before committing code, please run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>install
 </pre></div>
 </div>
-<p>This is in anticipation of a future time when the OMEGA documentation might
-be combined with other components of E3SM.</p>
-<p>In the Developer’s Guide, anchors should start with <code class="docutils literal notranslate"><span class="pre">omega-dev-</span></code>:</p>
-<div class="highlight-markdown notranslate"><div class="highlight"><pre><span></span>(omega-dev-quick-start)=
-
-<span class="gh"># Quick Start for Developers</span>
-...
+<p>After this, your code will be linted with all the tools discussed below as part
+of each call to <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span></code>. Any modified files will also be linted when CI
+(GitHub Actions) runs on each pull request and merge to the <code class="docutils literal notranslate"><span class="pre">develop</span></code> branch.</p>
+<p>You can lint the full code using all the tools with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
 </pre></div>
 </div>
-<p>Documentation for an OMEGA feature in the User’s Guide should contain
-information that is needed for users who set up and run OMEGA, including:</p>
-<ul class="simple">
-<li><p>Background information on the feature (though not as much as in Developer’s
-Guide and not referencing code) that gives the user an understanding of
-the configurable parameters.</p></li>
-<li><p>Config options related to the feature that users can modify in a YAML file.</p></li>
-<li><p>Flags related to the feature that a user can (or must) set when building
-OMEGA.</p></li>
-</ul>
-<p>The Developer’s Guide should also serve as a reference manual.  Among other
-things, the documentation in the Developer’s Guide needs to provide an easy way
-for other developers or reviewers to verify the code against the intended
-implementation. Therefore, documentation for a new feature in the Developer’s
-Guide should:</p>
-<ul class="simple">
-<li><p>Describe the actual mathematical terms (or a reference to them).</p></li>
-<li><p>Describe the discretized form with variables close to what are used in the
-code.</p></li>
-<li><p>Provide details on unit tests that cover that feature, if applicable.</p></li>
-<li><p>Describe any polaris regression tests that cover that feature, if applicable.</p></li>
-</ul>
+</section>
+<section id="bypassing-linting">
+<h2>Bypassing Linting<a class="headerlink" href="#bypassing-linting" title="Permalink to this heading"></a></h2>
+<p>If you wish to commit without first checking the code for lint (e.g. you plan
+to fix the code in a later commit), run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>commit<span class="w"> </span>--no-verify<span class="w"> </span>...
+</pre></div>
+</div>
+<p>with the same arguments you would normally use for <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span></code>.</p>
+</section>
+<section id="linting-c-code">
+<h2>Linting C++ Code<a class="headerlink" href="#linting-c-code" title="Permalink to this heading"></a></h2>
+<p>The tools used to lint C++ code are from
+<a class="reference external" href="https://github.com/Takishima/cmake-pre-commit-hooks">cmake-pre-commit-hooks</a>
+and include <a class="reference external" href="https://clang.llvm.org/docs/ClangFormat.html">clang-format</a>,
+<a class="reference external" href="https://clang.llvm.org/extra/clang-tidy/">clang-tidy</a>,
+<a class="reference external" href="https://cppcheck.sourceforge.io/">cppcheck</a>, and
+<a class="reference external" href="https://github.com/include-what-you-use/include-what-you-use">include-what-you-use</a>.
+(Currently <code class="docutils literal notranslate"><span class="pre">clang-tidy</span></code>, <code class="docutils literal notranslate"><span class="pre">cppcheck</span></code> and <code class="docutils literal notranslate"><span class="pre">include-what-you-use</span></code> are disabled
+but they will be enabled shortly.)</p>
+<p>You can run these tools individually if you need to:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>run<span class="w"> </span>clang-format<span class="w"> </span>--all-files
+pre-commit<span class="w"> </span>run<span class="w"> </span>clang-tidy<span class="w"> </span>--all-files
+pre-commit<span class="w"> </span>run<span class="w"> </span>cppcheck<span class="w"> </span>--all-files
+pre-commit<span class="w"> </span>run<span class="w"> </span>include-what-you-use<span class="w"> </span>--all-files
+</pre></div>
+</div>
+<p>You can specify one more more files instead of <code class="docutils literal notranslate"><span class="pre">--all-files</span></code>.</p>
+</section>
+<section id="linting-python-code">
+<h2>Linting Python Code<a class="headerlink" href="#linting-python-code" title="Permalink to this heading"></a></h2>
+<p>The tools used to lint python code include
+<a class="reference external" href="https://pycqa.github.io/isort/">isort</a> for sorting imports,
+<a class="reference external" href="https://github.com/ikamensh/flynt">flynt</a> for enforcing string formatting
+with f-strings,
+<a class="reference external" href="https://flake8.pycqa.org/en/latest/">flake8</a> for enforcing the
+<a class="reference external" href="https://peps.python.org/pep-0008/">PEP8</a> style guide for python, and
+<a class="reference external" href="https://mypy-lang.org/">mypy</a> for performing variable type checking.</p>
+<p>You can run these tools individually if you need to:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>run<span class="w"> </span>isort<span class="w"> </span>--all-files
+pre-commit<span class="w"> </span>run<span class="w"> </span>flynt<span class="w"> </span>--all-files
+pre-commit<span class="w"> </span>run<span class="w"> </span>flake8<span class="w"> </span>--all-files
+pre-commit<span class="w"> </span>run<span class="w"> </span>mypy<span class="w"> </span>--all-files
+</pre></div>
+</div>
+<p>You can specify one more more files instead of <code class="docutils literal notranslate"><span class="pre">--all-files</span></code>.</p>
+</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="Linting.html" class="btn btn-neutral float-left" title="Linting Code" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="BuildDocs.html" class="btn btn-neutral float-right" title="Building the Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="CondaEnv.html" class="btn btn-neutral float-left" title="Development Conda Environment" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Docs.html" class="btn btn-neutral float-right" title="Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

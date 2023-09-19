@@ -63,6 +63,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/CondaEnv.html">Development Conda Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/Linting.html">Linting Code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/CMakeBuild.html">Omega Build with CMake</a></li>
@@ -267,11 +268,11 @@ retrieved from anywhere.</p>
 <span class="w">      </span><span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">any</span><span class="o">&gt;</span><span class="w"> </span><span class="n">metaMap</span><span class="p">;</span>
 
 <span class="w">      </span><span class="c1">/// for arrays or vectors, the rank of the array</span>
-<span class="w">      </span><span class="kt">int</span><span class="w"> </span><span class="n">nDims</span><span class="p">;</span><span class="w"> </span>
+<span class="w">      </span><span class="kt">int</span><span class="w"> </span><span class="n">nDims</span><span class="p">;</span>
 
 <span class="w">      </span><span class="c1">/// for arrays or vectors, the dimensions</span>
 <span class="w">      </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">MetaDim</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">dimensions</span><span class="p">;</span>
-<span class="w">      </span>
+
 <span class="w">      </span><span class="c1">/// Store and maintain all defined metadata in this vector</span>
 <span class="w">      </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Metadata</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">defFields</span><span class="p">;</span>
 
@@ -351,7 +352,7 @@ in cases where input arguments don’t make sense.</p>
 <span class="w">          </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">stdName</span><span class="p">,</span><span class="w">     </span><span class="c1">/// CF standard name</span>
 <span class="w">          </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">any</span><span class="w">    </span><span class="n">validMin</span><span class="p">,</span><span class="w">    </span><span class="c1">/// min valid field value</span>
 <span class="w">          </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">any</span><span class="w">    </span><span class="n">validMax</span><span class="p">,</span><span class="w">    </span><span class="c1">/// max valid field value</span>
-<span class="w">          </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">any</span><span class="w">    </span><span class="n">fillValue</span><span class="p">,</span><span class="w">   </span><span class="c1">/// scalar used for undefined entries </span>
+<span class="w">          </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">any</span><span class="w">    </span><span class="n">fillValue</span><span class="p">,</span><span class="w">   </span><span class="c1">/// scalar used for undefined entries</span>
 <span class="w">          </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w">         </span><span class="n">nDims</span><span class="p">,</span><span class="w">       </span><span class="c1">/// number of dimensions</span>
 <span class="w">          </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">MetaDims</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="c1">// dim pointers</span>
 <span class="w">          </span><span class="p">);</span>
@@ -384,7 +385,7 @@ use case is likely rare.</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">int</span><span class="w"> </span><span class="nf">Metadata::Remove</span><span class="p">(</span>
 <span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">varName</span><span class="p">,</span><span class="w"> </span><span class="c1">/// name of field</span>
 <span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">name</span><span class="p">.</span><span class="w">    </span><span class="c1">/// name of metadata to remove</span>
-<span class="w">            </span><span class="p">);</span><span class="w"> </span>
+<span class="w">            </span><span class="p">);</span>
 </pre></div>
 </div>
 </section>
@@ -454,7 +455,7 @@ the dimension length:</p>
 to inquire whether metadata or dimensions with a given name
 have already been defined:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">bool</span><span class="w"> </span><span class="nf">Metadata::isDefined</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">name</span><span class="p">);</span>
-<span class="w">   </span><span class="kt">bool</span><span class="w"> </span><span class="nf">MetaDim::isDefined</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">name</span><span class="p">);</span><span class="w"> </span>
+<span class="w">   </span><span class="kt">bool</span><span class="w"> </span><span class="nf">MetaDim::isDefined</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">name</span><span class="p">);</span>
 </pre></div>
 </div>
 </section>
@@ -488,7 +489,7 @@ if a field has already been added, the add function will do nothing.</p>
 </div>
 <p>Finally, we will need to be able to extract the names of all
 fields that have been added to a group:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fieldList</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fieldList</span><span class="w"> </span><span class="o">=</span>
 <span class="w">       </span><span class="n">MetaGroup</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">groupName</span><span class="p">);</span>
 </pre></div>
 </div>

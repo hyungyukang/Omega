@@ -63,6 +63,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/CondaEnv.html">Development Conda Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/Linting.html">Linting Code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/CMakeBuild.html">Omega Build with CMake</a></li>
@@ -308,7 +309,7 @@ values can be recast as reals in a bit-preserving manner using
 <span class="w">   </span><span class="k">private</span><span class="o">:</span>
 
 <span class="w">      </span><span class="n">I4</span><span class="w"> </span><span class="n">rankID</span><span class="p">;</span><span class="w">                           </span><span class="c1">///&lt; ID of neighboring MPI rank</span>
-<span class="w">      </span><span class="n">ExchList</span><span class="w"> </span><span class="n">sendLists</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="w"> </span><span class="n">recvLists</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span><span class="w"> </span><span class="c1">///&lt; 0 = onCell, 1 = onEdge, </span>
+<span class="w">      </span><span class="n">ExchList</span><span class="w"> </span><span class="n">sendLists</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="w"> </span><span class="n">recvLists</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span><span class="w"> </span><span class="c1">///&lt; 0 = onCell, 1 = onEdge,</span>
 <span class="w">                                           </span><span class="c1">///&lt; 2 = onVertex</span>
 <span class="w">      </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Real</span><span class="o">&gt;</span><span class="w"> </span><span class="n">sendBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">recvBuffer</span><span class="p">;</span>
 <span class="w">      </span><span class="n">MPI_Request</span><span class="w"> </span><span class="n">rReq</span><span class="p">,</span><span class="w"> </span><span class="n">sReq</span><span class="p">;</span><span class="w">              </span><span class="c1">///&lt; MPI request handles</span>

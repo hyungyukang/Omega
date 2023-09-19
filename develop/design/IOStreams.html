@@ -63,6 +63,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/CondaEnv.html">Development Conda Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/Linting.html">Linting Code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/CMakeBuild.html">Omega Build with CMake</a></li>
@@ -283,12 +284,12 @@ to denote lists, etc., filenames should be in quotes. For example:</p>
 <span class="w">         </span><span class="nt">contents</span><span class="p">:</span>
 <span class="w">         </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">GRPmesh</span>
 <span class="w">         </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">other fields</span><span class="p p-Indicator">?]</span>
-<span class="w">            </span>
+
 <span class="w">      </span><span class="nt">restart-read</span><span class="p">:</span>
 <span class="w">         </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">read</span>
 <span class="w">         </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;/mypath/omega-restart.$Y-$M-$D_$h.$m.$s.nc&#39;</span>
 <span class="w">         </span><span class="nt">pointerFilename</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;/mypath/pointerFileName&#39;</span>
-<span class="w">         </span><span class="nt">freqUnits</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">initial</span><span class="w"> </span>
+<span class="w">         </span><span class="nt">freqUnits</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">initial</span>
 <span class="w">         </span><span class="nt">freq</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="w">         </span><span class="nt">precision</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">double</span>
 <span class="w">         </span><span class="nt">contents</span><span class="p">:</span>

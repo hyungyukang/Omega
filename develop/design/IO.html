@@ -63,6 +63,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/CondaEnv.html">Development Conda Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/Linting.html">Linting Code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/CMakeBuild.html">Omega Build with CMake</a></li>
@@ -347,7 +348,7 @@ array decompositions for each data type, mesh location and array size.</p>
 <span class="w">         </span><span class="n">IOFormat</span><span class="w"> </span><span class="n">format</span><span class="p">;</span>
 <span class="w">         </span><span class="n">IORearranger</span><span class="w"> </span><span class="n">rearranger</span><span class="p">;</span>
 
-<span class="w">         </span><span class="c1">/// ptr to defined Scorpio IO system with MPI communicator info </span>
+<span class="w">         </span><span class="c1">/// ptr to defined Scorpio IO system with MPI communicator info</span>
 <span class="w">         </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">iosystem</span><span class="p">;</span>
 
 <span class="w">         </span><span class="c1">/// pointers to defined decompositions for every multi-dim</span>
@@ -420,7 +421,7 @@ and rearranger can be overridden on a per-file basis.</p>
 <span class="w">         </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">ioStride</span><span class="p">,</span><span class="w">     </span><span class="c1">/// stride in MPI ranks for io tasks</span>
 <span class="w">         </span><span class="k">const</span><span class="w"> </span><span class="n">IOFormat</span><span class="w"> </span><span class="n">format</span><span class="p">,</span><span class="w">  </span><span class="c1">/// default IO format</span>
 <span class="w">         </span><span class="k">const</span><span class="w"> </span><span class="n">IORearranger</span><span class="w"> </span><span class="n">rearranger</span><span class="p">,</span><span class="w"> </span><span class="c1">/// default rearranger method</span>
-<span class="w">         </span><span class="p">);</span><span class="w"> </span>
+<span class="w">         </span><span class="p">);</span>
 </pre></div>
 </div>
 </section>

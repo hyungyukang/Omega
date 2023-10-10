@@ -120,9 +120,16 @@
              
   <section class="tex2jax_ignore mathjax_ignore" id="cmake-based-omega-build">
 <span id="omega-user-build"></span><h1>CMake-based Omega Build<a class="headerlink" href="#cmake-based-omega-build" title="Permalink to this heading"></a></h1>
-<p>Omega’s build system is built upon the CMake build tool, which provides
-a robust foundation for managing the build process.</p>
-<p>The Omega build system supports two modes: standalone and E3SM component.</p>
+<p>Omega’s build system is constructed using the CMake build tool,
+offering a strong foundation for managing the building process.</p>
+<p>The Omega build system has two modes: standalone and E3SM component.</p>
+<p>At the start of the Omega build, the system reads the E3SM machine file
+(<code class="docutils literal notranslate"><span class="pre">config_machines.xml</span></code>) for both standalone and E3SM component builds.
+Following this, it configures CMake variables and environment variables
+based on the computing system where the build is taking place, as well as
+user input from the CMake command-line.</p>
+<p>For the Omega build system to function, a Python interpreter is necessary.
+The minimum version of CMake is 3.21.</p>
 <section id="standalone-build">
 <h2>Standalone Build<a class="headerlink" href="#standalone-build" title="Permalink to this heading"></a></h2>
 <p>CMake and OMEGA prefer an out-of-source build. This enables a user to build
@@ -130,14 +137,47 @@ and maintain multiple executables from the same source directory.
 The standard practice is for a user to create a separate directory where
 the build should take place and the commands below should be launched from
 that directory.</p>
-<p>To perform a standalone build, you need to execute the cmake command with
-the required CMake and Omega parameters. For example, you can specify the
-CC parameter as the C++ compiler and enable the ctest option to guide the
-Omega build process. The following example demonstrates building
-a standalone Omega with a test suite.</p>
+<p>To utilize a compiler name that’s defined in the E3SM machine configuration
+file (<code class="docutils literal notranslate"><span class="pre">config_machines.xml</span></code>), employ the <code class="docutils literal notranslate"><span class="pre">OMEGA_CIME_COMPILER</span></code> CMake variable,
+as illustrated below. In some cases, you may also want to add <code class="docutils literal notranslate"><span class="pre">OMEGA_CIME_MACHINE</span></code>
+to specify which system you intend to use. The values of <code class="docutils literal notranslate"><span class="pre">OMEGA_CIME_COMPILER</span></code>
+and <code class="docutils literal notranslate"><span class="pre">OMEGA_CIME_MACHINE</span></code> are defined in
+“${E3SM}/cime_config/machines/config_machines.xml”.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>&gt;&gt;<span class="w"> </span>cmake<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DOMEGA_CIME_COMPILER<span class="o">=</span>nvidiagpu<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DOMEGA_CIME_MACHINE<span class="o">=</span>pm-gpu<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="si">${</span><span class="nv">E3SM_HOME</span><span class="si">}</span>/components/omega
+</pre></div>
+</div>
+<p>Once the command completes successfully, several scripts will be created
+in the build directory.</p>
+<ul class="simple">
+<li><p>omega_env.sh   : load specific modules and set env. variables read from CIME</p></li>
+<li><p>omega_build.sh : run <code class="docutils literal notranslate"><span class="pre">make</span></code> command after sourcing <code class="docutils literal notranslate"><span class="pre">omega_env.sh</span></code></p></li>
+<li><p>omega_run.sh   : run <code class="docutils literal notranslate"><span class="pre">./src/omega.exe</span></code> after sourcing <code class="docutils literal notranslate"><span class="pre">omega_env.sh</span></code></p></li>
+<li><p>omega_ctest.sh : run <code class="docutils literal notranslate"><span class="pre">ctest</span></code> after sourcing <code class="docutils literal notranslate"><span class="pre">omega_env.sh</span></code></p></li>
+</ul>
+<p>Run omega_build.sh in the build directory to build Omega.</p>
+<p>To employ a specific compiler, users can utilize the <code class="docutils literal notranslate"><span class="pre">OMEGA_CXX_COMPILER</span></code>
+CMake variable, providing CMake with the compiler’s path.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>&gt;&gt;<span class="w"> </span>cmake<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DOMEGA_CXX_COMPILER<span class="o">=</span>CC<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="si">${</span><span class="nv">E3SM_HOME</span><span class="si">}</span>/components/omega
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">OMEGA_CXX_COMPILER</span></code> overrides <code class="docutils literal notranslate"><span class="pre">OMEGA_CIME_COMPILER</span></code>.</p>
+<p>To build Omega for GPU, add OMEGA_ARCH to one of “CUDA” or “HIP”.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>&gt;&gt;<span class="w"> </span>cmake<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DOMEGA_CIME_COMPILER<span class="o">=</span>nvidiagpu<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DOMEGA_CIME_MACHINE<span class="o">=</span>pm-gpu<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DOMEGA_ARCH<span class="o">=</span>CUDA<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="si">${</span><span class="nv">E3SM_HOME</span><span class="si">}</span>/components/omega
+</pre></div>
+</div>
+<p>To enable the ctest-based unittest option, include the <code class="docutils literal notranslate"><span class="pre">OMEGA_BUILD_TEST</span></code>
+option as illustrated below.</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>&gt;&gt;<span class="w"> </span>cmake<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-DOMEGA_BUILD_TEST<span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-DOMEGA_CXX_COMPILER<span class="o">=</span>CC<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span><span class="si">${</span><span class="nv">E3SM_HOME</span><span class="si">}</span>/components/omega
 </pre></div>
 </div>
@@ -154,28 +194,30 @@ src
 <span class="nb">test</span>
 </pre></div>
 </div>
-<p>To build the Omega, execute the <code class="docutils literal notranslate"><span class="pre">make</span></code> command in the directory.</p>
+<p>To build the Omega, execute the <code class="docutils literal notranslate"><span class="pre">make</span></code> command in the build directory.</p>
+<p>Typical output will look something like:</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>&gt;&gt;<span class="w"> </span>make
 Scanning<span class="w"> </span>dependencies<span class="w"> </span>of<span class="w"> </span>target<span class="w"> </span>yakl
-<span class="o">[</span><span class="w"> </span><span class="m">11</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>Fortran<span class="w"> </span>object<span class="w"> </span>external/YAKL/CMakeFiles/yakl.dir/src/YAKL_gator_mod.F90.o
-<span class="o">[</span><span class="w"> </span><span class="m">22</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>external/YAKL/CMakeFiles/yakl.dir/src/YAKL.cpp.o
-<span class="o">[</span><span class="w"> </span><span class="m">33</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>static<span class="w"> </span>library<span class="w"> </span>libyakl.a
-<span class="o">[</span><span class="w"> </span><span class="m">33</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>yakl
-<span class="o">[</span><span class="w"> </span><span class="m">44</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>src/CMakeFiles/OmegaLib.dir/ocn/ocndummy.cpp.o
-<span class="o">[</span><span class="w"> </span><span class="m">55</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>static<span class="w"> </span>library<span class="w"> </span>libOmegaLib.a
-<span class="o">[</span><span class="w"> </span><span class="m">55</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>OmegaLib
-<span class="o">[</span><span class="w"> </span><span class="m">66</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>src/CMakeFiles/omega.exe.dir/drivers/drvdummy.cpp.o
-<span class="o">[</span><span class="w"> </span><span class="m">77</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>executable<span class="w"> </span>omega.exe
-<span class="o">[</span><span class="w"> </span><span class="m">77</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>omega.exe
-<span class="o">[</span><span class="w"> </span><span class="m">88</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>test/CMakeFiles/OMEGA_TEST.dir/testdummy.cpp.o
-<span class="o">[</span><span class="m">100</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>executable<span class="w"> </span>OMEGA_TEST
-<span class="o">[</span><span class="m">100</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>OMEGA_TEST
+<span class="o">[</span><span class="w"> </span><span class="m">10</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>Fortran<span class="w"> </span>object<span class="w"> </span>external/YAKL/CMakeFiles/yakl.dir/src/YAKL_gator_mod.F90.o
+<span class="o">[</span><span class="w"> </span><span class="m">20</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>external/YAKL/CMakeFiles/yakl.dir/src/YAKL.cpp.o
+<span class="o">[</span><span class="w"> </span><span class="m">30</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>static<span class="w"> </span>library<span class="w"> </span>libyakl.a
+<span class="o">[</span><span class="w"> </span><span class="m">30</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>yakl
+<span class="o">[</span><span class="w"> </span><span class="m">40</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>src/CMakeFiles/OmegaLib.dir/base/MachEnv.cpp.o
+<span class="o">[</span><span class="w"> </span><span class="m">50</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>src/CMakeFiles/OmegaLib.dir/ocn/OcnDummy.cpp.o
+<span class="o">[</span><span class="w"> </span><span class="m">60</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>static<span class="w"> </span>library<span class="w"> </span>libOmegaLib.a
+<span class="o">[</span><span class="w"> </span><span class="m">60</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>OmegaLib
+<span class="o">[</span><span class="w"> </span><span class="m">70</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>src/CMakeFiles/omega.exe.dir/drivers/DrvDummy.cpp.o
+<span class="o">[</span><span class="w"> </span><span class="m">80</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>executable<span class="w"> </span>omega.exe
+<span class="o">[</span><span class="w"> </span><span class="m">80</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>omega.exe
+<span class="o">[</span><span class="w"> </span><span class="m">90</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>test/CMakeFiles/testDataTypes.exe.dir/base/DataTypesTest.cpp.o
+<span class="o">[</span><span class="m">100</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>executable<span class="w"> </span>testDataTypes.exe
+<span class="o">[</span><span class="m">100</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>testDataTypes.exe
 </pre></div>
 </div>
 <p>If the build succeeds, the Omega library and executable are created in the
 <code class="docutils literal notranslate"><span class="pre">src</span></code> sub-directory of the build directory.</p>
 <p>To specify the output directory for saving the generated output files,
-you can include the <code class="docutils literal notranslate"><span class="pre">OMEGA_INSTALL_PREFIX</span></code> variable in the <code class="docutils literal notranslate"><span class="pre">cmake</span></code> command,
+a user can include the <code class="docutils literal notranslate"><span class="pre">OMEGA_INSTALL_PREFIX</span></code> variable in the <code class="docutils literal notranslate"><span class="pre">cmake</span></code> command,
 as shown below:</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>...<span class="w"> </span><span class="se">\</span>
@@ -184,18 +226,18 @@ as shown below:</p>
 <span class="w">  </span>...
 </pre></div>
 </div>
-<p>Afterwards, you can use the <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code> command to copy the Omega library
+<p>Afterwards, a user can use the <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code> command to copy the Omega library
 and executable to the <code class="docutils literal notranslate"><span class="pre">lib</span></code> and <code class="docutils literal notranslate"><span class="pre">bin</span></code> sub-directories under the directory
 specified by <code class="docutils literal notranslate"><span class="pre">DOMEGA_INSTALL_PREFIX</span></code>.</p>
 <p>To run the Omega test suite, execute the <code class="docutils literal notranslate"><span class="pre">ctest</span></code> command.</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>&gt;&gt;<span class="w"> </span>ctest
 Test<span class="w"> </span>project<span class="w"> </span>&lt;cmake<span class="w"> </span>working<span class="w"> </span>directory&gt;
-<span class="w">    </span>Start<span class="w"> </span><span class="m">1</span>:<span class="w"> </span>OMEGA_TEST
-<span class="m">1</span>/1<span class="w"> </span>Test<span class="w"> </span><span class="c1">#1: OMEGA_TEST .......................   Passed    0.01 sec</span>
+<span class="w">    </span>Start<span class="w"> </span><span class="m">1</span>:<span class="w"> </span>DATA_TYPES_TEST
+<span class="m">1</span>/1<span class="w"> </span>Test<span class="w"> </span><span class="c1">#1: DATA_TYPES_TEST ..................   Passed    0.03 sec</span>
 
 <span class="m">100</span>%<span class="w"> </span>tests<span class="w"> </span>passed,<span class="w"> </span><span class="m">0</span><span class="w"> </span>tests<span class="w"> </span>failed<span class="w"> </span>out<span class="w"> </span>of<span class="w"> </span><span class="m">1</span>
 
-Total<span class="w"> </span>Test<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="o">(</span>real<span class="o">)</span><span class="w"> </span><span class="o">=</span><span class="w">   </span><span class="m">0</span>.01<span class="w"> </span>sec
+Total<span class="w"> </span>Test<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="o">(</span>real<span class="o">)</span><span class="w"> </span><span class="o">=</span><span class="w">   </span><span class="m">0</span>.04<span class="w"> </span>sec
 </pre></div>
 </div>
 </section>
@@ -237,7 +279,7 @@ build_omega<span class="o">()</span><span class="w"> </span><span class="c1"># &
 </pre></div>
 </div>
 <p>Step 3: Create an E3SM Case</p>
-<p>At this stage, you can create any E3SM case as usual without
+<p>At this stage, a user can create any E3SM case as usual without
 requiring any specific configuration for Omega.</p>
 <p>NOTE: In this version, the compiled library file for Omega,
 “libOmegaLib.a”, is not linked to the E3SM executable. You can

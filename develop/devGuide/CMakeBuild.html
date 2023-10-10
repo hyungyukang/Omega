@@ -127,6 +127,8 @@ steps: Setup, Update, Build, and Output.</p>
 <p><img alt="CMake-based Omega build process" src="../_images/cmakebuild.png" /></p>
 <p>The build step consists of adding three subdirectories that drive builds
 for external libraries, the Omega model, and optional tests.</p>
+<p>Python is required to use this build system.
+The version of CMake should be 3.21 or later for supporting HIP.</p>
 <section id="step-1-setup">
 <h2>Step 1: Setup<a class="headerlink" href="#step-1-setup" title="Permalink to this heading"></a></h2>
 <p>During this step, the build-controlling variables are configured.
@@ -153,7 +155,11 @@ OMEGA_SOURCE_DIR: Directory where the top-level Omega CMakeLists.txt is located
 OMEGA_INSTALL_PREFIX: User-defined output directory for the library and executable
 OMEGA_ARCH: User-defined programming framework (e.g., &quot;CUDA&quot;, &quot;HIP&quot;, &quot;OPENMP&quot;, &quot;SYCL&quot;, &quot;&quot;)
 OMEGA_${YAKL_ARCH}_FLAGS: Framework-specific compiler flags
-OMEGA_CXX_FLAGS: C++ compiler flags
+OMEGA_CXX_COMPILER: C++ compiler
+OMEGA_CIME_COMPILER: E3SM compiler name defined in config_machines.xml
+OMEGA_CIME_MACHINE: E3SM machine name defined in config_machines.xml
+OMEGA_CXX_FLAGS: a list for C++ compiler flags
+OMEGA_LINK_OPTIONS: a list for linker flags
 OMEGA_BUILD_EXECUTABLE: Enable building the Omega executable
 OMEGA_BUILD_TEST: Enable building Omega tests
 </pre></div>
@@ -168,11 +174,14 @@ E3SM_DEFAULT_BUILD_TYPE: E3SM build type (Release or Debug)
 </div>
 <p>CMake variables</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CMAKE_CURRENT_SOURCE_DIR</span>
+<span class="n">CMAKE_CURRENT_BINARY_DIR</span>
+<span class="n">CMAKE_CURRENT_LIST_DIR</span>
 <span class="n">CMAKE_CXX_STANDARD</span>
+<span class="n">CMAKE_CXX_COMPILER</span>
+<span class="n">CMAKE_CXX_FLAGS</span>
 <span class="n">CMAKE_CURRENT_LIST_DIR</span>
 <span class="n">CMAKE_BUILD_TYPE</span>
 <span class="n">CMAKE_INSTALL_PREFIX</span>
-<span class="n">CMAKE_CURRENT_BINARY_DIR</span>
 <span class="n">CMAKE_VERSION</span>
 </pre></div>
 </div>
@@ -180,8 +189,9 @@ E3SM_DEFAULT_BUILD_TYPE: E3SM build type (Release or Debug)
 <section id="step-2-update">
 <h2>Step 2: Update<a class="headerlink" href="#step-2-update" title="Permalink to this heading"></a></h2>
 <p>In this step, CMake is configured, and external library variables,
-such as YAKL, are set based on the settings defined in the Setup step.
-The integrity of the build setup is verified at the end of this step.</p>
+such as YAKL, MPI, NetCDF, and PNetCDF, are set based on the settings
+defined in the Setup step. The integrity of the build setup is verified
+at the end of this step.</p>
 </section>
 <section id="step-3-build">
 <h2>Step 3: Build<a class="headerlink" href="#step-3-build" title="Permalink to this heading"></a></h2>

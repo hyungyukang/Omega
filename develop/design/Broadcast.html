@@ -54,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/OmegaBuild.html">CMake-based Omega Build</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/DataTypes.html">Data Types and Precision</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Broadcast.html">Omega Broadcast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Logging.html">Omega Logging</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
@@ -62,6 +63,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html">Data Types and Precision</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/Broadcast.html">Omega Broadcast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/CondaEnv.html">Development Conda Environment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Linting.html">Linting Code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Docs.html">Documentation</a></li>
@@ -192,7 +194,7 @@ overlap communication and computation using non-blocking forms.</p>
 function with simplified arguments.</p>
 <section id="data-types-and-parameters">
 <h3>4.1 Data types and parameters<a class="headerlink" href="#data-types-and-parameters" title="Permalink to this heading"></a></h3>
-<p>For non-blocking broadcasts, we will alias the MPI_request type
+<p>For non-blocking broadcasts, we will alias the <code class="docutils literal notranslate"><span class="pre">MPI_request</span></code> type
 to a Broadcast ID:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="n">BroadcastID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MPI_Request</span><span class="p">;</span>
 </pre></div>
@@ -208,13 +210,13 @@ interfaces cleaner.</p>
 <h4>4.2.1 Broadcast from master task in default environment<a class="headerlink" href="#broadcast-from-master-task-in-default-environment" title="Permalink to this heading"></a></h4>
 <p>The first form is the simplest for a broadcast within the default
 environment and from the master task:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">Broadcast</span><span class="p">([</span><span class="n">data</span><span class="w"> </span><span class="n">type</span><span class="p">]</span><span class="w"> </span><span class="n">value</span><span class="p">);</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">Broadcast</span><span class="p">([</span><span class="n">data</span><span class="w"> </span><span class="n">type</span><span class="p">]</span><span class="w"> </span><span class="n">Value</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>where <code class="docutils literal notranslate"><span class="pre">[data</span> <span class="pre">type]</span></code> is one of the supported types (I4, I8 R4, R8, Real,
 boolean, std::string). In actual use, this would look like:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">ierr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Broadcast</span><span class="p">(</span><span class="n">myIntVar</span><span class="p">);</span>
-<span class="n">ierr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Broadcast</span><span class="p">(</span><span class="n">myRealVar</span><span class="p">);</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Broadcast</span><span class="p">(</span><span class="n">MyIntValue</span><span class="p">);</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Broadcast</span><span class="p">(</span><span class="n">MyRealValue</span><span class="p">);</span>
 <span class="p">[</span><span class="n">etc</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">all</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="n">types</span><span class="p">]</span>
 </pre></div>
 </div>
@@ -225,8 +227,8 @@ The remaining tasks would receive the broadcast and store the value.</p>
 <h4>4.2.2 Broadcast from another rank within default environment<a class="headerlink" href="#broadcast-from-another-rank-within-default-environment" title="Permalink to this heading"></a></h4>
 <p>This is similar to the above, but adds the additional argument
 for the source rank to broadcast from.</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">Broadcast</span><span class="p">([</span><span class="n">data</span><span class="w"> </span><span class="n">type</span><span class="p">]</span><span class="w"> </span><span class="n">value</span><span class="p">,</span><span class="w">  </span><span class="c1">///&lt; [in] value to be broadcast</span>
-<span class="w">              </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">srcRank</span><span class="w">   </span><span class="c1">///&lt; [in] rank to broadcast from</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">Broadcast</span><span class="p">([</span><span class="n">data</span><span class="w"> </span><span class="n">type</span><span class="p">]</span><span class="w"> </span><span class="n">Value</span><span class="p">,</span><span class="w">  </span><span class="c1">///&lt; [in] value to be broadcast</span>
+<span class="w">              </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">SrcRank</span><span class="w">   </span><span class="c1">///&lt; [in] rank to broadcast from</span>
 <span class="w">              </span><span class="p">);</span><span class="w">      </span><span class="c1">//</span>
 </pre></div>
 </div>
@@ -234,8 +236,8 @@ for the source rank to broadcast from.</p>
 <section id="broadcast-from-master-rank-within-a-different-environment">
 <h4>4.2.3 Broadcast from master rank within a different environment<a class="headerlink" href="#broadcast-from-master-rank-within-a-different-environment" title="Permalink to this heading"></a></h4>
 <p>As in 4.2.1, but adds the machine environment as an argument:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">Broadcast</span><span class="p">([</span><span class="n">data</span><span class="w"> </span><span class="n">type</span><span class="p">]</span><span class="w"> </span><span class="n">value</span><span class="p">,</span><span class="w">    </span><span class="c1">///&lt; [in] value to be broadcast</span>
-<span class="w">              </span><span class="k">const</span><span class="w"> </span><span class="n">MachEnv</span><span class="w"> </span><span class="n">subEnv</span><span class="p">,</span><span class="w"> </span><span class="c1">///&lt; [in] defined OMEGA environment</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">Broadcast</span><span class="p">([</span><span class="n">data</span><span class="w"> </span><span class="n">type</span><span class="p">]</span><span class="w"> </span><span class="n">Value</span><span class="p">,</span><span class="w">     </span><span class="c1">///&lt; [in] value to be broadcast</span>
+<span class="w">              </span><span class="k">const</span><span class="w"> </span><span class="n">MachEnv</span><span class="w"> </span><span class="o">*</span><span class="n">SubEnv</span><span class="p">,</span><span class="w"> </span><span class="c1">///&lt; [in] defined OMEGA environment</span>
 <span class="w">              </span><span class="p">);</span>
 </pre></div>
 </div>
@@ -243,9 +245,9 @@ for the source rank to broadcast from.</p>
 <section id="broadcast-from-another-rank-within-a-different-environment">
 <h4>4.2.4 Broadcast from another rank within a different environment<a class="headerlink" href="#broadcast-from-another-rank-within-a-different-environment" title="Permalink to this heading"></a></h4>
 <p>As in 4.2.2, but adds the machine environment as an argument:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">Broadcast</span><span class="p">([</span><span class="n">data</span><span class="w"> </span><span class="n">type</span><span class="p">]</span><span class="w"> </span><span class="n">value</span><span class="p">,</span><span class="w">     </span><span class="c1">///&lt; [in] value to be broadcast</span>
-<span class="w">              </span><span class="k">const</span><span class="w"> </span><span class="n">MachEnv</span><span class="w"> </span><span class="n">subEnv</span><span class="p">,</span><span class="w">  </span><span class="c1">///&lt; [in] defined OMEGA environment</span>
-<span class="w">              </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">srcRank</span><span class="w">      </span><span class="c1">///&lt; [in] rank to broadcast from</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">Broadcast</span><span class="p">([</span><span class="n">data</span><span class="w"> </span><span class="n">type</span><span class="p">]</span><span class="w"> </span><span class="n">Value</span><span class="p">,</span><span class="w">     </span><span class="c1">///&lt; [in] value to be broadcast</span>
+<span class="w">              </span><span class="k">const</span><span class="w"> </span><span class="n">MachEnv</span><span class="w"> </span><span class="o">*</span><span class="n">SubEnv</span><span class="p">,</span><span class="w"> </span><span class="c1">///&lt; [in] defined OMEGA environment</span>
+<span class="w">              </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">SrcRank</span><span class="w">      </span><span class="c1">///&lt; [in] rank to broadcast from</span>
 <span class="w">              </span><span class="p">);</span>
 </pre></div>
 </div>
@@ -262,9 +264,9 @@ return a request id. Following the MPI standard, this will all
 be named IBroadcast. In addition, an IBroadcastWait will be
 included to wait for the request to complete. A non-blocking
 sequence would look like:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">BroadcastID</span><span class="w"> </span><span class="n">myReqID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IBroadcast</span><span class="p">(</span><span class="n">myVar</span><span class="p">);</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">BroadcastID</span><span class="w"> </span><span class="n">myReqID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IBroadcast</span><span class="p">(</span><span class="n">MyVar</span><span class="p">);</span>
 <span class="p">[</span><span class="w"> </span><span class="n">perform</span><span class="w"> </span><span class="n">other</span><span class="w"> </span><span class="n">tasks</span><span class="o">/</span><span class="n">computation</span><span class="w"> </span><span class="p">]</span>
-<span class="kt">int</span><span class="w"> </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IBroadcastWait</span><span class="p">(</span><span class="n">myReqID</span><span class="p">);</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IBroadcastWait</span><span class="p">(</span><span class="n">MyReqID</span><span class="p">);</span>
 </pre></div>
 </div>
 </section>

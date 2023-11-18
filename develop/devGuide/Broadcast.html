@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Data Types and Precision</title>
+  <title>Omega Broadcast</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -20,8 +20,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Machine Environment (MachEnv)" href="MachEnv.html" />
-    <link rel="prev" title="Quick Start for Developers" href="QuickStart.html" />
+    <link rel="next" title="Development Conda Environment" href="CondaEnv.html" />
+    <link rel="prev" title="Machine Environment (MachEnv)" href="MachEnv.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -60,10 +60,15 @@
 <p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="QuickStart.html">Quick Start for Developers</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Data Types and Precision</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#arrays-and-yakl">Arrays and YAKL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">Data Types and Precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
 <li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Omega Broadcast</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Omega Broadcast</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#code-structure">Code Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ibroadcast-interface">IBroadcast Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#integration-with-mpi">Integration with MPI</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="CondaEnv.html">Development Conda Environment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Linting.html">Linting Code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Docs.html">Documentation</a></li>
@@ -103,9 +108,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Data Types and Precision</li>
+      <li class="breadcrumb-item active">Omega Broadcast</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/devGuide/DataTypes.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/devGuide/Broadcast.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -113,63 +118,52 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="data-types-and-precision">
-<h1>Data Types and Precision<a class="headerlink" href="#data-types-and-precision" title="Permalink to this heading"></a></h1>
-<p>OMEGA supports all standard data types and uses some additional defined
-types to guarantee a specific level of precision. In particular, we
-define I4, I8, R4 and R8 types for 4-byte (32-bit) and 8-byte (64-bit)
-integer and floating point variables. Note that these exist in the
-OMEGA namespace so use the scoped form OMEGA::I4, etc.
-In addition, we define a Real data type that is, by default,
-double precision (8 bytes/64-bit) but if the code is built with a
-<code class="docutils literal notranslate"><span class="pre">-DSINGLE_PRECISION</span></code> (see insert link to build system) preprocessor flag,
-the default Real becomes single precision (4-byte/32-bit). For floating
-point variables, developers should use this Real type instead of the
-specific R4 or R8 forms unless the specific form is required
-(eg converting to single precision before output or if a particular
-algorithm is known to require double precision). This allows us to
-easily convert all reals to single precision to explore performance or
-accuracy in single precision mode.</p>
+  <section class="tex2jax_ignore mathjax_ignore" id="omega-broadcast">
+<span id="omega-dev-broadcast"></span><h1>Omega Broadcast<a class="headerlink" href="#omega-broadcast" title="Permalink to this heading"></a></h1>
+<section id="code-structure">
+<h2>Code Structure<a class="headerlink" href="#code-structure" title="Permalink to this heading"></a></h2>
+<p>Omega Broadcasting functions are organized within two primary files:</p>
+<ol class="arabic simple">
+<li><p><strong>Header File</strong>: Located at <code class="docutils literal notranslate"><span class="pre">src/base/Broadcast.h</span></code>, this file declares
+various functions of the <code class="docutils literal notranslate"><span class="pre">Broadcast</span></code>. These functions are
+distinctively overloaded to accommodate multiple broadcasting needs.
+The key differentiators for these overloads are based on:</p>
+<ul class="simple">
+<li><p>The types of variables being broadcasted.</p></li>
+<li><p>The specific ordering of function arguments.</p></li>
+</ul>
+</li>
+<li><p><strong>Implementation File</strong>: The actual implementations of these declared
+functions are found in <code class="docutils literal notranslate"><span class="pre">src/base/Broadcast.cpp</span></code>.</p></li>
+</ol>
 </section>
-<section id="arrays-and-yakl">
-<h1>Arrays and YAKL<a class="headerlink" href="#arrays-and-yakl" title="Permalink to this heading"></a></h1>
-<p>The C++ language does not have native support for multi-dimensional
-arrays as part of the language standard, though there are a number
-of implementations as part of the Standard Template Library and
-elsewhere. OMEGA uses the <a class="reference external" href="https://github.com/mrnorman/YAKL">YAKL</a>
-framework for defining and allocating arrays on both the CPU host and
-any accelerator device that may be present. Because the syntax for
-defining such arrays is somewhat long, we instead define a number of
-alias array types of the form <code class="docutils literal notranslate"><span class="pre">ArrayNDTT</span></code> where N is the dimension of
-the array and TT is the data type (I4, I8, R4, R8 or Real) corresponding
-to the types described above. The dimension refers to the number of
-ranks in the array and not the physical dimension. Although YAKL
-supports Fortran ordering, we will use C ordering for array indices.
-Within OMEGA the default location for an Array should be on the device
-with a similar type ArrayHostNDTT defined for arrays needed on the host.
-As an example, we can define and allocate a device and host array using:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="n">Array3dReal</span><span class="w"> </span><span class="n">Temperature</span><span class="p">(</span><span class="s">&quot;Temperature&quot;</span><span class="p">,</span><span class="n">nTimeLevels</span><span class="p">,</span><span class="w"> </span><span class="n">nCells</span><span class="p">,</span><span class="w"> </span><span class="n">nVertLevels</span><span class="p">);</span>
-<span class="w">   </span><span class="n">ArrayHost3dReal</span><span class="w"> </span><span class="n">TemperatureHost</span><span class="p">(</span><span class="s">&quot;Temperature&quot;</span><span class="p">,</span><span class="n">nTimeLevels</span><span class="p">,</span><span class="w"> </span><span class="n">nCells</span><span class="p">,</span><span class="w"> </span><span class="n">nVertLevels</span><span class="p">);</span>
-</pre></div>
-</div>
-<p>Alternatively, you can use the copy functions to create a host copy
-from the device or vice versa.</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="k">auto</span><span class="w"> </span><span class="n">TemperatureHost</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Temperature</span><span class="p">.</span><span class="n">createHostCopy</span><span class="p">();</span>
-</pre></div>
-</div>
-<p>Finally, the arrays can be deallocated explicity using the class
-deallocate method, eg <code class="docutils literal notranslate"><span class="pre">Temperature.deallocate();</span></code> or if they are local
-to a routine, they will be automatically deallocated when they fall out
-of scope on exit. More details on YAKL arrays are available in the YAKL
-documentation.</p>
+<section id="ibroadcast-interface">
+<h2>IBroadcast Interface<a class="headerlink" href="#ibroadcast-interface" title="Permalink to this heading"></a></h2>
+<p>Parallel to <code class="docutils literal notranslate"><span class="pre">Broadcast</span></code>, there is the <code class="docutils literal notranslate"><span class="pre">IBroadcast</span></code> interface. Currently under
+development, <code class="docutils literal notranslate"><span class="pre">IBroadcast</span></code> focuses on overloading functions for non-blocking
+broadcast operations. This aspect of the Omega Broadcasting system is
+designed to provide more efficient and asynchronous communication capabilities.</p>
+</section>
+<section id="integration-with-mpi">
+<h2>Integration with MPI<a class="headerlink" href="#integration-with-mpi" title="Permalink to this heading"></a></h2>
+<p>At their core, the Omega broadcast functions serve as wrappers around
+the MPI (Message Passing Interface) broadcast functions. They are
+intricately designed to:</p>
+<ul class="simple">
+<li><p>Retrieve values from the Omega Environment.</p></li>
+<li><p>Utilize Omega-specific data types.</p></li>
+<li><p>Seamlessly feed these values into the standard MPI functions for
+effective broadcasting.</p></li>
+</ul>
+</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="QuickStart.html" class="btn btn-neutral float-left" title="Quick Start for Developers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="MachEnv.html" class="btn btn-neutral float-right" title="Machine Environment (MachEnv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="MachEnv.html" class="btn btn-neutral float-left" title="Machine Environment (MachEnv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="CondaEnv.html" class="btn btn-neutral float-right" title="Development Conda Environment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

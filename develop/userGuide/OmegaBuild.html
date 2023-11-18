@@ -192,30 +192,15 @@ cmake_install.cmake
 CTestTestfile.cmake
 external
 Makefile
+omega_build.sh
+omega_ctest.sh
+omega_env.sh
+omega_run.sh
 src
 <span class="nb">test</span>
 </pre></div>
 </div>
-<p>To build the Omega, execute the <code class="docutils literal notranslate"><span class="pre">make</span></code> command in the build directory.</p>
-<p>Typical output will look something like:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>&gt;&gt;<span class="w"> </span>make
-Scanning<span class="w"> </span>dependencies<span class="w"> </span>of<span class="w"> </span>target<span class="w"> </span>yakl
-<span class="o">[</span><span class="w"> </span><span class="m">10</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>Fortran<span class="w"> </span>object<span class="w"> </span>external/YAKL/CMakeFiles/yakl.dir/src/YAKL_gator_mod.F90.o
-<span class="o">[</span><span class="w"> </span><span class="m">20</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>external/YAKL/CMakeFiles/yakl.dir/src/YAKL.cpp.o
-<span class="o">[</span><span class="w"> </span><span class="m">30</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>static<span class="w"> </span>library<span class="w"> </span>libyakl.a
-<span class="o">[</span><span class="w"> </span><span class="m">30</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>yakl
-<span class="o">[</span><span class="w"> </span><span class="m">40</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>src/CMakeFiles/OmegaLib.dir/base/MachEnv.cpp.o
-<span class="o">[</span><span class="w"> </span><span class="m">50</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>src/CMakeFiles/OmegaLib.dir/ocn/OcnDummy.cpp.o
-<span class="o">[</span><span class="w"> </span><span class="m">60</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>static<span class="w"> </span>library<span class="w"> </span>libOmegaLib.a
-<span class="o">[</span><span class="w"> </span><span class="m">60</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>OmegaLib
-<span class="o">[</span><span class="w"> </span><span class="m">70</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>src/CMakeFiles/omega.exe.dir/drivers/DrvDummy.cpp.o
-<span class="o">[</span><span class="w"> </span><span class="m">80</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>executable<span class="w"> </span>omega.exe
-<span class="o">[</span><span class="w"> </span><span class="m">80</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>omega.exe
-<span class="o">[</span><span class="w"> </span><span class="m">90</span>%<span class="o">]</span><span class="w"> </span>Building<span class="w"> </span>CXX<span class="w"> </span>object<span class="w"> </span>test/CMakeFiles/testDataTypes.exe.dir/base/DataTypesTest.cpp.o
-<span class="o">[</span><span class="m">100</span>%<span class="o">]</span><span class="w"> </span>Linking<span class="w"> </span>CXX<span class="w"> </span>executable<span class="w"> </span>testDataTypes.exe
-<span class="o">[</span><span class="m">100</span>%<span class="o">]</span><span class="w"> </span>Built<span class="w"> </span>target<span class="w"> </span>testDataTypes.exe
-</pre></div>
-</div>
+<p>To build the Omega, execute the <code class="docutils literal notranslate"><span class="pre">./omega_build.sh</span></code> command in the build directory.</p>
 <p>If the build succeeds, the Omega library and executable are created in the
 <code class="docutils literal notranslate"><span class="pre">src</span></code> sub-directory of the build directory.</p>
 <p>To specify the output directory for saving the generated output files,
@@ -231,8 +216,12 @@ as shown below:</p>
 <p>Afterwards, a user can use the <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code> command to copy the Omega library
 and executable to the <code class="docutils literal notranslate"><span class="pre">lib</span></code> and <code class="docutils literal notranslate"><span class="pre">bin</span></code> sub-directories under the directory
 specified by <code class="docutils literal notranslate"><span class="pre">DOMEGA_INSTALL_PREFIX</span></code>.</p>
-<p>To run the Omega test suite, execute the <code class="docutils literal notranslate"><span class="pre">ctest</span></code> command.</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>&gt;&gt;<span class="w"> </span>ctest
+<p>The <code class="docutils literal notranslate"><span class="pre">./omega_ctest.sh</span></code> command runs Omega unit tests. To run the tests, MPI
+parallel job launcher such as SLURM srun should be available. You may first
+get allocation of an interactive computing node or use batch system.</p>
+<p>For example, if you are on an interactive computingnode, you can run
+Omega unit test by running <code class="docutils literal notranslate"><span class="pre">omega_ctest.sh</span></code> as shown below.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>&gt;&gt;<span class="w"> </span>./omega_ctest.sh
 Test<span class="w"> </span>project<span class="w"> </span>&lt;cmake<span class="w"> </span>working<span class="w"> </span>directory&gt;
 <span class="w">    </span>Start<span class="w"> </span><span class="m">1</span>:<span class="w"> </span>DATA_TYPES_TEST
 <span class="m">1</span>/1<span class="w"> </span>Test<span class="w"> </span><span class="c1">#1: DATA_TYPES_TEST ..................   Passed    0.03 sec</span>

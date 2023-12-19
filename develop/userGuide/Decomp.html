@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Machine Environment (MachEnv)</title>
+  <title>Domain Decomposition (Decomp)</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
@@ -22,8 +22,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Omega Broadcast" href="Broadcast.html" />
-    <link rel="prev" title="Data Types and Precision" href="DataTypes.html" />
+    <link rel="next" title="Quick Start for Developers" href="../devGuide/QuickStart.html" />
+    <link rel="prev" title="Omega Logging" href="Logging.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -55,10 +55,10 @@
 <li class="toctree-l1"><a class="reference internal" href="QuickStart.html">Quick Start for Users</a></li>
 <li class="toctree-l1"><a class="reference internal" href="OmegaBuild.html">CMake-based Omega Build</a></li>
 <li class="toctree-l1"><a class="reference internal" href="DataTypes.html">Data Types and Precision</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Machine Environment (MachEnv)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Omega Broadcast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Logging.html">Omega Logging</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Decomp.html">Domain Decomposition (Decomp)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Domain Decomposition (Decomp)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
 <ul>
@@ -107,9 +107,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Machine Environment (MachEnv)</li>
+      <li class="breadcrumb-item active">Domain Decomposition (Decomp)</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/userGuide/MachEnv.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/userGuide/Decomp.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -117,34 +117,61 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="machine-environment-machenv">
-<h1>Machine Environment (MachEnv)<a class="headerlink" href="#machine-environment-machenv" title="Permalink to this heading"></a></h1>
-<p>Within OMEGA, many aspects of the machine environment are stored
-in a class called MachEnv. These include message-passing parameters
-like MPI communicators and task information, number of threads
-if threaded, vector length for CPUs, GPU and node information as
-needed. Multiple environments are supported in case portions of the
-code need to run on subsets of tasks or in different contexts. A
-default environment is defined early in the initialization of the
-model and can be retrieved as described in the
-<a class="reference internal" href="../devGuide/MachEnv.html#omega-dev-mach-env"><span class="std std-ref">Developer’s Guide</span></a>.</p>
-<p>The user is not expected to set any parameters in MachEnv. All
-quantities are derived from either the job launch command
-(eg mpirun or srun) that defines the number of MPI tasks and tasks
-layouts or from machine parameters enforced during the build based
-on supported machine xml configurations.
-The latter include the pre-processing parameters
-<code class="docutils literal notranslate"><span class="pre">-DOMEGA_VECTOR_LENGTH=xx</span></code> and <code class="docutils literal notranslate"><span class="pre">-DOMEGA_THREADED</span></code> that define an
-optimal vector length for CPU code and turn on OpenMP threading
-if desired.</p>
+  <section id="domain-decomposition-decomp">
+<h1>Domain Decomposition (Decomp)<a class="headerlink" href="#domain-decomposition-decomp" title="Permalink to this heading"></a></h1>
+<p>OMEGA is designed to be run in parallel across multiple nodes and cores
+in a clustered architecture. As in many Earth System Models, we decompose
+the horizontal domain into subdomains that are distributed across the
+system. Communication between the domains is accomplished using the
+Message Passing Interface standard. To reduce the communication between
+subdomains, a halo of points is filled with information from remote neighbor
+cells, edges and vertices so that a time step can largely be completed
+without the need to communicate.</p>
+<p>The partitioning itself is performed using the
+<a class="reference external" href="http://glaros.dtc.umn.edu/gkhome/metis/metis/overview">METIS</a> library that
+can partition unstructured domains in a way that also optimizes communication.
+More details on the mesh, connectivity and partitioning can be found in
+the <a class="reference internal" href="../devGuide/Decomp.html#omega-dev-decomp"><span class="std std-ref">Developer’s Guide</span></a>.</p>
+<p>There are three parameters that are set by the user in the input configuration
+file. These are:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">Decomp</span><span class="p">:</span>
+<span class="w">   </span><span class="nt">HaloWidth</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="w">   </span><span class="nt">MeshFileName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OmegaMesh.nc</span>
+<span class="w">   </span><span class="nt">DecompMethod</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MetisKWay</span>
+</pre></div>
+</div>
+<p>(until the config module is complete, these are currently hardwired to
+the defaults above). The HaloWidth is set to be able to compute all of the
+baroclinic terms in a timestep without communication and for higher-order
+tracer advection terms, this currently must be at least 3. The MeshFileName
+should include the complete path and filename to a standard Omega mesh file
+that contains at a minimum</p>
+<ul class="simple">
+<li><p>the total number of cells, edges and vertices (NCells, NEdges, NVertices)</p></li>
+<li><p>the mesh connectivity contained in the arrays CellsOnCell, EdgesOnCell
+VerticesOnCell, CellsOnEdge, EdgesOnEdge, CellsOnVertex, EdgesOnVertex.
+Again, a full description of the mesh is given in the
+<a class="reference internal" href="../devGuide/Decomp.html#omega-dev-decomp"><span class="std std-ref">Developer’s Guide</span></a>.
+The mesh information is read via parallel IO into an initial linear domain
+decomposition and then is partitioned by METIS and rearranged into the
+final METIS parallel decomposition.</p></li>
+</ul>
+<p>METIS and ParMETIS support a number of partitioning schemes, but MetisKWay
+is currently the only supported decomposition method for Omega and is
+generally the better option.</p>
+<p>Once the mesh is decomposed, all of the mesh index arrays are stored in
+a Decomp named Default which can be retrieved as described in the
+Developer guide. In the future, additional decompositions associated
+with processor subsets (as described in MachEnv) but this capability is
+not yet supported.</p>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="DataTypes.html" class="btn btn-neutral float-left" title="Data Types and Precision" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="Broadcast.html" class="btn btn-neutral float-right" title="Omega Broadcast" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="Logging.html" class="btn btn-neutral float-left" title="Omega Logging" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../devGuide/QuickStart.html" class="btn btn-neutral float-right" title="Quick Start for Developers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

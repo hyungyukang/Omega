@@ -65,6 +65,7 @@
 <li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Omega Broadcast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Logging.html">Omega Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Decomp.html">Domain Decomposition (Decomp)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
 <ul>
@@ -79,6 +80,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/CMakeBuild.html">Omega Build with CMake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Logging.html">Developing Omega Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/Decomp.html">Domain Decomposition (Decomp)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
 <ul>
@@ -146,10 +148,16 @@ file (<code class="docutils literal notranslate"><span class="pre">config_machin
 as illustrated below. In some cases, you may also want to add <code class="docutils literal notranslate"><span class="pre">OMEGA_CIME_MACHINE</span></code>
 to specify which system you intend to use. The values of <code class="docutils literal notranslate"><span class="pre">OMEGA_CIME_COMPILER</span></code>
 and <code class="docutils literal notranslate"><span class="pre">OMEGA_CIME_MACHINE</span></code> are defined in
-“${E3SM}/cime_config/machines/config_machines.xml”.</p>
+“${E3SM}/cime_config/machines/config_machines.xml”.
+OMEGA requires some external libraries. Many of these are built automatically
+from the E3SM distribution. However, the METIS and ParMETIS libraries must
+be built separately and the path must be supplied during the cmake invocation
+as shown below. If a METIS_ROOT is not supplied, it is assumed that both METIS
+and ParMETIS are installed in the same PARMETIS_ROOT location.</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>&gt;&gt;<span class="w"> </span>cmake<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-DOMEGA_CIME_COMPILER<span class="o">=</span>nvidiagpu<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-DOMEGA_CIME_MACHINE<span class="o">=</span>pm-gpu<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DPARMETIS_ROOT<span class="o">=</span>/path/to/parmetis<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span><span class="si">${</span><span class="nv">E3SM_HOME</span><span class="si">}</span>/components/omega
 </pre></div>
 </div>
@@ -220,8 +228,11 @@ and executable to the <code class="docutils literal notranslate"><span class="pr
 specified by <code class="docutils literal notranslate"><span class="pre">DOMEGA_INSTALL_PREFIX</span></code>.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">./omega_ctest.sh</span></code> command runs Omega unit tests. To run the tests, MPI
 parallel job launcher such as SLURM srun should be available. You may first
-get allocation of an interactive computing node or use batch system.</p>
-<p>For example, if you are on an interactive computingnode, you can run
+get allocation of an interactive computing node or use batch system.
+In addition, you must either copy (or soft link) a mesh file into the same
+directory as the unit test executables or specify in a configuration file
+(not implemented yet) the path to that mesh input file.</p>
+<p>For example, if you are on an interactive computing node, you can run
 Omega unit test by running <code class="docutils literal notranslate"><span class="pre">omega_ctest.sh</span></code> as shown below.</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>&gt;&gt;<span class="w"> </span>./omega_ctest.sh
 Test<span class="w"> </span>project<span class="w"> </span>&lt;cmake<span class="w"> </span>working<span class="w"> </span>directory&gt;

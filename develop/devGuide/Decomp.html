@@ -221,6 +221,17 @@ yakl::c::parallel_for);</p>
 <span class="p">});</span>
 </pre></div>
 </div>
+<p>Any defined decomposition can be removed by name using</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Decomp</span><span class="o">::</span><span class="n">erase</span><span class="p">(</span><span class="n">Name</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>and all decompositions <em>must</em> be removed before the yakl finalize call using</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Decomp</span><span class="o">::</span><span class="n">clear</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>which destroys all host and device arrays before YAKL finalizes and removes
+the memory pool in which all the arrays are allocated. Failure to call clear
+before <code class="docutils literal notranslate"><span class="pre">yakl::finalize()</span></code> will result in an error.</p>
 </section>
 
 

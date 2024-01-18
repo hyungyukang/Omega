@@ -175,7 +175,9 @@ Because the new environments are subsets of the default environment, one
 additional function <code class="docutils literal notranslate"><span class="pre">OMEGA::MachEnv::isMember()</span></code> is provided so that
 non-member tasks can be excluded from calculations. The retrieval functions
 call from non-member tasks will return invalid values. Finally, there is
-a <code class="docutils literal notranslate"><span class="pre">removeEnv</span></code> function that can delete any defined environment.</p>
+a <code class="docutils literal notranslate"><span class="pre">removeEnv(Name)</span></code> function that can delete any individual defined
+environment by name and a <code class="docutils literal notranslate"><span class="pre">removeAll()</span></code> function that cleans up by
+removing all defined environments.</p>
 <p>As a class that is basically a container for the environment parameters,
 the implementation is a simple class with several scalar data members and
 the retrieval/creation functions noted above. To track all defined

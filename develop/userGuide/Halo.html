@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Data Types and Precision</title>
+  <title>Halo Exchanges (Halo)</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
@@ -22,8 +22,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Machine Environment (MachEnv)" href="MachEnv.html" />
-    <link rel="prev" title="CMake-based Omega Build" href="OmegaBuild.html" />
+    <link rel="next" title="Quick Start for Developers" href="../devGuide/QuickStart.html" />
+    <link rel="prev" title="Parallel IO (IO)" href="IO.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -54,14 +54,14 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="QuickStart.html">Quick Start for Users</a></li>
 <li class="toctree-l1"><a class="reference internal" href="OmegaBuild.html">CMake-based Omega Build</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Data Types and Precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">Data Types and Precision</a></li>
 <li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Omega Broadcast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Logging.html">Omega Logging</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Decomp.html">Domain Decomposition (Decomp)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="IO.html">Parallel IO (IO)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Halo.html">Halo Exchanges (Halo)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Halo Exchanges (Halo)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
 <ul>
@@ -113,9 +113,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Data Types and Precision</li>
+      <li class="breadcrumb-item active">Halo Exchanges (Halo)</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/userGuide/DataTypes.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/userGuide/Halo.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -123,25 +123,29 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="data-types-and-precision">
-<h1>Data Types and Precision<a class="headerlink" href="#data-types-and-precision" title="Permalink to this heading"></a></h1>
-<p>OMEGA supports all standard data types and uses some specific defined
-types to guarantee a specific level of precision. There is only one
-user-configurable option for precision. When a specific floating point
-precision is not required, we use a Real data type that is, by default,
-double precision (8 bytes/64-bit) but if the code is built with a
-<code class="docutils literal notranslate"><span class="pre">-DSINGLE_PRECISION</span></code> (see insert link to build system) preprocessor flag,
-the default Real becomes single precision (4-byte/32-bit). Users are
-encouraged to use the default double precision unless exploring the
-performance or accuracy characteristics of single precision.</p>
+  <section class="tex2jax_ignore mathjax_ignore" id="halo-exchanges-halo">
+<span id="omega-user-halo"></span><h1>Halo Exchanges (Halo)<a class="headerlink" href="#halo-exchanges-halo" title="Permalink to this heading"></a></h1>
+<p>When OMEGA is run in a parallel machine environment, the computaional domain
+is broken into subdomains that are distrubted among the computational nodes
+of the machine. It is necessary to regularly exchange data that is located
+at or near the interfaces of adjacent subdomains, these regions are called
+halos. The Halo class accomplishes these halo exchanges using the MPI
+(Message Passing Interface) standard.</p>
+<p>The Halo class depends on the MachEnv class and the Decomp class. Currently,
+the only configuration parameters that directly impact Halo are those set
+to configure the <a class="reference internal" href="Decomp.html#omega-user-decomp"><span class="std std-ref">Decomp</span></a> class.</p>
+<p>Once a Halo object is constructed, all the information needed to perform
+a halo exchange on any supported array type defined in any index space
+is contained in the Halo object. Halo exchanges are executed via the
+exchangeFullArrayHalo function.</p>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="OmegaBuild.html" class="btn btn-neutral float-left" title="CMake-based Omega Build" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="MachEnv.html" class="btn btn-neutral float-right" title="Machine Environment (MachEnv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="IO.html" class="btn btn-neutral float-left" title="Parallel IO (IO)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../devGuide/QuickStart.html" class="btn btn-neutral float-right" title="Quick Start for Developers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

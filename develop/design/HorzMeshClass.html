@@ -62,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Decomp.html">Domain Decomposition (Decomp)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/IO.html">Parallel IO (IO)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Halo.html">Halo Exchanges (Halo)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/HorzMesh.html">Horizontal Mesh</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
 <ul>
@@ -80,6 +81,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Decomp.html">Domain Decomposition (Decomp)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/IO.html">Parallel IO (IO)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Halo.html">Halo Exchanges (Halo)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/HorzMesh.html">Horizontal Mesh</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
 <ul class="current">
@@ -203,7 +205,7 @@ Additionally, this flexibility can be used to support separate domain decomposit
 <section id="desired-omega-can-read-in-a-reduced-number-of-mesh-variables-and-compute-the-remaining-array-information-online">
 <h3>2.8 Desired: OMEGA can read in a reduced number of mesh variables and compute the remaining array information online.<a class="headerlink" href="#desired-omega-can-read-in-a-reduced-number-of-mesh-variables-and-compute-the-remaining-array-information-online" title="Permalink to this heading"></a></h3>
 <p>Many of the mesh variables are not independent, e.g.  areaCell, weightsOnEdge, etc., and can be computed from a reduced set of mesh variables.
-This functionality could be used to reduce mesh/restart file size for high resolution meshes.<br />
+This functionality could be used to reduce mesh/restart file size for high resolution meshes.
 Building in this flexibility would allow for all mesh-related calculations to be available within the code base instead of spreading them amongst various utility programs in MPAS-Tools.
 This will improve the ability to maintain and unit test the mesh calculations in MPAS-Tools.
 The functions used to compute the dependent mesh information can also be used to verify any mesh information that is provided in the mesh input stream.</p>
@@ -238,7 +240,7 @@ Connectivity arrays that are already contained in the Decomp class will be repli
 <span class="w">  </span><span class="n">Array1DR8</span><span class="w"> </span><span class="n">AreaCell</span><span class="p">;</span>
 <span class="w">  </span><span class="n">ArrayHost1DR8</span><span class="w"> </span><span class="n">AreaCellH</span><span class="p">;</span>
 
-<span class="w">  </span><span class="n">Array2DI4</span><span class="w"> </span><span class="n">CellsOnCell</span><span class="p">;</span><span class="w"> </span>
+<span class="w">  </span><span class="n">Array2DI4</span><span class="w"> </span><span class="n">CellsOnCell</span><span class="p">;</span>
 <span class="w">  </span><span class="n">ArrayHost2DI4</span><span class="w"> </span><span class="n">CellsOnCellH</span><span class="p">;</span>
 
 <span class="p">}</span>

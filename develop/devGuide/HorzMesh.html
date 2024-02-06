@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Omega Broadcast</title>
+  <title>Horizontal Mesh</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
@@ -22,8 +22,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Development Conda Environment" href="CondaEnv.html" />
-    <link rel="prev" title="Model Configuration (Config)" href="Config.html" />
+    <link rel="next" title="Broadcast" href="../design/Broadcast.html" />
+    <link rel="prev" title="Halo Exchanges (Halo)" href="Halo.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -71,12 +71,7 @@
 <li class="toctree-l1"><a class="reference internal" href="DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
 <li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Config.html">Model Configuration (Config)</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Omega Broadcast</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#code-structure">Code Structure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#ibroadcast-interface">IBroadcast Interface</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#integration-with-mpi">Integration with MPI</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Omega Broadcast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CondaEnv.html">Development Conda Environment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Linting.html">Linting Code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Docs.html">Documentation</a></li>
@@ -86,7 +81,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Decomp.html">Domain Decomposition (Decomp)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="IO.html">Parallel IO (IO)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Halo.html">Halo Exchanges (Halo)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="HorzMesh.html">Horizontal Mesh</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Horizontal Mesh</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
 <ul>
@@ -121,9 +116,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Omega Broadcast</li>
+      <li class="breadcrumb-item active">Horizontal Mesh</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/devGuide/Broadcast.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/devGuide/HorzMesh.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -131,52 +126,63 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="omega-broadcast">
-<span id="omega-dev-broadcast"></span><h1>Omega Broadcast<a class="headerlink" href="#omega-broadcast" title="Permalink to this heading"></a></h1>
-<section id="code-structure">
-<h2>Code Structure<a class="headerlink" href="#code-structure" title="Permalink to this heading"></a></h2>
-<p>Omega Broadcasting functions are organized within two primary files:</p>
-<ol class="arabic simple">
-<li><p><strong>Header File</strong>: Located at <code class="docutils literal notranslate"><span class="pre">src/base/Broadcast.h</span></code>, this file declares
-various functions of the <code class="docutils literal notranslate"><span class="pre">Broadcast</span></code>. These functions are
-distinctively overloaded to accommodate multiple broadcasting needs.
-The key differentiators for these overloads are based on:</p>
-<ul class="simple">
-<li><p>The types of variables being broadcasted.</p></li>
-<li><p>The specific ordering of function arguments.</p></li>
-</ul>
-</li>
-<li><p><strong>Implementation File</strong>: The actual implementations of these declared
-functions are found in <code class="docutils literal notranslate"><span class="pre">src/base/Broadcast.cpp</span></code>.</p></li>
-</ol>
-</section>
-<section id="ibroadcast-interface">
-<h2>IBroadcast Interface<a class="headerlink" href="#ibroadcast-interface" title="Permalink to this heading"></a></h2>
-<p>Parallel to <code class="docutils literal notranslate"><span class="pre">Broadcast</span></code>, there is the <code class="docutils literal notranslate"><span class="pre">IBroadcast</span></code> interface. Currently under
-development, <code class="docutils literal notranslate"><span class="pre">IBroadcast</span></code> focuses on overloading functions for non-blocking
-broadcast operations. This aspect of the Omega Broadcasting system is
-designed to provide more efficient and asynchronous communication capabilities.</p>
-</section>
-<section id="integration-with-mpi">
-<h2>Integration with MPI<a class="headerlink" href="#integration-with-mpi" title="Permalink to this heading"></a></h2>
-<p>At their core, the Omega broadcast functions serve as wrappers around
-the MPI (Message Passing Interface) broadcast functions. They are
-intricately designed to:</p>
-<ul class="simple">
-<li><p>Retrieve values from the Omega Environment.</p></li>
-<li><p>Utilize Omega-specific data types.</p></li>
-<li><p>Seamlessly feed these values into the standard MPI functions for
-effective broadcasting.</p></li>
-</ul>
-</section>
+  <section id="horizontal-mesh">
+<h1>Horizontal Mesh<a class="headerlink" href="#horizontal-mesh" title="Permalink to this heading"></a></h1>
+<p>The OMEGA horizontal mesh uses the <a class="reference external" href="https://mpas-dev.github.io/files/documents/MPAS-MeshSpec.pdf">MPAS Mesh
+Specification</a>.
+A mesh object is created by the <code class="docutils literal notranslate"><span class="pre">init</span></code> method, which assumes that <code class="docutils literal notranslate"><span class="pre">Decomp</span></code> has
+already been initialized.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Decomp</span><span class="o">::</span><span class="n">init</span><span class="p">();</span>
+<span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">HorzMesh</span><span class="o">::</span><span class="n">init</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>The constructor replicates the subdomain mesh cell/edge/vertex counts and
+connectivity information from Decomp so this information can be passed among the
+computational routines, alongside the other local mesh information.  It then
+creates several parallel I/O decompositions and reads in the remaining subdomain
+mesh information.  Finally, any mesh information needed on the device is copied
+from the host to a device YAKL array. Arrays such as the coordinate variables,
+which are not involved in tendency calculations, are not transferred to the
+device. These tasks are organized into several private methods. Eventually,
+dependent mesh variables will be computed from the minimum set of required mesh
+information.</p>
+<p>After initialization, the default mesh object can be retrieved via:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="p">::</span><span class="n">HorzMesh</span> <span class="o">*</span><span class="n">HMesh</span> <span class="o">=</span> <span class="n">OMEGA</span><span class="p">::</span><span class="n">HorzMesh</span><span class="p">::</span><span class="n">getDefault</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>Once this retrieval has been performed, public member variables can be accessed
+using:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="p">::</span><span class="n">I4</span> <span class="n">NCellsOwned</span> <span class="o">=</span> <span class="n">HMesh</span><span class="o">-&gt;</span><span class="n">NCellsOwned</span><span class="p">;</span>
+<span class="n">OMEGA</span><span class="p">::</span><span class="n">Array1DR8</span> <span class="n">AreaCell</span> <span class="o">=</span> <span class="n">HMesh</span><span class="o">-&gt;</span><span class="n">AreaCell</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>The HorzMesh is meant to be a container that allows the mesh information to be
+passed to the PDE solver routines:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">computeFluxTendency</span><span class="p">(</span><span class="n">OMEGA</span><span class="p">::</span><span class="n">HorzMesh</span> <span class="o">*</span><span class="n">HMesh</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="p">{</span>
+<span class="n">yakl</span><span class="p">::</span><span class="n">c</span><span class="p">::</span><span class="n">parallel_for</span><span class="p">(</span><span class="n">yakl</span><span class="p">::</span><span class="n">c</span><span class="p">::</span><span class="n">Bounds</span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span><span class="n">HMesh</span><span class="o">-&gt;</span><span class="n">NCellsOwned</span><span class="p">,</span><span class="n">HMesh</span><span class="o">-&gt;</span><span class="n">MaxEdges</span><span class="p">),</span>
+                      <span class="n">YAKL_LAMBDA</span> <span class="p">(</span><span class="nb">int</span> <span class="n">Cell</span><span class="p">,</span> <span class="nb">int</span> <span class="n">Edge</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">Edge</span> <span class="o">&lt;</span> <span class="n">HMesh</span><span class="o">-&gt;</span><span class="n">NEdgesOnCell</span><span class="p">(</span><span class="n">Cell</span><span class="p">))</span> <span class="p">{</span>
+      <span class="n">Var</span><span class="p">(</span><span class="n">Cell</span><span class="p">)</span> <span class="o">=</span> <span class="n">Var</span><span class="p">(</span><span class="n">Cell</span><span class="p">)</span> <span class="o">+</span> <span class="n">Flux</span><span class="p">(</span><span class="n">Cell</span><span class="p">,</span><span class="n">Edge</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>For member variables that are host arrays, variable names are appended with an
+<code class="docutils literal notranslate"><span class="pre">H</span></code>.  Array variable names not ending in <code class="docutils literal notranslate"><span class="pre">H</span></code> are device arrays.  The copy from
+host to device array is performed in the constructor via:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">AreaCell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AreaCellH</span><span class="p">.</span><span class="n">createDeviceCopy</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>The device arrays are deallocated by the <code class="docutils literal notranslate"><span class="pre">HorzMesh::clear()</span></code> method, which is
+necessary before calling <code class="docutils literal notranslate"><span class="pre">yakl::finalize</span></code>.</p>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="Config.html" class="btn btn-neutral float-left" title="Model Configuration (Config)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="CondaEnv.html" class="btn btn-neutral float-right" title="Development Conda Environment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="Halo.html" class="btn btn-neutral float-left" title="Halo Exchanges (Halo)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../design/Broadcast.html" class="btn btn-neutral float-right" title="Broadcast" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -59,6 +59,7 @@
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Broadcast.html">Omega Broadcast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Logging.html">Omega Logging</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Decomp.html">Domain Decomposition (Decomp)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userGuide/MetaData.html">Metadata</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/IO.html">Parallel IO (IO)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Halo.html">Halo Exchanges (Halo)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/HorzMesh.html">Horizontal Mesh</a></li>
@@ -78,6 +79,7 @@
 <li class="toctree-l1"><a class="reference internal" href="devGuide/CMakeBuild.html">Omega Build with CMake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Logging.html">Developing Omega Logging</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Decomp.html">Domain Decomposition (Decomp)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devGuide/MetaData.html">Metadata</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/IO.html">Parallel IO (IO)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Halo.html">Halo Exchanges (Halo)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/HorzMesh.html">Horizontal Mesh</a></li>
@@ -161,6 +163,17 @@ component of E3SM for comparison purposes.</p>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Decomp.html">Domain Decomposition (Decomp)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userGuide/MetaData.html">Metadata</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MetaData.html#introduction-to-metadata-in-omega">Introduction to Metadata in Omega</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MetaData.html#working-with-metadata">Working with Metadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MetaData.html#creating-and-destroying-metadata-instances">Creating and Destroying MetaData Instances</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MetaData.html#managing-metadata-in-instances">Managing Metadata in Instances</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MetaData.html#handling-metadata-instances">Handling MetaData Instances</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MetaData.html#working-with-metadim-instances">Working with MetaDim Instances</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MetaData.html#managing-metagroup-instances">Managing MetaGroup Instances</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MetaData.html#utility-functions">Utility Functions</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/IO.html">Parallel IO (IO)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Halo.html">Halo Exchanges (Halo)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/HorzMesh.html">Horizontal Mesh</a></li>
@@ -208,6 +221,22 @@ component of E3SM for comparison purposes.</p>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Decomp.html">Domain Decomposition (Decomp)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devGuide/MetaData.html">Metadata</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/MetaData.html#metadata-code-structure">MetaData Code Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/MetaData.html#function-naming-convention">Function Naming Convention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/MetaData.html#return-type-and-return-code">Return Type and Return Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/MetaData.html#inheriting-metadata-class">Inheriting MetaData class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/MetaData.html#create-destroy-a-metadata-instance">Create/Destroy a MetaData Instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/MetaData.html#add-remove-a-metadata-to-from-a-metadata-instance">Add/Remove a Metadata to/from a MetaData Instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/MetaData.html#retreive-a-metadata-from-a-metadata-instance">Retreive a Metadata from a MetaData Instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/MetaData.html#retreive-a-metadata-instance">Retreive a MetaData Instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/MetaData.html#create-destroy-a-metadim-instance">Create/Destroy a MetaDim Instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/MetaData.html#retreive-dimension-from-a-metadim-instance">Retreive Dimension from a MetaDim Instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/MetaData.html#create-destroy-a-metagroup-instance">Create/Destroy a MetaGroup Instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/MetaData.html#add-retrieve-or-remove-a-metadata-instance-from-a-metagroup-instance">Add, Retrieve, or Remove a MetaData Instance from a MetaGroup Instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/MetaData.html#utilities">Utilities</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/IO.html">Parallel IO (IO)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Halo.html">Halo Exchanges (Halo)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/HorzMesh.html">Horizontal Mesh</a></li>

@@ -145,7 +145,13 @@ specific R4 or R8 forms unless the specific form is required
 (eg converting to single precision before output or if a particular
 algorithm is known to require double precision). This allows us to
 easily convert all reals to single precision to explore performance or
-accuracy in single precision mode.</p>
+accuracy in single precision mode. In some cases creating literal values
+of type Real is necessary to avoid unwanted promotions. For that purpose
+a user-defined literal <code class="docutils literal notranslate"><span class="pre">_Real</span></code> is provided. As an example, we can compute
+the inverse area of a cell using only the Real type as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="n">Real</span><span class="w"> </span><span class="n">InvAreaCell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.</span><span class="n">_Real</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">AreaCell</span><span class="p">(</span><span class="n">ICell</span><span class="p">);</span>
+</pre></div>
+</div>
 </section>
 <section id="arrays-and-yakl">
 <h1>Arrays and YAKL<a class="headerlink" href="#arrays-and-yakl" title="Permalink to this heading"></a></h1>

@@ -74,7 +74,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Omega Broadcast</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Development Conda Environment</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#installing-mambaforge">Installing Mambaforge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installing-miniforge3">Installing Miniforge3</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#creating-the-conda-environment">Creating the Conda Environment</a></li>
 </ul>
 </li>
@@ -139,35 +139,42 @@
 code, you will need your own
 <a class="reference external" href="https://conda.io/projects/conda/en/latest/index.html">conda</a> environment with
 the necessary packages.</p>
-<section id="installing-mambaforge">
-<span id="omega-dev-install-mambaforge"></span><h2>Installing Mambaforge<a class="headerlink" href="#installing-mambaforge" title="Permalink to this heading"></a></h2>
+<section id="installing-miniforge3">
+<span id="omega-dev-install-miniforge3"></span><h2>Installing Miniforge3<a class="headerlink" href="#installing-miniforge3" title="Permalink to this heading"></a></h2>
 <p>If you have not already done so, you will install
-<a class="reference external" href="https://github.com/conda-forge/miniforge#mambaforge">Mambaforge</a>, preferably
-somewhere in your home directory but possibly somewhere in your scratch space.
-In what follows, we assume you have Mambaforge installed in
-<code class="docutils literal notranslate"><span class="pre">${HOME}/mambaforge</span></code>.</p>
-<p>You may wish to skip the step in the Mambaforge installation where it
-wants to modify your <code class="docutils literal notranslate"><span class="pre">.bashrc</span></code>.  If you allow it to, it will add
-activation of the <code class="docutils literal notranslate"><span class="pre">mamba</span></code> and <code class="docutils literal notranslate"><span class="pre">conda</span></code> commands and the <code class="docutils literal notranslate"><span class="pre">base</span></code> conda
-environment, and this may not be something you want.</p>
-<p>If you opt not to allow Mambforge to update your <code class="docutils literal notranslate"><span class="pre">.bashrc</span></code>, it may be helpful
-to add an alias like the following to your <code class="docutils literal notranslate"><span class="pre">.bashrc</span></code>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">alias</span><span class="w"> </span><span class="nv">mamba_base</span><span class="o">=</span><span class="s1">&#39;</span>
-<span class="s1">source ${HOME}/mambaforge/etc/profile.d/conda.sh</span>
-<span class="s1">source ${HOME}/mambaforge/etc/profile.d/mamba.sh</span>
-<span class="s1">mamba activate&#39;</span>
+<a class="reference external" href="https://github.com/conda-forge/miniforge#miniforge3">Miniforge3</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-L<span class="w"> </span>-O<span class="w"> </span><span class="s2">&quot;https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-</span><span class="k">$(</span>uname<span class="k">)</span><span class="s2">-</span><span class="k">$(</span>uname<span class="w"> </span>-m<span class="k">)</span><span class="s2">.sh&quot;</span>
+bash<span class="w"> </span>Miniforge3-<span class="k">$(</span>uname<span class="k">)</span>-<span class="k">$(</span>uname<span class="w"> </span>-m<span class="k">)</span>.sh
 </pre></div>
 </div>
-<p>Anytime you need <code class="docutils literal notranslate"><span class="pre">conda</span></code> and <code class="docutils literal notranslate"><span class="pre">mamba</span></code> commands, you can first run <code class="docutils literal notranslate"><span class="pre">mamba_base</span></code>
-to get them.</p>
+<p>If you have the space to do so, we recommend installing Miniforge3 somewhere in
+our home directory.  Typically, this file system will be faster than on a
+scratch space spaces.  Also, a conda environment will be rendered useless if
+its contents get purged.  However, conda environments each require several GB
+of space, which may quickly use up your disk quota so you will need to weigh
+these trade-offs for yourself.</p>
+<p>In what follows, we assume you have Miniforge3 installed in
+<code class="docutils literal notranslate"><span class="pre">${HOME}/miniforge3</span></code>.</p>
+<p>You may wish to skip the step in the Miniforge3 installation where it
+wants to modify your <code class="docutils literal notranslate"><span class="pre">.bashrc</span></code>.  If you allow it to, it will add activation of
+the <code class="docutils literal notranslate"><span class="pre">conda</span></code> command and the <code class="docutils literal notranslate"><span class="pre">base</span></code> conda environment, and this may not be
+something you want.</p>
+<p>If you opt not to allow Miniforge3 to update your <code class="docutils literal notranslate"><span class="pre">.bashrc</span></code>, it may be helpful
+to add an alias like the following to your <code class="docutils literal notranslate"><span class="pre">.bashrc</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">alias</span><span class="w"> </span><span class="nv">conda_base</span><span class="o">=</span><span class="s1">&#39;</span>
+<span class="s1">source ${HOME}/miniforge3/etc/profile.d/conda.sh</span>
+<span class="s1">conda activate&#39;</span>
+</pre></div>
+</div>
+<p>Anytime you need <code class="docutils literal notranslate"><span class="pre">conda</span></code> command, you can first run <code class="docutils literal notranslate"><span class="pre">conda_base</span></code>to get it.</p>
 </section>
 <section id="creating-the-conda-environment">
 <span id="omega-dev-create-conda-env"></span><h2>Creating the Conda Environment<a class="headerlink" href="#creating-the-conda-environment" title="Permalink to this heading"></a></h2>
-<p>With Mambaforge installed and the <code class="docutils literal notranslate"><span class="pre">conda</span></code> and <code class="docutils literal notranslate"><span class="pre">mamba</span></code> commands activated,
-you can create the OMEGA development environment, starting from the root
-of an OMEGA branch, with:</p>
+<p>With Miniforge3 installed and the <code class="docutils literal notranslate"><span class="pre">conda</span></code> command available, you can create the
+Omega development environment, starting from the root
+of an Omega branch, with:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>components/omega/
-mamba<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>omega_dev<span class="w"> </span>--file<span class="w"> </span>dev-conda.txt
+conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>omega_dev<span class="w"> </span>--file<span class="w"> </span>dev-conda.txt
 conda<span class="w"> </span>activate<span class="w"> </span>omega_dev
 </pre></div>
 </div>

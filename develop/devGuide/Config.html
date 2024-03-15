@@ -177,7 +177,10 @@ this for the example shown in the User Guide:</p>
 <span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">HmixConfig</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;HmixRefWidth&quot;</span><span class="w">     </span><span class="p">,</span><span class="w"> </span><span class="n">HmixRefWidth</span><span class="p">);</span>
 </pre></div>
 </div>
-<p>If the module is deeper in the hierarchy (eg an HmixDel2 module
+<p>All Config get/set/add functions support variables of all Omega data
+types (I4, I8, R4, R8, Real, bool, std::string) and also
+std::vector vectors of any of those supported types.
+If the module is deeper in the hierarchy (eg an HmixDel2 module
 under the Hmix module), you would need an additional call to extract
 the subconfiguration, like:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Config</span><span class="w"> </span><span class="n">HmixDel2Config</span><span class="p">;</span><span class="w"> </span><span class="c1">// creates and empty config for Hmix Del2</span>

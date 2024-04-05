@@ -68,15 +68,15 @@
 <p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/QuickStart.html">Quick Start for Developers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devGuide/CondaEnv.html">Development Conda Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devGuide/Linting.html">Linting Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devGuide/Docs.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/DataTypes.html">Data Types and Precision</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Broadcast.html">Omega Broadcast</a></li>
-<li class="toctree-l1"><a class="reference internal" href="devGuide/CondaEnv.html">Development Conda Environment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="devGuide/Linting.html">Linting Code</a></li>
-<li class="toctree-l1"><a class="reference internal" href="devGuide/Docs.html">Documentation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/CMakeBuild.html">Omega Build with CMake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Logging.html">Developing Omega Logging</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Decomp.html">Domain Decomposition (Decomp)</a></li>
@@ -194,6 +194,22 @@ component of E3SM for comparison purposes.</p>
 <li class="toctree-l2"><a class="reference internal" href="devGuide/QuickStart.html#code-development">Code development</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="devGuide/CondaEnv.html">Development Conda Environment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/CondaEnv.html#installing-miniforge3">Installing Miniforge3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/CondaEnv.html#creating-the-conda-environment">Creating the Conda Environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/CondaEnv.html#updating-the-conda-environment">Updating the Conda Environment</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="devGuide/Linting.html">Linting Code</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/Linting.html#enabling-lint-checks">Enabling Lint Checks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/Linting.html#bypassing-linting">Bypassing Linting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/Linting.html#linting-c-code">Linting C++ Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/Linting.html#linting-python-code">Linting Python Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/Linting.html#updating-the-linting-pacakge">Updating the linting pacakge</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="devGuide/Docs.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/DataTypes.html">Data Types and Precision</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
@@ -204,20 +220,6 @@ component of E3SM for comparison purposes.</p>
 <li class="toctree-l2"><a class="reference internal" href="devGuide/Broadcast.html#integration-with-mpi">Integration with MPI</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="devGuide/CondaEnv.html">Development Conda Environment</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="devGuide/CondaEnv.html#installing-miniforge3">Installing Miniforge3</a></li>
-<li class="toctree-l2"><a class="reference internal" href="devGuide/CondaEnv.html#creating-the-conda-environment">Creating the Conda Environment</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="devGuide/Linting.html">Linting Code</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="devGuide/Linting.html#enabling-lint-checks">Enabling Lint Checks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="devGuide/Linting.html#bypassing-linting">Bypassing Linting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="devGuide/Linting.html#linting-c-code">Linting C++ Code</a></li>
-<li class="toctree-l2"><a class="reference internal" href="devGuide/Linting.html#linting-python-code">Linting Python Code</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="devGuide/Docs.html">Documentation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/CMakeBuild.html">Omega Build with CMake</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="devGuide/CMakeBuild.html#step-1-setup">Step 1: Setup</a></li>
 <li class="toctree-l2"><a class="reference internal" href="devGuide/CMakeBuild.html#step-2-update">Step 2: Update</a></li>

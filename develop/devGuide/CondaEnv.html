@@ -23,7 +23,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Linting Code" href="Linting.html" />
-    <link rel="prev" title="Omega Broadcast" href="Broadcast.html" />
+    <link rel="prev" title="Quick Start for Developers" href="QuickStart.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -69,19 +69,20 @@
 <p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="QuickStart.html">Quick Start for Developers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">Data Types and Precision</a></li>
-<li class="toctree-l1"><a class="reference internal" href="DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Config.html">Model Configuration (Config)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Omega Broadcast</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Development Conda Environment</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#installing-miniforge3">Installing Miniforge3</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#creating-the-conda-environment">Creating the Conda Environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#updating-the-conda-environment">Updating the Conda Environment</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="Linting.html">Linting Code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="BuildDocs.html">Building the Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">Data Types and Precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Config.html">Model Configuration (Config)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Omega Broadcast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CMakeBuild.html">Omega Build with CMake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Logging.html">Developing Omega Logging</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Decomp.html">Domain Decomposition (Decomp)</a></li>
@@ -183,13 +184,20 @@ conda<span class="w"> </span>activate<span class="w"> </span>omega_dev
 </pre></div>
 </div>
 </section>
+<section id="updating-the-conda-environment">
+<span id="omega-dev-update-conda-env"></span><h2>Updating the Conda Environment<a class="headerlink" href="#updating-the-conda-environment" title="Permalink to this heading"></a></h2>
+<p>If you need to update the <code class="docutils literal notranslate"><span class="pre">omega_dev</span></code> conda environment, the easiest way to
+do that is just to recreate it by following the same instructions as above.
+You will be prompted about whether you want to delete the old environment
+unless you include the <code class="docutils literal notranslate"><span class="pre">-y</span></code> flag (to say “yes” to all prompts).</p>
+</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="Broadcast.html" class="btn btn-neutral float-left" title="Omega Broadcast" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="QuickStart.html" class="btn btn-neutral float-left" title="Quick Start for Developers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="Linting.html" class="btn btn-neutral float-right" title="Linting Code" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

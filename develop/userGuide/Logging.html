@@ -79,7 +79,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html">Data Types and Precision</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-kokkos">Arrays and Kokkos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Broadcast.html">Omega Broadcast</a></li>
@@ -186,7 +186,7 @@ analysis and debugging.</p></li>
 </ol>
 <p>You can replace the string “World” with any variable whose type is
 a C++ basic data type, such as an int, a float, or a string. You can
-also use a limited set of YAKL variables. For example, the following code
+also use a limited set of Kokkos variables. For example, the following code
 writes the value of the variable <code class="docutils literal notranslate"><span class="pre">MyInt</span></code> as a TRACE level log:</p>
 <div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="n">MyInt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
 <span class="n">LOG_TRACE</span><span class="p">(</span><span class="s">&quot;The value of MyInt is: {}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">MyInt</span><span class="p">);</span>

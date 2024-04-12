@@ -96,7 +96,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="DataTypes.html">Data Types and Precision</a></li>
-<li class="toctree-l1"><a class="reference internal" href="DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html#arrays-and-kokkos">Arrays and Kokkos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Omega Broadcast</a></li>
@@ -228,7 +228,7 @@ to buid and test Omega. The utility automates many of the steps below.</p>
 <h3>Building Omega<a class="headerlink" href="#building-omega" title="Permalink to this heading"></a></h3>
 <p>In the Omega branch you would like to build, first update the submodules that
 Omega requires:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>submodule<span class="w"> </span>update<span class="w"> </span>--init<span class="w"> </span>--recursive<span class="w"> </span>externals/YAKL<span class="w"> </span>externals/ekat<span class="w"> </span><span class="se">\</span>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>submodule<span class="w"> </span>update<span class="w"> </span>--init<span class="w"> </span>--recursive<span class="w"> </span>externals/ekat<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>externals/scorpio<span class="w"> </span>cime
 </pre></div>
 </div>
@@ -279,9 +279,9 @@ script that you can run to build Omega:</p>
 <p>Omega includes several unit tests that run through CTest.  These need to be
 run on a compute node.  Some tests also require a valid Omega mesh file
 called <code class="docutils literal notranslate"><span class="pre">test/OmegaMesh.nc</span></code>.  An appropriate mesh file can be downloaded from
-<a class="reference external" href="https://web.lcrc.anl.gov/public/e3sm/polaris/ocean/polaris_cache/global_convergence/icos/cosine_bell/Icos480/mesh/mesh.230220.nc">mesh.230220.nc</a>.</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>wget<span class="w"> </span>https://web.lcrc.anl.gov/public/e3sm/polaris/ocean/polaris_cache/global_convergence/icos/cosine_bell/Icos480/mesh/mesh.230220.nc
-mv<span class="w"> </span>mesh.230220.nc<span class="w"> </span>test/OmegaMesh.nc
+<a class="reference external" href="https://web.lcrc.anl.gov/public/e3sm/polaris/ocean/omega_ctest/ocean.QU.240km.151209.nc">mesh.230220.nc</a>.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>wget<span class="w"> </span>https://web.lcrc.anl.gov/public/e3sm/polaris/ocean/omega_ctest/ocean.QU.240km.151209.nc
+mv<span class="w"> </span>ocean.QU.240km.151209.nc<span class="w"> </span>test/OmegaMesh.nc
 </pre></div>
 </div>
 <p>Then, run the tests:</p>
@@ -306,8 +306,8 @@ mv<span class="w"> </span>mesh.230220.nc<span class="w"> </span>test/OmegaMesh.n
 <span class="mi">7</span><span class="o">/</span><span class="mi">9</span> <span class="n">Test</span> <span class="c1">#7: IO_TEST ..........................   Passed    2.94 sec</span>
     <span class="n">Start</span> <span class="mi">8</span><span class="p">:</span> <span class="n">CONFIG_TEST</span>
 <span class="mi">8</span><span class="o">/</span><span class="mi">9</span> <span class="n">Test</span> <span class="c1">#8: CONFIG_TEST ......................   Passed    1.01 sec</span>
-    <span class="n">Start</span> <span class="mi">9</span><span class="p">:</span> <span class="n">YAKL_TEST</span>
-<span class="mi">9</span><span class="o">/</span><span class="mi">9</span> <span class="n">Test</span> <span class="c1">#9: YAKL_TEST ........................   Passed    0.03 sec</span>
+    <span class="n">Start</span> <span class="mi">9</span><span class="p">:</span> <span class="n">KOKKOS_TEST</span>
+<span class="mi">9</span><span class="o">/</span><span class="mi">9</span> <span class="n">Test</span> <span class="c1">#9: KOKKOS_TEST ........................   Passed    0.03 sec</span>
 
 <span class="mi">100</span><span class="o">%</span> <span class="n">tests</span> <span class="n">passed</span><span class="p">,</span> <span class="mi">0</span> <span class="n">tests</span> <span class="n">failed</span> <span class="n">out</span> <span class="n">of</span> <span class="mi">9</span>
 

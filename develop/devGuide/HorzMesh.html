@@ -75,7 +75,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="DataTypes.html">Data Types and Precision</a></li>
-<li class="toctree-l1"><a class="reference internal" href="DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html#arrays-and-kokkos">Arrays and Kokkos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Omega Broadcast</a></li>
@@ -150,7 +150,7 @@ connectivity information from Decomp so this information can be passed among the
 computational routines, alongside the other local mesh information.  It then
 creates several parallel I/O decompositions and reads in the remaining subdomain
 mesh information.  Finally, any mesh information needed on the device is copied
-from the host to a device YAKL array. Arrays such as the coordinate variables,
+from the host to a device Kokkos array. Arrays such as the coordinate variables,
 which are not involved in tendency calculations, are not transferred to the
 device. These tasks are organized into several private methods. Eventually,
 dependent mesh variables will be computed from the minimum set of required mesh
@@ -168,8 +168,8 @@ using:</p>
 <p>The HorzMesh is meant to be a container that allows the mesh information to be
 passed to the PDE solver routines:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">computeFluxTendency</span><span class="p">(</span><span class="n">OMEGA</span><span class="p">::</span><span class="n">HorzMesh</span> <span class="o">*</span><span class="n">HMesh</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="p">{</span>
-<span class="n">yakl</span><span class="p">::</span><span class="n">c</span><span class="p">::</span><span class="n">parallel_for</span><span class="p">(</span><span class="n">yakl</span><span class="p">::</span><span class="n">c</span><span class="p">::</span><span class="n">Bounds</span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span><span class="n">HMesh</span><span class="o">-&gt;</span><span class="n">NCellsOwned</span><span class="p">,</span><span class="n">HMesh</span><span class="o">-&gt;</span><span class="n">MaxEdges</span><span class="p">),</span>
-                      <span class="n">YAKL_LAMBDA</span> <span class="p">(</span><span class="nb">int</span> <span class="n">Cell</span><span class="p">,</span> <span class="nb">int</span> <span class="n">Edge</span><span class="p">)</span> <span class="p">{</span>
+<span class="n">OMEGA</span><span class="p">::</span><span class="n">parallelFor</span><span class="p">({</span><span class="n">HMesh</span><span class="o">-&gt;</span><span class="n">NCellsOwned</span><span class="p">,</span><span class="n">HMesh</span><span class="o">-&gt;</span><span class="n">MaxEdges</span><span class="p">},</span>
+                      <span class="n">KOKKOS_LAMBDA</span> <span class="p">(</span><span class="nb">int</span> <span class="n">Cell</span><span class="p">,</span> <span class="nb">int</span> <span class="n">Edge</span><span class="p">)</span> <span class="p">{</span>
   <span class="k">if</span> <span class="p">(</span><span class="n">Edge</span> <span class="o">&lt;</span> <span class="n">HMesh</span><span class="o">-&gt;</span><span class="n">NEdgesOnCell</span><span class="p">(</span><span class="n">Cell</span><span class="p">))</span> <span class="p">{</span>
       <span class="n">Var</span><span class="p">(</span><span class="n">Cell</span><span class="p">)</span> <span class="o">=</span> <span class="n">Var</span><span class="p">(</span><span class="n">Cell</span><span class="p">)</span> <span class="o">+</span> <span class="n">Flux</span><span class="p">(</span><span class="n">Cell</span><span class="p">,</span><span class="n">Edge</span><span class="p">);</span>
   <span class="p">}</span>
@@ -179,11 +179,11 @@ passed to the PDE solver routines:</p>
 <p>For member variables that are host arrays, variable names are appended with an
 <code class="docutils literal notranslate"><span class="pre">H</span></code>.  Array variable names not ending in <code class="docutils literal notranslate"><span class="pre">H</span></code> are device arrays.  The copy from
 host to device array is performed in the constructor via:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">AreaCell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AreaCellH</span><span class="p">.</span><span class="n">createDeviceCopy</span><span class="p">();</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">AreaCell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">createDeviceMirrorCopy</span><span class="p">(</span><span class="n">AreaCellH</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>The device arrays are deallocated by the <code class="docutils literal notranslate"><span class="pre">HorzMesh::clear()</span></code> method, which is
-necessary before calling <code class="docutils literal notranslate"><span class="pre">yakl::finalize</span></code>.</p>
+necessary before calling <code class="docutils literal notranslate"><span class="pre">Kokkos::finalize</span></code>.</p>
 </section>
 
 

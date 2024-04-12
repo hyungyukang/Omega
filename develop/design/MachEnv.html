@@ -75,7 +75,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html">Data Types and Precision</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-kokkos">Arrays and Kokkos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Broadcast.html">Omega Broadcast</a></li>
@@ -104,7 +104,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#requirement-initialize-mpi-in-standalone">2.1 Requirement: Initialize MPI in Standalone</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#requirement-create-mpi-communicator-in-coupled-mode">2.2 Requirement: Create MPI communicator in coupled mode</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#requirement-define-mpi-layouts">2.3 Requirement: Define MPI layouts</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#requirement-yakl-initialization">2.4 Requirement: YAKL initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-kokkos-initialization">2.4 Requirement: Kokkos initialization</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#requirement-vector-blocking-size-defined-at-compile-time">2.5 Requirement: Vector blocking size defined at compile time</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#desired-set-alternative-master-task">2.6 Desired: Set alternative master task</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#desired-multiple-environments">2.7 Desired: Multiple environments</a></li>
@@ -201,10 +201,10 @@ communicator based on a parent communicator sent by the calling routine
 <p>Each MPI rank will need to know its own rank id, number of ranks and
 define a master rank.</p>
 </section>
-<section id="requirement-yakl-initialization">
-<h3>2.4 Requirement: YAKL initialization<a class="headerlink" href="#requirement-yakl-initialization" title="Permalink to this heading"></a></h3>
-<p>Since we are using YAKL for kernel launching and array types, we
-will need to initialize YAKL in standalone mode. It may also be
+<section id="requirement-kokkos-initialization">
+<h3>2.4 Requirement: Kokkos initialization<a class="headerlink" href="#requirement-kokkos-initialization" title="Permalink to this heading"></a></h3>
+<p>Since we are using Kokkos for kernel launching and array types, we
+will need to initialize Kokkos in standalone mode. It may also be
 needed for coupled simulations.</p>
 </section>
 <section id="requirement-vector-blocking-size-defined-at-compile-time">
@@ -394,9 +394,9 @@ success/fail return code.</p>
 <section id="verification-and-testing">
 <h2>5 Verification and Testing<a class="headerlink" href="#verification-and-testing" title="Permalink to this heading"></a></h2>
 <p>We will test this with a simple test driver in an 8-rank
-MPI configuration. Requirement 2.4 (YAKL initialization) will
+MPI configuration. Requirement 2.4 (Kokkos initialization) will
 need to be verified by visual inspection but later tests using
-YAKL functions will determine whether this has been successful.</p>
+Kokkos functions will determine whether this has been successful.</p>
 <section id="test-standalone-initialization">
 <h3>5.1 Test standalone initialization<a class="headerlink" href="#test-standalone-initialization" title="Permalink to this heading"></a></h3>
 <p>The test driver will call the standalone initialization, then

@@ -75,7 +75,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html">Data Types and Precision</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-kokkos">Arrays and Kokkos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Broadcast.html">Omega Broadcast</a></li>
@@ -304,7 +304,7 @@ before the parallel IO is set up.</p>
 <p>Once the primary (cell) mesh is partitioned, the edge and vertex
 index spaces will be assigned based on the adjacency to the local
 cells, as in the current MPAS model. Because much of this information
-will be later replicated in a mesh class with YAKL arrays, this
+will be later replicated in a mesh class with Kokkos arrays, this
 decomposition structure will be destroyed after initialization and
 any related setup of halos and other infrastructure.</p>
 <section id="data-types-and-parameters">

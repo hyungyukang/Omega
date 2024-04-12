@@ -75,7 +75,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="DataTypes.html">Data Types and Precision</a></li>
-<li class="toctree-l1"><a class="reference internal" href="DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html#arrays-and-kokkos">Arrays and Kokkos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Omega Broadcast</a></li>
@@ -83,7 +83,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Developing Omega Logging</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#initializing-omega-logger">Initializing Omega Logger</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#creating-logging-macros">Creating Logging Macros</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#customer-formatter-for-yakl">Customer formatter for YAKL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#customer-formatter-for-kokkos">Customer formatter for Kokkos</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="Decomp.html">Domain Decomposition (Decomp)</a></li>
@@ -144,7 +144,7 @@
 <span id="omega-dev-logging"></span><h1>Developing Omega Logging<a class="headerlink" href="#developing-omega-logging" title="Permalink to this heading"></a></h1>
 <p>Omega’s logging system is built upon the
 <a class="reference external" href="https://github.com/gabime/spdlog">spdlog</a> logging tool.</p>
-<p>Logging macros and custom formatters for YAKL data types have been
+<p>Logging macros and custom formatters for Kokkos data types have been
 integrated into the Omega logging system via the Logging.h header file
 located in the src/infra directory. Users who wish to utilize Omega’s
 logging capabilities must include this header file in their code.</p>
@@ -174,10 +174,10 @@ versatility by accommodating the utilization of the spdlog logger as
 their first argument. This approach facilitats the integration of various
 logger types.</p>
 </section>
-<section id="customer-formatter-for-yakl">
-<h2>Customer formatter for YAKL<a class="headerlink" href="#customer-formatter-for-yakl" title="Permalink to this heading"></a></h2>
+<section id="customer-formatter-for-kokkos">
+<h2>Customer formatter for Kokkos<a class="headerlink" href="#customer-formatter-for-kokkos" title="Permalink to this heading"></a></h2>
 <p>Within the same header file, you will encounter specialized spdlog formatter
-structs designed to accommodate YAKL data types.</p>
+structs designed to accommodate Kokkos data types.</p>
 <p>For further information on customizing the spdlog formatter, refer to
 <a class="reference external" href="https://github.com/gabime/spdlog/wiki/3.-Custom-formatting">Custom formatting</a>.</p>
 </section>

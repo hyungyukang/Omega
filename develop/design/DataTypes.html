@@ -75,7 +75,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html">Data Types and Precision</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-kokkos">Arrays and Kokkos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Broadcast.html">Omega Broadcast</a></li>
@@ -116,7 +116,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#verification-and-testing">5 Verification and Testing</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#test-explicit-types">5.1 Test explicit types</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#test-global-switch-for-default-real-size">5.2 Test global switch for default real size</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#yakl-array-test">5.3 YAKL array test</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#kokkos-array-test">5.3 Kokkos array test</a></li>
 </ul>
 </li>
 </ul>
@@ -167,7 +167,7 @@
 <section id="overview">
 <h2>1 Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
 <p>Data type aliases are a useful means for managing precision within OMEGA and
-to improve readability for for YAKL array data types. This header file
+to improve readability for for Kokkos array data types. This header file
 defines a number of aliases to common data types used throughout OMEGA.</p>
 </section>
 <section id="requirements">
@@ -181,7 +181,7 @@ types to enforce precision where needed.</p>
 </section>
 <section id="desired-readability-for-array-types">
 <h3>2.2 Desired: Readability for array types<a class="headerlink" href="#desired-readability-for-array-types" title="Permalink to this heading"></a></h3>
-<p>OMEGA will be using YAKL array data types which have a long syntax. For
+<p>OMEGA will be using Kokkos array data types which have a long syntax. For
 readability, these should be aliased to a shorter, intuitive data type.</p>
 </section>
 <section id="desired-fixed-width-integer-types">
@@ -212,7 +212,7 @@ require reproducible algorithms in the future.</p>
 <p>Currently, the data types can be defined in a single header file that sets
 up aliases. Because the main data types are simply aliases to the standard
 data types, interoperability (Req 2.4) should not be an issue. For the
-YAKL arrays, YAKL provides means for interoperability with both other
+Kokkos arrays, Kokkos provides means for interoperability with both other
 languages and other frameworks and will be incorporated into any
 interfaces with other codes.</p>
 <section id="data-types-and-parameters">
@@ -227,7 +227,7 @@ Otherwise, the default real will be double precision.</p>
 <h4>4.1.2 Class/structs/data types<a class="headerlink" href="#class-structs-data-types" title="Permalink to this heading"></a></h4>
 <p>The data types will be defined using type aliases within a single header
 file DataTypes.h We will use the “using” syntax rather than
-the older typedef. For YAKL arrays, we require both device arrays (default)
+the older typedef. For Kokkos arrays, we require both device arrays (default)
 and host array types and will use C-ordering.</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Standard integer and floating point types</span>
 <span class="k">using</span><span class="w"> </span><span class="n">I4</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="kt">int32_t</span><span class="p">;</span>
@@ -240,22 +240,27 @@ and host array types and will use C-ordering.</p>
 <span class="k">using</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">double</span><span class="p">;</span>
 <span class="cp">#endif</span>
 
-<span class="c1">// Aliases for YAKL arrays - by default on device and in</span>
+<span class="c1">// Aliases for Kokkos arrays - by default on device and in</span>
 <span class="c1">// C-ordering.</span>
-<span class="k">using</span><span class="w"> </span><span class="n">Array1DI4</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">I4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
-<span class="k">using</span><span class="w"> </span><span class="n">Array1DI8</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">I8</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
-<span class="k">using</span><span class="w"> </span><span class="n">Array1DR4</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">R4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
-<span class="k">using</span><span class="w"> </span><span class="n">Array1DR8</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">R8</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
-<span class="k">using</span><span class="w"> </span><span class="n">Array1DReal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">Real</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
-<span class="k">using</span><span class="w"> </span><span class="n">Array2DI4</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">I4</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
-<span class="k">using</span><span class="w"> </span><span class="n">Array2DI8</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">I8</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
-<span class="k">using</span><span class="w"> </span><span class="n">Array2DR4</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">R4</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
-<span class="k">using</span><span class="w"> </span><span class="n">Array2DR8</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">R8</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
-<span class="k">using</span><span class="w"> </span><span class="n">Array2DReal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">Real</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">memDevice</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
-<span class="c1">// continue this pattern for higher-dimensional arrays</span>
-<span class="c1">// Also need similar aliases for arrays on the host</span>
-<span class="k">using</span><span class="w"> </span><span class="n">ArrayHost1DI4</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">YAKL</span><span class="o">::</span><span class="n">Array</span><span class="o">&lt;</span><span class="n">I4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">memHost</span><span class="p">,</span><span class="n">styleC</span><span class="o">&gt;</span>
-<span class="c1">// replicated as above for each type, dimension</span>
+<span class="cp">#define MAKE_OMEGA_VIEW_DIMS(N, V, T, ML, MS)  \</span>
+<span class="cp">   using N##1D##T = Kokkos::V&lt;T *, ML, MS&gt;;    \</span>
+<span class="cp">   using N##2D##T = Kokkos::V&lt;T **, ML, MS&gt;;   \</span>
+<span class="cp">   using N##3D##T = Kokkos::V&lt;T ***, ML, MS&gt;;  \</span>
+<span class="cp">   using N##4D##T = Kokkos::V&lt;T ****, ML, MS&gt;; \</span>
+<span class="cp">   using N##5D##T = Kokkos::V&lt;T *****, ML, MS&gt;;</span>
+
+<span class="cp">#define MAKE_OMEGA_VIEW_TYPES(N, V, ML, MS) \</span>
+<span class="cp">   MAKE_OMEGA_VIEW_DIMS(N, V, I4, ML, MS)   \</span>
+<span class="cp">   MAKE_OMEGA_VIEW_DIMS(N, V, I8, ML, MS)   \</span>
+<span class="cp">   MAKE_OMEGA_VIEW_DIMS(N, V, R4, ML, MS)   \</span>
+<span class="cp">   MAKE_OMEGA_VIEW_DIMS(N, V, R8, ML, MS)   \</span>
+<span class="cp">   MAKE_OMEGA_VIEW_DIMS(N, V, Real, ML, MS)</span>
+
+<span class="c1">// Aliases for Kokkos device arrays of various dimensions and types</span>
+<span class="n">MAKE_OMEGA_VIEW_TYPES</span><span class="p">(</span><span class="n">Array</span><span class="p">,</span><span class="w"> </span><span class="n">View</span><span class="p">,</span><span class="w"> </span><span class="n">MemLayout</span><span class="p">,</span><span class="w"> </span><span class="n">MemSpace</span><span class="p">)</span>
+
+<span class="c1">// Aliases for Kokkos host arrays of various dimensions and types</span>
+<span class="n">MAKE_OMEGA_VIEW_TYPES</span><span class="p">(</span><span class="n">HostArray</span><span class="p">,</span><span class="w"> </span><span class="n">View</span><span class="p">,</span><span class="w"> </span><span class="n">HostMemLayout</span><span class="p">,</span><span class="w"> </span><span class="n">HostMemSpace</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -285,11 +290,11 @@ verify size is as expected using sizeof</p>
 <li><p>tests requirement 2.1</p></li>
 </ul>
 </section>
-<section id="yakl-array-test">
-<h3>5.3 YAKL array test<a class="headerlink" href="#yakl-array-test" title="Permalink to this heading"></a></h3>
-<p>Create YAKL arrays of each type on device. Create host arrays to
-mirror each. Initialize YAKL arrays on device and copy to host
-using YAKL. Create a non-YAKL array on host initialized the same
+<section id="kokkos-array-test">
+<h3>5.3 Kokkos array test<a class="headerlink" href="#kokkos-array-test" title="Permalink to this heading"></a></h3>
+<p>Create Kokkos arrays of each type on device. Create host arrays to
+mirror each. Initialize Kokkos arrays on device and copy to host
+using Kokkos. Create a non-Kokkos array on host initialized the same
 way and compare values from each on the host.</p>
 <ul class="simple">
 <li><p>tests requirement 2.2</p></li>

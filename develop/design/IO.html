@@ -75,7 +75,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html">Data Types and Precision</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-kokkos">Arrays and Kokkos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Broadcast.html">Omega Broadcast</a></li>
@@ -110,7 +110,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#requirement-parallel-i-o">2.5 Requirement: parallel I/O</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#requirement-parallel-i-o-tuning">2.6 Requirement: parallel I/O tuning</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#requirement-data-types-and-type-conversion">2.7 Requirement: Data types and type conversion</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#requirement-yakl-arrays-and-host-device-support">2.8 Requirement: YAKL arrays and host/device support</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-kokkos-arrays-and-host-device-support">2.8 Requirement: Kokkos arrays and host/device support</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#requirement-modes-on-file-existence">2.9 Requirement: Modes on file existence</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#desired-asynchronous-i-o">2.10 Desired: Asynchronous I/O</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#desired-file-compression">2.11 Desired: File compression</a></li>
@@ -182,7 +182,7 @@ For performance at high resolution, much of this IO must occur in parallel
 and interact with a high-performance filesystem. We describe here an IO
 layer that provides interfaces to the underlying SCORPIO parallel I/O
 library used in E3SM. It primarily provides a translation layer to
-read/write OMEGA metadata and YAKL arrays. It works together with the
+read/write OMEGA metadata and Kokkos arrays. It works together with the
 OMEGA Metadata and IOStreams capabilities. Users will interact with
 IO primarily through the IOStreams and should not need to access this
 layer directly.</p>
@@ -240,14 +240,14 @@ of those tasks.</p>
 <section id="requirement-data-types-and-type-conversion">
 <h3>2.7 Requirement: Data types and type conversion<a class="headerlink" href="#requirement-data-types-and-type-conversion" title="Permalink to this heading"></a></h3>
 <p>The I/O system must be able to read/write all supported
-data types for metadata and all supported YAKL array types.
+data types for metadata and all supported Kokkos array types.
 In some cases, output files at reduced precision are required
 so an option to convert data to reduced precision is needed.</p>
 </section>
-<section id="requirement-yakl-arrays-and-host-device-support">
-<h3>2.8 Requirement: YAKL arrays and host/device support<a class="headerlink" href="#requirement-yakl-arrays-and-host-device-support" title="Permalink to this heading"></a></h3>
-<p>Distributed data in OMEGA is stored as YAKL array types.
-We must be able to read/write YAKL arrays and be able
+<section id="requirement-kokkos-arrays-and-host-device-support">
+<h3>2.8 Requirement: Kokkos arrays and host/device support<a class="headerlink" href="#requirement-kokkos-arrays-and-host-device-support" title="Permalink to this heading"></a></h3>
+<p>Distributed data in OMEGA is stored as Kokkos array types.
+We must be able to read/write Kokkos arrays and be able
 to move data between host and device as needed.</p>
 </section>
 <section id="requirement-modes-on-file-existence">
@@ -287,7 +287,7 @@ publications.</p>
 parallel I/O library used across E3SM components. The
 I/O interfaces here generally provide wrappers for
 translating internal OMEGA metadata representations and
-YAKL array types to the form required by SCORPIO. OMEGA
+Kokkos array types to the form required by SCORPIO. OMEGA
 users and developers will generally interact with I/O
 through the IO Streams layer that manages all files and
 associated file contents.</p>
@@ -416,7 +416,7 @@ to specify the fields in an IOStream.</p>
 <span class="w">         </span><span class="c1">/// only one of the pointers will be defined based on array type</span>
 <span class="w">         </span><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Array1DI4</span><span class="o">&gt;</span><span class="w"> </span><span class="n">data1DI4</span><span class="p">;</span>
 <span class="w">         </span><span class="p">[</span><span class="n">replicated</span><span class="w"> </span><span class="n">up</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="mi">5</span><span class="n">D</span><span class="w"> </span><span class="n">arrays</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">I4</span><span class="p">,</span><span class="n">I8</span><span class="p">,</span><span class="n">R4</span><span class="p">,</span><span class="n">R8</span><span class="p">]</span>
-<span class="w">         </span><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">ArrayHost1DI4</span><span class="o">&gt;</span><span class="w"> </span><span class="n">dataHost1DI4</span><span class="p">;</span>
+<span class="w">         </span><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">HostArray1DI4</span><span class="o">&gt;</span><span class="w"> </span><span class="n">dataHost1DI4</span><span class="p">;</span>
 <span class="w">         </span><span class="p">[</span><span class="n">replicated</span><span class="w"> </span><span class="n">up</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="mi">5</span><span class="n">D</span><span class="w"> </span><span class="n">arrays</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">I4</span><span class="p">,</span><span class="n">I8</span><span class="p">,</span><span class="n">R4</span><span class="p">,</span><span class="n">R8</span><span class="p">]</span>
 
 

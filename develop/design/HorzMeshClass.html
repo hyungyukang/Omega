@@ -75,7 +75,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html">Data Types and Precision</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-kokkos">Arrays and Kokkos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Broadcast.html">Omega Broadcast</a></li>
@@ -175,7 +175,7 @@
 <span id="omega-design-horz-mesh"></span><h1>Horizontal Mesh<a class="headerlink" href="#horizontal-mesh" title="Permalink to this heading"></a></h1>
 <section id="overview">
 <h2>1 Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
-<p>The mesh class will contain the YAKL arrays which describe the horizontal mesh and are used in the computation of the tendency terms in the discrete governing equations. OMEGA will separate the horizontal mesh variables from the vertical mesh information.</p>
+<p>The mesh class will contain the Kokkos arrays which describe the horizontal mesh and are used in the computation of the tendency terms in the discrete governing equations. OMEGA will separate the horizontal mesh variables from the vertical mesh information.</p>
 </section>
 <section id="requirements">
 <h2>2 Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h2>
@@ -187,12 +187,12 @@
 <h3>2.2 Requirement: Functionality is needed to read the mesh on the host and transfer relevant data to the device for computation<a class="headerlink" href="#requirement-functionality-is-needed-to-read-the-mesh-on-the-host-and-transfer-relevant-data-to-the-device-for-computation" title="Permalink to this heading"></a></h3>
 <p>Not all mesh information is required in computing the tendency terms on the device, e.g. lonCell, latCell, etc.
 However, other arrays will need to be allocated and copied to the device for use in tendency computation.
-The mesh class will explicitly include host and device YAKL arrays for each variable.
+The mesh class will explicitly include host and device Kokkos arrays for each variable.
 A class method will be included to copy the relevant mesh information to the device.</p>
 </section>
 <section id="requirement-zero-based-cell-edge-and-vertex-numbering">
 <h3>2.3 Requirement: Zero-based cell, edge, and vertex numbering<a class="headerlink" href="#requirement-zero-based-cell-edge-and-vertex-numbering" title="Permalink to this heading"></a></h3>
-<p>Although the existing MPAS Mesh spec uses a one-based mesh numbering, zero-based mesh numbering is required to be compatible with the zero-based indexing used for YAKL arrays.</p>
+<p>Although the existing MPAS Mesh spec uses a one-based mesh numbering, zero-based mesh numbering is required to be compatible with the zero-based indexing used for Kokkos arrays.</p>
 </section>
 <section id="requirement-work-with-decomp-class-to-decompose-mesh">
 <h3>2.4 Requirement: Work with Decomp class to decompose mesh<a class="headerlink" href="#requirement-work-with-decomp-class-to-decompose-mesh" title="Permalink to this heading"></a></h3>
@@ -200,7 +200,7 @@ A class method will be included to copy the relevant mesh information to the dev
 </section>
 <section id="requirement-mesh-variables-will-be-associated-with-metadata-to-describe-data">
 <h3>2.5 Requirement: Mesh variables will be associated with metadata to describe data<a class="headerlink" href="#requirement-mesh-variables-will-be-associated-with-metadata-to-describe-data" title="Permalink to this heading"></a></h3>
-<p>Following the Metadata and IO designs, the YAKL arrays for the mesh variables will be associated with information about the represented values.</p>
+<p>Following the Metadata and IO designs, the Kokkos arrays for the mesh variables will be associated with information about the represented values.</p>
 </section>
 <section id="requirement-i-o-to-obtain-mesh-data">
 <h3>2.6 Requirement: I/O to obtain mesh data<a class="headerlink" href="#requirement-i-o-to-obtain-mesh-data" title="Permalink to this heading"></a></h3>
@@ -239,7 +239,7 @@ A checksumming strategy will be implemented to avoid situations where simulation
 </section>
 <section id="class-structs-data-types">
 <h4>4.1.2 Class/structs/data types<a class="headerlink" href="#class-structs-data-types" title="Permalink to this heading"></a></h4>
-<p>The horizontal mesh information will be organized in a class with public YAKL arrays.
+<p>The horizontal mesh information will be organized in a class with public Kokkos arrays.
 Arrays that require a device copy will have a explicit variable.
 Connectivity arrays that are already contained in the Decomp class will be replicated in the horizontal mesh class via pointers.</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">HorzMesh</span><span class="w"> </span><span class="p">{</span>
@@ -247,10 +247,10 @@ Connectivity arrays that are already contained in the Decomp class will be repli
 <span class="k">public</span><span class="o">:</span>
 
 <span class="w">  </span><span class="n">Array1DR8</span><span class="w"> </span><span class="n">AreaCell</span><span class="p">;</span>
-<span class="w">  </span><span class="n">ArrayHost1DR8</span><span class="w"> </span><span class="n">AreaCellH</span><span class="p">;</span>
+<span class="w">  </span><span class="n">HostArray1DR8</span><span class="w"> </span><span class="n">AreaCellH</span><span class="p">;</span>
 
 <span class="w">  </span><span class="n">Array2DI4</span><span class="w"> </span><span class="n">CellsOnCell</span><span class="p">;</span>
-<span class="w">  </span><span class="n">ArrayHost2DI4</span><span class="w"> </span><span class="n">CellsOnCellH</span><span class="p">;</span>
+<span class="w">  </span><span class="n">HostArray2DI4</span><span class="w"> </span><span class="n">CellsOnCellH</span><span class="p">;</span>
 
 <span class="p">}</span>
 </pre></div>
@@ -289,7 +289,7 @@ Connectivity arrays that are already contained in the Decomp class will be repli
 <section id="device-copy-creation">
 <h4>4.2.4 Device copy creation<a class="headerlink" href="#device-copy-creation" title="Permalink to this heading"></a></h4>
 <p>This method will be repsonsible for creating the device copies of the required mesh information on the host. It will be a private method called by the constructor.</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">AreaCell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AreaCellH</span><span class="p">.</span><span class="n">createDeviceCopy</span><span class="p">()</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">AreaCell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">createDeviceMirrorCopy</span><span class="p">(</span><span class="n">AreaCellH</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>

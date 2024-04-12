@@ -75,7 +75,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/BuildDocs.html">Building the Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html">Data Types and Precision</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-yakl">Arrays and YAKL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/DataTypes.html#arrays-and-kokkos">Arrays and Kokkos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Broadcast.html">Omega Broadcast</a></li>
@@ -209,7 +209,7 @@ must be stored internally within OMEGA as static variables.</p>
 </section>
 <section id="requirement-managing-environments">
 <h3>2.4 Requirement: Managing environments<a class="headerlink" href="#requirement-managing-environments" title="Permalink to this heading"></a></h3>
-<p>Initializing and exiting environments like MPI and YAKL must
+<p>Initializing and exiting environments like MPI and Kokkos must
 take place at the driver level (standalone driver or coupled
 model driver) as these environments are shared by other
 components. The finalize method described below must clean up
@@ -229,7 +229,7 @@ is typically the fastest forcing data interval.</p>
 <h3>2.6 Requirement: Finalize method<a class="headerlink" href="#requirement-finalize-method" title="Permalink to this heading"></a></h3>
 <p>The finalize method must provide a graceful exit, checkpointing
 as needed and cleaning up all memory. It must not, however,
-exit the MPI or other shared environments (eg YAKL) per
+exit the MPI or other shared environments (eg Kokkos) per
 requirement 2.4</p>
 </section>
 <section id="requirement-init-method">
@@ -360,7 +360,8 @@ something like the code below (details subject to change during implementation).
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 
 <span class="w">   </span><span class="n">MPI_Init</span><span class="p">();</span><span class="w"> </span><span class="c1">// initialize MPI</span>
-<span class="w">   </span><span class="n">yakl</span><span class="o">::</span><span class="n">init</span><span class="p">();</span><span class="w"> </span><span class="c1">// initialize YAKL</span>
+<span class="w">   </span><span class="n">Kokkos</span><span class="o">::</span><span class="n">init</span><span class="p">();</span><span class="w"> </span><span class="c1">// initialize Kokkos</span>
+<span class="w">   </span><span class="p">{</span>
 
 <span class="w">   </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">State</span><span class="w"> </span><span class="n">CurrState</span><span class="p">;</span>
 <span class="w">   </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">TimeInstant</span><span class="w"> </span><span class="n">CurrTime</span><span class="p">;</span>
@@ -395,9 +396,9 @@ something like the code below (details subject to change during implementation).
 <span class="w">      </span><span class="n">LOG_ERROR</span><span class="p">(</span><span class="s">&quot;OMEGA terminating due to error&quot;</span><span class="p">);</span>
 <span class="w">   </span><span class="p">}</span>
 
-<span class="w">   </span><span class="c1">// Exit various environments</span>
-<span class="w">   </span><span class="n">yakl</span><span class="o">::</span><span class="n">finalize</span><span class="p">();</span>
-<span class="w">   </span><span class="n">MPI</span><span class="o">::</span><span class="n">Finalize</span><span class="p">();</span>
+<span class="w">   </span><span class="p">}</span>
+<span class="w">   </span><span class="n">Kokkos</span><span class="o">::</span><span class="n">finalize</span><span class="p">();</span><span class="w"> </span><span class="c1">// Exit Kokkos</span>
+<span class="w">   </span><span class="n">MPI</span><span class="o">::</span><span class="n">Finalize</span><span class="p">();</span><span class="w"> </span><span class="c1">// Exit MPI</span>
 
 <span class="w">   </span><span class="k">return</span><span class="w"> </span><span class="n">ErrAll</span><span class="p">;</span>
 <span class="p">}</span>

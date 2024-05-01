@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Template: MyClassOrModuleName</title>
+  <title>State</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
@@ -19,12 +19,11 @@
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
         <script src="../_static/sphinx_highlight.js"></script>
-        <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="prev" title="Tracer infrastructure" href="Tracers.html" />
+    <link rel="next" title="TimeManager" href="TimeMgr.html" />
+    <link rel="prev" title="Omega v0: Shallow Water" href="ShallowWaterOmega0.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -106,16 +105,12 @@
 <li class="toctree-l1"><a class="reference internal" href="IOStreams.html">IOStreams</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Reductions.html">Global Reductions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ShallowWaterOmega0.html">Omega v0: Shallow Water</a></li>
-<li class="toctree-l1"><a class="reference internal" href="State.html">State</a></li>
-<li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">TimeManager</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Timers.html">Timers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Tracers.html">Tracer infrastructure</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Template: MyClassOrModuleName</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">State</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">1 Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#requirements">2 Requirements</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#requirement-xxx">2.1 Requirement: xxx</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#requirement-yyy">2.2 Requirement: yyy</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#desired-zzz">2.3 Desired: zzz</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-state-should-register-prognostic-variables-with-iostreams">2.1 Requirement: State should register prognostic variables with IOStreams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-update-timestep">2.2 Requirement: Update timestep</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-can-be-used-as-a-common-data-type-for-tendency-and-provis-variables">2.3 Requirement: Can be used as a common data type for tendency and provis variables</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#algorithmic-formulation">3 Algorithmic Formulation</a></li>
@@ -125,16 +120,25 @@
 <li class="toctree-l4"><a class="reference internal" href="#class-structs-data-types">4.1.2 Class/structs/data types</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#methods">4.2 Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#methods">4.2 Methods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#constructor">4.2.1 Constructor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#destructor">4.2.2 Destructor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#time-level-update">4.2.3 Time level update</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#verification-and-testing">5 Verification and Testing</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#test-xxx">5.1 Test xxx</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#test-yyy">5.2 Test yyy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#test-read">5.1 Test read</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#test-time-level-update">5.2 Test time level update</a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">TimeManager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Timers.html">Timers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Tracers.html">Tracer infrastructure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmegaDesignTemplate.html">Template: MyClassOrModuleName</a></li>
 </ul>
 
         </div>
@@ -151,9 +155,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Template: MyClassOrModuleName</li>
+      <li class="breadcrumb-item active">State</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/design/OmegaDesignTemplate.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/design/State.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -161,80 +165,91 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="template-myclassormodulename">
-<span id="omega-design-my-class"></span><h1>Template: MyClassOrModuleName<a class="headerlink" href="#template-myclassormodulename" title="Permalink to this heading"></a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="state">
+<span id="omega-design-state"></span><h1>State<a class="headerlink" href="#state" title="Permalink to this heading"></a></h1>
 <section id="overview">
 <h2>1 Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
-<p>A short overview of the functionality this provides.</p>
+<p>The state class will provide a container for the prognostic (normal velocity and layer thickness) variables on a subdomain within OMEGA.
+It will have functionality for registering fields with IOStreams and performing time level updates.
+This will also be a data type that can be used for tendency terms and provis variables within the timestepping scheme.</p>
 </section>
 <section id="requirements">
 <h2>2 Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h2>
-<section id="requirement-xxx">
-<h3>2.1 Requirement: xxx<a class="headerlink" href="#requirement-xxx" title="Permalink to this heading"></a></h3>
-<p>State requirement clearly and simply, followed by justification.
-Avoid getting into design or implementation details</p>
+<section id="requirement-state-should-register-prognostic-variables-with-iostreams">
+<h3>2.1 Requirement: State should register prognostic variables with IOStreams<a class="headerlink" href="#requirement-state-should-register-prognostic-variables-with-iostreams" title="Permalink to this heading"></a></h3>
+<p>The state class will have a method to register the progostic variables with IOStreams to provide initial condition input and solution output.</p>
 </section>
-<section id="requirement-yyy">
-<h3>2.2 Requirement: yyy<a class="headerlink" href="#requirement-yyy" title="Permalink to this heading"></a></h3>
-<p>State requirement clearly and simply, followed by justification.
-Avoid getting into design or implementation details</p>
+<section id="requirement-update-timestep">
+<h3>2.2 Requirement: Update timestep<a class="headerlink" href="#requirement-update-timestep" title="Permalink to this heading"></a></h3>
+<p>A method will be responsible for advancing the prognostic variables prior to the beginning of a new timestep.
+The left-most index of the prognostic variables will be a time index, which will facilitate flexibility with timestepping schemes.
+The time level update will include a halo exchange and an exchange of time level.</p>
 </section>
-<section id="desired-zzz">
-<h3>2.3 Desired: zzz<a class="headerlink" href="#desired-zzz" title="Permalink to this heading"></a></h3>
-<p>Clear statement of desired feature and reason for including (e.g. design needs
-to take this into account for future capability).</p>
+<section id="requirement-can-be-used-as-a-common-data-type-for-tendency-and-provis-variables">
+<h3>2.3 Requirement: Can be used as a common data type for tendency and provis variables<a class="headerlink" href="#requirement-can-be-used-as-a-common-data-type-for-tendency-and-provis-variables" title="Permalink to this heading"></a></h3>
+<p>The timestepping scheme will require storage for the tendency terms and the intermediate stage. The state class can also be used to fulfill this need.</p>
 </section>
 </section>
 <section id="algorithmic-formulation">
 <h2>3 Algorithmic Formulation<a class="headerlink" href="#algorithmic-formulation" title="Permalink to this heading"></a></h2>
-<p>Describe any algorithms or point to references that are important for implementation</p>
-<p>You can include math in Latex format like his:</p>
-<div class="math notranslate nohighlight">
-\[\begin{split}
-(a + b)^2  &amp;=  (a + b)(a + b) \\
-           &amp;=  a^2 + 2ab + b^2
-\end{split}\]</div>
+<p>No algorithms are required</p>
 </section>
 <section id="design">
 <h2>4 Design<a class="headerlink" href="#design" title="Permalink to this heading"></a></h2>
-<p>You can include code blocks like this:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="n">var</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">value</span><span class="p">;</span>
-</pre></div>
-</div>
 <section id="data-types-and-parameters">
 <h3>4.1 Data types and parameters<a class="headerlink" href="#data-types-and-parameters" title="Permalink to this heading"></a></h3>
 <section id="parameters">
 <h4>4.1.1 Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading"></a></h4>
-<p>List and define any configuration parameters or public constants.</p>
+<p>No parameters are required.</p>
 </section>
 <section id="class-structs-data-types">
 <h4>4.1.2 Class/structs/data types<a class="headerlink" href="#class-structs-data-types" title="Permalink to this heading"></a></h4>
-<p>Describe any public data types and/or the class definition</p>
+<p>The State class will contain public Kokkos host and device views for the normal velocity and layer thickness variables.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">State</span><span class="p">{</span>
+
+<span class="k">public</span><span class="o">:</span>
+
+<span class="w">  </span><span class="n">Array3DR8</span><span class="w"> </span><span class="n">LayerThickness</span><span class="p">;</span>
+<span class="w">  </span><span class="n">Array3DR8</span><span class="w"> </span><span class="n">NormalVelocity</span><span class="p">;</span>
+
+<span class="p">}</span>
+</pre></div>
+</div>
 </section>
 </section>
 <section id="methods">
 <h3>4.2 Methods<a class="headerlink" href="#methods" title="Permalink to this heading"></a></h3>
-<p>List and describe all public methods and their interfaces (actual code for
-interface that would be in header file). Describe typical use cases.</p>
+<p>There will be a constructor and destructor for the class and several public methods. Some of these methods are only applicable to the prognostic state and not to the tendency and provis contexts.</p>
+<section id="constructor">
+<h4>4.2.1 Constructor<a class="headerlink" href="#constructor" title="Permalink to this heading"></a></h4>
+<p>The constructor will also be responsible for:</p>
+<ul class="simple">
+<li><p>allocating prognostic variables</p></li>
+<li><p>registering fields and metadata with the I/O infrastructure</p></li>
+</ul>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">State</span><span class="p">(</span><span class="n">Decomp</span><span class="w"> </span><span class="o">*</span><span class="n">DefDecomp</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">TimeLevels</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="destructor">
+<h4>4.2.2 Destructor<a class="headerlink" href="#destructor" title="Permalink to this heading"></a></h4>
+<p>A destructor will be available to release memory.</p>
+</section>
+<section id="time-level-update">
+<h4>4.2.3 Time level update<a class="headerlink" href="#time-level-update" title="Permalink to this heading"></a></h4>
+<p>The time level update method will perform a halo exchange for the prognostic variables and advance the state variables for the next timestep.</p>
+</section>
 </section>
 </section>
 <section id="verification-and-testing">
 <h2>5 Verification and Testing<a class="headerlink" href="#verification-and-testing" title="Permalink to this heading"></a></h2>
-<section id="test-xxx">
-<h3>5.1 Test xxx<a class="headerlink" href="#test-xxx" title="Permalink to this heading"></a></h3>
-<p>Describe test including conditions for pass/fail
-List which requirements it tests:</p>
-<ul class="simple">
-<li><p>tests requirement xxx</p></li>
-</ul>
+<section id="test-read">
+<h3>5.1 Test read<a class="headerlink" href="#test-read" title="Permalink to this heading"></a></h3>
+<p>The sample domain used for the Decomp test will be used to test obtaining the correct local values from the IO infrastructure</p>
 </section>
-<section id="test-yyy">
-<h3>5.2 Test yyy<a class="headerlink" href="#test-yyy" title="Permalink to this heading"></a></h3>
-<p>Describe test including conditions for pass/fail
-List which requirements it tests:</p>
-<ul class="simple">
-<li><p>tests requirement zzz</p></li>
-</ul>
+<section id="test-time-level-update">
+<h3>5.2 Test time level update<a class="headerlink" href="#test-time-level-update" title="Permalink to this heading"></a></h3>
+<p>There will be a test to ensure the time level update functions correctly.</p>
 </section>
 </section>
 </section>
@@ -243,7 +258,8 @@ List which requirements it tests:</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="Tracers.html" class="btn btn-neutral float-left" title="Tracer infrastructure" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ShallowWaterOmega0.html" class="btn btn-neutral float-left" title="Omega v0: Shallow Water" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="TimeMgr.html" class="btn btn-neutral float-right" title="TimeManager" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -148,11 +148,9 @@ file and it’s requirements are described in the
 <p>Within the model, the paradigm should be that a given module will extract
 its configuration from the full configuration as part of the module’s
 initialization and store it in private class or module variables to be used
-later. This is partly for performance reasons. In the current implementation,
-the configuration is read in and owned by the master MPI task and the
-retrieval from the full configuration into module variables involves a
-broadcast to the rest of the tasks. In addition, this paradigm will allow
-the deletion of the configuration at the end of initialization to free memory.</p>
+later. This paradigm keeps variables close to the code that uses them and
+will allow the deletion of the configuration at the end of initialization
+to free memory.</p>
 <p>The configuration is built around the yaml-cpp library. Each configuration
 contains a <code class="docutils literal notranslate"><span class="pre">YAML::Node</span></code> and a name for the configuration.
 Most of the functions below are wrappers around yaml-cpp templated functions.
@@ -215,6 +213,39 @@ written using the write function with a filename supplied as in</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OmegaConfig</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;FileName&quot;</span><span class="p">);</span>
 </pre></div>
 </div>
+<p>In some cases, the variable or group name is not known prior to reading.
+For example, users can define an arbitrary number of IO streams in the
+Config file. In these cases, a module must loop through the entries,
+retrieving the name of each entry. Then the variable or sub-configuration
+can be retrieved by name for further processing. The streams example might
+then look like:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// extract streams sub-configuration from full Omega config</span>
+<span class="n">OMEGA</span><span class="o">::</span><span class="n">Config</span><span class="w"> </span><span class="n">StreamsConfig</span><span class="p">;</span><span class="w"> </span><span class="c1">// creates an empty config for streams</span>
+<span class="n">OmegaConfig</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;Streams&quot;</span><span class="p">,</span><span class="n">StreamsConfig</span><span class="p">);</span>
+
+<span class="c1">// The iterator here is a Config::Iter (we use auto to save space)</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">It</span><span class="o">=</span><span class="n">StreamsConfig</span><span class="o">-&gt;</span><span class="n">begin</span><span class="p">();</span><span class="w"> </span><span class="n">It</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">StreamsConfig</span><span class="o">-&gt;</span><span class="n">end</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">It</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">   </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">NodeName</span><span class="p">;</span>
+<span class="w">   </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Config</span><span class="o">::</span><span class="n">getName</span><span class="p">(</span><span class="n">It</span><span class="p">,</span><span class="w"> </span><span class="n">NodeName</span><span class="p">);</span>
+
+<span class="w">   </span><span class="c1">// Now we can get the specific configuration of each stream by name</span>
+<span class="w">   </span><span class="c1">// and use it to process each stream</span>
+<span class="w">   </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Config</span><span class="w"> </span><span class="n">ThisStreamConfig</span><span class="p">;</span>
+<span class="w">   </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">StreamsConfig</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">NodeName</span><span class="p">,</span><span class="w"> </span><span class="n">ThisStreamConfig</span><span class="p">);</span>
+
+<span class="w">   </span><span class="c1">// Extract info from ThisStreamConfig as needed</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The Config iterator is identical to a <code class="docutils literal notranslate"><span class="pre">YAML::const_iterator</span></code> which in
+turn behaves like the <code class="docutils literal notranslate"><span class="pre">std::map</span></code> iterator and they can be used in a
+similar manner. For example, you can retrive the key and value of a
+YAML map node entry using <code class="docutils literal notranslate"><span class="pre">Iter-&gt;first.as&lt;std::string&gt;()</span></code> (for the key) and
+<code class="docutils literal notranslate"><span class="pre">Iter-&gt;second.as&lt;DataType&gt;()</span></code> (for the value). Generally, the other
+interfaces described in this section are preferred after retrieving the
+name with the getName interface as shown above, but this iterator functionality
+is available if needed when iterating through Configuration entries that
+are not known in advance.</p>
 <p>While the focus is on reading a configuration, a new configuration can be
 built up from scratch by creating an empty Config instance using the
 constructors and adding variables and sub-configurations through the add

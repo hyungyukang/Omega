@@ -65,6 +65,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/IOField.html">IO Fields (IOField)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Halo.html">Halo Exchanges (Halo)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/HorzMesh.html">Horizontal Mesh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/HorzOperators.html">Horizontal Operators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/TimeMgr.html">Time Manager (TimeMgr)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
@@ -79,6 +80,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#building-and-testing-omega">Building and testing Omega</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#polaris-ctest-utility">Polaris CTest Utility</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#building-omega">Building Omega</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#getting-test-meshes">Getting test meshes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#running-ctests">Running CTests</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#debugging-tips">Debugging tips</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#metis-and-parmetis-libraries">Metis and Parmetis libraries</a></li>
@@ -108,6 +110,7 @@
 <li class="toctree-l1"><a class="reference internal" href="IOField.html">IO Fields (IOField)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Halo.html">Halo Exchanges (Halo)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="HorzMesh.html">Horizontal Mesh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HorzOperators.html">Horizontal Operators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">Time Manager (TimeMgr)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
@@ -275,17 +278,29 @@ script that you can run to build Omega:</p>
 </pre></div>
 </div>
 </section>
+<section id="getting-test-meshes">
+<span id="omega-dev-quick-start-getting-meshes"></span><h3>Getting test meshes<a class="headerlink" href="#getting-test-meshes" title="Permalink to this heading"></a></h3>
+<p>Some tests require a valid Omega mesh file. Different tests require different meshes. At the moment, mesh files need
+to be copied or linked to specifically named files under the <code class="docutils literal notranslate"><span class="pre">test</span></code> directory. Appropriate mesh files can be downloaded from:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://web.lcrc.anl.gov/public/e3sm/inputdata/ocn/mpas-o/oQU240/ocean.QU.240km.151209.nc">Ocean Mesh</a></p></li>
+<li><p><a class="reference external" href="https://web.lcrc.anl.gov/public/e3sm/polaris/ocean/polaris_cache/global_convergence/icos/cosine_bell/Icos480/init/initial_state.230220.nc">Global Mesh</a></p></li>
+<li><p><a class="reference external" href="https://gist.github.com/mwarusz/f8caf260398dbe140d2102ec46a41268/raw/e3c29afbadc835797604369114321d93fd69886d/PlanarPeriodic48x48.nc">Planar Mesh</a></p></li>
+</ul>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>wget<span class="w"> </span>-O<span class="w"> </span>ocean_test_mesh.nc<span class="w"> </span>https://web.lcrc.anl.gov/public/e3sm/inputdata/ocn/mpas-o/oQU240/ocean.QU.240km.151209.nc
+wget<span class="w"> </span>-O<span class="w"> </span>global_test_mesh.nc<span class="w"> </span>https://web.lcrc.anl.gov/public/e3sm/polaris/ocean/polaris_cache/global_convergence/icos/cosine_bell/Icos480/init/initial_state.230220.nc
+wget<span class="w"> </span>-O<span class="w"> </span>planar_test_mesh.nc<span class="w"> </span>https://gist.github.com/mwarusz/f8caf260398dbe140d2102ec46a41268/raw/e3c29afbadc835797604369114321d93fd69886d/PlanarPeriodic48x48.nc
+ln<span class="w"> </span>-sf<span class="w">  </span>ocean_test_mesh.nc<span class="w"> </span>test/OmegaMesh.nc
+ln<span class="w"> </span>-sf<span class="w">  </span>global_test_mesh.nc<span class="w"> </span>test/OmegaSphereMesh.nc
+ln<span class="w"> </span>-sf<span class="w">  </span>planar_test_mesh.nc<span class="w"> </span>test/OmegaPlanarMesh.nc
+</pre></div>
+</div>
+</section>
 <section id="running-ctests">
 <h3>Running CTests<a class="headerlink" href="#running-ctests" title="Permalink to this heading"></a></h3>
 <p>Omega includes several unit tests that run through CTest.  These need to be
-run on a compute node.  Some tests also require a valid Omega mesh file
-called <code class="docutils literal notranslate"><span class="pre">test/OmegaMesh.nc</span></code>.  An appropriate mesh file can be downloaded from
-<a class="reference external" href="https://web.lcrc.anl.gov/public/e3sm/polaris/ocean/omega_ctest/ocean.QU.240km.151209.nc">mesh.230220.nc</a>.</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>wget<span class="w"> </span>https://web.lcrc.anl.gov/public/e3sm/polaris/ocean/omega_ctest/ocean.QU.240km.151209.nc
-mv<span class="w"> </span>ocean.QU.240km.151209.nc<span class="w"> </span>test/OmegaMesh.nc
-</pre></div>
-</div>
-<p>Then, run the tests:</p>
+run on a compute node.</p>
+<p>To run the tests:</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>./omega_ctest.sh
 </pre></div>
 </div>

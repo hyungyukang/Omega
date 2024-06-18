@@ -17,7 +17,16 @@ CurlOnVertex::CurlOnVertex(HorzMesh const *Mesh)
       DcEdge(Mesh->DcEdge), AreaTriangle(Mesh->AreaTriangle),
       EdgeSignOnVertex(Mesh->EdgeSignOnVertex) {}
 
+CurlOnVertex2D::CurlOnVertex2D(HorzMesh const *Mesh)
+    : VertexDegree(Mesh->VertexDegree), EdgesOnVertex(Mesh->EdgesOnVertex),
+      DcEdge(Mesh->DcEdge), AreaTriangle(Mesh->AreaTriangle),
+      EdgeSignOnVertex(Mesh->EdgeSignOnVertex) {}
+
 TangentialReconOnEdge::TangentialReconOnEdge(HorzMesh const *Mesh)
+    : NEdgesOnEdge(Mesh->NEdgesOnEdge), EdgesOnEdge(Mesh->EdgesOnEdge),
+      WeightsOnEdge(Mesh->WeightsOnEdge) {}
+
+TangentialReconOnEdge2D::TangentialReconOnEdge2D(HorzMesh const *Mesh)
     : NEdgesOnEdge(Mesh->NEdgesOnEdge), EdgesOnEdge(Mesh->EdgesOnEdge),
       WeightsOnEdge(Mesh->WeightsOnEdge) {}
 

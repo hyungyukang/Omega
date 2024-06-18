@@ -33,15 +33,16 @@ target_link_libraries(
     yaml-cpp
     parmetis
     metis
+    gklib
 )
 
-if(GKlib_FOUND)
-    target_link_libraries(
-        OmegaLibFlags
-        PUBLIC
-        gklib
-    )
-endif()
+#if(GKlib_FOUND)
+#    target_link_libraries(
+#        OmegaLibFlags
+#        PUBLIC
+#        gklib
+#    )
+#endif()
 
 # Add source files for the library
 file(GLOB _LIBSRC_FILES infra/*.cpp base/*.cpp ocn/*.cpp)
@@ -69,8 +70,21 @@ if(OMEGA_BUILD_EXECUTABLE)
     PRIVATE
     ${OMEGA_LIB_NAME}
     OmegaLibFlags
-  )
+)
 
-  set_target_properties(${OMEGA_EXE_NAME} PROPERTIES LINKER_LANGUAGE C)
+  set(EXESRC_FILES
+    ocn/ShallowWaterMain.cpp
+  )
+   # ocn/sw_model.cpp
+
+  # Create the executable target
+  add_executable(${OMEGA_SW_EXE_NAME} ${EXESRC_FILES})
+
+  target_link_libraries(
+    ${OMEGA_SW_EXE_NAME}
+    PRIVATE
+    ${OMEGA_LIB_NAME}
+    OmegaLibFlags
+)
 
 endif()

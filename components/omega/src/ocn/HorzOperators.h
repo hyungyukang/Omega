@@ -10,27 +10,16 @@ class DivergenceOnCell {
  public:
    DivergenceOnCell(HorzMesh const *Mesh);
 
-   KOKKOS_FUNCTION void operator()(const Array2DReal &DivCell, int ICell,
-                                   int KChunk,
-                                   const Array2DReal &VecEdge) const {
-      const int KStart       = KChunk * VecLength;
-      const Real InvAreaCell = 1._Real / AreaCell(ICell);
-
-      Real DivCellTmp[VecLength] = {0};
-
+   KOKKOS_FUNCTION Real operator()(int ICell,
+                                   const Array1DReal &VecEdge) const {
+      Real DivCell = 0;
       for (int J = 0; J < NEdgesOnCell(ICell); ++J) {
          const int JEdge = EdgesOnCell(ICell, J);
-         for (int KVec = 0; KVec < VecLength; ++KVec) {
-            const int K = KStart + KVec;
-            DivCellTmp[KVec] -= DvEdge(JEdge) * EdgeSignOnCell(ICell, J) *
-                                VecEdge(JEdge, K) * InvAreaCell;
-         }
+         DivCell -= DvEdge(JEdge) * EdgeSignOnCell(ICell, J) * VecEdge(JEdge);
       }
-
-      for (int KVec = 0; KVec < VecLength; ++KVec) {
-         const int K       = KStart + KVec;
-         DivCell(ICell, K) = DivCellTmp[KVec];
-      }
+      const Real InvAreaCell = 1. / AreaCell(ICell);
+      DivCell *= InvAreaCell;
+      return DivCell;
    }
 
  private:
@@ -45,19 +34,14 @@ class GradientOnEdge {
  public:
    GradientOnEdge(HorzMesh const *Mesh);
 
-   KOKKOS_FUNCTION void operator()(const Array2DReal &GradEdge, int IEdge,
-                                   int KChunk,
-                                   const Array2DReal &ScalarCell) const {
-      const int KStart     = KChunk * VecLength;
-      const Real InvDcEdge = 1._Real / DcEdge(IEdge);
+   KOKKOS_FUNCTION Real operator()(int IEdge,
+                                   const Array1DReal &ScalarCell) const {
       const auto JCell0    = CellsOnEdge(IEdge, 0);
       const auto JCell1    = CellsOnEdge(IEdge, 1);
-
-      for (int KVec = 0; KVec < VecLength; ++KVec) {
-         const int K = KStart + KVec;
-         GradEdge(IEdge, K) =
-             InvDcEdge * (ScalarCell(JCell1, K) - ScalarCell(JCell0, K));
-      }
+      const Real InvDcEdge = 1. / DcEdge(IEdge);
+      const Real GradEdge =
+          InvDcEdge * (ScalarCell(JCell1) - ScalarCell(JCell0));
+      return GradEdge;
    }
 
  private:
@@ -69,28 +53,42 @@ class CurlOnVertex {
  public:
    CurlOnVertex(HorzMesh const *Mesh);
 
-   KOKKOS_FUNCTION void operator()(const Array2DReal &CurlVertex, int IVertex,
-                                   int KChunk,
-                                   const Array2DReal &VecEdge) const {
-      const int KStart           = KChunk * VecLength;
-      const Real InvAreaTriangle = 1._Real / AreaTriangle(IVertex);
-
-      Real CurlVertexTmp[VecLength] = {0};
-
+   KOKKOS_FUNCTION Real operator()(int IVertex,
+                                   const Array1DReal &VecEdge) const {
+      Real CurlVertex = 0;
       for (int J = 0; J < VertexDegree; ++J) {
          const int JEdge = EdgesOnVertex(IVertex, J);
-         for (int KVec = 0; KVec < VecLength; ++KVec) {
-            const int K = KStart + KVec;
-            CurlVertexTmp[KVec] += DcEdge(JEdge) *
-                                   EdgeSignOnVertex(IVertex, J) *
-                                   VecEdge(JEdge, K) * InvAreaTriangle;
-         }
+         CurlVertex +=
+             DcEdge(JEdge) * EdgeSignOnVertex(IVertex, J) * VecEdge(JEdge);
       }
+      const Real InvAreaTriangle = 1. / AreaTriangle(IVertex);
+      CurlVertex *= InvAreaTriangle;
+      return CurlVertex;
+   }
 
-      for (int KVec = 0; KVec < VecLength; ++KVec) {
-         const int K            = KStart + KVec;
-         CurlVertex(IVertex, K) = CurlVertexTmp[KVec];
+ private:
+   I4 VertexDegree;
+   Array2DI4 EdgesOnVertex;
+   Array1DR8 DcEdge;
+   Array1DR8 AreaTriangle;
+   Array2DR8 EdgeSignOnVertex;
+};
+
+class CurlOnVertex2D {
+ public:
+   CurlOnVertex2D(HorzMesh const *Mesh);
+
+   KOKKOS_FUNCTION Real operator()(int IVertex, int KLevel,
+                                   const Array2DReal &VecEdge) const {
+      Real CurlVertex = 0;
+      for (int J = 0; J < VertexDegree; ++J) {
+         const int JEdge = EdgesOnVertex(IVertex, J);
+         CurlVertex +=
+             DcEdge(JEdge) * EdgeSignOnVertex(IVertex, J) * VecEdge(JEdge,KLevel);
       }
+      const Real InvAreaTriangle = 1. / AreaTriangle(IVertex);
+      CurlVertex *= InvAreaTriangle;
+      return CurlVertex;
    }
 
  private:
@@ -105,25 +103,34 @@ class TangentialReconOnEdge {
  public:
    TangentialReconOnEdge(HorzMesh const *Mesh);
 
-   KOKKOS_FUNCTION void operator()(const Array2DReal &ReconEdge, int IEdge,
-                                   int KChunk,
-                                   const Array2DReal &VecEdge) const {
-      const int KStart = KChunk * VecLength;
-
-      Real ReconEdgeTmp[VecLength] = {0};
-
+   KOKKOS_FUNCTION Real operator()(int IEdge,
+                                   const Array1DReal &VecEdge) const {
+      Real ReconEdge = 0;
       for (int J = 0; J < NEdgesOnEdge(IEdge); ++J) {
          const int JEdge = EdgesOnEdge(IEdge, J);
-         for (int KVec = 0; KVec < VecLength; ++KVec) {
-            const int K = KStart + KVec;
-            ReconEdgeTmp[KVec] += WeightsOnEdge(IEdge, J) * VecEdge(JEdge, K);
-         }
+         ReconEdge += WeightsOnEdge(IEdge, J) * VecEdge(JEdge);
       }
+      return ReconEdge;
+   }
 
-      for (int KVec = 0; KVec < VecLength; ++KVec) {
-         const int K         = KStart + KVec;
-         ReconEdge(IEdge, K) = ReconEdgeTmp[KVec];
+ private:
+   Array1DI4 NEdgesOnEdge;
+   Array2DI4 EdgesOnEdge;
+   Array2DR8 WeightsOnEdge;
+};
+
+class TangentialReconOnEdge2D {
+ public:
+   TangentialReconOnEdge2D(HorzMesh const *Mesh);
+
+   KOKKOS_FUNCTION Real operator()(int IEdge, int KLevel,
+                                   const Array2DReal &VecEdge) const {
+      Real ReconEdge = 0;
+      for (int J = 0; J < NEdgesOnEdge(IEdge); ++J) {
+         const int JEdge = EdgesOnEdge(IEdge, J);
+         ReconEdge += WeightsOnEdge(IEdge, J) * VecEdge(JEdge,KLevel);
       }
+      return ReconEdge;
    }
 
  private:

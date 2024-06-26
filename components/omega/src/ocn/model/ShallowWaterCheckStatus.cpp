@@ -22,15 +22,20 @@ sw_check_status(const int printInterval, R8 t, const R8 dt, int Comm,
    // Check current status
    //-----------------------------------------------------------------------------------/
 
+   // If this test is using manufactured solutions
+   if ( ManufacturedSolution ) {
+      sw_manufactured_solution(TestCase, t, Mesh, State);
+   }
+
    int ErrSWVelError = 0;
    ErrorMeasures SWVelError;
    ErrSWVelError += computeErrors(SWVelError, State->NormalVelocity[0],
-                        NormalVelocityInit, Mesh, OnEdge, NVertLevels);
+                                  NormalVelocitySolution, Mesh, OnEdge, NVertLevels);
 
    int ErrSWThickError = 0;
    ErrorMeasures SWThickError;
    ErrSWThickError += computeErrors(SWThickError, State->LayerThickness[0],
-                        LayerThicknessInit, Mesh, OnCell, NVertLevels);
+                                    LayerThicknessSolution, Mesh, OnCell, NVertLevels);
 
    if ( Env->getMyTask() == 0 ) {
       R8 time_print = (int) (t+dt) % printInterval;

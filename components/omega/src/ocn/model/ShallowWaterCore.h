@@ -34,20 +34,25 @@ public:
    //------------------------------------------------------------------------//
    // All from Config later...
 
-   const R8 dt       = 100.0;     // Time step size (sec)
+   const R8 dt       = 400.0;     // Time step size (sec)
    const R8 initTime = 0.0;       // Model initial time (sec)
    const R8 endTime  = 5*86400;   // Model eEnd time (sec)
 
    const I4 printInterval = 3600; // Time interval of status check
    const I4 nsteps = std::ceil((endTime) / dt); // Number of time steps
 
-   // Time stepper choices
+   // Time stepper choices  ------------/
    const char *time_integrator = "heuns"; // (~RK2)
    //const char *time_integrator = "forward-euler";
    //const char *time_integrator = "forward-backward";
    //const char *time_integrator = "ssp-rk3";
 
-   const int TestCase = 2; // Global steady-state nonlinear flow
+    // Test cases ----------------------/
+   // const int TestCase = 0; // Use initial conditions in input file
+   //const int TestCase = 2; // Global steady-state nonlinear flow
+
+   const int TestCase = 21; // Solid body rotation; ManufacturedSolution = true
+   const bool ManufacturedSolution = true; // true If this test is using manufactured solutions
 
    //------------------------------------------------------------------------//
 
@@ -60,6 +65,10 @@ public:
    // SW initial field create
    void sw_init_field (const int TestCase, const MachEnv *Env, const Halo *Halo, 
                        const HorzMesh *Mesh, OceanState *State);
+
+   // SW manufactured solution
+   void sw_manufactured_solution(const int TestCase, R8 t,
+                                 const HorzMesh *Mesh, OceanState *State);
 
    // SW model core
    void sw_model(int Comm, const MachEnv *Env,const Decomp *DefDecomp, const Halo *DefHalo, 
@@ -101,8 +110,8 @@ public:
 
    //------------------------------------------------------------------------//
    // SW vars
-   Array2DReal LayerThicknessInit;
-   Array2DReal NormalVelocityInit;
+   Array2DReal LayerThicknessSolution;
+   Array2DReal NormalVelocitySolution;
    Array2DReal TotalDepthKECell;
    Array2DReal LayerThicknessEdge;
    Array2DReal ThicknessFlux;

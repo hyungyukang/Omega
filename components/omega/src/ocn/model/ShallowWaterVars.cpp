@@ -31,11 +31,11 @@ sw_init_var(const HorzMesh *Mesh, const OceanState *State) {
 
    // SW arrays
 
-   Array2DReal normalVelocityInit("normaVelocityInit",NEdgesSize,NVertLevels);
-   NormalVelocityInit = normalVelocityInit;
+   Array2DReal normalVelocitySolution("normaVelocitySolution",NEdgesSize,NVertLevels);
+   NormalVelocitySolution = normalVelocitySolution;
 
-   Array2DReal layerThicknessInit("layerThicknessInit", NCellsSize, NVertLevels);
-   LayerThicknessInit = layerThicknessInit;
+   Array2DReal layerThicknessSolution("layerThicknessSolution", NCellsSize, NVertLevels);
+   LayerThicknessSolution = layerThicknessSolution;
 
    Array2DReal totalDepthKECell("totalDepthKECell", NCellsSize, NVertLevels);
    TotalDepthKECell = totalDepthKECell;

@@ -145,7 +145,7 @@ using namespace OMEGA;
 
 int main(int argc, char *argv[]) {
 
-    // Mesh file name <- From Config/YAML later and can be placed anywhere
+    //TODO Mesh file name <- From Config/YAML later and can be placed anywhere
     constexpr char DefMeshFile[] = "OmegaSphereMesh.nc";
    
     OceanDriver OD;

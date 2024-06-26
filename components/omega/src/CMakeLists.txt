@@ -9,6 +9,7 @@ target_include_directories(
     ${OMEGA_SOURCE_DIR}/src/base
     ${OMEGA_SOURCE_DIR}/src/infra
     ${OMEGA_SOURCE_DIR}/src/ocn
+    ${OMEGA_SOURCE_DIR}/src/ocn/model
     ${Parmetis_INCLUDE_DIRS}
 )
 
@@ -45,7 +46,7 @@ target_link_libraries(
 #endif()
 
 # Add source files for the library
-file(GLOB _LIBSRC_FILES infra/*.cpp base/*.cpp ocn/*.cpp)
+file(GLOB _LIBSRC_FILES infra/*.cpp base/*.cpp ocn/*.cpp ocn/model/*.cpp)
 
 add_library(${OMEGA_LIB_NAME} ${_LIBSRC_FILES})
 
@@ -59,7 +60,7 @@ target_link_libraries(
 if(OMEGA_BUILD_EXECUTABLE)
 
   set(EXESRC_FILES
-    drivers/DrvDummy.cpp
+    drivers/OceanDriver.cpp
   )
 
   # Create the executable target
@@ -72,19 +73,5 @@ if(OMEGA_BUILD_EXECUTABLE)
     OmegaLibFlags
 )
 
-  set(EXESRC_FILES
-    ocn/ShallowWaterMain.cpp
-  )
-   # ocn/sw_model.cpp
-
-  # Create the executable target
-  add_executable(${OMEGA_SW_EXE_NAME} ${EXESRC_FILES})
-
-  target_link_libraries(
-    ${OMEGA_SW_EXE_NAME}
-    PRIVATE
-    ${OMEGA_LIB_NAME}
-    OmegaLibFlags
-)
 
 endif()

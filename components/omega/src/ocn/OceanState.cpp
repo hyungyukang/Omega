@@ -110,7 +110,8 @@ OceanState::OceanState(
    finalizeParallelIO();
 
    // Register fields and metadate for IO
-   if (Name != "Default") {
+   //if (Name != "Default") {
+   if (Name == "Default") {
       defineIOFields();
    }
 
@@ -312,38 +313,77 @@ void OceanState::updateTimeLevels() {
 
    int NewLevel = NTimeLevels - 1;
 
-   // Update time levels for layer thickness
+   // Local halo exchange with data staging 
    copyToHost(NewLevel);
+   MeshHalo->exchangeFullArrayHalo(NormalVelocityH[NewLevel], OMEGA::OnEdge);
    MeshHalo->exchangeFullArrayHalo(LayerThicknessH[NewLevel], OMEGA::OnCell);
    copyToDevice(NewLevel);
 
-   Array2DR8 Temp;
-   HostArray2DR8 TempH;
-
-   for (int Level = 0; Level < NTimeLevels - 1; Level++) {
-      Temp                      = LayerThickness[Level + 1];
-      LayerThickness[Level + 1] = LayerThickness[Level];
-      LayerThickness[Level]     = Temp;
-
-      TempH                      = LayerThicknessH[Level + 1];
-      LayerThicknessH[Level + 1] = LayerThicknessH[Level];
-      LayerThicknessH[Level]     = TempH;
-   }
+   Array2DR8 TempV1;
+   HostArray2DR8 TempV2;
 
    // Update time levels for normal velocity
-   copyToHost(NewLevel);
-   MeshHalo->exchangeFullArrayHalo(NormalVelocityH[NewLevel], OMEGA::OnEdge);
-   copyToDevice(NewLevel);
-
    for (int Level = 0; Level < NTimeLevels - 1; Level++) {
-      Temp                      = NormalVelocity[Level + 1];
+      TempV1                    = NormalVelocity[Level + 1];
       NormalVelocity[Level + 1] = NormalVelocity[Level];
-      NormalVelocity[Level]     = Temp;
+      NormalVelocity[Level]     = TempV1;
 
-      TempH                      = NormalVelocityH[Level + 1];
+      TempV2                     = NormalVelocityH[Level + 1];
       NormalVelocityH[Level + 1] = NormalVelocityH[Level];
-      NormalVelocityH[Level]     = TempH;
+      NormalVelocityH[Level]     = TempV2;
    }
+
+   Array2DR8 TempH1;
+   HostArray2DR8 TempH2;
+
+   // Update time levels for layer thickness
+   for (int Level = 0; Level < NTimeLevels - 1; Level++) {
+      TempH1                    = LayerThickness[Level + 1];
+      LayerThickness[Level + 1] = LayerThickness[Level];
+      LayerThickness[Level]     = TempH1;
+
+      TempH2                     = LayerThicknessH[Level + 1];
+      LayerThicknessH[Level + 1] = LayerThicknessH[Level];
+      LayerThicknessH[Level]     = TempH2;
+   }
+
+
+//   // Update time levels for layer thickness
+//   copyToHost(NewLevel);
+//   MeshHalo->exchangeFullArrayHalo(LayerThicknessH[NewLevel], OMEGA::OnCell);
+//   copyToDevice(NewLevel);
+//
+//   Array2DR8 Temp;
+//   HostArray2DR8 TempH;
+//
+//   for (int Level = 0; Level < NTimeLevels - 1; Level++) {
+//      Temp                      = LayerThickness[Level + 1];
+//      LayerThickness[Level + 1] = LayerThickness[Level];
+//      LayerThickness[Level]     = Temp;
+//
+//      TempH                      = LayerThicknessH[Level + 1];
+//      LayerThicknessH[Level + 1] = LayerThicknessH[Level];
+//      LayerThicknessH[Level]     = TempH;
+//   }
+//
+//   // Update time levels for normal velocity
+//   copyToHost(NewLevel);
+//   MeshHalo->exchangeFullArrayHalo(NormalVelocityH[NewLevel], OMEGA::OnEdge);
+//   copyToDevice(NewLevel);
+//
+//   for (int Level = 0; Level < NTimeLevels - 1; Level++) {
+//      Temp                      = NormalVelocity[Level + 1];
+//      NormalVelocity[Level + 1] = NormalVelocity[Level];
+//      NormalVelocity[Level]     = Temp;
+//
+//      TempH                      = NormalVelocityH[Level + 1];
+//      NormalVelocityH[Level + 1] = NormalVelocityH[Level];
+//      NormalVelocityH[Level]     = TempH;
+//   }
+
+
+
+
 
    // Update IOField data associations
    int Err      = 0;

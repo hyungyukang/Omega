@@ -60,7 +60,6 @@ class PotentialVortHAdvOnEdge {
                                    I4 IEdge,
                                    I4 KChunk,
                                    const Array2DR8 &NormRVortEdge,
-                                   //const Array1DR8 &NormFEdge,
                                    const Array2DR8 &NormFEdge,
                                    const Array2DR8 &LayerThickEdge,
                                    const Array2DR8 &NormVelEdge
@@ -73,8 +72,6 @@ class PotentialVortHAdvOnEdge {
          I4 JEdge = EdgesOnEdge(IEdge, J);
          for (int KVec = 0; KVec < VecLength; ++KVec) {
             const I4 K    = KStart + KVec;
-            //Real NormVort = (NormRVortEdge(IEdge, K) + NormFEdge(IEdge) +
-            //                 NormRVortEdge(JEdge, K) + NormFEdge(JEdge)) * 0.5;
 
             Real NormVort = (NormRVortEdge(IEdge, K) + NormFEdge(IEdge, K) +
                              NormRVortEdge(JEdge, K) + NormFEdge(JEdge, K)) * 0.5;
@@ -146,11 +143,12 @@ class SSHGradOnEdge {
       const I4 KStart      = KChunk * VecLength;
       const I4 ICell0      = CellsOnEdge(IEdge, 0);
       const I4 ICell1      = CellsOnEdge(IEdge, 1);
-      const Real InvDcEdge = 1. / DcEdge(IEdge);
+      const Real InvDcEdge = 1._Real / DcEdge(IEdge);
 
       for (int KVec = 0; KVec < VecLength; ++KVec) {
          const I4 K      = KStart + KVec;
-         Tend(IEdge, K) -= Grav * (HCell(ICell1, K) - HCell(ICell0, K)) * InvDcEdge;
+         //Tend(IEdge, K) -= Grav * (HCell(ICell1, K) - HCell(ICell0, K)) * InvDcEdge;
+         Tend(IEdge, K) -= 9.80616_Real * (HCell(ICell1, K) - HCell(ICell0, K)) * InvDcEdge;
       }
 }
 
@@ -188,11 +186,13 @@ class VelocityDiffusionOnEdge {
 
       for (int KVec = 0; KVec < VecLength; ++KVec) {
          const I4 K       = KStart + KVec;
-         const Real Del2U = ((DivCell(ICell1, K) - DivCell(ICell0, K)) * DcEdgeInv -
+         const Real Del2U = (10.0*(DivCell(ICell1, K) - DivCell(ICell0, K)) * DcEdgeInv -
                             (RVortVertex(IVertex1, K) - RVortVertex(IVertex0, K)) 
                             * DvEdgeInv);
 
-         Tend(IEdge, K) += EdgeMask(IEdge, K) * ViscDel2 * MeshScalingDel2(IEdge) *
+         //Tend(IEdge, K) += EdgeMask(IEdge, K) * ViscDel2 * MeshScalingDel2(IEdge) *
+         //Tend(IEdge, K) += ViscDel2 * MeshScalingDel2(IEdge) *
+         Tend(IEdge, K) += 5.0e4* MeshScalingDel2(IEdge) *
                            Del2U;
 
       }

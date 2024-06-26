@@ -340,8 +340,6 @@ class OmegaMachines(Machines):
                                    "omega_build.sh")
         omega_run = os.path.join(os.path.dirname(self.outpath),
                                  "omega_run.sh")
-        omega_run_sw = os.path.join(os.path.dirname(self.outpath),
-                                 "omega_run_sw.sh")
         omega_ctest = os.path.join(os.path.dirname(self.outpath),
                                    "omega_ctest.sh")
 
@@ -381,13 +379,7 @@ class OmegaMachines(Machines):
             f.write("#!/usr/bin/env bash\n\n")
 
             f.write("source ./omega_env.sh\n")
-            f.write("./src/omega.exe 1000\n")
-
-        with open(omega_run_sw, "w") as f:
-            f.write("#!/usr/bin/env bash\n\n")
-
-            f.write("source ./omega_env.sh\n")
-            f.write("srun -n 8 --cpu-bind=cores ./src/omega_sw.exe 1000\n")
+            f.write("srun -n 8 --cpu-bind=cores ./src/omega.exe 1000\n")
 
         with open(omega_ctest, "w") as f:
             f.write("#!/usr/bin/env bash\n\n")
@@ -403,9 +395,6 @@ class OmegaMachines(Machines):
 
         st = os.stat(omega_run)
         os.chmod(omega_run, st.st_mode | stat.S_IEXEC)
-
-        st = os.stat(omega_run_sw)
-        os.chmod(omega_run_sw, st.st_mode | stat.S_IEXEC)
 
         st = os.stat(omega_ctest)
         os.chmod(omega_ctest, st.st_mode | stat.S_IEXEC)

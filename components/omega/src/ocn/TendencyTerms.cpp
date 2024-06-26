@@ -34,7 +34,8 @@ SSHGradOnEdge::SSHGradOnEdge(const HorzMesh *Mesh, Config *Options)
 
 //    Options->get("SSHTendencyEnable", Enabled);
 //    Options->get("Gravity", Grav);
-   Grav = 1._Real;
+   //Grav = 1._Real;
+   Grav = 9.80616_Real;
 }
 
 VelocityDiffusionOnEdge::VelocityDiffusionOnEdge(

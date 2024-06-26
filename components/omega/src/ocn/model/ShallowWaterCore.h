@@ -52,7 +52,7 @@ public:
    //const int TestCase = 2; // Global steady-state nonlinear flow
 
    const int TestCase = 21; // Solid body rotation; ManufacturedSolution = true
-   const bool ManufacturedSolution = true; // true If this test is using manufactured solutions
+   const bool TimeDependentSolution = true; // true If this test is using time-dendent solutions
 
    //------------------------------------------------------------------------//
 
@@ -66,8 +66,8 @@ public:
    void sw_init_field (const int TestCase, const MachEnv *Env, const Halo *Halo, 
                        const HorzMesh *Mesh, OceanState *State);
 
-   // SW manufactured solution
-   void sw_manufactured_solution(const int TestCase, R8 t,
+   // SW time-dependent solution
+   void sw_time_dependent_solution(const int TestCase, R8 t,
                                  const HorzMesh *Mesh, OceanState *State);
 
    // SW model core

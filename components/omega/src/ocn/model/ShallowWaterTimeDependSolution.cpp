@@ -18,8 +18,8 @@ namespace OMEGA {
 //===-----------------------------------------------------------------------===/
 
 void ShallowWaterCore::
-sw_manufactured_solution(const int TestCase, R8 t, 
-                         const HorzMesh *Mesh, OceanState *State) {
+sw_time_dependent_solution(const int TestCase, R8 t, 
+                           const HorzMesh *Mesh, OceanState *State) {
 
    //--------------------------------------------------------------------------/
    // Select test case
@@ -119,10 +119,10 @@ sw_manufactured_solution(const int TestCase, R8 t,
    } else if ( TestCase == 0) {
 
    } else {
-      LOG_ERROR("Invalid choice of TestCase with manufactured solutions \
+      LOG_ERROR("Invalid choice of TestCase with time-dependent solutions \
                  (Choices: 21, 0)"); 
    } // if TestCase
 
-} // sw_manufacturedSolution
+} // sw_time_dependent_solution
 
 } // namespace OMEGA

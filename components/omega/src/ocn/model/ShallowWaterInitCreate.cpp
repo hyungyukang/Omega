@@ -94,11 +94,11 @@ sw_init_field(const int TestCase, const MachEnv *Env, const Halo *Halo,
 
 
    //--------------------------------------------------------------------------/
-   // Solid body rotation - Manufactured solution
+   // Solid body rotation with time-dependent solution
    //--------------------------------------------------------------------------/
    } else if ( TestCase == 21) {
 
-       sw_manufactured_solution(TestCase, 0.0, Mesh, State);
+       sw_time_dependent_solution(TestCase, 0.0, Mesh, State);
 
       //parallelFor(
       //   {Mesh->NCellsAll, NVertLevels}, KOKKOS_LAMBDA(int ICell, int KLevel) {

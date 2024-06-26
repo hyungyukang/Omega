@@ -22,9 +22,9 @@ sw_check_status(const int printInterval, R8 t, const R8 dt, int Comm,
    // Check current status
    //-----------------------------------------------------------------------------------/
 
-   // If this test is using manufactured solutions
-   if ( ManufacturedSolution ) {
-      sw_manufactured_solution(TestCase, t, Mesh, State);
+   // If this test is using time-dependent solutions
+   if ( TimeDependentSolution ) {
+      sw_time_dependent_solution(TestCase, t, Mesh, State);
    }
 
    int ErrSWVelError = 0;

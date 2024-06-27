@@ -92,8 +92,8 @@ sw_tend_vel(int ThickCurTimeLevel, int VelCurTimeLevel, const MachEnv *Env,
    parallelFor(
       {Mesh->NCellsAll, NVertLevels}, KOKKOS_LAMBDA(int ICell, int KLevel) {
          TotalDepthKECell(ICell,KLevel) =
-              (  gravity * State->LayerThickness[ThickCurTimeLevel](ICell,KLevel)
-               + BottomTopography(ICell) ) + KineticAux.KineticEnergyCell(ICell,KLevel);
+            gravity * ( State->LayerThickness[ThickCurTimeLevel](ICell,KLevel)
+            + BottomTopography(ICell) ) + KineticAux.KineticEnergyCell(ICell,KLevel);
       });
 
    // TendencyTerms -----------------------------------------------------------/
@@ -107,6 +107,13 @@ sw_tend_vel(int ThickCurTimeLevel, int VelCurTimeLevel, const MachEnv *Env,
                         LayerThicknessEdge,State->NormalVelocity[VelCurTimeLevel]);
       });
 
+   // KEGradOnEdge
+   KEGradOnEdge KEGradOnE(Mesh, TendConfig);
+   parallelFor(
+      {Mesh->NEdgesAll, NVertLevels}, KOKKOS_LAMBDA(int IEdge, int KLevel) {
+         KEGradOnE(NormalVelocityTend, IEdge, KLevel, TotalDepthKECell);
+      });
+
    // SSHGradOnEdge  --> Computation merged in KEGradOnEdge (TotalDepthKECell)
    //SSHGradOnEdge SSHGradOnE(Mesh, TendConfig);
    //parallelFor(
@@ -115,12 +122,6 @@ sw_tend_vel(int ThickCurTimeLevel, int VelCurTimeLevel, const MachEnv *Env,
    //      //SSHGradOnE(NormalVelocityTend, IEdge, KLevel, TotalDepth);
    //   });
 
-   // KEGradOnEdge
-   KEGradOnEdge KEGradOnE(Mesh, TendConfig);
-   parallelFor(
-      {Mesh->NEdgesAll, NVertLevels}, KOKKOS_LAMBDA(int IEdge, int KLevel) {
-         KEGradOnE(NormalVelocityTend, IEdge, KLevel, TotalDepthKECell);
-      });
    // Del2 velocity
    //VelocityDiffusionOnEdge VelDiffOnE(Mesh, TendConfig);
    //parallelFor(

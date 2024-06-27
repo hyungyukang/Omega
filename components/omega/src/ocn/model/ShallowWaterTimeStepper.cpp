@@ -35,7 +35,7 @@ sw_time_stepper(const std::string &time_integrator, R8 t, const R8 dt, const Mac
       // Normal Velocity tendency at (n) --------------------------------------/
       sw_tend_vel(0, 0, Env, Halo, Mesh, State);
 
-      // State advance to (n+0.5) ---------------------------------------------/
+      // State advance to (n+1) -----------------------------------------------/
       // LayerThickness
       parallelFor(
          {Mesh->NCellsOwned, NVertLevels}, KOKKOS_LAMBDA(int ICell, int KLevel) {
@@ -135,7 +135,6 @@ sw_time_stepper(const std::string &time_integrator, R8 t, const R8 dt, const Mac
       State->updateTimeLevels();
 
 
-
    //===--------------------------------------------------------------------===/
    } else if ( time_integrator == "ssp-rk3" ) {
    //===--------------------------------------------------------------------===/
@@ -204,6 +203,7 @@ sw_time_stepper(const std::string &time_integrator, R8 t, const R8 dt, const Mac
 
       // Update time level ----------------------------------------------------/
       State->updateTimeLevels();
+
 
    //--------------------------------------------------------------------------/
    } else {

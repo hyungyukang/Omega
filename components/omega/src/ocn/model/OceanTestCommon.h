@@ -257,6 +257,19 @@ inline Real maxVal(const Array2DReal &Arr) {
    return MaxVal;
 }
 
+inline Real minVal(const Array2DReal &Arr) {
+   Real MinVal;
+
+   parallelReduce(
+       {Arr.extent_int(0), Arr.extent_int(1)},
+       KOKKOS_LAMBDA(int I, int J, Real &Accum) {
+          Accum = Kokkos::min(Arr(I, J), Accum);
+       },
+       Kokkos::Min<Real>(MinVal));
+
+   return MinVal;
+}
+
 inline Real sum(const Array2DReal &Arr) {
    Real Sum;
 

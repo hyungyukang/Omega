@@ -123,6 +123,8 @@ sw_init_io(const Decomp *DefDecomp, const HorzMesh *Mesh, const OceanState *Stat
                                  CellDims, Mesh->NCellsSize * NVertLevels, OffsetCell,
                                  IO::DefaultRearr);
 
+   
+
    int DimCellID;
    Err = OMEGA::IO::defineDim(OutFileID, "NCells", DefDecomp->NCellsGlobal, DimCellID);
    int CellDimIDs[2] = {DimCellID, DimVertID};
@@ -170,6 +172,12 @@ sw_io_write(const Decomp *DefDecomp, const HorzMesh *Mesh, const OceanState *Sta
 //         State->NormalVelocity[1](IEdge,KLevel) = 0.0;
 //
 //      });
+
+   // Save total depth ( H = h + b )
+   parallelFor(
+      {Mesh->NCellsAll, NVertLevels}, KOKKOS_LAMBDA(int ICell, int KLevel) {
+         State->LayerThicknessH[0](ICell,KLevel) = State->LayerThicknessH[0](ICell,KLevel)+BottomTopography(ICell);
+       });   
 
    int ErrWriteVel   = IO::writeArray(State->NormalVelocity[0].data(), Mesh->NEdgesSize * NVertLevels,
                                       &FillR8, OutFileID, DecompEdgeR8, NormalVelocityID);

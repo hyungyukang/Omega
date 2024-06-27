@@ -1,3 +1,6 @@
+#ifndef OMEGA_OCEANDRIVER_H
+#define OMEGA_OCEANDRIVER_H
+
 //===-----------------------------------------------------------------------===/
 
 #include "Config.h"
@@ -63,3 +66,4 @@ public:
 }; // class OmegaDriver
 
 } // namespace OMEGA
+#endif

@@ -18,17 +18,11 @@ namespace OMEGA {
 //===-----------------------------------------------------------------------===/
 
 void ShallowWaterCore::
-sw_time_dependent_solution(const int TestCase, R8 t, 
+sw_time_dependent_solution(const int TestCase, R8 curTime, 
                            const HorzMesh *Mesh, OceanState *State) {
 
    //--------------------------------------------------------------------------/
-   // Select test case
-
-   //const int TestCase = 2;
-   //--------------------------------------------------------------------------/
-
-   //--------------------------------------------------------------------------/
-   // Test case 21: Solid body rotation
+   // Test case 21: Solid body rotation with time-dependent solutions
    //--------------------------------------------------------------------------/
 
    if ( TestCase == 21 ) {
@@ -36,10 +30,19 @@ sw_time_dependent_solution(const int TestCase, R8 t,
       const R8 u0    = 2.0 * pii * Rearth / (12.0 * 86400);
       const R8 alpha = 0.0;
       const R8 k1 = 133681;
-      const R8 omegaT = omega * t;
+      const R8 omegaT = omega * curTime;
 
       Array2DR8 uZonal("uZonal", Mesh->NEdgesSize, NVertLevels);
       Array2DR8 vMerid("vMerid", Mesh->NEdgesSize, NVertLevels);
+
+      // Bottom topography
+      if ( curTime == 0 ) {
+         parallelFor(
+            {Mesh->NCellsAll}, KOKKOS_LAMBDA(int ICell) {
+            const R8 sinLat2 = pow(sin(Mesh->LatCellH(ICell)),2);
+            BottomTopography(ICell) = Rearth * omega * sinLat2 / (2.0*gravity);
+         });
+      }
 
       parallelFor(
          {Mesh->NEdgesAll, NVertLevels}, KOKKOS_LAMBDA(int IEdge, int KLevel) {
@@ -75,12 +78,13 @@ sw_time_dependent_solution(const int TestCase, R8 t,
             const R8 gh = -0.5 * htemp1s + 0.5 * ROSinLats + k1;
             const R8 height = gh / gravity;
 
-            if ( t == 0.0 ) {
-               State->LayerThicknessH[0](ICell,KLevel) = height;
-               State->LayerThicknessH[1](ICell,KLevel) = height;
+            // Thickness = Total depth - BottomTopo
+            if ( curTime == 0.0 ) {
+               State->LayerThicknessH[0](ICell,KLevel) = height-BottomTopography(ICell);
+               State->LayerThicknessH[1](ICell,KLevel) = height-BottomTopography(ICell);
             }
 
-            LayerThicknessSolution(ICell,KLevel) = height;
+            LayerThicknessSolution(ICell,KLevel) = height-BottomTopography(ICell);
           });
 
       // uZonal & vMerid -> NormalVelocity
@@ -90,7 +94,7 @@ sw_time_dependent_solution(const int TestCase, R8 t,
             const R8 meridNormalComp = sin(Mesh->AngleEdge(IEdge))*vMerid(IEdge,KLevel);
             const R8 normalComp      = zonalNormalComp + meridNormalComp;
 
-            if ( t == 0.0 ) {
+            if ( curTime == 0.0 ) {
                State->NormalVelocityH[0](IEdge,KLevel) = normalComp;
                State->NormalVelocityH[1](IEdge,KLevel) = normalComp;
             }
@@ -98,20 +102,14 @@ sw_time_dependent_solution(const int TestCase, R8 t,
             NormalVelocitySolution(IEdge,KLevel) = normalComp;
          });
 
-      // Bottom topography
-      if ( t == 0 ) {
-         parallelFor(
-            {Mesh->NCellsAll}, KOKKOS_LAMBDA(int ICell) {
-            const R8 sinLat2 = pow(sin(Mesh->LatCellH(ICell)),2);
-            BottomTopography(ICell) = Rearth * omega * sinLat2 / (2.0*gravity);
-         });
-   
+      if ( curTime == 0 ) {
          State->NormalVelocity[0] = createDeviceMirrorCopy(State->NormalVelocityH[0]);
          State->NormalVelocity[1] = createDeviceMirrorCopy(State->NormalVelocityH[1]);
          State->LayerThickness[0] = createDeviceMirrorCopy(State->LayerThicknessH[0]);
          State->LayerThickness[1] = createDeviceMirrorCopy(State->LayerThicknessH[1]);
          BottomTopography         = createDeviceMirrorCopy(BottomTopography);
       }
+
 
    //--------------------------------------------------------------------------/
    // Use initial condition from the input file

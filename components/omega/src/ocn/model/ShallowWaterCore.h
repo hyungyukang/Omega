@@ -1,5 +1,6 @@
-//===--   -----------------------------*- C++ -*-===/
-//
+#ifndef OMEGA_SHALLOWWATERCORE_H
+#define OMEGA_SHALLOWWATERCORE_H
+
 //===-----------------------------------------------------------------------===/
 
 #include "Config.h"
@@ -34,7 +35,7 @@ public:
    //------------------------------------------------------------------------//
    // All from Config later...
 
-   const R8 dt       = 400.0;     // Time step size (sec)
+   const R8 dt       = 100.0;     // Time step size (sec)
    const R8 initTime = 0.0;       // Model initial time (sec)
    const R8 endTime  = 5*86400;   // Model eEnd time (sec)
 
@@ -42,17 +43,21 @@ public:
    const I4 nsteps = std::ceil((endTime) / dt); // Number of time steps
 
    // Time stepper choices  ------------/
-   const char *time_integrator = "heuns"; // (~RK2)
+   //const char *time_integrator = "heuns"; // (~RK2)
    //const char *time_integrator = "forward-euler";
-   //const char *time_integrator = "forward-backward";
+   const char *time_integrator = "forward-backward";
    //const char *time_integrator = "ssp-rk3";
 
     // Test cases ----------------------/
-   // const int TestCase = 0; // Use initial conditions in input file
-   //const int TestCase = 2; // Global steady-state nonlinear flow
+      // Stationary time solutions
+   const bool TimeDependentSolution = false; // true If this test is using time-dendent solutions
+   //const int TestCase = 0; // Use initial conditions in input file
+   const int TestCase = 2; // Global steady-state nonlinear flow
+   //const int TestCase = 5; // Zonal flow over an isolated moutain
 
-   const int TestCase = 21; // Solid body rotation; ManufacturedSolution = true
-   const bool TimeDependentSolution = true; // true If this test is using time-dendent solutions
+      // Time-dependent solution
+   //const bool TimeDependentSolution = true; // true If this test is using time-dendent solutions
+   //const int TestCase = 21; // Solid body rotation; time-dependent solution = true
 
    //------------------------------------------------------------------------//
 
@@ -121,7 +126,6 @@ public:
 
    Array1DReal BottomTopography;
 
-
    //------------------------------------------------------------------------//
    // IO-related vars
 
@@ -135,3 +139,4 @@ public:
 }; // class ShallowWaterCore
 
 } // namespace OMEGA
+#endif

@@ -24,7 +24,7 @@ sw_check_status(const int printInterval, R8 t, const R8 dt, int Comm,
 
    // If this test is using time-dependent solutions
    if ( TimeDependentSolution ) {
-      sw_time_dependent_solution(TestCase, t, Mesh, State);
+      sw_time_dependent_solution(TestCase, t+dt, Mesh, State);
    }
 
    int ErrSWVelError = 0;
@@ -47,8 +47,8 @@ sw_check_status(const int printInterval, R8 t, const R8 dt, int Comm,
       }
    }
 
-//   maxNormVelLocal = maxVal(State->NormalVelocity[0]);
-//   maxLayThickLocal= maxVal(State->LayerThickness[0]);
+//   R8 maxNormVelLocal = maxVal(State->NormalVelocity[0]);
+//   R8 maxLayThickLocal= maxVal(State->LayerThickness[0]);
 //
 //   Real maxNormVel, maxLayThick;
 //
@@ -56,11 +56,11 @@ sw_check_status(const int printInterval, R8 t, const R8 dt, int Comm,
 //   int ErrMaxThick = MPI_Allreduce(&maxLayThickLocal,&maxLayThick,1,MPI_RealKind,MPI_MAX, Comm);
 //
 //   if ( Env->getMyTask() == 0 ) {
-//      R8 time_print = (int)t % 3600;
+//      R8 time_print = (int)(t+dt) % 3600;
 //      if ( time_print == 0 ) {
-//         LOG_INFO("sw_timeStepper:: current Time = {}", t);
-//         LOG_INFO("sw_timeStepper:: after Max. NormalVelocity = {}", maxNormVel);
-//         LOG_INFO("sw_timeStepper:: after Max. LayerThickness = {}", maxLayThick);
+//         LOG_INFO("sw_timeStepper:: current Time = {}", t+dt);
+//         LOG_INFO("sw_timeStepper:: after Min. NormalVelocity = {}", maxNormVel);
+//         LOG_INFO("sw_timeStepper:: after Min. LayerThickness = {}", maxLayThick);
 //      }
 //   }
 

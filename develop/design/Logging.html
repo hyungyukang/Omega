@@ -283,15 +283,21 @@ additional E3SM and Omega specific requirements must be addressed.</p>
 <h4>4.1.1 Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading"></a></h4>
 <p>The software design will implement a global switch for setting the minimum log
 severity and message format using predefined global C++ defines. The severity
-level can be set at compile-time using <code class="docutils literal notranslate"><span class="pre">-D</span> <span class="pre">LOG_LEVEL=&lt;level&gt;</span></code>, where <code class="docutils literal notranslate"><span class="pre">&lt;level&gt;</span></code>
+level can be set at compile-time using <code class="docutils literal notranslate"><span class="pre">-D</span> <span class="pre">OMEGA_LOG_LEVEL=&lt;level&gt;</span></code>, where <code class="docutils literal notranslate"><span class="pre">&lt;level&gt;</span></code>
 can be one of the predefined levels: <code class="docutils literal notranslate"><span class="pre">TRACE</span></code>, <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code>, <code class="docutils literal notranslate"><span class="pre">INFO</span></code>, <code class="docutils literal notranslate"><span class="pre">WARN</span></code>, <code class="docutils literal notranslate"><span class="pre">ERROR</span></code>,
 or <code class="docutils literal notranslate"><span class="pre">CRITICAL</span></code>, where the severity increases from <code class="docutils literal notranslate"><span class="pre">TRACE</span></code> to <code class="docutils literal notranslate"><span class="pre">CRITICAL</span></code>. Log
 messages that have severity equal to or higher than the specified level will be
 stored in the log destination.</p>
-<p>Furthermore, the message format can be set using <code class="docutils literal notranslate"><span class="pre">-D</span> <span class="pre">LOG_PATTERN=&lt;pattern&gt;</span></code> at
+<p>Furthermore, the message format can be set using <code class="docutils literal notranslate"><span class="pre">-D</span> <span class="pre">OMEGA_LOG_PATTERN=&lt;pattern&gt;</span></code> at
 compile time, where <code class="docutils literal notranslate"><span class="pre">&lt;pattern&gt;</span></code> represents a format in the form of <code class="docutils literal notranslate"><span class="pre">%flag</span></code>,
 similar to the strftime function. This pattern defines the layout of the log
 message.</p>
+<p>Users can control which MPI ranks generate log files using
+<code class="docutils literal notranslate"><span class="pre">-D</span> <span class="pre">OMEGA_LOG_TASKS=&lt;tasks-pattern&gt;</span></code> at compile time. The <code class="docutils literal notranslate"><span class="pre">&lt;tasks-pattern&gt;</span></code> is
+either all for all tasks to generate log files, or comma-separated MPI rank
+numbers, or a range of MPI ranks with a dash. For example,
+<code class="docutils literal notranslate"><span class="pre">-D</span> <span class="pre">OMEGA_LOG_TASKS=0,2-3</span></code> indicates that MPI ranks 0, 2, and 3 generate log
+files.</p>
 </section>
 <section id="class-structs-data-types">
 <h4>4.1.2 Class/structs/data types<a class="headerlink" href="#class-structs-data-types" title="Permalink to this heading"></a></h4>
@@ -302,7 +308,7 @@ message.</p>
 <h3>4.2 Methods<a class="headerlink" href="#methods" title="Permalink to this heading"></a></h3>
 <p>The OMEGA logging system includes multiple macros that allow for logging at
 various severity levels. These macros guarantee that log messages with severity
-levels lower than the specified <code class="docutils literal notranslate"><span class="pre">LOG_LEVEL</span></code> will not be compiled.</p>
+levels lower than the specified <code class="docutils literal notranslate"><span class="pre">OMEGA_LOG_LEVEL</span></code> will not be compiled.</p>
 <section id="log-write">
 <h4>4.2.1 Log write<a class="headerlink" href="#log-write" title="Permalink to this heading"></a></h4>
 <p>The OMEGA logging system includes macros that allow the user to write log

@@ -19,7 +19,7 @@ namespace OMEGA {
 
 void ShallowWaterCore::
 sw_init_field(const int TestCase, const MachEnv *Env, const Halo *Halo, 
-              const HorzMesh *Mesh, OceanState *State) {
+              HorzMesh *Mesh, OceanState *State) {
 
    //--------------------------------------------------------------------------/
    // Test case 2: Global steady state nonlinear geostrophic flow
@@ -160,7 +160,14 @@ sw_init_field(const int TestCase, const MachEnv *Env, const Halo *Halo,
    //--------------------------------------------------------------------------/
    } else if ( TestCase == 21) {
 
-       sw_time_dependent_solution(TestCase, 0.0, Mesh, State);
+       sw_time_dependent_solution(TestCase, "init", false, false, 0.0, Mesh, State);
+
+   //--------------------------------------------------------------------------/
+   // Manfactured solution with time-dependent solution
+   //--------------------------------------------------------------------------/
+   } else if ( TestCase == 22) {
+
+       sw_time_dependent_solution(TestCase, "init", true, true,  0.0, Mesh, State);
 
    //--------------------------------------------------------------------------/
    // Use initial condition from the input file

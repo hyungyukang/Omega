@@ -8,8 +8,8 @@ namespace OMEGA {
 //=== Tendency for layer thickness -----------------------------------------===/
 //===-----------------------------------------------------------------------===/
 void ShallowWaterCore::
-sw_tend_thick(int ThickCurTimeLevel, int VelCurTimeLevel, const MachEnv *Env,
-                   const Halo *Halo, const HorzMesh *Mesh, OceanState *State) {
+sw_tend_thick(int ThickCurTimeLevel, int VelCurTimeLevel, const R8 nowTime, const MachEnv *Env,
+                   const Halo *Halo, HorzMesh *Mesh, OceanState *State) {
 
    Config *TendConfig;
 
@@ -44,6 +44,11 @@ sw_tend_thick(int ThickCurTimeLevel, int VelCurTimeLevel, const MachEnv *Env,
       {Mesh->NCellsAll, NVertLevels}, KOKKOS_LAMBDA(int ICell, int KLevel) {
          ThickFluxDivOnC(LayerThicknessTend, ICell, KLevel, ThicknessFlux);
       });
+
+   if ( TestCase == 22 ) {
+      // SourceTerm Thick = true; Vel = false
+      sw_time_dependent_solution(TestCase, "tend", true, false, nowTime, Mesh, State);
+   }
 } // sw_tend_thick
 
 
@@ -51,8 +56,8 @@ sw_tend_thick(int ThickCurTimeLevel, int VelCurTimeLevel, const MachEnv *Env,
 //=== Tendency for normal velocity -----------------------------------------===/
 //===-----------------------------------------------------------------------===/
 void ShallowWaterCore::
-sw_tend_vel(int ThickCurTimeLevel, int VelCurTimeLevel, const MachEnv *Env,
-            const Halo *Halo, const HorzMesh *Mesh, OceanState *State) {
+sw_tend_vel(int ThickCurTimeLevel, int VelCurTimeLevel, const R8 nowTime, const MachEnv *Env,
+            const Halo *Halo, HorzMesh *Mesh, OceanState *State) {
 
    Config *TendConfig;
 
@@ -92,8 +97,10 @@ sw_tend_vel(int ThickCurTimeLevel, int VelCurTimeLevel, const MachEnv *Env,
    parallelFor(
       {Mesh->NCellsAll, NVertLevels}, KOKKOS_LAMBDA(int ICell, int KLevel) {
          TotalDepthKECell(ICell,KLevel) =
-            gravity * ( State->LayerThickness[ThickCurTimeLevel](ICell,KLevel)
-            + BottomTopography(ICell) ) + KineticAux.KineticEnergyCell(ICell,KLevel);
+            gravity * ( State->LayerThickness[ThickCurTimeLevel](ICell,KLevel))
+            + KineticAux.KineticEnergyCell(ICell,KLevel);
+            //gravity * ( State->LayerThickness[ThickCurTimeLevel](ICell,KLevel)
+            //+ BottomTopography(ICell) ) + KineticAux.KineticEnergyCell(ICell,KLevel);
       });
 
    // TendencyTerms -----------------------------------------------------------/
@@ -129,6 +136,11 @@ sw_tend_vel(int ThickCurTimeLevel, int VelCurTimeLevel, const MachEnv *Env,
    //      VelDiffOnE(NormalVelocityTend, IEdge, KLevel,
    //                 KineticAux.VelocityDivCell, VorticityAux.RelVortVertex);
    //   });
+
+   if ( TestCase == 22 ) {
+      // SourceTerm Thick = false; Vel = true
+      sw_time_dependent_solution(TestCase, "tend", false, true, nowTime, Mesh, State);
+   }
 
 } // sw_tend_vel
 

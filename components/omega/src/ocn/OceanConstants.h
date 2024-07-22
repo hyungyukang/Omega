@@ -4,7 +4,6 @@ namespace OMEGA {
 
    const R8 pii = 3.141592653589793;
    const R8 Rearth = 6371220.0;
-   //const R8 omega =  7.29212e-5;
    const R8 omega =  7.292e-5;
    const R8 gravity = 9.80616;
    const R8 rgas = 287.0;

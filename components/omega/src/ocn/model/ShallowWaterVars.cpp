@@ -9,7 +9,7 @@ namespace OMEGA {
 //===-----------------------------------------------------------------------===/
 
 void ShallowWaterCore::
-sw_init_var(const HorzMesh *Mesh, const OceanState *State) {
+sw_init_var(HorzMesh *Mesh, const OceanState *State) {
 
    //--------------------------------------------------------------------------/
 
@@ -54,6 +54,12 @@ sw_init_var(const HorzMesh *Mesh, const OceanState *State) {
 
    Array2DReal layerThicknessTend("layerThicknessTend", NCellsSize, NVertLevels);
    LayerThicknessTend = layerThicknessTend;
+
+   Array2DReal normalVelocityRKTemp("normalVelocityRKTemp",NEdgesSize,NVertLevels);
+   NormalVelocityRKTemp = normalVelocityRKTemp;
+
+   Array2DReal layerThicknessRKTemp("layerThicknessRKTemp", NCellsSize, NVertLevels);
+   LayerThicknessRKTemp = layerThicknessRKTemp;
 
    //-----------------------------/ 
 

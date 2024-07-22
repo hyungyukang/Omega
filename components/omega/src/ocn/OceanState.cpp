@@ -39,7 +39,7 @@ int OceanState::init() {
    // These hard-wired variables need to be updated
    // with retrivals/config options
    int NTimeLevels = 2;
-   int NVertLevels = 3;
+   int NVertLevels = 1;
 
    // Create the default state
    OceanState DefOceanState("Default", DefHorzMesh, DefDecomp, DefHalo,

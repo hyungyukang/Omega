@@ -16,23 +16,25 @@ namespace OMEGA {
 
 void ShallowWaterCore::
 sw_check_status(const int printInterval, R8 t, const R8 dt, int Comm, 
-                const MachEnv *Env, const HorzMesh *Mesh, OceanState *State) {
+                const MachEnv *Env, HorzMesh *Mesh, OceanState *State) {
 
    //-----------------------------------------------------------------------------------/
    // Check current status
    //-----------------------------------------------------------------------------------/
-   R8 time_print = (int) (t+dt) % printInterval;
+   //R8 nowTime = t+dt;
+   R8 nowTime = t+dt;
+   R8 time_print = (int) (nowTime) % printInterval;
    if ( time_print == 0 ) {
 
       // Print current time first
       if ( Env->getMyTask() == 0 ) {
          cout<<fixed<<setprecision(15);
-         cout << (t+dt)/86400.0 ;
+         cout << (nowTime)/86400.0 ;
       }
 
       // If this test is using time-dependent solutions --------------------------------/
       if ( TimeDependentSolution ) {
-         sw_time_dependent_solution(TestCase, t+dt, Mesh, State);
+         sw_time_dependent_solution(TestCase, "solution", true, true, nowTime, Mesh, State);
       }
 
       // Compute L2 and Linf error norms -----------------------------------------------/
@@ -80,7 +82,7 @@ sw_check_status(const int printInterval, R8 t, const R8 dt, int Comm,
          int Err1 = MPI_Allreduce(&TotalEnergy,&TotalEnergyGlobal,1,MPI_RealKind,MPI_SUM, Comm);
    
          if ( Env->getMyTask() == 0 ) {
-            R8 time_print = (int) (t+dt) % printInterval;
+            R8 time_print = (int) (nowTime) % printInterval;
             if ( time_print == 0 ) {
                cout << " " << TotalEnergyGlobal;
             }
@@ -102,9 +104,9 @@ sw_check_status(const int printInterval, R8 t, const R8 dt, int Comm,
 //   int ErrMaxThick = MPI_Allreduce(&maxLayThickLocal,&maxLayThick,1,MPI_RealKind,MPI_MAX, Comm);
 //
 //   if ( Env->getMyTask() == 0 ) {
-//      R8 time_print = (int)(t+dt) % 3600;
+//      R8 time_print = (int)(nowTime) % 3600;
 //      if ( time_print == 0 ) {
-//         LOG_INFO("sw_timeStepper:: current Time = {}", t+dt);
+//         LOG_INFO("sw_timeStepper:: current Time = {}", nowTime);
 //         LOG_INFO("sw_timeStepper:: after Min. NormalVelocity = {}", maxNormVel);
 //         LOG_INFO("sw_timeStepper:: after Min. LayerThickness = {}", maxLayThick);
 //      }

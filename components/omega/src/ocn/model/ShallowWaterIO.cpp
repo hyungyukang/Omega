@@ -13,7 +13,7 @@ namespace OMEGA {
 //===-----------------------------------------------------------------------===/
 
 void ShallowWaterCore::
-sw_init_io(const Decomp *DefDecomp, const HorzMesh *Mesh, const OceanState *State) {
+sw_init_io(const Decomp *DefDecomp, HorzMesh *Mesh, OceanState *State) {
 
    //--------------------------------------------------------------------------/
 
@@ -70,7 +70,6 @@ sw_init_io(const Decomp *DefDecomp, const HorzMesh *Mesh, const OceanState *Stat
    //   LOG_CRITICAL("IOField: Initializing State IO field FAIL");
    //}
    //
-   int Err;
 
    //--------------------------------------------------------------------------/
    std::vector<int> OffsetEdge(Mesh->NEdgesSize * NVertLevels, -1);
@@ -119,6 +118,7 @@ sw_init_io(const Decomp *DefDecomp, const HorzMesh *Mesh, const OceanState *Stat
 
    std::vector<int> CellDims{DefDecomp->NCellsGlobal, NVertLevels};
    //int DecompCellR8;
+   int Err = 0;
    Err = IO::createDecomp(DecompCellR8, IO::IOTypeR8, 2,
                                  CellDims, Mesh->NCellsSize * NVertLevels, OffsetCell,
                                  IO::DefaultRearr);
@@ -145,38 +145,58 @@ sw_init_io(const Decomp *DefDecomp, const HorzMesh *Mesh, const OceanState *Stat
 } // sw_init_io
 
 void ShallowWaterCore::
-sw_io_write(const Decomp *DefDecomp, const HorzMesh *Mesh, const OceanState *State) {
+sw_io_write(const Decomp *DefDecomp, HorzMesh *Mesh, OceanState *State) {
 
-//   TangentialReconOnEdge2D TanReconEdge2D(Mesh);
-//   parallelFor(
-//      {Mesh->NEdgesAll, NVertLevels}, KOKKOS_LAMBDA(int IEdge, int KLevel) {
-//         const R8 tangentialComp = TanReconEdge2D(IEdge,KLevel, State->NormalVelocity[0]);
-//         TangentialVelocity(IEdge,KLevel) = tangentialComp;
-//      });
-//   parallelFor(
-//      {Mesh->NEdgesAll, NVertLevels}, KOKKOS_LAMBDA(int IEdge, int KLevel) {
-//         const R8 normalComp = State->NormalVelocity[0](IEdge,KLevel);
-//         const R8 tangentialComp = TangentialVelocity(IEdge,KLevel);
-//
-//         const R8 zonalComp = normalComp * cos(Mesh->AngleEdge(IEdge))
-//                            - tangentialComp * sin(Mesh->AngleEdge(IEdge));
-//
-//         //const R8 meridComp = normalComp * cos(Mesh->AngleEdge(IEdge))
-//         //                   - tangentialComp * sin(Mesh->AngleEdge(IEdge));
-//
-//         //const R8 zonalComp = normalComp * cos(Mesh->AngleEdge(IEdge))
-//         //                   - tangentialComp * sin(Mesh->AngleEdge(IEdge));
-//         //const R8 meridComp = 0.0;
-//
-//         State->NormalVelocity[0](IEdge,KLevel) = zonalComp;
-//         State->NormalVelocity[1](IEdge,KLevel) = 0.0;
-//
-//      });
+   //sw_time_dependent_solution(TestCase, "solution", true, true, CurrentTime, Mesh, State);
+
+//\/*
+   TangentialReconOnEdge2D TanReconEdge2D(Mesh);
+   parallelFor(
+      {Mesh->NEdgesAll, NVertLevels}, KOKKOS_LAMBDA(int IEdge, int KLevel) {
+         const R8 tangentialComp = TanReconEdge2D(IEdge,KLevel, State->NormalVelocity[0]);
+         State->NormalVelocity[1](IEdge,KLevel) = tangentialComp;
+      });
+   //parallelFor(
+   //   {Mesh->NEdgesAll, NVertLevels}, KOKKOS_LAMBDA(int IEdge, int KLevel) {
+   //      const R8 tangentialComp = TanReconEdge2D(IEdge,KLevel, NormalVelocitySolution);
+   //      TangentialVelocity(IEdge,KLevel) = tangentialComp;
+   //   });
+
+   parallelFor(
+      {Mesh->NEdgesAll, NVertLevels}, KOKKOS_LAMBDA(int IEdge, int KLevel) {
+         const R8 normalComp = State->NormalVelocity[0](IEdge,KLevel);
+         const R8 tangentialComp = State->NormalVelocity[1](IEdge,KLevel);
+         const R8 zonalComp = normalComp * cos(Mesh->AngleEdge(IEdge))
+                            - tangentialComp * sin(Mesh->AngleEdge(IEdge));
+         const R8 meridComp = normalComp * sin(Mesh->AngleEdge(IEdge))
+                            + tangentialComp * cos(Mesh->AngleEdge(IEdge));
+      
+         //const R8 normalCompSol = NormalVelocitySolution(IEdge,KLevel);
+         //const R8 tangentialCompSol = TangentialVelocity(IEdge,KLevel);
+         //const R8 zonalCompSol = normalCompSol * cos(Mesh->AngleEdge(IEdge))
+         //                      - tangentialCompSol * sin(Mesh->AngleEdge(IEdge));
+         //const R8 meridCompSol = normalCompSol * sin(Mesh->AngleEdge(IEdge))
+         //                      + tangentialCompSol * cos(Mesh->AngleEdge(IEdge));
+
+
+         //const R8 zonalComp = normalComp * cos(Mesh->AngleEdge(IEdge))
+         //                   - tangentialComp * sin(Mesh->AngleEdge(IEdge));
+         //const R8 meridComp = 0.0;
+
+         //State->NormalVelocity[0](IEdge,KLevel) = zonalComp - zonalCompSol;
+         State->NormalVelocity[0](IEdge,KLevel) = zonalComp;
+         //State->NormalVelocity[0](IEdge,KLevel) = zonalCompSol;
+         //State->NormalVelocity[0](IEdge,KLevel) = meridComp;
+         //State->NormalVelocity[1](IEdge,KLevel) = 0.0;
+
+      });
+//\*/
 
    // Save total depth ( H = h + b )
    parallelFor(
       {Mesh->NCellsAll, NVertLevels}, KOKKOS_LAMBDA(int ICell, int KLevel) {
-         State->LayerThicknessH[0](ICell,KLevel) = State->LayerThicknessH[0](ICell,KLevel)+BottomTopography(ICell);
+         //State->LayerThicknessH[0](ICell,KLevel) = (State->LayerThicknessH[0](ICell,KLevel)-LayerThicknessSolution(ICell,KLevel))+BottomTopography(ICell);
+         State->LayerThicknessH[0](ICell,KLevel) = (State->LayerThicknessH[0](ICell,KLevel)+BottomTopography(ICell));
        });   
 
    int ErrWriteVel   = IO::writeArray(State->NormalVelocity[0].data(), Mesh->NEdgesSize * NVertLevels,

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Horizontal Operators</title>
+  <title>Ocean State</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
@@ -22,8 +22,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Auxiliary Variables" href="AuxiliaryVariables.html" />
-    <link rel="prev" title="Horizontal Mesh" href="HorzMesh.html" />
+    <link rel="next" title="Time Manager (TimeMgr)" href="TimeMgr.html" />
+    <link rel="prev" title="Tendency Terms" href="TendencyTerms.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -92,10 +92,10 @@
 <li class="toctree-l1"><a class="reference internal" href="IOField.html">IO Fields (IOField)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Halo.html">Halo Exchanges (Halo)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="HorzMesh.html">Horizontal Mesh</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Horizontal Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HorzOperators.html">Horizontal Operators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="AuxiliaryVariables.html">Auxiliary Variables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TendencyTerms.html">Tendency Terms</a></li>
-<li class="toctree-l1"><a class="reference internal" href="OceanState.html">Ocean State</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Ocean State</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">Time Manager (TimeMgr)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Reductions.html">Global Reductions</a></li>
 </ul>
@@ -139,9 +139,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Horizontal Operators</li>
+      <li class="breadcrumb-item active">Ocean State</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/devGuide/HorzOperators.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/devGuide/OceanState.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -149,57 +149,68 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="horizontal-operators">
-<span id="omega-dev-horz-operators"></span><h1>Horizontal Operators<a class="headerlink" href="#horizontal-operators" title="Permalink to this heading"></a></h1>
-<p>The TRiSK scheme horizontal operators are implemented in C++ as functors, which
-are classes that can be called with input arguments in the same way as functions
-can. However, in contrast to plain functions, functors can contain internal
-state. In the case of Omega operators they contain shallow copies of various
-<code class="docutils literal notranslate"><span class="pre">HorzMesh</span></code> arrays that are needed to compute the operator, but are not strictly
-inputs of the operator.</p>
-<p>Operators are constructed from an instance of the <code class="docutils literal notranslate"><span class="pre">HorzMesh</span></code> class, for example</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">mesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">HorzMesh</span><span class="o">::</span><span class="n">getDefault</span><span class="p">();</span>
-<span class="w">    </span><span class="n">DivergenceOnCell</span><span class="w"> </span><span class="nf">DivOnCell</span><span class="p">(</span><span class="n">mesh</span><span class="p">);</span>
+  <section id="ocean-state">
+<h1>Ocean State<a class="headerlink" href="#ocean-state" title="Permalink to this heading"></a></h1>
+<p>The OMEGA <code class="docutils literal notranslate"><span class="pre">OceanState</span></code> class
+A state object is created by the <code class="docutils literal notranslate"><span class="pre">init</span></code> method, which assumes that <code class="docutils literal notranslate"><span class="pre">Decomp</span></code> and <code class="docutils literal notranslate"><span class="pre">HorzMesh</span></code> have
+already been initialized.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Decomp</span><span class="o">::</span><span class="n">init</span><span class="p">();</span>
+<span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">HorzMesh</span><span class="o">::</span><span class="n">init</span><span class="p">();</span>
+<span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">OceanState</span><span class="o">::</span><span class="n">init</span><span class="p">();</span>
 </pre></div>
 </div>
-<p>which sets up the previously mentioned internal state.</p>
-<p>Each Omega operator provides a C++ call operator, which computes its value on a
-vertical chunk of mesh elements given the element index, the chunk index,
-and operator-specific input arrays. The first argument to an operator is
-an array that gets updated with the computed values. Typically, operators are
-created outside of a parallel region and are used inside a parallel loop
-over mesh elements, for example</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">mesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">HorzMesh</span><span class="o">::</span><span class="n">getDefault</span><span class="p">();</span>
-<span class="w">    </span><span class="n">DivergenceOnCell</span><span class="w"> </span><span class="nf">DivOnCell</span><span class="p">(</span><span class="n">mesh</span><span class="p">);</span>
-<span class="w">    </span><span class="n">parallelFor</span><span class="p">({</span><span class="n">mesh</span><span class="o">-&gt;</span><span class="n">NCellsOwned</span><span class="p">,</span><span class="w"> </span><span class="n">NVertLevels</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">VecLength</span><span class="p">},</span><span class="w"> </span><span class="n">KOKKOS_LAMBDA</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">ICell</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">KChunk</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="c1">// computes divergence of Vec for cells with indices (ICell, KChunk:KChunk+VecLength-1)</span>
-<span class="w">        </span><span class="c1">// stores the result in DivVec</span>
-<span class="w">        </span><span class="n">DivOnCell</span><span class="p">(</span><span class="n">DivVec</span><span class="p">,</span><span class="w"> </span><span class="n">ICell</span><span class="p">,</span><span class="w"> </span><span class="n">KChunk</span><span class="p">,</span><span class="w"> </span><span class="n">Vec</span><span class="p">);</span>
-<span class="w">    </span><span class="p">});</span>
+<p>The constructor:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OceanState</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">,</span><span class="w"> </span><span class="c1">///&lt; [in] Name for mesh</span>
+<span class="w">           </span><span class="n">HorzMesh</span><span class="w"> </span><span class="o">*</span><span class="n">Mesh</span><span class="p">,</span><span class="w">          </span><span class="c1">///&lt; [in] Horizontal mesh</span>
+<span class="w">           </span><span class="n">Decomp</span><span class="w"> </span><span class="o">*</span><span class="n">MeshDecomp</span><span class="p">,</span><span class="w">      </span><span class="c1">///&lt; [in] Decomp for Mesh</span>
+<span class="w">           </span><span class="n">Halo</span><span class="w"> </span><span class="o">*</span><span class="n">MeshHalo_</span><span class="p">,</span><span class="w">         </span><span class="c1">///&lt; [in] Halo for Mesh</span>
+<span class="w">           </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NVertLevels_</span><span class="p">,</span><span class="w">  </span><span class="c1">///&lt; [in] Number of vertical levels</span>
+<span class="w">           </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NTimeLevels_</span><span class="w">   </span><span class="c1">///&lt; [in] Number of time levels</span>
+<span class="p">);</span>
 </pre></div>
 </div>
-<p>Currently, the following operators are implemented:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">DivergenceOnCell</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GradientOnEdge</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">CurlOnVertex</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">TangentialReconOnEdge</span></code></p></li>
-</ul>
-<p>Some tendency terms in the Omega PDE solver could in principle be constructed
-using these operators as building blocks. However, very often tendency terms
-require evaluation of slightly modified operators. Moreover, there is a
-potential performance cost of nesting operators within classes. Hence, the
-primary motivation for introducing these classes is to provide reference
-implementation of the basic TRiSK operators and for diagnostic and debugging
-purposes.</p>
+<p>allocates the <code class="docutils literal notranslate"><span class="pre">NormalVelocity</span></code> and <code class="docutils literal notranslate"><span class="pre">LayerThickness</span></code> arrays for a given number of time levels.
+The current time level is then registered with the IO infrastructure.</p>
+<p>After initialization, the default state object can be retrieved via:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="p">::</span><span class="n">OceanState</span> <span class="o">*</span><span class="n">State</span> <span class="o">=</span> <span class="n">OMEGA</span><span class="p">::</span><span class="n">OceanState</span><span class="p">::</span><span class="n">getDefault</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">OceanState</span></code> is meant to be a container that allows the non-tracer prognostic variables to be
+passed to the PDE solver routines for tendency and auxiliary variable calculation. For example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">AuxiliaryState</span><span class="p">::</span><span class="n">compute</span><span class="p">(</span><span class="n">OceanState</span> <span class="o">*</span><span class="n">State</span><span class="p">)</span> <span class="n">const</span> <span class="p">{</span>
+  <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>For now, member variables that are host arrays have variable names are appended with an
+<code class="docutils literal notranslate"><span class="pre">H</span></code>.  Array variable names not ending in <code class="docutils literal notranslate"><span class="pre">H</span></code> are device arrays.  For a given time level,
+host to device array is performed via:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">State</span><span class="o">-&gt;</span><span class="n">copyToDevice</span><span class="p">(</span><span class="n">TimeLevel</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>and a copy from device to host is performed by:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">State</span><span class="o">-&gt;</span><span class="n">copyToHost</span><span class="p">(</span><span class="n">TimeLevel</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Eventually, the host arrays will be eliminated when <code class="docutils literal notranslate"><span class="pre">IO</span></code> and <code class="docutils literal notranslate"><span class="pre">Halo</span></code> are extended to
+handle host &lt;-&gt; device transfers.</p>
+<p>A time level update to advance the solution at the end of a model timestep is done by:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">State</span><span class="o">-&gt;</span><span class="n">updateTimeLevels</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>This shifts the time levels to the previous index with the last index being shifted to the
+highest index to be overwritten in the next timestep. A halo exchange is also performed on
+these arrays and the IOFields data pointer is attached to the current time level.</p>
+<p>The state arrays are deallocated by the <code class="docutils literal notranslate"><span class="pre">OceanState::clear()</span></code> method, which is
+necessary before calling <code class="docutils literal notranslate"><span class="pre">Kokkos::finalize</span></code>.</p>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="HorzMesh.html" class="btn btn-neutral float-left" title="Horizontal Mesh" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="AuxiliaryVariables.html" class="btn btn-neutral float-right" title="Auxiliary Variables" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="TendencyTerms.html" class="btn btn-neutral float-left" title="Tendency Terms" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="TimeMgr.html" class="btn btn-neutral float-right" title="Time Manager (TimeMgr)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

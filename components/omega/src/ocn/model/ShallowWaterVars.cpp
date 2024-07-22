@@ -61,6 +61,12 @@ sw_init_var(HorzMesh *Mesh, const OceanState *State) {
    Array2DReal layerThicknessRKTemp("layerThicknessRKTemp", NCellsSize, NVertLevels);
    LayerThicknessRKTemp = layerThicknessRKTemp;
 
+   Array3DReal layerThicknessOut("layerThicknessOut", 1, NCellsSize, NVertLevels);
+   LayerThicknessOut = layerThicknessOut;
+
+   Array3DReal normalVelocityOut("NormalVelocityOut", 1, NEdgesSize, NVertLevels);
+   NormalVelocityOut = normalVelocityOut;
+
    //-----------------------------/ 
 
    Array1DReal bottomTopography("bottomTopography", NCellsSize);

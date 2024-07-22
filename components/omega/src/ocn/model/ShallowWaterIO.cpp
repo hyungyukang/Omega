@@ -21,48 +21,49 @@ sw_init_io(const Decomp *DefDecomp, HorzMesh *Mesh, OceanState *State) {
    //int OutFileID;
    OutFileID = 0;
    int Err0 = IO::openFile(
-         OutFileID, "SWoutput.nc", IO::ModeWrite, IO::FmtDefault,
+         OutFileID, "output.nc", IO::ModeWrite, IO::FmtDefault,
          IO::IfExists::Replace, IO::Precision::Double);
    if ( Err0 != 0)
       LOG_ERROR("IO: error opening file for output FAILE");
 
    //--------------------------------------------------------------------------/
 
-//   // Define IO field
-//   auto EdgeDim          = MetaDim::create("NEdges", Mesh->NEdgesSize);
-//   auto CellDim          = MetaDim::create("NCells", Mesh->NCellsSize);
-//   auto VertDim          = MetaDim::create("NVertLevels", NVertLevels);
-//   std::vector<std::shared_ptr<OMEGA::MetaDim>> CellDim2DR8{CellDim, VertDim};
-//   std::vector<std::shared_ptr<OMEGA::MetaDim>> EdgeDim2DR8{EdgeDim, VertDim};
-//   auto FieldNormalVelocity = ArrayMetaData::create(
-//       "NormalVelocity",
-//       "Normal Velocity on Edge", /// long Name or description
-//       "m/s",                         /// units
-//       "R8StdName",                 /// CF standard Name
-//       -12345.0,                    /// min valid value
-//       12345.0,                     /// max valid value
-//       -9.99E+30,                   /// scalar used for undefined entries
-//       2,                           /// number of dimensions
-//       EdgeDim2DR8                  /// dim pointers
-//   );
-//   int Err1 = IOField::define("NormalVelocity");
-//   int Err2 = IOField::attachData<OMEGA::Array2DR8>("NormalVelocity",State->NormalVelocity[0]);
-//
-//
-//   auto FieldLayerThickness = ArrayMetaData::create(
-//       "LayerThickness",
-//       "Layer thickness on Cell", /// long Name or description
-//       "m",                           /// units
-//       "R8StdName",                 /// CF standard Name
-//       0,                           /// min valid value
-//       12345.0,                     /// max valid value
-//       -9.99E+30,                   /// scalar used for undefined entries
-//       2,                           /// number of dimensions
-//       CellDim2DR8                  /// dim pointers
-//   );
-//   int Err3 = IOField::define("LayerThickness");
-//   int Err4 = IOField::attachData<OMEGA::Array2DR8>("LayerThickness",State->LayerThickness[0]);
-//
+   // Define IO field
+   auto TimeDim          = MetaDim::create("Time", 1);
+   auto EdgeDim          = MetaDim::create("NEdges", Mesh->NEdgesSize);
+   auto CellDim          = MetaDim::create("NCells", Mesh->NCellsSize);
+   auto VertDim          = MetaDim::create("NVertLevels", NVertLevels);
+   std::vector<std::shared_ptr<OMEGA::MetaDim>> CellDim3DR8{TimeDim,CellDim,VertDim};
+   std::vector<std::shared_ptr<OMEGA::MetaDim>> EdgeDim3DR8{TimeDim,EdgeDim,VertDim};
+   auto FieldNormalVelocity = ArrayMetaData::create(
+       "NormalVelocity",
+       "Normal Velocity on Edge", /// long Name or description
+       "m/s",                         /// units
+       "R8StdName",                 /// CF standard Name
+       -12345.0,                    /// min valid value
+       12345.0,                     /// max valid value
+       -9.99E+30,                   /// scalar used for undefined entries
+       2,                           /// number of dimensions
+       EdgeDim3DR8                  /// dim pointers
+   );
+   int Err1 = IOField::define("NormalVelocity");
+   int Err2 = IOField::attachData<OMEGA::Array3DR8>("NormalVelocity",NormalVelocityOut);
+
+
+   auto FieldLayerThickness = ArrayMetaData::create(
+       "LayerThickness",
+       "Layer thickness on Cell", /// long Name or description
+       "m",                           /// units
+       "R8StdName",                 /// CF standard Name
+       0,                           /// min valid value
+       12345.0,                     /// max valid value
+       -9.99E+30,                   /// scalar used for undefined entries
+       2,                           /// number of dimensions
+       CellDim3DR8                  /// dim pointers
+   );
+   int Err3 = IOField::define("LayerThickness");
+   int Err4 = IOField::attachData<OMEGA::Array3DR8>("LayerThickness",LayerThicknessOut);
+
 
    //--------------------------------------------------------------------------/
 
@@ -81,21 +82,22 @@ sw_init_io(const Decomp *DefDecomp, HorzMesh *Mesh, OceanState *State) {
       }
    }
 
-   std::vector<int> EdgeDims{DefDecomp->NEdgesGlobal, NVertLevels};
-   int ErrDecomp = IO::createDecomp(DecompEdgeR8, IO::IOTypeR8, 2,
+   std::vector<int> EdgeDims{1, DefDecomp->NEdgesGlobal, NVertLevels};
+   int ErrDecomp = IO::createDecomp(DecompEdgeR8, IO::IOTypeR8, 3,
                                  EdgeDims, Mesh->NEdgesSize * NVertLevels, OffsetEdge,
                                  IO::DefaultRearr);
+   int DimTimeID;
+   int ErrDimTime = OMEGA::IO::defineDim(OutFileID, "Time", 1, DimTimeID);
 
    int DimVertID;
-   int ErrDimVert = OMEGA::IO::defineDim(OutFileID, "NVertLevels", NVertLevels,
-                                     DimVertID);
+   int ErrDimVert = OMEGA::IO::defineDim(OutFileID, "nVertLevels", NVertLevels,DimVertID);
 
    int DimEdgeID;
-   int ErrDim = OMEGA::IO::defineDim(OutFileID, "NEdges", DefDecomp->NEdgesGlobal, DimEdgeID);
-   int EdgeDimIDs[2] = {DimEdgeID, DimVertID};
+   int ErrDim = OMEGA::IO::defineDim(OutFileID, "nEdges", DefDecomp->NEdgesGlobal, DimEdgeID);
+   int EdgeDimIDs[3] = {DimTimeID, DimEdgeID, DimVertID};
 
    //int NormalVelocityID;
-   int ErrVar = IO::defineVar(OutFileID, "NormalVelocity", IO::IOTypeR8, 2, EdgeDimIDs, NormalVelocityID);
+   int ErrVar = IO::defineVar(OutFileID, "normalVelocity", IO::IOTypeR8, 3, EdgeDimIDs, NormalVelocityID);
 
    //R8 VarMetaR8Ref      = 2.23456789;
    //int ErrMeta = IO::writeMeta("NormalVelocity", VarMetaR8Ref, OutFileID,
@@ -116,21 +118,22 @@ sw_init_io(const Decomp *DefDecomp, HorzMesh *Mesh, OceanState *State) {
       }
    }
 
-   std::vector<int> CellDims{DefDecomp->NCellsGlobal, NVertLevels};
+   std::vector<int> CellDims{1, DefDecomp->NCellsGlobal, NVertLevels};
    //int DecompCellR8;
    int Err = 0;
-   Err = IO::createDecomp(DecompCellR8, IO::IOTypeR8, 2,
+   Err = IO::createDecomp(DecompCellR8, IO::IOTypeR8, 3,
                                  CellDims, Mesh->NCellsSize * NVertLevels, OffsetCell,
                                  IO::DefaultRearr);
 
-   
+   //int DimTimeID;
+   //int ErrDimTime = OMEGA::IO::defineDim(OutFileID, "Time", 1, DimTimeID);
 
    int DimCellID;
-   Err = OMEGA::IO::defineDim(OutFileID, "NCells", DefDecomp->NCellsGlobal, DimCellID);
-   int CellDimIDs[2] = {DimCellID, DimVertID};
+   Err = OMEGA::IO::defineDim(OutFileID, "nCells", DefDecomp->NCellsGlobal, DimCellID);
+   int CellDimIDs[3] = {DimTimeID, DimCellID, DimVertID};
 
    //int LayerThicknessID;
-   Err = IO::defineVar(OutFileID, "LayerThickness", IO::IOTypeR8, 2, CellDimIDs, LayerThicknessID);
+   Err = IO::defineVar(OutFileID, "layerThickness", IO::IOTypeR8, 3, CellDimIDs, LayerThicknessID);
 
    //R8 VarMetaR8Ref      = 2.23456789;
    //int ErrMeta = IO::writeMeta("LayerThickness", VarMetaR8Ref, OutFileID,
@@ -185,6 +188,7 @@ sw_io_write(const Decomp *DefDecomp, HorzMesh *Mesh, OceanState *State) {
 
          //State->NormalVelocity[0](IEdge,KLevel) = zonalComp - zonalCompSol;
          State->NormalVelocity[0](IEdge,KLevel) = zonalComp;
+         NormalVelocityOut(0,IEdge,KLevel) = zonalComp;
          //State->NormalVelocity[0](IEdge,KLevel) = zonalCompSol;
          //State->NormalVelocity[0](IEdge,KLevel) = meridComp;
          //State->NormalVelocity[1](IEdge,KLevel) = 0.0;
@@ -197,11 +201,12 @@ sw_io_write(const Decomp *DefDecomp, HorzMesh *Mesh, OceanState *State) {
       {Mesh->NCellsAll, NVertLevels}, KOKKOS_LAMBDA(int ICell, int KLevel) {
          //State->LayerThicknessH[0](ICell,KLevel) = (State->LayerThicknessH[0](ICell,KLevel)-LayerThicknessSolution(ICell,KLevel))+BottomTopography(ICell);
          State->LayerThicknessH[0](ICell,KLevel) = (State->LayerThicknessH[0](ICell,KLevel)+BottomTopography(ICell));
+         LayerThicknessOut(0,ICell,KLevel) = (State->LayerThicknessH[0](ICell,KLevel)+BottomTopography(ICell));
        });   
 
-   int ErrWriteVel   = IO::writeArray(State->NormalVelocity[0].data(), Mesh->NEdgesSize * NVertLevels,
+   int ErrWriteVel   = IO::writeArray(NormalVelocityOut.data(), Mesh->NEdgesSize * NVertLevels,
                                       &FillR8, OutFileID, DecompEdgeR8, NormalVelocityID);
-   int ErrWriteThick = IO::writeArray(State->LayerThickness[0].data(), Mesh->NCellsSize * NVertLevels,
+   int ErrWriteThick = IO::writeArray(LayerThicknessOut.data(), Mesh->NCellsSize * NVertLevels,
                                       &FillR8, OutFileID, DecompCellR8, LayerThicknessID);
 
    // Finished writing, close file

@@ -144,6 +144,9 @@ public:
    Array2DReal NormalVelocityRKTemp;
    Array2DReal LayerThicknessRKTemp;
 
+   Array3DReal LayerThicknessOut;
+   Array3DReal NormalVelocityOut;
+
    Array1DReal BottomTopography;
 
    //------------------------------------------------------------------------//

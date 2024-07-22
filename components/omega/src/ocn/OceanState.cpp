@@ -110,8 +110,8 @@ OceanState::OceanState(
    finalizeParallelIO();
 
    // Register fields and metadate for IO
-   //if (Name != "Default") {
-   if (Name == "Default") {
+   if (Name != "Default") {
+   //if (Name == "Default") {
       defineIOFields();
    }
 

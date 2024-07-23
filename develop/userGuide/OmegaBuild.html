@@ -179,8 +179,10 @@ that directory.</p>
 <p>To utilize a compiler name that’s defined in the E3SM machine configuration
 file (<code class="docutils literal notranslate"><span class="pre">config_machines.xml</span></code>), employ the <code class="docutils literal notranslate"><span class="pre">OMEGA_CIME_COMPILER</span></code> CMake variable,
 as illustrated below. In some cases, you may also want to add <code class="docutils literal notranslate"><span class="pre">OMEGA_CIME_MACHINE</span></code>
-to specify which system you intend to use. The values of <code class="docutils literal notranslate"><span class="pre">OMEGA_CIME_COMPILER</span></code>
-and <code class="docutils literal notranslate"><span class="pre">OMEGA_CIME_MACHINE</span></code> are defined in
+to specify which system you intend to use. On systems where there is not a
+default <code class="docutils literal notranslate"><span class="pre">PROJECT</span></code> defined, you can use <code class="docutils literal notranslate"><span class="pre">OMEGA_CIME_PROJECT</span></code> to specify an
+account to use as a placeholder during the Omega build.
+The values of <code class="docutils literal notranslate"><span class="pre">OMEGA_CIME_COMPILER</span></code> and <code class="docutils literal notranslate"><span class="pre">OMEGA_CIME_MACHINE</span></code> are defined in
 “${E3SM}/cime_config/machines/config_machines.xml”.
 OMEGA requires some external libraries. Many of these are built automatically
 from the E3SM distribution. However, the METIS, ParMETIS, and, optionally,

@@ -15,6 +15,7 @@ sw_init_var(HorzMesh *Mesh, const OceanState *State) {
 
    // SW constants
 
+   NTimeLevels    = State->NTimeLevels;
    NVertLevels    = State->NVertLevels;
 
    NEdgesSize     = Mesh->NEdgesSize;
@@ -61,10 +62,10 @@ sw_init_var(HorzMesh *Mesh, const OceanState *State) {
    Array2DReal layerThicknessRKTemp("layerThicknessRKTemp", NCellsSize, NVertLevels);
    LayerThicknessRKTemp = layerThicknessRKTemp;
 
-   Array3DReal layerThicknessOut("layerThicknessOut", 1, NCellsSize, NVertLevels);
+   Array3DReal layerThicknessOut("layerThicknessOut", NTimeLevels, NCellsSize, NVertLevels);
    LayerThicknessOut = layerThicknessOut;
 
-   Array3DReal normalVelocityOut("NormalVelocityOut", 1, NEdgesSize, NVertLevels);
+   Array3DReal normalVelocityOut("NormalVelocityOut", NTimeLevels, NEdgesSize, NVertLevels);
    NormalVelocityOut = normalVelocityOut;
 
    //-----------------------------/ 

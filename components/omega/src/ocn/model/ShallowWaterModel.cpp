@@ -12,6 +12,14 @@ void ShallowWaterCore::
 sw_model(int Comm, const MachEnv *Env, const Decomp *DefDecomp,
          Halo *DefHalo, HorzMesh *Mesh, OceanState *State) {
 
+
+   // Time manager  ---------------------------------------------------------/
+   Calendar CalGreg("Gregorian", OMEGA::CalendarGregorian);
+   //TimeInstant Time0(&CalGreg, 1, 1, 1, 0, 0, 0.0);
+   //TimeInstant StartTime = Time0;
+   //TimeInstant EndTime = (&CalGreg, 1, 1, 1, 0, 0, endTime);
+
+
    // SW var initialization ---------------------------------------------------/
    sw_init_var(Mesh, State);
 

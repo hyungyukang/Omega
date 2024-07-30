@@ -12,6 +12,7 @@
 #include "IO.h"
 #include "IOField.h"
 #include "Logging.h"
+#include "TimeMgr.h"
 #include "MachEnv.h"
 #include "OceanState.h"
 #include "OmegaKokkos.h"
@@ -44,6 +45,12 @@ public:
    const I4 printInterval = 3600.0; // Time interval of status check
    const I4 nsteps = std::ceil((endTime) / dt); // Number of time steps
    R8 CurrentTime = 0.0;
+
+   // Time manager  ---------------------------------------------------------/
+   //Calendar CalGreg("Gregorian", OMEGA::CalendarGregorian);
+   //TimeInstant Time0(&CalGreg, 1, 1, 1, 0, 0, 0.0);
+   //TimeInstant StartTime = Time0;
+   //TimeInstant EndTime = (&CalGreg, 1, 1, 1, 0, 0, endTime);
 
    //const I4 nsteps = 100; // Number of time steps
    //const R8 endTime  = nsteps*dt;   // Model eEnd time (sec)
@@ -119,6 +126,8 @@ public:
    //------------------------------------------------------------------------//
    // SW constants
 
+   I4 NStrLen = 64;
+   I4 NTimeLevels;
    I4 NVertLevels;
 
    I4 NEdgesSize;
@@ -153,10 +162,12 @@ public:
    // IO-related vars
 
    int OutFileID;
+   int DecompStr;
    int DecompCellR8;
    int DecompEdgeR8;
    int LayerThicknessID;
    int NormalVelocityID;
+   int XtimeID;
    R8 FillR8 = -1.23456789e30;
 
 }; // class ShallowWaterCore

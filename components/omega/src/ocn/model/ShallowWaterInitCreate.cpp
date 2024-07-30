@@ -208,6 +208,16 @@ sw_init_field(const int TestCase, const MachEnv *Env, const Halo *Halo,
                  (Choices: 0, 2)"); 
    } // if TestCase
 
+   // Save initial conditions in output var
+   parallelFor(
+      {Mesh->NCellsAll,NVertLevels}, KOKKOS_LAMBDA(int ICell, int KLevel) {
+         LayerThicknessOut(0,ICell,KLevel) = State->LayerThicknessH[0](ICell,KLevel);
+      });
+   parallelFor(
+      {Mesh->NEdgesAll, NVertLevels}, KOKKOS_LAMBDA(int IEdge, int KLevel) {
+         NormalVelocityOut(0,IEdge,KLevel) = State->NormalVelocityH[0](IEdge,KLevel);
+      });
+   
 } // sw_init_field
 
 } // namespace OMEGA

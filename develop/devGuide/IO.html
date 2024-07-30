@@ -194,7 +194,7 @@ files for reading/writing, use:</p>
 </pre></div>
 </div>
 <p>or</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IO</span><span class="o">::</span><span class="n">openFile</span><span class="p">(</span><span class="n">FileID</span><span class="p">,</span><span class="w"> </span><span class="n">Filename</span><span class="p">,</span><span class="w"> </span><span class="n">Mode</span><span class="p">,</span><span class="w"> </span><span class="n">Format</span><span class="p">,</span><span class="w"> </span><span class="n">IfExists</span><span class="p">,</span><span class="w"> </span><span class="n">Precision</span><span class="p">);</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IO</span><span class="o">::</span><span class="n">openFile</span><span class="p">(</span><span class="n">FileID</span><span class="p">,</span><span class="w"> </span><span class="n">Filename</span><span class="p">,</span><span class="w"> </span><span class="n">Mode</span><span class="p">,</span><span class="w"> </span><span class="n">Format</span><span class="p">,</span><span class="w"> </span><span class="n">IfExists</span><span class="p">);</span>
 <span class="w">   </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IO</span><span class="o">::</span><span class="n">closeFile</span><span class="p">(</span><span class="n">FileID</span><span class="p">);</span>
 </pre></div>
 </div>
@@ -223,20 +223,12 @@ In the longer interface, the user must supply these values using the enums:</p>
 <span class="w">   </span><span class="n">Replace</span><span class="p">,</span><span class="w"> </span><span class="c1">/// Replace the file</span>
 <span class="w">   </span><span class="n">Append</span><span class="p">,</span><span class="w">  </span><span class="c1">/// Append to the existing file</span>
 <span class="p">};</span>
-
-<span class="c1">/// Floating point precision to allow reduced precision to save space</span>
-<span class="k">enum</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Precision</span><span class="w"> </span><span class="p">{</span>
-<span class="w">   </span><span class="n">Double</span><span class="p">,</span><span class="w"> </span><span class="c1">/// Maintain full double precision (64-bit) for reals</span>
-<span class="w">   </span><span class="n">Single</span><span class="p">,</span><span class="w"> </span><span class="c1">/// Reduce all floating point variables to 32-bit reals</span>
-<span class="p">};</span>
 </pre></div>
 </div>
-<p>with the defaults for each being <code class="docutils literal notranslate"><span class="pre">IO::FmtDefault</span></code>, <code class="docutils literal notranslate"><span class="pre">IO::IfExists::Fail</span></code>,
-and <code class="docutils literal notranslate"><span class="pre">IO::Precision::Double</span></code>. The E3SM standard format is currently
+<p>with the defaults for each being <code class="docutils literal notranslate"><span class="pre">IO::FmtDefault</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">IO::IfExists::Fail</span></code>. The E3SM standard format is currently
 NetCDF4. Earlier NetCDF formats should be avoided, but are provided in
-case an input file is in an earlier format. The Precision argument is
-for output files only and determines whether double-precision (R8) variables
-should be reduced to single precision during output.</p>
+case an input file is in an earlier format.</p>
 <p>Once the file is open, data is read/written using:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IO</span><span class="o">::</span><span class="n">readArray</span><span class="w"> </span><span class="p">(</span><span class="o">&amp;</span><span class="n">Array</span><span class="p">,</span><span class="w"> </span><span class="n">Size</span><span class="p">,</span><span class="w"> </span><span class="n">VariableName</span><span class="p">,</span><span class="w"> </span><span class="n">FileID</span><span class="p">,</span><span class="w"> </span><span class="n">DecompID</span><span class="p">,</span><span class="w"> </span><span class="n">VarID</span><span class="p">);</span>
 <span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IO</span><span class="o">::</span><span class="n">writeArray</span><span class="p">(</span><span class="o">&amp;</span><span class="n">Array</span><span class="p">,</span><span class="w"> </span><span class="n">Size</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">FillValue</span><span class="p">,</span><span class="w">   </span><span class="n">FileID</span><span class="p">,</span><span class="w"> </span><span class="n">DecompID</span><span class="p">,</span><span class="w"> </span><span class="n">VarID</span><span class="p">);</span>
@@ -261,12 +253,12 @@ defined using:</p>
 with the dimension name (eg NCells, NEdges, NVertices, NVertLevels or
 NTracers), length is the length of the full global array and DimID is
 the ID assigned to this dimension. Note that for reading a file, we
-do have a function:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">int</span><span class="w"> </span><span class="n">Length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IO</span><span class="o">::</span><span class="n">getDimLength</span><span class="p">(</span><span class="n">FileID</span><span class="p">,</span><span class="w"> </span><span class="n">DimName</span><span class="p">);</span>
+supply the function:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IO</span><span class="o">::</span><span class="n">getDimFromFile</span><span class="p">(</span><span class="n">FileID</span><span class="p">,</span><span class="w"> </span><span class="n">DimName</span><span class="p">,</span><span class="w"> </span><span class="n">DimID</span><span class="p">,</span><span class="w"> </span><span class="n">DimLength</span><span class="p">);</span>
 </pre></div>
 </div>
-<p>that can be used to inquire about the dimension length and check for
-consistency, but the full dimension must still be defined.</p>
+<p>that can be used to inquire about the dimension length and retrieve the
+dimension ID from the file.</p>
 <p>Once the dimensions are defined, the decomposition of an array must
 be defined using:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">createDecomp</span><span class="p">(</span><span class="n">DecompID</span><span class="p">,</span><span class="w"> </span><span class="n">IODataType</span><span class="p">,</span><span class="w"> </span><span class="n">NDims</span><span class="p">,</span><span class="w"> </span><span class="n">DimLengths</span><span class="p">,</span>

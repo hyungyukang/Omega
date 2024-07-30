@@ -160,7 +160,7 @@ of the model on subsets of tasks.</p>
 <p>On model initiation, the initialization routine <code class="docutils literal notranslate"><span class="pre">OMEGA::MachEnv::init()</span></code>
 is called to set up the default MachEnv, which can be retrieved at
 any time using:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">MachEnv</span><span class="w"> </span><span class="n">DefEnv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">MachEnv</span><span class="o">::</span><span class="n">getDefaultEnv</span><span class="p">();</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">MachEnv</span><span class="w"> </span><span class="n">DefEnv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">MachEnv</span><span class="o">::</span><span class="n">getDefault</span><span class="p">();</span>
 </pre></div>
 </div>
 <p>that returns a pointer to the default environment.
@@ -199,7 +199,7 @@ environment from a strided set of tasks starting at the <code class="docutils li
 (eg all odd tasks would have Begin=1 and Stride=2). The final
 interface creates a subset containing the selected tasks stored in
 a vector <code class="docutils literal notranslate"><span class="pre">Tasks</span></code>. Each new environment is given a <code class="docutils literal notranslate"><span class="pre">Name</span></code> and can be
-retrieved by name using <code class="docutils literal notranslate"><span class="pre">OMEGA::MachEnv::getEnv(Name)</span></code>. Once retrieved,
+retrieved by name using <code class="docutils literal notranslate"><span class="pre">OMEGA::MachEnv::get(Name)</span></code>. Once retrieved,
 the other get functions listed above are used to get each data member.
 Because the new environments are subsets of the default environment, one
 additional function <code class="docutils literal notranslate"><span class="pre">OMEGA::MachEnv::isMember()</span></code> is provided so that

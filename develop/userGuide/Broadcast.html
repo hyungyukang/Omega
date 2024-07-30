@@ -206,7 +206,7 @@ the simplicity of the basic broadcasting operation.</p>
 <span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">RootTask</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
 <span class="c1">// Get a specific Omega Machine Environment</span>
-<span class="n">OMEGA</span><span class="o">::</span><span class="n">MachEnv</span><span class="w"> </span><span class="o">*</span><span class="n">SubsetEnv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">MachEnv</span><span class="o">::</span><span class="n">getEnv</span><span class="p">(</span><span class="s">&quot;Subset&quot;</span><span class="p">);</span>
+<span class="n">OMEGA</span><span class="o">::</span><span class="n">MachEnv</span><span class="w"> </span><span class="o">*</span><span class="n">SubsetEnv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">MachEnv</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;Subset&quot;</span><span class="p">);</span>
 
 <span class="c1">// broadcast from the master task of SubsetEnv environment</span>
 <span class="n">OMEGA</span><span class="o">::</span><span class="n">Broadcast</span><span class="p">(</span><span class="n">MyVal</span><span class="p">,</span><span class="w"> </span><span class="n">SubsetEnv</span><span class="p">);</span>

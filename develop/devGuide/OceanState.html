@@ -159,13 +159,13 @@ already been initialized.</p>
 <span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">OceanState</span><span class="o">::</span><span class="n">init</span><span class="p">();</span>
 </pre></div>
 </div>
-<p>The constructor:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OceanState</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">,</span><span class="w"> </span><span class="c1">///&lt; [in] Name for mesh</span>
-<span class="w">           </span><span class="n">HorzMesh</span><span class="w"> </span><span class="o">*</span><span class="n">Mesh</span><span class="p">,</span><span class="w">          </span><span class="c1">///&lt; [in] Horizontal mesh</span>
-<span class="w">           </span><span class="n">Decomp</span><span class="w"> </span><span class="o">*</span><span class="n">MeshDecomp</span><span class="p">,</span><span class="w">      </span><span class="c1">///&lt; [in] Decomp for Mesh</span>
-<span class="w">           </span><span class="n">Halo</span><span class="w"> </span><span class="o">*</span><span class="n">MeshHalo_</span><span class="p">,</span><span class="w">         </span><span class="c1">///&lt; [in] Halo for Mesh</span>
-<span class="w">           </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NVertLevels_</span><span class="p">,</span><span class="w">  </span><span class="c1">///&lt; [in] Number of vertical levels</span>
-<span class="w">           </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NTimeLevels_</span><span class="w">   </span><span class="c1">///&lt; [in] Number of time levels</span>
+<p>The create method:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OceanState</span><span class="o">::</span><span class="n">create</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">,</span><span class="w"> </span><span class="c1">///&lt; [in] Name for mesh</span>
+<span class="w">                   </span><span class="n">HorzMesh</span><span class="w"> </span><span class="o">*</span><span class="n">Mesh</span><span class="p">,</span><span class="w">          </span><span class="c1">///&lt; [in] Horizontal mesh</span>
+<span class="w">                   </span><span class="n">Decomp</span><span class="w"> </span><span class="o">*</span><span class="n">MeshDecomp</span><span class="p">,</span><span class="w">      </span><span class="c1">///&lt; [in] Decomp for Mesh</span>
+<span class="w">                   </span><span class="n">Halo</span><span class="w"> </span><span class="o">*</span><span class="n">MeshHalo_</span><span class="p">,</span><span class="w">         </span><span class="c1">///&lt; [in] Halo for Mesh</span>
+<span class="w">                   </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NVertLevels_</span><span class="p">,</span><span class="w">  </span><span class="c1">///&lt; [in] Number of vertical levels</span>
+<span class="w">                   </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NTimeLevels_</span><span class="w">   </span><span class="c1">///&lt; [in] Number of time levels</span>
 <span class="p">);</span>
 </pre></div>
 </div>

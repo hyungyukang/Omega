@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>State</title>
+  <title>AuxiliaryState</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
@@ -22,8 +22,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Tendency" href="Tendency.html" />
-    <link rel="prev" title="Omega v0: Shallow Water" href="ShallowWaterOmega0.html" />
+    <link rel="next" title="TimeManager" href="TimeMgr.html" />
+    <link rel="prev" title="Auxiliary variables" href="AuxiliaryVariables.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -117,12 +117,15 @@
 <li class="toctree-l1"><a class="reference internal" href="IOStreams.html">IOStreams</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Reductions.html">Global Reductions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ShallowWaterOmega0.html">Omega v0: Shallow Water</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">State</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="State.html">State</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Tendency.html">Tendency</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AuxiliaryVariables.html">Auxiliary variables</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">AuxiliaryState</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">1 Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#requirements">2 Requirements</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#requirement-state-should-register-prognostic-variables-with-iostreams">2.1 Requirement: State should register prognostic variables with IOStreams</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#requirement-update-timestep">2.2 Requirement: Update timestep</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#requirement-can-be-used-as-a-common-data-type-for-tendency-and-provis-variables">2.3 Requirement: Can be used as a common data type for tendency and provis variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-auxiliary-state-should-register-auxiliary-variables-with-iostreams">2.1 Requirement: Auxiliary state should register auxiliary variables with IOStreams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-computation-of-auxiliary-variables">2.2 Requirement: Computation of auxiliary variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-multiple-auxiliary-states-can-be-present">2.3 Requirement: Multiple auxiliary states can be present</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#algorithmic-formulation">3 Algorithmic Formulation</a></li>
@@ -133,23 +136,22 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#methods">4.2 Methods</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#constructor">4.2.1 Constructor</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#destructor">4.2.2 Destructor</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#time-level-update">4.2.3 Time level update</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#creation">4.2.1 Creation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#initialization">4.2.2 Initialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#retrieval">4.2.3 Retrieval</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#computation">4.2.4 Computation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#destruction-and-removal">4.2.5 Destruction and removal</a></li>
 </ul>
 </li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#verification-and-testing">5 Verification and Testing</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#test-read">5.1 Test read</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#test-time-level-update">5.2 Test time level update</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#test-multiple-auxiliary-states">5.1 Test multiple auxiliary states</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#test-computation">5.2 Test computation</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="Tendency.html">Tendency</a></li>
-<li class="toctree-l1"><a class="reference internal" href="AuxiliaryVariables.html">Auxiliary variables</a></li>
-<li class="toctree-l1"><a class="reference internal" href="AuxiliaryState.html">AuxiliaryState</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">TimeManager</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Timers.html">Timers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TimeStepping.html">Time Stepping</a></li>
@@ -171,9 +173,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">State</li>
+      <li class="breadcrumb-item active">AuxiliaryState</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/design/State.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/design/AuxiliaryState.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -181,29 +183,31 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="state">
-<span id="omega-design-state"></span><h1>State<a class="headerlink" href="#state" title="Permalink to this heading"></a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="auxiliarystate">
+<span id="omega-design-aux-state"></span><h1>AuxiliaryState<a class="headerlink" href="#auxiliarystate" title="Permalink to this heading"></a></h1>
 <section id="overview">
 <h2>1 Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
-<p>The state class will provide a container for the prognostic (normal velocity and layer thickness) variables on a subdomain within OMEGA.
-It will have functionality for registering fields with IOStreams and performing time level updates.
-This will also be a data type that can be used for tendency terms and provis variables within the timestepping scheme.</p>
+<p>The auxiliary state class will provide a container for the auxiliary variables
+on a subdomain within OMEGA. It will provide methods for computing the
+variables and it will register fields with IOStreams.</p>
 </section>
 <section id="requirements">
 <h2>2 Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h2>
-<section id="requirement-state-should-register-prognostic-variables-with-iostreams">
-<h3>2.1 Requirement: State should register prognostic variables with IOStreams<a class="headerlink" href="#requirement-state-should-register-prognostic-variables-with-iostreams" title="Permalink to this heading"></a></h3>
-<p>The state class will have a method to register the progostic variables with IOStreams to provide initial condition input and solution output.</p>
+<section id="requirement-auxiliary-state-should-register-auxiliary-variables-with-iostreams">
+<h3>2.1 Requirement: Auxiliary state should register auxiliary variables with IOStreams<a class="headerlink" href="#requirement-auxiliary-state-should-register-auxiliary-variables-with-iostreams" title="Permalink to this heading"></a></h3>
+<p>The auxiliary state class will register the auxiliary variables with IOStreams
+in its constructor to facilitate their output.</p>
 </section>
-<section id="requirement-update-timestep">
-<h3>2.2 Requirement: Update timestep<a class="headerlink" href="#requirement-update-timestep" title="Permalink to this heading"></a></h3>
-<p>A method will be responsible for advancing the prognostic variables prior to the beginning of a new timestep.
-The left-most index of the prognostic variables will be a time index, which will facilitate flexibility with timestepping schemes.
-The time level update will include a halo exchange and an exchange of time level.</p>
+<section id="requirement-computation-of-auxiliary-variables">
+<h3>2.2 Requirement: Computation of auxiliary variables<a class="headerlink" href="#requirement-computation-of-auxiliary-variables" title="Permalink to this heading"></a></h3>
+<p>Methods to compute the auxiliary variables will be provided. At minimum, a
+method to compute all of the variables is needed, but convenience functions
+that compute just a subset of them might also be useful.</p>
 </section>
-<section id="requirement-can-be-used-as-a-common-data-type-for-tendency-and-provis-variables">
-<h3>2.3 Requirement: Can be used as a common data type for tendency and provis variables<a class="headerlink" href="#requirement-can-be-used-as-a-common-data-type-for-tendency-and-provis-variables" title="Permalink to this heading"></a></h3>
-<p>The timestepping scheme will require storage for the tendency terms and the intermediate stage. The state class can also be used to fulfill this need.</p>
+<section id="requirement-multiple-auxiliary-states-can-be-present">
+<h3>2.3 Requirement: Multiple auxiliary states can be present<a class="headerlink" href="#requirement-multiple-auxiliary-states-can-be-present" title="Permalink to this heading"></a></h3>
+<p>There will be methods to create and remove non-default auxiliary states, that
+can be associated with different meshes.</p>
 </section>
 </section>
 <section id="algorithmic-formulation">
@@ -220,52 +224,98 @@ The time level update will include a halo exchange and an exchange of time level
 </section>
 <section id="class-structs-data-types">
 <h4>4.1.2 Class/structs/data types<a class="headerlink" href="#class-structs-data-types" title="Permalink to this heading"></a></h4>
-<p>The State class will contain public Kokkos host and device views for the normal velocity and layer thickness variables.</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">State</span><span class="p">{</span>
-
-<span class="k">public</span><span class="o">:</span>
-
-<span class="w">  </span><span class="n">Array3DR8</span><span class="w"> </span><span class="n">LayerThickness</span><span class="p">;</span>
-<span class="w">  </span><span class="n">Array3DR8</span><span class="w"> </span><span class="n">NormalVelocity</span><span class="p">;</span>
-
-<span class="p">}</span>
+<p>The auxiliary state class will contain objects representing auxiliary variable
+groups, strings for names of the auxiliary state and its metadata group, and a
+pointer to the associated mesh. Additionally, it will have a static map of all
+auxiliary states and a pointer to the default auxiliary state for quick
+retrieval.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">AuxiliaryState</span><span class="w"> </span><span class="p">{</span>
+<span class="w"> </span><span class="k">public</span><span class="o">:</span>
+<span class="w">   </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">Name</span><span class="p">;</span>
+<span class="w">   </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">GroupName</span><span class="p">;</span>
+<span class="w">   </span><span class="n">KineticAuxVars</span><span class="w"> </span><span class="n">KineticAux</span><span class="p">;</span>
+<span class="w">   </span><span class="n">LayerThicknessAuxVars</span><span class="w"> </span><span class="n">LayerThicknessAux</span><span class="p">;</span>
+<span class="w">   </span><span class="n">VorticityAuxVars</span><span class="w"> </span><span class="n">VorticityAux</span><span class="p">;</span>
+<span class="w">   </span><span class="n">VelocityDel2AuxVars</span><span class="w"> </span><span class="n">VelocityDel2Aux</span><span class="p">;</span>
+<span class="w">   </span><span class="c1">// more variables in the future</span>
+<span class="w"> </span><span class="k">private</span><span class="o">:</span>
+<span class="w">   </span><span class="k">const</span><span class="w"> </span><span class="n">HorzMesh</span><span class="w"> </span><span class="o">*</span><span class="n">Mesh</span><span class="p">;</span>
+<span class="w">   </span><span class="k">static</span><span class="w"> </span><span class="n">AuxiliaryState</span><span class="w"> </span><span class="o">*</span><span class="n">DefaultAuxState</span><span class="p">;</span>
+<span class="w">   </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">AuxiliaryState</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">AllAuxStates</span><span class="p">;</span>
+<span class="p">};</span>
 </pre></div>
 </div>
 </section>
 </section>
 <section id="methods">
 <h3>4.2 Methods<a class="headerlink" href="#methods" title="Permalink to this heading"></a></h3>
-<p>There will be a constructor and destructor for the class and several public methods. Some of these methods are only applicable to the prognostic state and not to the tendency and provis contexts.</p>
-<section id="constructor">
-<h4>4.2.1 Constructor<a class="headerlink" href="#constructor" title="Permalink to this heading"></a></h4>
-<p>The constructor will also be responsible for:</p>
+<p>There will be a constructor and destructor for the class and several public
+methods. The constructor will be be private to make sure that every auxiliary
+state is properly stored in the map. However, a static method to create new
+auxiliary states, enforcing this requirement, will be provided.</p>
+<section id="creation">
+<h4>4.2.1 Creation<a class="headerlink" href="#creation" title="Permalink to this heading"></a></h4>
+<p>The constructor will be responsible for:</p>
 <ul class="simple">
-<li><p>allocating prognostic variables</p></li>
+<li><p>constructing auxiliary variables</p></li>
 <li><p>registering fields and metadata with the I/O infrastructure</p></li>
 </ul>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">State</span><span class="p">(</span><span class="n">Decomp</span><span class="w"> </span><span class="o">*</span><span class="n">DefDecomp</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">TimeLevels</span><span class="p">);</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">AuxiliaryState</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">HorzMesh</span><span class="w"> </span><span class="o">*</span><span class="n">Mesh</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NVertLevels</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The create method will take the same arguments as the constructor, use it to
+create a new auxiliary state, and put it in the static map of all auxiliary
+states. It will return a pointer to the newly created state.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">AuxiliaryState</span><span class="o">*</span><span class="w"> </span><span class="nf">AuxiliaryState::create</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">HorzMesh</span><span class="w"> </span><span class="o">*</span><span class="n">Mesh</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NVertLevels</span><span class="p">);</span>
 </pre></div>
 </div>
 </section>
-<section id="destructor">
-<h4>4.2.2 Destructor<a class="headerlink" href="#destructor" title="Permalink to this heading"></a></h4>
-<p>A destructor will be available to release memory.</p>
+<section id="initialization">
+<h4>4.2.2 Initialization<a class="headerlink" href="#initialization" title="Permalink to this heading"></a></h4>
+<p>The init method will create the default auxiliary state and return an error code:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">AuxiliaryState::init</span><span class="p">();</span>
+</pre></div>
+</div>
 </section>
-<section id="time-level-update">
-<h4>4.2.3 Time level update<a class="headerlink" href="#time-level-update" title="Permalink to this heading"></a></h4>
-<p>The time level update method will perform a halo exchange for the prognostic variables and advance the state variables for the next timestep.</p>
+<section id="retrieval">
+<h4>4.2.3 Retrieval<a class="headerlink" href="#retrieval" title="Permalink to this heading"></a></h4>
+<p>There will be methods for getting the default and non-default auxiliary states:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">AuxiliaryState</span><span class="w"> </span><span class="o">*</span><span class="nf">AuxiliaryState::getDefault</span><span class="p">();</span>
+<span class="n">AuxiliaryState</span><span class="w"> </span><span class="o">*</span><span class="nf">AuxiliaryState::get</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="computation">
+<h4>4.2.4 Computation<a class="headerlink" href="#computation" title="Permalink to this heading"></a></h4>
+<p>The ‘computeAll’ method will compute all auxiliary variables using the ocean
+state from a given time level:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">AuxiliaryState::computeAll</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">OceanState</span><span class="w"> </span><span class="o">*</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">TimeLevel</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="destruction-and-removal">
+<h4>4.2.5 Destruction and removal<a class="headerlink" href="#destruction-and-removal" title="Permalink to this heading"></a></h4>
+<p>The destructor will unregister fields and remove metadata. The erase method
+will remove a named auxiliary state, whereas the clear method will remove all of
+them. Both will call the destructor in the process.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">AuxiliaryState::erase</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">);</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">AuxiliaryState::clear</span><span class="p">();</span>
+</pre></div>
+</div>
 </section>
 </section>
 </section>
 <section id="verification-and-testing">
 <h2>5 Verification and Testing<a class="headerlink" href="#verification-and-testing" title="Permalink to this heading"></a></h2>
-<section id="test-read">
-<h3>5.1 Test read<a class="headerlink" href="#test-read" title="Permalink to this heading"></a></h3>
-<p>The sample domain used for the Decomp test will be used to test obtaining the correct local values from the IO infrastructure</p>
+<section id="test-multiple-auxiliary-states">
+<h3>5.1 Test multiple auxiliary states<a class="headerlink" href="#test-multiple-auxiliary-states" title="Permalink to this heading"></a></h3>
+<p>There will be a test checking that multiple auxiliary state object can be
+created and that removing them works properly.</p>
 </section>
-<section id="test-time-level-update">
-<h3>5.2 Test time level update<a class="headerlink" href="#test-time-level-update" title="Permalink to this heading"></a></h3>
-<p>There will be a test to ensure the time level update functions correctly.</p>
+<section id="test-computation">
+<h3>5.2 Test computation<a class="headerlink" href="#test-computation" title="Permalink to this heading"></a></h3>
+<p>There will be a test to ensure all of the variables are correctly computed by
+the compute method.</p>
 </section>
 </section>
 </section>
@@ -274,8 +324,8 @@ The time level update will include a halo exchange and an exchange of time level
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="ShallowWaterOmega0.html" class="btn btn-neutral float-left" title="Omega v0: Shallow Water" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="Tendency.html" class="btn btn-neutral float-right" title="Tendency" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="AuxiliaryVariables.html" class="btn btn-neutral float-left" title="Auxiliary variables" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="TimeMgr.html" class="btn btn-neutral float-right" title="TimeManager" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

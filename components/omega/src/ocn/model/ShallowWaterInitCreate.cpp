@@ -209,14 +209,26 @@ sw_init_field(const int TestCase, const MachEnv *Env, const Halo *Halo,
    } // if TestCase
 
    // Save initial conditions in output var
-   parallelFor(
-      {Mesh->NCellsAll,NVertLevels}, KOKKOS_LAMBDA(int ICell, int KLevel) {
-         LayerThicknessOut(0,ICell,KLevel) = State->LayerThicknessH[0](ICell,KLevel);
-      });
-   parallelFor(
-      {Mesh->NEdgesAll, NVertLevels}, KOKKOS_LAMBDA(int IEdge, int KLevel) {
-         NormalVelocityOut(0,IEdge,KLevel) = State->NormalVelocityH[0](IEdge,KLevel);
-      });
+//   parallelFor(
+//      {Mesh->NCellsAll,NVertLevels}, KOKKOS_LAMBDA(int ICell, int KLevel) {
+//         LayerThicknessOut(0,ICell,KLevel) = State->LayerThicknessH[0](ICell,KLevel);
+//      });
+//   parallelFor(
+//      {Mesh->NEdgesAll, NVertLevels}, KOKKOS_LAMBDA(int IEdge, int KLevel) {
+//         NormalVelocityOut(0,IEdge,KLevel) = State->NormalVelocityH[0](IEdge,KLevel);
+//      });
+//
+//   if ( TestCase == 22 ) {
+//   parallelFor(
+//      {Mesh->NCellsAll}, KOKKOS_LAMBDA(int ICell) {
+//         SshOut(0,ICell) = (State->LayerThicknessH[0](ICell,0)-H0);
+//       });
+//   } else {
+//   parallelFor(
+//      {Mesh->NCellsAll}, KOKKOS_LAMBDA(int ICell) {
+//         SshOut(0,ICell) = (State->LayerThicknessH[0](ICell,0));
+//       });
+//   }
    
 } // sw_init_field
 

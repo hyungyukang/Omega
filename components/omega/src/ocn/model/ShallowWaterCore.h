@@ -35,7 +35,7 @@ public:
 
    //------------------------------------------------------------------------//
    // All from Config later...
-   const R8 dt       = 20.0;    // Time step size (sec)
+   const R8 dt       =  50.0;    // Time step size (sec)
    const R8 initTime = 0.0;       // Model initial time (sec)
    const R8 endTime  = 10.0*3600.0;   // Model eEnd time (sec)
    //const R8 endTime  = 15*86400;   // Model eEnd time (sec)
@@ -57,12 +57,12 @@ public:
    //const I4 nsteps = std::ceil((endTime) / dt); // Number of time steps
 
    // Time stepper choices  -------------------------------------------------/
-   const char *time_integrator = "midpoint"; // (~RK2)
+   //const char *time_integrator = "midpoint"; // (~RK2)
    //const char *time_integrator = "heuns"; // (~RK2)
    //const char *time_integrator = "forward-euler";
    //const char *time_integrator = "forward-backward";
    //const char *time_integrator = "ssp-rk3";
-   //const char *time_integrator = "rk4";
+   const char *time_integrator = "rk4";
 
     // Test cases -----------------------------------------------------------/
 
@@ -127,7 +127,7 @@ public:
    // SW constants
 
    I4 NStrLen = 64;
-   I4 NTimeLevels;
+   I4 NTimeLevels = 1;
    I4 NVertLevels;
 
    I4 NEdgesSize;
@@ -139,6 +139,8 @@ public:
    I4 NEdgesOwned;
    I4 NCellsOwned;
    I4 NVerticesOwned;
+
+   R8 H0;
 
    //------------------------------------------------------------------------//
    // SW vars
@@ -153,6 +155,7 @@ public:
    Array2DReal NormalVelocityRKTemp;
    Array2DReal LayerThicknessRKTemp;
 
+   Array2DReal SshOut;
    Array3DReal LayerThicknessOut;
    Array3DReal NormalVelocityOut;
 
@@ -163,11 +166,13 @@ public:
 
    int OutFileID;
    int DecompStr;
-   int DecompCellR8;
+   int DecompCell2DR8;
+   int DecompCell3DR8;
    int DecompEdgeR8;
+   int XtimeID;
    int LayerThicknessID;
    int NormalVelocityID;
-   int XtimeID;
+   int SshID;
    R8 FillR8 = -1.23456789e30;
 
 }; // class ShallowWaterCore

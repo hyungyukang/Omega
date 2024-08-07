@@ -3,6 +3,8 @@
 
 # Perlmutter pm-cpu
 
+module load cmake
+
 PARMETIS_ROOT=/global/cfs/cdirs/e3sm/software/polaris/pm-cpu/spack/dev_polaris_0_3_0_gnu_mpich/var/spack/environments/dev_polaris_0_3_0_gnu_mpich/.spack-env/view
 cmake \
    -DOMEGA_CIME_COMPILER=gnu  \

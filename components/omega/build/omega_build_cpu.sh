@@ -11,6 +11,10 @@ cmake \
    -Wno-dev \
    ../
 
+./omega_build.sh
+
+cp -rf ./default_inputs ./src/
+
    #-DOMEGA_BUILD_TEST=ON \
    #-S /global/homes/m/mpeterse/repos/omega/pr_tendterms_boneill/components/omega -B .
 #./omega_build.sh

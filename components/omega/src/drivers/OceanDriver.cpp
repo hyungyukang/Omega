@@ -144,6 +144,7 @@ finalize() {
 using namespace OMEGA;
 
 int main(int argc, char *argv[]) {
+//int main(char *argv[]) {
 
     //TODO Mesh file name <- From Config/YAML later and can be placed anywhere
     //constexpr char DefMeshFile[] = "OmegaSphereMesh.nc";
@@ -153,6 +154,7 @@ int main(int argc, char *argv[]) {
     OceanDriver OD;
 
     // Model initialize
+    //int argc = 1000;
     OD.initialize(argc,argv,DefMeshFile);
 
     // Model run

@@ -134,7 +134,8 @@ sw_time_dependent_solution(const int TestCase, const std::string &solutionOpt,
 
      // Set default values
 
-     const R8 H0 = 1000.0;
+     //const R8 H0 = 1000.0;
+     H0 = 1000.0 ; // not const as it is defined as a global variable.
      const R8 etaHat1 = 1.00;
      const R8 f0 = 1.0e-4;
      const I4 mx = 2;

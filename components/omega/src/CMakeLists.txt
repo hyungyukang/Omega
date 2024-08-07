@@ -34,16 +34,16 @@ target_link_libraries(
     yaml-cpp
     parmetis
     metis
-    gklib
+    #gklib
 )
 
-#if(GKlib_FOUND)
-#    target_link_libraries(
-#        OmegaLibFlags
-#        PUBLIC
-#        gklib
-#    )
-#endif()
+if(GKlib_FOUND)
+    target_link_libraries(
+        OmegaLibFlags
+        PUBLIC
+        gklib
+    )
+endif()
 
 # Add source files for the library
 file(GLOB _LIBSRC_FILES infra/*.cpp base/*.cpp ocn/*.cpp ocn/model/*.cpp)

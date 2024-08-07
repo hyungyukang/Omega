@@ -35,7 +35,7 @@ public:
 
    //------------------------------------------------------------------------//
    // All from Config later...
-   const R8 dt       =  50.0;    // Time step size (sec)
+   const R8 dt       =  5.0;    // Time step size (sec)
    const R8 initTime = 0.0;       // Model initial time (sec)
    const R8 endTime  = 10.0*3600.0;   // Model eEnd time (sec)
    //const R8 endTime  = 15*86400;   // Model eEnd time (sec)
@@ -57,12 +57,12 @@ public:
    //const I4 nsteps = std::ceil((endTime) / dt); // Number of time steps
 
    // Time stepper choices  -------------------------------------------------/
-   //const char *time_integrator = "midpoint"; // (~RK2)
+   const char *time_integrator = "midpoint"; // (~RK2)
    //const char *time_integrator = "heuns"; // (~RK2)
    //const char *time_integrator = "forward-euler";
    //const char *time_integrator = "forward-backward";
    //const char *time_integrator = "ssp-rk3";
-   const char *time_integrator = "rk4";
+   //const char *time_integrator = "rk4";
 
     // Test cases -----------------------------------------------------------/
 

@@ -37,7 +37,7 @@
           
           
           <a href="../index.html" class="icon icon-home">
-            OMEGA
+            Omega
           </a>
               <div class="version">
                 develop
@@ -136,7 +136,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">OMEGA</a>
+          <a href="../index.html">Omega</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -156,7 +156,7 @@
              
   <section id="parallel-io-io">
 <h1>Parallel IO (IO)<a class="headerlink" href="#parallel-io-io" title="Permalink to this heading"></a></h1>
-<p>For input and output of data needed for OMEGA, we use the Software for
+<p>For input and output of data needed for Omega, we use the Software for
 Caching Output and Reads for Parallel I/O
 (<a class="reference external" href="https://github.com/E3SM-Project/scorpio">SCORPIO</a>) library. This
 library supports parallel reading and writing of distributed arrays in various
@@ -171,7 +171,7 @@ for computation. For example, the user could specify the number of IO tasks to
 match underlying hardware like the network interfaces (NICs) on a node.
 Users will generally access IO via the <a class="reference internal" href="#omega-user-iostreams"><span class="xref myst">IOStreams</span></a>
 and other interfaces and the base IO layer described here only provides
-an OMEGA-aware wrapper around SCORPIO calls.</p>
+an Omega-aware wrapper around SCORPIO calls.</p>
 <p>There are some general parameters that must be set for IO performance and
 formatting via the input configuration file. These are:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">IO</span><span class="p">:</span>
@@ -204,12 +204,12 @@ See SCORPIO documentation for details.</p>
 <p>Finally, the user can specify the file format. The SCORPIO library
 supports all the various NetCDF formats, though the use of older
 NetCDF formats is strongly discouraged. NetCDF-4 is currently the E3SM
-default and is the default for OMEGA. In addition, SCORPIO supports
+default and is the default for Omega. In addition, SCORPIO supports
 native HDF5 files (note that the latest NetCDF formats are all implemented
 with HDF5 and are mostly compatible with HDF5) The ADIOS format is different
 since ADIOS writes each chunk of data to a separate file and these files must
 be combined later. E3SM provides the necessary tools to combine/convert
-ADIOS files to netcdf as part of pre/post-processing. For standalone OMEGA,
+ADIOS files to netcdf as part of pre/post-processing. For standalone Omega,
 users would need to become familiar with these tools if they wish to use
 ADIOS.</p>
 </section>

@@ -37,7 +37,7 @@
           
           
           <a href="../index.html" class="icon icon-home">
-            OMEGA
+            Omega
           </a>
               <div class="version">
                 develop
@@ -136,7 +136,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">OMEGA</a>
+          <a href="../index.html">Omega</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -156,7 +156,7 @@
              
   <section id="parallel-io-io">
 <h1>Parallel IO (IO)<a class="headerlink" href="#parallel-io-io" title="Permalink to this heading"></a></h1>
-<p>For input and output of data needed for OMEGA, we use the Software for
+<p>For input and output of data needed for Omega, we use the Software for
 Caching Output and Reads for Parallel I/O
 (<a class="reference external" href="https://github.com/E3SM-Project/scorpio">SCORPIO</a>) library. This
 library supports parallel reading and writing of distributed arrays in various
@@ -172,21 +172,21 @@ match underlying hardware like the network interfaces (NICs) on a node.
 Users and developers will generally access IO via
 <a class="reference internal" href="#omega-user-iostreams"><span class="xref myst">IOStreams</span></a>
 and other interfaces. The base IO layer described here only provides
-an OMEGA-aware wrapper around SCORPIO calls.</p>
+an Omega-aware wrapper around SCORPIO calls.</p>
 <p>The base interfaces provide functions for file operations (open/close),
 reading and writing of metadata, and reading and writing of data arrays.
 Interfaces at this level utilize raw pointers to data and assume
 contiguous storage for arrays. SCORPIO utilizes integer handles
 to various files and data types so these must often be defined or
 retrieved for many operations. Although there is no IO class, we encapsulate
-the IO routines within the OMEGA and IO namespaces.</p>
+the IO routines within the Omega and IO namespaces.</p>
 <p>Before using any IO functions, the parallel IO system must be initialized
 using:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IO</span><span class="o">::</span><span class="n">init</span><span class="p">(</span><span class="n">Comm</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>where Comm is an MPI communicator and should in most cases be the communicator
-from the OMEGA default MachEnv (see <a class="reference internal" href="MachEnv.html#omega-dev-mach-env"><span class="std std-ref">MachEnv</span></a>). This
+from the Omega default MachEnv (see <a class="reference internal" href="MachEnv.html#omega-dev-mach-env"><span class="std std-ref">MachEnv</span></a>). This
 function also extracts the user-defined variables from the model configuration,
 include the number of IO tasks, the IO task stride, the default data
 rearranger method, and the default file format
@@ -280,7 +280,7 @@ when the IO system was initialized, but can also be set explicitly to
 <code class="docutils literal notranslate"><span class="pre">OMEGA::IO::RearrBox</span></code> or <code class="docutils literal notranslate"><span class="pre">OMEGA::IO::RearrSubset</span></code>. The box rearranger
 is generally preferred (see <a class="reference internal" href="../userGuide/IO.html#omega-user-io"><span class="std std-ref">UserGuide</span></a>). The GlobalIndx
 array describes the global location (as a zero-based offset) of each
-local array entry. This can be computed from the OMEGA Default Decomp
+local array entry. This can be computed from the Omega Default Decomp
 arrays. For example, an array dimensioned (NCellsAll,NVertLevels) would
 have an offset computed using:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OffsetCell</span><span class="p">(</span><span class="n">NCellsAll</span><span class="o">*</span><span class="n">NVertLevels</span><span class="p">,</span><span class="mi">-1</span><span class="p">);</span>
@@ -294,7 +294,7 @@ have an offset computed using:</p>
 </pre></div>
 </div>
 <p>Note that we exclude Halo layers by assigning an offset of -1. Finally,
-the data type of the array must be supplied. To map the standard OMEGA
+the data type of the array must be supplied. To map the standard Omega
 data types to the data types used in the IO subsystem, we define:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">enum</span><span class="w"> </span><span class="nc">IODataType</span><span class="w"> </span><span class="p">{</span>
 <span class="w">   </span><span class="n">IOTypeI4</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="n">PIO_INT</span><span class="p">,</span><span class="w">    </span><span class="c1">/// 32-bit integer</span>
@@ -307,7 +307,7 @@ data types to the data types used in the IO subsystem, we define:</p>
 </pre></div>
 </div>
 <p>so that in the above interface, we would supply for example <code class="docutils literal notranslate"><span class="pre">IO::IOTypeI4</span></code>
-for an OMEGA I4 data type.</p>
+for an Omega I4 data type.</p>
 <p>Now that dimensions and decompositions have been defined, a variable can
 be defined (this is required for writing only) using:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IO</span><span class="o">::</span><span class="n">defineVar</span><span class="p">(</span><span class="n">FileID</span><span class="p">,</span><span class="w"> </span><span class="n">VarName</span><span class="p">,</span><span class="w"> </span><span class="n">IODataType</span><span class="p">,</span><span class="w"> </span><span class="n">NDims</span><span class="p">,</span><span class="w"> </span><span class="n">DimIDs</span><span class="p">,</span><span class="w"> </span><span class="n">VarID</span><span class="p">);</span>
@@ -329,7 +329,7 @@ itself. To read/write metadata, use:</p>
 </pre></div>
 </div>
 <p>where MetaName is a <code class="docutils literal notranslate"><span class="pre">std::string</span></code> holding the name of the metadata and
-the MetaValue is the value of the MetaData. All supported OMEGA data types are
+the MetaValue is the value of the MetaData. All supported Omega data types are
 allowed except boolean which must be converted to an integer type. The FileID
 is once again the ID of the open data file and VarID is the variable to which
 this metadata is attached. For global file and simulation metadata not attached

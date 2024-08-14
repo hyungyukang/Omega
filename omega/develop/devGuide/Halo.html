@@ -37,7 +37,7 @@
           
           
           <a href="../index.html" class="icon icon-home">
-            OMEGA
+            Omega
           </a>
               <div class="version">
                 develop
@@ -136,7 +136,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">OMEGA</a>
+          <a href="../index.html">Omega</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -156,7 +156,7 @@
              
   <section class="tex2jax_ignore mathjax_ignore" id="halo-exchanges-halo">
 <span id="omega-dev-halo"></span><h1>Halo Exchanges (Halo)<a class="headerlink" href="#halo-exchanges-halo" title="Permalink to this heading"></a></h1>
-<p>OMEGA utilizes domain-based parallelism, where the domain is divided into
+<p>Omega utilizes domain-based parallelism, where the domain is divided into
 partitions that run in parallel as separate tasks distributed across the
 resources of the machine. Arrays representing physical quantities that are
 defined throughout the domain are divided into overlapping chunks and
@@ -165,7 +165,7 @@ arrays are updated. Array elements that are needed by a task to evolve the
 model forward in time, but are defined on and updated by a neighboring task
 are halo elements. It is necessary for each parallel task to regularly send
 locally defined array elements that belong to the halos of neighboring tasks
-and to receive local halo elements owned by neighboring tasks. In OMEGA, these
+and to receive local halo elements owned by neighboring tasks. In Omega, these
 halo exchanges are perfromed using the Halo class which, once constructed,
 contains lists of indices to send to and receive from neighboring tasks, and
 methods to conduct the exchanges. The halo exchanges are carried out using

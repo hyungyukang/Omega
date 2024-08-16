@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ocean State</title>
+  <title>Tendencies</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
@@ -22,8 +22,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Time Manager (TimeMgr)" href="TimeMgr.html" />
-    <link rel="prev" title="Tendencies" href="Tendencies.html" />
+    <link rel="next" title="Ocean State" href="OceanState.html" />
+    <link rel="prev" title="Tendency Terms" href="TendencyTerms.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -100,8 +100,14 @@
 <li class="toctree-l1"><a class="reference internal" href="AuxiliaryVariables.html">Auxiliary Variables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="AuxiliaryState.html">Auxiliary State</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TendencyTerms.html">Tendency Terms</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Tendencies.html">Tendencies</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Ocean State</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tendencies</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#initialization">Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#creation-of-non-default-tendencies">Creation of non-default tendencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#computation-of-tendencies">Computation of tendencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#removal-of-tendencies">Removal of tendencies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="OceanState.html">Ocean State</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">Time Manager (TimeMgr)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Reductions.html">Global Reductions</a></li>
 </ul>
@@ -147,9 +153,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Ocean State</li>
+      <li class="breadcrumb-item active">Tendencies</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/devGuide/OceanState.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/devGuide/Tendencies.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -157,68 +163,77 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="ocean-state">
-<h1>Ocean State<a class="headerlink" href="#ocean-state" title="Permalink to this heading"></a></h1>
-<p>The Omega <code class="docutils literal notranslate"><span class="pre">OceanState</span></code> class
-A state object is created by the <code class="docutils literal notranslate"><span class="pre">init</span></code> method, which assumes that <code class="docutils literal notranslate"><span class="pre">Decomp</span></code> and <code class="docutils literal notranslate"><span class="pre">HorzMesh</span></code> have
-already been initialized.</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Decomp</span><span class="o">::</span><span class="n">init</span><span class="p">();</span>
-<span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">HorzMesh</span><span class="o">::</span><span class="n">init</span><span class="p">();</span>
-<span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">OceanState</span><span class="o">::</span><span class="n">init</span><span class="p">();</span>
+  <section class="tex2jax_ignore mathjax_ignore" id="tendencies">
+<span id="omega-dev-tendencies"></span><h1>Tendencies<a class="headerlink" href="#tendencies" title="Permalink to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">Tendencies</span></code> class groups together all of the OMEGA <a class="reference internal" href="TendencyTerms.html#omega-dev-tend-terms"><span class="std std-ref">tendency terms</span></a>.
+It is responsible for managing their lifetime and providing functions that compute the
+tendency terms and the <a class="reference internal" href="AuxiliaryState.html#omega-dev-aux-state"><span class="std std-ref">auxiliary state</span></a>.
+It is possible to have multiple <code class="docutils literal notranslate"><span class="pre">Tendencies</span></code> instances in OMEGA. Every instance has a name
+and is tracked in a static C++ map called <code class="docutils literal notranslate"><span class="pre">AllTendencies</span></code>.</p>
+<section id="initialization">
+<h2>Initialization<a class="headerlink" href="#initialization" title="Permalink to this heading"></a></h2>
+<p>An instance of the <code class="docutils literal notranslate"><span class="pre">Tendencies</span></code> class requires a <a class="reference internal" href="HorzMesh.html#omega-dev-horz-mesh"><span class="std std-ref"><code class="docutils literal notranslate"><span class="pre">HorzMesh</span></code></span></a>, so
+the mesh class and all of its dependencies need to be initialized before the <code class="docutils literal notranslate"><span class="pre">Tendencies</span></code> class
+can be. The static method:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">init</span><span class="p">();</span>
 </pre></div>
 </div>
-<p>The create method:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OceanState</span><span class="o">::</span><span class="n">create</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">,</span><span class="w"> </span><span class="c1">///&lt; [in] Name for mesh</span>
-<span class="w">                   </span><span class="n">HorzMesh</span><span class="w"> </span><span class="o">*</span><span class="n">Mesh</span><span class="p">,</span><span class="w">          </span><span class="c1">///&lt; [in] Horizontal mesh</span>
-<span class="w">                   </span><span class="n">Decomp</span><span class="w"> </span><span class="o">*</span><span class="n">MeshDecomp</span><span class="p">,</span><span class="w">      </span><span class="c1">///&lt; [in] Decomp for Mesh</span>
-<span class="w">                   </span><span class="n">Halo</span><span class="w"> </span><span class="o">*</span><span class="n">MeshHalo_</span><span class="p">,</span><span class="w">         </span><span class="c1">///&lt; [in] Halo for Mesh</span>
-<span class="w">                   </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NVertLevels_</span><span class="p">,</span><span class="w">  </span><span class="c1">///&lt; [in] Number of vertical levels</span>
-<span class="w">                   </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NTimeLevels_</span><span class="w">   </span><span class="c1">///&lt; [in] Number of time levels</span>
-<span class="p">);</span>
+<p>initializes the default <code class="docutils literal notranslate"><span class="pre">Tendencies</span></code>. A pointer to it can be retrieved at any time using:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">*</span><span class="w"> </span><span class="n">DefTendencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">getDefault</span><span class="p">();</span>
 </pre></div>
 </div>
-<p>allocates the <code class="docutils literal notranslate"><span class="pre">NormalVelocity</span></code> and <code class="docutils literal notranslate"><span class="pre">LayerThickness</span></code> arrays for a given number of time levels.
-The current time level is then registered with the IO infrastructure.</p>
-<p>After initialization, the default state object can be retrieved via:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="p">::</span><span class="n">OceanState</span> <span class="o">*</span><span class="n">State</span> <span class="o">=</span> <span class="n">OMEGA</span><span class="p">::</span><span class="n">OceanState</span><span class="p">::</span><span class="n">getDefault</span><span class="p">();</span>
+<p>The constructor of the <code class="docutils literal notranslate"><span class="pre">Tendencies</span></code> class initializes member instances of each of the
+tendency terms, which each store constant mesh information as private member variables.</p>
+</section>
+<section id="creation-of-non-default-tendencies">
+<h2>Creation of non-default tendencies<a class="headerlink" href="#creation-of-non-default-tendencies" title="Permalink to this heading"></a></h2>
+<p>A non-default tendency group can be created from a string <code class="docutils literal notranslate"><span class="pre">Name</span></code>, horizontal mesh <code class="docutils literal notranslate"><span class="pre">Mesh</span></code>, number of
+vertical levels <code class="docutils literal notranslate"><span class="pre">NVertLevels</span></code>, and a configuration <code class="docutils literal notranslate"><span class="pre">Options</span></code>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">*</span><span class="w">  </span><span class="n">NewTendencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">create</span><span class="p">(</span><span class="n">Name</span><span class="p">,</span><span class="w"> </span><span class="n">Mesh</span><span class="p">,</span><span class="w"> </span><span class="n">NVertLevels</span><span class="p">,</span><span class="w"> </span><span class="n">Options</span><span class="p">);</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">OceanState</span></code> is meant to be a container that allows the non-tracer prognostic variables to be
-passed to the PDE solver routines for tendency and auxiliary variable calculation. For example</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">void</span> <span class="n">AuxiliaryState</span><span class="p">::</span><span class="n">compute</span><span class="p">(</span><span class="n">OceanState</span> <span class="o">*</span><span class="n">State</span><span class="p">)</span> <span class="n">const</span> <span class="p">{</span>
-  <span class="o">...</span>
-<span class="p">}</span>
+<p>For convenience, this returns a pointer to the newly created instance.
+Given its name, a pointer to a named tendency group
+can be obtained at any time by calling the static <code class="docutils literal notranslate"><span class="pre">get</span></code> method:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">*</span><span class="w"> </span><span class="n">NewTendencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">Name</span><span class="p">);</span>
 </pre></div>
 </div>
-<p>For now, member variables that are host arrays have variable names are appended with an
-<code class="docutils literal notranslate"><span class="pre">H</span></code>.  Array variable names not ending in <code class="docutils literal notranslate"><span class="pre">H</span></code> are device arrays.  For a given time level,
-host to device array is performed via:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">State</span><span class="o">-&gt;</span><span class="n">copyToDevice</span><span class="p">(</span><span class="n">TimeLevel</span><span class="p">);</span>
+</section>
+<section id="computation-of-tendencies">
+<h2>Computation of tendencies<a class="headerlink" href="#computation-of-tendencies" title="Permalink to this heading"></a></h2>
+<p>To compute all tendencies for both layer thickness and normal velocity equations,
+given ocean state, <code class="docutils literal notranslate"><span class="pre">State</span></code>, and a group of auxiliary variables, <code class="docutils literal notranslate"><span class="pre">AuxState</span></code>, do:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Tendencies</span><span class="p">.</span><span class="n">computeAllTendencies</span><span class="p">(</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">AuxState</span><span class="p">);</span>
 </pre></div>
 </div>
-<p>and a copy from device to host is performed by:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">State</span><span class="o">-&gt;</span><span class="n">copyToHost</span><span class="p">(</span><span class="n">TimeLevel</span><span class="p">);</span>
+<p>To call only the layer thickness tendency terms:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Tendencies</span><span class="p">.</span><span class="n">computeThicknessTendencies</span><span class="p">(</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">AuxState</span><span class="p">);</span>
 </pre></div>
 </div>
-<p>Eventually, the host arrays will be eliminated when <code class="docutils literal notranslate"><span class="pre">IO</span></code> and <code class="docutils literal notranslate"><span class="pre">Halo</span></code> are extended to
-handle host &lt;-&gt; device transfers.</p>
-<p>A time level update to advance the solution at the end of a model timestep is done by:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">State</span><span class="o">-&gt;</span><span class="n">updateTimeLevels</span><span class="p">();</span>
+<p>To call only the normal velocity tendency terms:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Tendencies</span><span class="p">.</span><span class="n">computeVelocityTendencies</span><span class="p">(</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">AuxState</span><span class="p">);</span>
 </pre></div>
 </div>
-<p>This shifts the time levels to the previous index with the last index being shifted to the
-highest index to be overwritten in the next timestep. A halo exchange is also performed on
-these arrays and the IOFields data pointer is attached to the current time level.</p>
-<p>The state arrays are deallocated by the <code class="docutils literal notranslate"><span class="pre">OceanState::clear()</span></code> method, which is
-necessary before calling <code class="docutils literal notranslate"><span class="pre">Kokkos::finalize</span></code>.</p>
+</section>
+<section id="removal-of-tendencies">
+<h2>Removal of tendencies<a class="headerlink" href="#removal-of-tendencies" title="Permalink to this heading"></a></h2>
+<p>To erase a specific named tendencies instance use <code class="docutils literal notranslate"><span class="pre">erase</span></code></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">erase</span><span class="p">(</span><span class="n">Name</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>To clear all instances do:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">clear</span><span class="p">();</span>
+</pre></div>
+</div>
+</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="Tendencies.html" class="btn btn-neutral float-left" title="Tendencies" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="TimeMgr.html" class="btn btn-neutral float-right" title="Time Manager (TimeMgr)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="TendencyTerms.html" class="btn btn-neutral float-left" title="Tendency Terms" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="OceanState.html" class="btn btn-neutral float-right" title="Ocean State" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

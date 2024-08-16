@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AuxiliaryState</title>
+  <title>Tendencies</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
@@ -22,8 +22,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="TimeManager" href="TimeMgr.html" />
-    <link rel="prev" title="Auxiliary variables" href="AuxiliaryVariables.html" />
+    <link rel="next" title="Auxiliary variables" href="AuxiliaryVariables.html" />
+    <link rel="prev" title="Tendency" href="Tendency.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -123,14 +123,11 @@
 <li class="toctree-l1"><a class="reference internal" href="ShallowWaterOmega0.html">Omega v0: Shallow Water</a></li>
 <li class="toctree-l1"><a class="reference internal" href="State.html">State</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Tendency.html">Tendency</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Tendencies.html">Tendencies</a></li>
-<li class="toctree-l1"><a class="reference internal" href="AuxiliaryVariables.html">Auxiliary variables</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">AuxiliaryState</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tendencies</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">1 Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#requirements">2 Requirements</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#requirement-auxiliary-state-should-register-auxiliary-variables-with-iostreams">2.1 Requirement: Auxiliary state should register auxiliary variables with IOStreams</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#requirement-computation-of-auxiliary-variables">2.2 Requirement: Computation of auxiliary variables</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#requirement-multiple-auxiliary-states-can-be-present">2.3 Requirement: Multiple auxiliary states can be present</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-computation-of-tendency-terms">2.1 Requirement: Computation of tendency terms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirement-multiple-tendencies-can-be-present">2.2 Requirement: Multiple tendencies can be present</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#algorithmic-formulation">3 Algorithmic Formulation</a></li>
@@ -151,12 +148,14 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#verification-and-testing">5 Verification and Testing</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#test-multiple-auxiliary-states">5.1 Test multiple auxiliary states</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#test-multiple-tendencies-instances">5.1 Test multiple tendencies instances</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#test-computation">5.2 Test computation</a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="AuxiliaryVariables.html">Auxiliary variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AuxiliaryState.html">AuxiliaryState</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">TimeManager</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Timers.html">Timers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TimeStepping.html">Time Stepping</a></li>
@@ -178,9 +177,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">AuxiliaryState</li>
+      <li class="breadcrumb-item active">Tendencies</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/design/AuxiliaryState.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/design/Tendencies.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -188,30 +187,26 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="auxiliarystate">
-<span id="omega-design-aux-state"></span><h1>AuxiliaryState<a class="headerlink" href="#auxiliarystate" title="Permalink to this heading"></a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="tendencies">
+<span id="omega-design-tendencies"></span><h1>Tendencies<a class="headerlink" href="#tendencies" title="Permalink to this heading"></a></h1>
 <section id="overview">
 <h2>1 Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
-<p>The auxiliary state class will provide a container for the auxiliary variables
+<p>The tendencies class will provide a container for the tendency terms
 on a subdomain within OMEGA. It will provide methods for computing the
-variables and it will register fields with IOStreams.</p>
+terms for the layer thickness and normal velocity tendencies.</p>
 </section>
 <section id="requirements">
 <h2>2 Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h2>
-<section id="requirement-auxiliary-state-should-register-auxiliary-variables-with-iostreams">
-<h3>2.1 Requirement: Auxiliary state should register auxiliary variables with IOStreams<a class="headerlink" href="#requirement-auxiliary-state-should-register-auxiliary-variables-with-iostreams" title="Permalink to this heading"></a></h3>
-<p>The auxiliary state class will register the auxiliary variables with IOStreams
-in its constructor to facilitate their output.</p>
+<section id="requirement-computation-of-tendency-terms">
+<h3>2.1 Requirement: Computation of tendency terms<a class="headerlink" href="#requirement-computation-of-tendency-terms" title="Permalink to this heading"></a></h3>
+<p>Methods to compute the tendency terms will be provided. This will include
+functions to compute the layer thickness tendencies, normal velocity tendencies,
+and all tendencies. This will also involve calling the compute function for the
+auxiliary state.</p>
 </section>
-<section id="requirement-computation-of-auxiliary-variables">
-<h3>2.2 Requirement: Computation of auxiliary variables<a class="headerlink" href="#requirement-computation-of-auxiliary-variables" title="Permalink to this heading"></a></h3>
-<p>Methods to compute the auxiliary variables will be provided. At minimum, a
-method to compute all of the variables is needed, but convenience functions
-that compute just a subset of them might also be useful.</p>
-</section>
-<section id="requirement-multiple-auxiliary-states-can-be-present">
-<h3>2.3 Requirement: Multiple auxiliary states can be present<a class="headerlink" href="#requirement-multiple-auxiliary-states-can-be-present" title="Permalink to this heading"></a></h3>
-<p>There will be methods to create and remove non-default auxiliary states, that
+<section id="requirement-multiple-tendencies-can-be-present">
+<h3>2.2 Requirement: Multiple tendencies can be present<a class="headerlink" href="#requirement-multiple-tendencies-can-be-present" title="Permalink to this heading"></a></h3>
+<p>There will be methods to create and remove non-default tendencies instances, that
 can be associated with different meshes.</p>
 </section>
 </section>
@@ -229,24 +224,23 @@ can be associated with different meshes.</p>
 </section>
 <section id="class-structs-data-types">
 <h4>4.1.2 Class/structs/data types<a class="headerlink" href="#class-structs-data-types" title="Permalink to this heading"></a></h4>
-<p>The auxiliary state class will contain objects representing auxiliary variable
-groups, strings for names of the auxiliary state and its metadata group, and a
-pointer to the associated mesh. Additionally, it will have a static map of all
-auxiliary states and a pointer to the default auxiliary state for quick
+<p>The tendencies class is an object representing a group of tendency terms and
+arrays for the accumulated tendency calculations. Additionally, it will have
+a static map of all tendencies and a pointer to the default tendencies instance for quick
 retrieval.</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">AuxiliaryState</span><span class="w"> </span><span class="p">{</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Tendencies</span><span class="p">{</span>
 <span class="w"> </span><span class="k">public</span><span class="o">:</span>
-<span class="w">   </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">Name</span><span class="p">;</span>
-<span class="w">   </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">GroupName</span><span class="p">;</span>
-<span class="w">   </span><span class="n">KineticAuxVars</span><span class="w"> </span><span class="n">KineticAux</span><span class="p">;</span>
-<span class="w">   </span><span class="n">LayerThicknessAuxVars</span><span class="w"> </span><span class="n">LayerThicknessAux</span><span class="p">;</span>
-<span class="w">   </span><span class="n">VorticityAuxVars</span><span class="w"> </span><span class="n">VorticityAux</span><span class="p">;</span>
-<span class="w">   </span><span class="n">VelocityDel2AuxVars</span><span class="w"> </span><span class="n">VelocityDel2Aux</span><span class="p">;</span>
-<span class="w">   </span><span class="c1">// more variables in the future</span>
+<span class="w">   </span><span class="n">Array2DReal</span><span class="w"> </span><span class="n">LayerThicknessTend</span><span class="p">;</span>
+<span class="w">   </span><span class="n">Array2DReal</span><span class="w"> </span><span class="n">NormalVelocityTend</span><span class="p">;</span>
+<span class="w">   </span><span class="n">ThicknessFluxDivOnCell</span><span class="w"> </span><span class="n">ThicknessFluxDiv</span><span class="p">;</span>
+<span class="w">   </span><span class="n">PotentialVortHAdvOnEdge</span><span class="w"> </span><span class="n">PotientialVortHAdv</span><span class="p">;</span>
+<span class="w">   </span><span class="n">KEGradOnEdge</span><span class="w"> </span><span class="n">KEGrad</span><span class="p">;</span>
+<span class="w">   </span><span class="n">SSHGradOnEdge</span><span class="w"> </span><span class="n">SSHGrad</span><span class="p">;</span>
+<span class="w">   </span><span class="n">VelocityDiffusionOnEdge</span><span class="w"> </span><span class="n">VelocityDiffusion</span><span class="p">;</span>
+<span class="w">   </span><span class="n">VelocityHyperDiffOnEdge</span><span class="w"> </span><span class="n">VelocityHyperDiff</span><span class="p">;</span>
 <span class="w"> </span><span class="k">private</span><span class="o">:</span>
-<span class="w">   </span><span class="k">const</span><span class="w"> </span><span class="n">HorzMesh</span><span class="w"> </span><span class="o">*</span><span class="n">Mesh</span><span class="p">;</span>
-<span class="w">   </span><span class="k">static</span><span class="w"> </span><span class="n">AuxiliaryState</span><span class="w"> </span><span class="o">*</span><span class="n">DefaultAuxState</span><span class="p">;</span>
-<span class="w">   </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">AuxiliaryState</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">AllAuxStates</span><span class="p">;</span>
+<span class="w">   </span><span class="k">static</span><span class="w"> </span><span class="n">Tendencies</span><span class="w"> </span><span class="o">*</span><span class="n">DefaultTendencies</span><span class="p">;</span>
+<span class="w">   </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Tendencies</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">AllTendencies</span><span class="p">;</span>
 <span class="p">};</span>
 </pre></div>
 </div>
@@ -255,56 +249,65 @@ retrieval.</p>
 <section id="methods">
 <h3>4.2 Methods<a class="headerlink" href="#methods" title="Permalink to this heading"></a></h3>
 <p>There will be a constructor and destructor for the class and several public
-methods. The constructor will be be private to make sure that every auxiliary
-state is properly stored in the map. However, a static method to create new
-auxiliary states, enforcing this requirement, will be provided.</p>
+methods. The constructor will be be private to make sure that every tendencies instance
+is properly stored in the map. However, a static method to create new
+tendencies instance, enforcing this requirement, will be provided.</p>
 <section id="creation">
 <h4>4.2.1 Creation<a class="headerlink" href="#creation" title="Permalink to this heading"></a></h4>
 <p>The constructor will be responsible for:</p>
 <ul class="simple">
-<li><p>constructing auxiliary variables</p></li>
-<li><p>registering fields and metadata with the I/O infrastructure</p></li>
+<li><p>initializing tendency term functors</p></li>
+<li><p>allocating tendency arrays</p></li>
 </ul>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">AuxiliaryState</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">HorzMesh</span><span class="w"> </span><span class="o">*</span><span class="n">Mesh</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NVertLevels</span><span class="p">);</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Tendencies</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">HorzMesh</span><span class="w"> </span><span class="o">*</span><span class="n">Mesh</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NVertLevels</span><span class="p">,</span><span class="w"> </span><span class="n">Config</span><span class="w"> </span><span class="o">*</span><span class="n">Options</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>The create method will take the same arguments as the constructor, use it to
-create a new auxiliary state, and put it in the static map of all auxiliary
-states. It will return a pointer to the newly created state.</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">AuxiliaryState</span><span class="o">*</span><span class="w"> </span><span class="nf">AuxiliaryState::create</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">HorzMesh</span><span class="w"> </span><span class="o">*</span><span class="n">Mesh</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NVertLevels</span><span class="p">);</span>
+create a new tendencies instance, and put it in the static map of all tendencies.
+It will return a pointer to the newly created object.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Tendencies</span><span class="o">*</span><span class="w"> </span><span class="nf">Tendencies::create</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">HorzMesh</span><span class="w"> </span><span class="o">*</span><span class="n">Mesh</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">NVertLevels</span><span class="p">,</span><span class="w"> </span><span class="n">Config</span><span class="w"> </span><span class="o">*</span><span class="n">Options</span><span class="p">);</span>
 </pre></div>
 </div>
 </section>
 <section id="initialization">
 <h4>4.2.2 Initialization<a class="headerlink" href="#initialization" title="Permalink to this heading"></a></h4>
-<p>The init method will create the default auxiliary state and return an error code:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">AuxiliaryState::init</span><span class="p">();</span>
+<p>The init method will create the default tendencies and return an error code:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">Tendencies::init</span><span class="p">();</span>
 </pre></div>
 </div>
 </section>
 <section id="retrieval">
 <h4>4.2.3 Retrieval<a class="headerlink" href="#retrieval" title="Permalink to this heading"></a></h4>
-<p>There will be methods for getting the default and non-default auxiliary states:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">AuxiliaryState</span><span class="w"> </span><span class="o">*</span><span class="nf">AuxiliaryState::getDefault</span><span class="p">();</span>
-<span class="n">AuxiliaryState</span><span class="w"> </span><span class="o">*</span><span class="nf">AuxiliaryState::get</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">);</span>
+<p>There will be methods for getting the default and non-default tendencies instances:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Tendencies</span><span class="w"> </span><span class="o">*</span><span class="nf">Tendencies::getDefault</span><span class="p">();</span>
+<span class="n">Tendencies</span><span class="w"> </span><span class="o">*</span><span class="nf">Tendencies::get</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">);</span>
 </pre></div>
 </div>
 </section>
 <section id="computation">
 <h4>4.2.4 Computation<a class="headerlink" href="#computation" title="Permalink to this heading"></a></h4>
-<p>The ‘computeAll’ method will compute all auxiliary variables using the ocean
-state from a given time level:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">AuxiliaryState::computeAll</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">OceanState</span><span class="w"> </span><span class="o">*</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">TimeLevel</span><span class="p">);</span>
+<p>The ‘computeAll’ method will compute and accumulate all layer thickness and normal velocity tendencies using the ocean
+state and auxiliary state from a given time level:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">Tendencies::computeAllTendencies</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">OceanState</span><span class="w"> </span><span class="o">*</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">AuxilaryState</span><span class="w"> </span><span class="o">*</span><span class="n">AuxState</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">TimeLevel</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The layer thickness tendencies will be computed with a method:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">Tendencies::computeThicknessTendencies</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">OceanState</span><span class="w"> </span><span class="o">*</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">AuxilaryState</span><span class="w"> </span><span class="o">*</span><span class="n">AuxState</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">TimeLevel</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The normal velocity tendencies will be computed with a method:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">Tendencies::computeVelocityTendencies</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">OceanState</span><span class="w"> </span><span class="o">*</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">AuxilaryState</span><span class="w"> </span><span class="o">*</span><span class="n">AuxState</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">TimeLevel</span><span class="p">);</span>
 </pre></div>
 </div>
 </section>
 <section id="destruction-and-removal">
 <h4>4.2.5 Destruction and removal<a class="headerlink" href="#destruction-and-removal" title="Permalink to this heading"></a></h4>
-<p>The destructor will unregister fields and remove metadata. The erase method
-will remove a named auxiliary state, whereas the clear method will remove all of
+<p>No operations are needed in the destructor as the Kokkos arrays are removed
+when they are no longer in scope. The erase method
+will remove a named tendencies instance, whereas the clear method will remove all of
 them. Both will call the destructor in the process.</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">AuxiliaryState::erase</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">);</span>
-<span class="kt">void</span><span class="w"> </span><span class="nf">AuxiliaryState::clear</span><span class="p">();</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">Tendencies::erase</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="o">&amp;</span><span class="n">Name</span><span class="p">);</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">Tendencies::clear</span><span class="p">();</span>
 </pre></div>
 </div>
 </section>
@@ -312,14 +315,14 @@ them. Both will call the destructor in the process.</p>
 </section>
 <section id="verification-and-testing">
 <h2>5 Verification and Testing<a class="headerlink" href="#verification-and-testing" title="Permalink to this heading"></a></h2>
-<section id="test-multiple-auxiliary-states">
-<h3>5.1 Test multiple auxiliary states<a class="headerlink" href="#test-multiple-auxiliary-states" title="Permalink to this heading"></a></h3>
-<p>There will be a test checking that multiple auxiliary state object can be
+<section id="test-multiple-tendencies-instances">
+<h3>5.1 Test multiple tendencies instances<a class="headerlink" href="#test-multiple-tendencies-instances" title="Permalink to this heading"></a></h3>
+<p>There will be a test checking that multiple tendencies objects can be
 created and that removing them works properly.</p>
 </section>
 <section id="test-computation">
 <h3>5.2 Test computation<a class="headerlink" href="#test-computation" title="Permalink to this heading"></a></h3>
-<p>There will be a test to ensure all of the variables are correctly computed by
+<p>There will be a test to ensure all of the tendencies are correctly computed by
 the compute method.</p>
 </section>
 </section>
@@ -329,8 +332,8 @@ the compute method.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="AuxiliaryVariables.html" class="btn btn-neutral float-left" title="Auxiliary variables" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="TimeMgr.html" class="btn btn-neutral float-right" title="TimeManager" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="Tendency.html" class="btn btn-neutral float-left" title="Tendency" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="AuxiliaryVariables.html" class="btn btn-neutral float-right" title="Auxiliary variables" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

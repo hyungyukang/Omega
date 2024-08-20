@@ -35,7 +35,7 @@ public:
 
    //------------------------------------------------------------------------//
    // All from Config later...
-   const R8 dt       =  5.0;    // Time step size (sec)
+   R8 dt       =  5.0;    // Time step size (sec)
    const R8 initTime = 0.0;       // Model initial time (sec)
    const R8 endTime  = 10.0*3600.0;   // Model eEnd time (sec)
    //const R8 endTime  = 15*86400;   // Model eEnd time (sec)

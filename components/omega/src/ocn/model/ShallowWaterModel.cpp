@@ -13,6 +13,22 @@ sw_model(int Comm, const MachEnv *Env, const Decomp *DefDecomp,
          Halo *DefHalo, HorzMesh *Mesh, OceanState *State) {
 
 
+   // YAML read test  -------------------------------------------------------/
+   Config("omega");
+   Config *ConfigOmega = Config::getOmegaConfig();
+   int Err = Config::readAll("namelist.yaml");
+   Config ConfigTimeIntegration("time_integration");
+   if (Err == 0) {
+      //LOG_INFO("Config YAML: read PASS");
+      int Err1 = ConfigOmega->get(ConfigTimeIntegration);
+      LOG_INFO(ConfigTimeIntegration.existsVar("config_dt"));
+      R8 config_dt;
+      int Err2 = ConfigTimeIntegration.get("config_dt",config_dt);
+      LOG_INFO(config_dt);
+   } else {
+      LOG_INFO("Config YAML: read FAIL");
+   }
+
    // Time manager  ---------------------------------------------------------/
    Calendar CalGreg("Gregorian", OMEGA::CalendarGregorian);
    //TimeInstant Time0(&CalGreg, 1, 1, 1, 0, 0, 0.0);

@@ -72,6 +72,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Tendencies.html">Tendencies</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/OceanState.html">Ocean State</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/TimeMgr.html">Time Manager (TimeMgr)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/TimeStepping.html">Time stepping</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Reductions.html">Global Reductions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
@@ -107,6 +108,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="OceanState.html">Ocean State</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">Time Manager (TimeMgr)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TimeStepping.html">Time stepping</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Reductions.html">Global Reductions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
@@ -185,13 +187,21 @@ tendency terms, which each store constant mesh information as private member var
 </section>
 <section id="creation-of-non-default-tendencies">
 <h2>Creation of non-default tendencies<a class="headerlink" href="#creation-of-non-default-tendencies" title="Permalink to this heading"></a></h2>
-<p>A non-default tendency group can be created from a string <code class="docutils literal notranslate"><span class="pre">Name</span></code>, horizontal mesh <code class="docutils literal notranslate"><span class="pre">Mesh</span></code>, number of
+<p>A non-default tendency group can be created with or without custom tendencies.
+Without custom tendencies, it is created from a string <code class="docutils literal notranslate"><span class="pre">Name</span></code>, horizontal mesh <code class="docutils literal notranslate"><span class="pre">Mesh</span></code>, number of
 vertical levels <code class="docutils literal notranslate"><span class="pre">NVertLevels</span></code>, and a configuration <code class="docutils literal notranslate"><span class="pre">Options</span></code>:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">*</span><span class="w">  </span><span class="n">NewTendencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">create</span><span class="p">(</span><span class="n">Name</span><span class="p">,</span><span class="w"> </span><span class="n">Mesh</span><span class="p">,</span><span class="w"> </span><span class="n">NVertLevels</span><span class="p">,</span><span class="w"> </span><span class="n">Options</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>For convenience, this returns a pointer to the newly created instance.
-Given its name, a pointer to a named tendency group
+To allow the user to provide custom tendencies, the <code class="docutils literal notranslate"><span class="pre">create</span></code> function can take two additional arguments
+<code class="docutils literal notranslate"><span class="pre">CustomThicknessTend</span></code> and <code class="docutils literal notranslate"><span class="pre">CustomVelocityTend</span></code></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">*</span><span class="w">  </span><span class="n">NewTendencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">create</span><span class="p">(</span><span class="n">Name</span><span class="p">,</span><span class="w"> </span><span class="n">Mesh</span><span class="p">,</span><span class="w"> </span><span class="n">NVertLevels</span><span class="p">,</span><span class="w"> </span><span class="n">Options</span><span class="p">,</span><span class="w"> </span><span class="n">CustomThicknessTend</span><span class="p">,</span><span class="w"> </span><span class="n">CustomVelocityTend</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The two custom tendency arguments need to be callable objects that take a Kokkos array <code class="docutils literal notranslate"><span class="pre">Tend</span></code>, ocean state <code class="docutils literal notranslate"><span class="pre">State</span></code>,
+auxiliary state <code class="docutils literal notranslate"><span class="pre">AuxState</span></code>, two integers: <code class="docutils literal notranslate"><span class="pre">ThickTimeLevel</span></code> and <code class="docutils literal notranslate"><span class="pre">VelTimeLevel</span></code>, and time instant <code class="docutils literal notranslate"><span class="pre">Time</span></code>.</p>
+<p>Given its name, a pointer to a named tendency group
 can be obtained at any time by calling the static <code class="docutils literal notranslate"><span class="pre">get</span></code> method:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">*</span><span class="w"> </span><span class="n">NewTendencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">Name</span><span class="p">);</span>
 </pre></div>
@@ -200,16 +210,17 @@ can be obtained at any time by calling the static <code class="docutils literal 
 <section id="computation-of-tendencies">
 <h2>Computation of tendencies<a class="headerlink" href="#computation-of-tendencies" title="Permalink to this heading"></a></h2>
 <p>To compute all tendencies for both layer thickness and normal velocity equations,
-given ocean state, <code class="docutils literal notranslate"><span class="pre">State</span></code>, and a group of auxiliary variables, <code class="docutils literal notranslate"><span class="pre">AuxState</span></code>, do:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Tendencies</span><span class="p">.</span><span class="n">computeAllTendencies</span><span class="p">(</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">AuxState</span><span class="p">);</span>
+given ocean state, <code class="docutils literal notranslate"><span class="pre">State</span></code>, a group of auxiliary variables, <code class="docutils literal notranslate"><span class="pre">AuxState</span></code>, thickness
+time level ‘ThickTimeLevel’, velocity time level <code class="docutils literal notranslate"><span class="pre">VelTimeLevel</span></code>, and time instant <code class="docutils literal notranslate"><span class="pre">Time</span></code> do:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Tendencies</span><span class="p">.</span><span class="n">computeAllTendencies</span><span class="p">(</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">AuxState</span><span class="p">,</span><span class="w"> </span><span class="n">ThickTimeLevel</span><span class="p">,</span><span class="w"> </span><span class="n">VelTimeLevel</span><span class="p">,</span><span class="w"> </span><span class="n">Time</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>To call only the layer thickness tendency terms:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Tendencies</span><span class="p">.</span><span class="n">computeThicknessTendencies</span><span class="p">(</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">AuxState</span><span class="p">);</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Tendencies</span><span class="p">.</span><span class="n">computeThicknessTendencies</span><span class="p">(</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">AuxState</span><span class="p">,</span><span class="w"> </span><span class="n">ThickTimeLevel</span><span class="p">,</span><span class="w"> </span><span class="n">VelTimeLevel</span><span class="p">,</span><span class="w"> </span><span class="n">Time</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>To call only the normal velocity tendency terms:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Tendencies</span><span class="p">.</span><span class="n">computeVelocityTendencies</span><span class="p">(</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">AuxState</span><span class="p">);</span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Tendencies</span><span class="p">.</span><span class="n">computeVelocityTendencies</span><span class="p">(</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">AuxState</span><span class="p">,</span><span class="w"> </span><span class="n">ThickTimeLevel</span><span class="p">,</span><span class="w"> </span><span class="n">VelTimeLevel</span><span class="p">,</span><span class="w"> </span><span class="n">Time</span><span class="p">);</span>
 </pre></div>
 </div>
 </section>

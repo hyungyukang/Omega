@@ -234,7 +234,8 @@ class Decomp {
    /// Initializes Omega decomposition info and creates the default
    /// decomposition based on the default MachEnv and configuration
    /// options.
-   static int init(const std::string &MeshFileName = "OmegaMesh.nc");
+   //static int init(const std::string &MeshFileName = "OmegaMesh.nc");
+   static int init(const std::string &MeshFileName = "init.nc");
 
    // Creates a new decomposition using the constructor and puts it in the
    // AllDecomps map

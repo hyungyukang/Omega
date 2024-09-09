@@ -200,7 +200,7 @@ int IO_write(TimeInstant &Time) {
 
    // Time info
    char xtime[NTimeLevelsIO][64] = {{' '}};
-   std::string CurrTimeString = Time.getString(4,4,"_");
+   std::string CurrTimeString = Time.getString(4,0,"_");
    char *cstr = CurrTimeString.data();
    strncpy (xtime[0],cstr,strlen(cstr)+1);
 

@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 
    while (Err1 == 0 && !(EndAlarm.isRinging())) {
 
-      Err1 = OMEGA::ocnRun(CurrTime, EndAlarm);
+      Err1 = OMEGA::ocnRun(OmegaCal, CurrTime, EndAlarm);
 
       if (Err1 != 0)
          LOG_ERROR("Error advancing Omega run interval");

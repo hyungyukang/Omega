@@ -11,7 +11,9 @@
 
 namespace OMEGA {
 
-int ocnRun(TimeInstant &CurrTime, ///< [inout] current sim time
+int ocnRun(
+           Calendar &OmegaCal,     ///< [out] sim calendar
+           TimeInstant &CurrTime, ///< [inout] current sim time
            Alarm &EndAlarm        ///< [inout] alarm to end simulation
 ) {
 
@@ -36,6 +38,24 @@ int ocnRun(TimeInstant &CurrTime, ///< [inout] current sim time
 
    I8 IStep = 0;
 
+
+   ///////////////////////////////////////
+   R8 ElapsedTimeSec;
+
+   TimeInstant StartTime = OmegaClock.getStartTime();
+   LOG_INFO("ocnRun: Time step starts at {}:",
+            StartTime.getString(4, 4, "-"));
+   TimeFrac ElapsedTime = StartTime.getElapsedTime();
+   ElapsedTimeSec = ElapsedTime.getSeconds();
+   TimeInterval RefInterval;
+   Err = RefInterval.set(ElapsedTimeSec,TimeUnits::Seconds);
+   ///////////////////////////////////////
+
+   ///////////////////////////////////////
+   Err = IO_init(StartTime);
+   ///////////////////////////////////////
+
+
    // time loop, integrate until EndAlarm or error encountered
    while (Err == 0 && !(EndAlarm.isRinging())) {
 
@@ -47,14 +67,32 @@ int ocnRun(TimeInstant &CurrTime, ///< [inout] current sim time
 
       // do forward time step
       TimeInstant SimTime = OmegaClock.getPreviousTime();
-      DefTimeStepper->doStep(DefOceanState, SimTime);
+      TimeInstant CurrRunDuration = SimTime - RefInterval;
 
+      TimeFrac ElapsedTime = CurrRunDuration.getElapsedTime();
+
+      ElapsedTimeSec = ElapsedTime.getSeconds();
+      LOG_INFO("ocnRun: Elapsed Time in Seconds {}",ElapsedTimeSec);
+
+      DefTimeStepper->doStep(DefOceanState, CurrRunDuration);
+
+      ////////////////////////////////////////////////////////////////
       // write restart file/output, anything needed post-timestep
 
       CurrTime = OmegaClock.getCurrentTime();
       LOG_INFO("ocnRun: Time step {} complete, clock time: {}", IStep,
-               CurrTime.getString(4, 4, "-"));
+               CurrTime.getString(4, 4, "_"));
+
+      //Err = CurrTime.get(yyyy,mm,dd,hh,min,whole,numer,denom);
+      //ElapsedTime = OmegaCal.getElapsedTime(yyyy,mm,dd,hh,min,whole,numer,denom);
+      //Err = ElapsedTime.get(whole,numer,denom);
+      //LOG_INFO("Elapsed Time {} {} {}", whole - wholeInit, numer, denom);
+
    }
+
+   ///////////////////////////////////////
+   Err = IO_write(CurrTime);
+   ///////////////////////////////////////
 
    return Err;
 

@@ -10,6 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "OceanConstans.h"
 #include "AuxiliaryState.h"
 #include "Config.h"
 #include "HorzMesh.h"
@@ -170,7 +171,7 @@ class SSHGradOnEdge {
    }
 
  private:
-   R8 Grav = 9.80665_Real;
+   //R8 Grav = 9.80665_Real;
    Array2DI4 CellsOnEdge;
    Array1DR8 DcEdge;
 };

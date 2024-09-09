@@ -24,7 +24,7 @@ int ocnInit(MPI_Comm Comm, Calendar &OmegaCal, TimeInstant &StartTime,
             Alarm &EndAlarm);
 
 /// Advance the model from starting from CurrTime until EndAlarm rings
-int ocnRun(TimeInstant &CurrTime, Alarm &EndAlarm);
+int ocnRun(Calendar &OmegaCal, TimeInstant &CurrTime, Alarm &EndAlarm);
 
 /// Clean up all Omega objects
 int ocnFinalize(const TimeInstant &CurrTime);
@@ -35,6 +35,9 @@ int initTimeManagement(Calendar &OmegaCal, TimeInstant &StartTime,
 
 /// Initialize Omega modules needed to run ocean model
 int initOmegaModules(MPI_Comm Comm);
+
+int IO_init(TimeInstant &Time);
+int IO_write(TimeInstant &Time);
 
 } // end namespace OMEGA
 

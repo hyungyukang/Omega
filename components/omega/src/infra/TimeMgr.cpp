@@ -4314,6 +4314,10 @@ TimeInstant Clock::getStartTime(void) const { return StartTime; }
 
 TimeInterval Clock::getTimeStep(void) const { return TimeStep; }
 
+//////////////////////////////////////////////////////////////
+TimeFrac TimeInstant::getElapsedTime(void) const { return ElapsedTime; }
+//////////////////////////////////////////////////////////////
+
 //------------------------------------------------------------------------------
 // Clock::attachAlarm - Attaches an alarm to this clock
 // Attaches an alarm to this clock. The clock simply stores a pointer to this

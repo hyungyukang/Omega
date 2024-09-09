@@ -14,6 +14,7 @@
 #include "DataTypes.h"
 #include "HorzMesh.h"
 #include "OceanState.h"
+#include "share/ManufacturedSolution.h"
 
 namespace OMEGA {
 
@@ -23,6 +24,7 @@ std::map<std::string, std::unique_ptr<Tendencies>> Tendencies::AllTendencies;
 //------------------------------------------------------------------------------
 // Initialize the tendencies. Assumes that HorzMesh as alread been initialized.
 int Tendencies::init() {
+
    int Err = 0;
 
    HorzMesh *DefHorzMesh = HorzMesh::getDefault();
@@ -50,6 +52,35 @@ int Tendencies::init() {
 
    Tendencies::DefaultTendencies =
        create("Default", DefHorzMesh, NVertLevels, &TendConfig);
+
+   // Check if use the manufactured solution test
+   bool UseManufacturedSolution = false;
+   Config ManufacturedSolutionConfig("ManufacturedSolution");
+   if (OmegaConfig->existsGroup("ManufacturedSolution")) {
+      Err = OmegaConfig->get(ManufacturedSolutionConfig);
+      if (ManufacturedSolutionConfig.existsVar("UseManufacturedSolution")) {
+         Err = ManufacturedSolutionConfig.get("UseManufacturedSolution", UseManufacturedSolution);
+      }
+   }
+
+   if (UseManufacturedSolution) {
+      // Clear tendencies
+      Tendencies::clear();
+
+      //Tendencies::CustomTendencyType{} = ManufacturedThicknessTendency{};
+      //Tendencies::CustomVelocityType{} = ManufacturedVelocityTendency{};
+
+      // Re-create tendencies with the manufactured solution
+      Tendencies::DefaultTendencies =
+          create("Default", DefHorzMesh, NVertLevels, &TendConfig,
+                 ManufacturedThicknessTendency{}, ManufacturedVelocityTendency{});
+                // Tendencies::CustomTendencyType{},Tendencies::CustomVelocityType{});
+                // CustomTendencyType{}, ManufacturedVelocityTendency{});
+
+      //auto *TestTendencies = Tendencies::create(
+      //   "TestTendencies", DefHorzMesh, NVertLevels, &TendConfig,
+      //   ManufacturedThicknessTendency{}, ManufacturedVelocityTendency{});
+   }
 
    return Err;
 

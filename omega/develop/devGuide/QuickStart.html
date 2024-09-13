@@ -59,6 +59,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Broadcast.html">Omega Broadcast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Logging.html">Omega Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Driver.html">Driver</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Decomp.html">Domain Decomposition (Decomp)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Dimension.html">Dimension</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Field.html">Fields and Metadata (Field)</a></li>
@@ -108,6 +109,7 @@
 <li class="toctree-l1"><a class="reference internal" href="DataTypes.html#arrays-and-kokkos">Arrays and Kokkos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Config.html">Model Configuration (Config)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Driver.html">Driver</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Omega Broadcast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="CMakeBuild.html">Omega Build with CMake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Logging.html">Developing Omega Logging</a></li>
@@ -317,7 +319,8 @@ ln<span class="w"> </span>-sf<span class="w">  </span>planar_test_mesh.nc<span c
 </section>
 <section id="running-ctests">
 <h3>Running CTests<a class="headerlink" href="#running-ctests" title="Permalink to this heading"></a></h3>
-<p>Omega includes several unit tests that run through CTest.  These need to be
+<p>Omega includes several unit tests that run through CTest. Several tests require options read from a YAML configuration file. Before running the tests, copy
+the <code class="docutils literal notranslate"><span class="pre">UnitTest.yml</span></code> file from the <code class="docutils literal notranslate"><span class="pre">configs</span></code> directory in the Omega repo into the <code class="docutils literal notranslate"><span class="pre">test</span></code> directory, and rename it <code class="docutils literal notranslate"><span class="pre">omega.yml</span></code>. The unit tests need to be
 run on a compute node.</p>
 <p>To run the tests:</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>./omega_ctest.sh

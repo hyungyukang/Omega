@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Time stepping</title>
+  <title>Driver</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
@@ -22,8 +22,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Global Reductions" href="Reductions.html" />
-    <link rel="prev" title="Time Manager (TimeMgr)" href="TimeMgr.html" />
+    <link rel="next" title="Domain Decomposition (Decomp)" href="Decomp.html" />
+    <link rel="prev" title="Omega Logging" href="Logging.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -59,7 +59,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Omega Broadcast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Logging.html">Omega Logging</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Driver.html">Driver</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Driver</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Decomp.html">Domain Decomposition (Decomp)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Dimension.html">Dimension</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Field.html">Fields and Metadata (Field)</a></li>
@@ -73,7 +73,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Tendencies.html">Tendencies</a></li>
 <li class="toctree-l1"><a class="reference internal" href="OceanState.html">Ocean State</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">Time Manager (TimeMgr)</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Time stepping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TimeStepping.html">Time stepping</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Reductions.html">Global Reductions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
@@ -149,9 +149,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Time stepping</li>
+      <li class="breadcrumb-item active">Driver</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/userGuide/TimeStepping.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/userGuide/Driver.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -159,31 +159,56 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="time-stepping">
-<span id="omega-user-time-stepping"></span><h1>Time stepping<a class="headerlink" href="#time-stepping" title="Permalink to this heading"></a></h1>
-<p>Time stepper refers to the numerical scheme used to advance the model in time.
-Omega implements a couple of time-stepping schemes. The user can select the
-scheme they want in the configuration file.</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="nt">TimeStepping</span><span class="p">:</span>
-<span class="w">       </span><span class="nt">TimeStepperType</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Forward-Backward&#39;</span>
+  <section id="driver">
+<h1>Driver<a class="headerlink" href="#driver" title="Permalink to this heading"></a></h1>
+<p>The Omega Driver manages the execution of the Omega ocean model. Currently,
+the only user-configurable parameters unique to the Driver relate to the
+time management of the simulation.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="nt">TimeManagement</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">StartTime</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0001-01-01_00:00:00</span>
+<span class="w">      </span><span class="nt">StopTime</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">none</span>
+<span class="w">      </span><span class="nt">RunDuration</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0000_02:00:00.000</span>
+<span class="w">      </span><span class="nt">CalendarType</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">No Leap</span>
 </pre></div>
 </div>
-<p>The following time steppers are currently available:</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">StartTime</span></code> and <code class="docutils literal notranslate"><span class="pre">StopTime</span></code> should be formatted strings in the form
+<code class="docutils literal notranslate"><span class="pre">YYYY-MM-DD_HH:MM:SS.SSSS</span></code> and the <code class="docutils literal notranslate"><span class="pre">RunDuration</span></code> should be a formatted string in
+the form <code class="docutils literal notranslate"><span class="pre">DDDD_HH:MM:SS.SSSS</span></code> (the actual width of each unit can be arbitrary
+and the separators can be any single non-numeric character). Either the
+<code class="docutils literal notranslate"><span class="pre">StopTime</span></code> or <code class="docutils literal notranslate"><span class="pre">RunDuration</span></code> can be set to <code class="docutils literal notranslate"><span class="pre">none</span></code> in order to use the other to
+determine the duration of the run. If both are set and <code class="docutils literal notranslate"><span class="pre">StopTime</span> <span class="pre">-</span> <span class="pre">StartTime</span></code>
+is incosistent with <code class="docutils literal notranslate"><span class="pre">RunDuration</span></code>, then <code class="docutils literal notranslate"><span class="pre">RunDuration</span></code> is used for the
+simulation. The supported calendar types are:</p>
 <table class="colwidths-auto docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>Config option name</p></th>
-<th class="head"><p>Scheme</p></th>
+<th class="head"><p>Calendar type</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Forward-Backward</p></td>
-<td><p>forward-backward</p></td>
+<tr class="row-even"><td><p>Gregorian</p></td>
+<td><p>Gregorian calendar</p></td>
 </tr>
-<tr class="row-odd"><td><p>RungeKutta2</p></td>
-<td><p>second-order two-stage midpoint Runge Kutta method</p></td>
+<tr class="row-odd"><td><p>No Leap</p></td>
+<td><p>Gregorian without leap years</p></td>
 </tr>
-<tr class="row-even"><td><p>RungeKutta4</p></td>
-<td><p>classic fourth-order four-stage Runge Kutta method</p></td>
+<tr class="row-even"><td><p>Julian</p></td>
+<td><p>Julian calendar</p></td>
+</tr>
+<tr class="row-odd"><td><p>Julian Day</p></td>
+<td><p>Julian day</p></td>
+</tr>
+<tr class="row-even"><td><p>Modified Julian Day</p></td>
+<td><p>modified Julian day</p></td>
+</tr>
+<tr class="row-odd"><td><p>360 Day</p></td>
+<td><p>12 months, 30 days each</p></td>
+</tr>
+<tr class="row-even"><td><p>Custom</p></td>
+<td><p>user-defined calendar</p></td>
+</tr>
+<tr class="row-odd"><td><p>No Calendar</p></td>
+<td><p>tracks elapsed time only</p></td>
 </tr>
 </tbody>
 </table>
@@ -193,8 +218,8 @@ scheme they want in the configuration file.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="TimeMgr.html" class="btn btn-neutral float-left" title="Time Manager (TimeMgr)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="Reductions.html" class="btn btn-neutral float-right" title="Global Reductions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="Logging.html" class="btn btn-neutral float-left" title="Omega Logging" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Decomp.html" class="btn btn-neutral float-right" title="Domain Decomposition (Decomp)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

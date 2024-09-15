@@ -43,6 +43,26 @@ int Tendencies::init() {
 
    Err = DefaultTendencies->readTendConfig(&TendConfig);
 
+   // Check if use the manufactured solution test
+   bool UseManufacturedSolution = false;
+   Config ManufacturedSolutionConfig("ManufacturedSolution");
+   if (OmegaConfig->existsGroup("ManufacturedSolution")) {
+      Err = OmegaConfig->get(ManufacturedSolutionConfig);
+      if (ManufacturedSolutionConfig.existsVar("UseManufacturedSolution")) {
+         Err = ManufacturedSolutionConfig.get("UseManufacturedSolution", UseManufacturedSolution);
+      }
+   }
+
+   if (UseManufacturedSolution) {
+      // Clear tendencies
+      Tendencies::clear();
+
+      // Re-create tendencies with the manufactured solution
+      Tendencies::DefaultTendencies =
+          create("Default", DefHorzMesh, NVertLevels, &TendConfig,
+                 ManufacturedThicknessTendency{}, ManufacturedVelocityTendency{});
+   }
+
    return Err;
 
 } // end init

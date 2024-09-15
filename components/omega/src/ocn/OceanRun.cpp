@@ -36,6 +36,14 @@ int ocnRun(TimeInstant &CurrTime, ///< [inout] current sim time
 
    I8 IStep = 0;
 
+   ///////////////////////////////
+   R8 ElapsedTimeSec;
+   TimeInstant StartTime = OmegaClock.getStartTime();
+   Err = StartTime.get(ElapsedTimeSec, TimeUnits::Seconds);
+   TimeInterval RefInterval;
+   Err = RefInterval.set(ElapsedTimeSec,TimeUnits::Seconds);
+   ///////////////////////////////
+
    // time loop, integrate until EndAlarm or error encountered
    while (Err == 0 && !(EndAlarm.isRinging())) {
 
@@ -46,7 +54,11 @@ int ocnRun(TimeInstant &CurrTime, ///< [inout] current sim time
       // call forcing routines, anything needed pre-timestep
 
       // do forward time step
-      TimeInstant SimTime = OmegaClock.getPreviousTime();
+      //TimeInstant SimTime = OmegaClock.getPreviousTime();
+      ///////////////////////////////
+      TimeInstant SimTime = OmegaClock.getPreviousTime() - RefInterval;
+      ///////////////////////////////
+      //
       DefTimeStepper->doStep(DefOceanState, SimTime);
 
       // write restart file/output, anything needed post-timestep
@@ -55,6 +67,12 @@ int ocnRun(TimeInstant &CurrTime, ///< [inout] current sim time
       LOG_INFO("ocnRun: Time step {} complete, clock time: {}", IStep,
                CurrTime.getString(4, 4, "-"));
    }
+
+
+   // write restart file/output
+   ///////////////////////////////////////
+   Err = IO_write(CurrTime);
+   ///////////////////////////////////////
 
    return Err;
 

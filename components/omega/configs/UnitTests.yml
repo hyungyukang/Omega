@@ -23,3 +23,5 @@ Omega:
       ViscDel2: 1.0
       VelHyperDiffTendencyEnable: true
       ViscDel4: 1.0
+   ManufacturedSolution:
+      UseManufacturedSolution: true

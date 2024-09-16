@@ -14,6 +14,7 @@
 #include "DataTypes.h"
 #include "HorzMesh.h"
 #include "OceanState.h"
+#include "share/ManufacturedSolution.h"
 
 namespace OMEGA {
 

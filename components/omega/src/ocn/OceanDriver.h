@@ -36,6 +36,9 @@ int initTimeManagement(Calendar &OmegaCal, TimeInstant &StartTime,
 /// Initialize Omega modules needed to run ocean model
 int initOmegaModules(MPI_Comm Comm);
 
+int IO_init(TimeInstant &Time);
+int IO_write(TimeInstant &Time);
+
 } // end namespace OMEGA
 
 //===----------------------------------------------------------------------===//

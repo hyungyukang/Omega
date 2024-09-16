@@ -17,9 +17,7 @@ struct ManufacturedThicknessTendency {
                    int VelTimeLevel, TimeInstant Time) const {
 
      // Get ElapsedTime
-     R8 ElapsedTimeSec;
-     I4 Err = StartTime.get(ElapsedTimeSec, TimeUnits::Seconds);
-
+     TimeFrac ElapsedTime = Time.getElapsedTime();
 
      R8 H0 = 1000.0;
      R8 etaHat1 = 1.00;
@@ -32,7 +30,7 @@ struct ManufacturedThicknessTendency {
      R8 kX1 = mx* 2.0*pii/lX;
      R8 kY1 = my* 2.0*pii/lY;
      R8 omega1 = sqrt(g*H0*(kX1*kX1 + kY1*kY1));
-     R8 omegaT = omega1 * ElapsedTimeSec;
+     R8 omegaT = omega1 * ElapsedTime.getSeconds();
 
      auto *Mesh                = HorzMesh::getDefault();
      auto NVertLevels          = ThicknessTend.extent_int(1);
@@ -60,9 +58,7 @@ struct ManufacturedVelocityTendency {
                    int VelTimeLevel, TimeInstant Time) const {
 
      // Get ElapsedTime
-     R8 ElapsedTimeSec;
-     I4 Err = StartTime.get(ElapsedTimeSec, TimeUnits::Seconds);
-
+     TimeFrac ElapsedTime = Time.getElapsedTime();
 
      R8 H0 = 1000.0;
      R8 etaHat1 = 1.00;
@@ -76,7 +72,7 @@ struct ManufacturedVelocityTendency {
      R8 kX1 = mx* 2.0*pii/lX;
      R8 kY1 = my* 2.0*pii/lY;
      R8 omega1 = sqrt(g*H0*(kX1*kX1 + kY1*kY1));
-     R8 omegaT = omega1 * ElapsedTimeSec;
+     R8 omegaT = omega1 * ElapsedTime.getSeconds();
 
      auto *Mesh                = HorzMesh::getDefault();
      auto NVertLevels          = NormalVelTend.extent_int(1);

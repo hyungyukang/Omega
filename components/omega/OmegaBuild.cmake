@@ -304,9 +304,9 @@ macro(init_standalone_build)
   file(APPEND ${_ProfileScript} "# create files such as a path in a scratch file system.\n")
 
   # copy yaml configuration files
-  file(MAKE_DIRECTORY "${OMEGA_BUILD_DIR}/config")
+  file(MAKE_DIRECTORY "${OMEGA_BUILD_DIR}/configs")
   file(COPY "${OMEGA_SOURCE_DIR}/configs/Default.yml"
-       DESTINATION "${OMEGA_BUILD_DIR}/config")
+       DESTINATION "${OMEGA_BUILD_DIR}/configs")
   file(COPY "${OMEGA_SOURCE_DIR}/configs/Default.yml"
        DESTINATION "${OMEGA_BUILD_DIR}/test")
   file(RENAME "${OMEGA_BUILD_DIR}/test/Default.yml"

@@ -32,6 +32,7 @@ userGuide/Decomp
 userGuide/Dimension
 userGuide/Field
 userGuide/IO
+userGuide/IOStreams
 userGuide/Halo
 userGuide/HorzMesh
 userGuide/HorzOperators
@@ -65,6 +66,7 @@ devGuide/Decomp
 devGuide/Dimension
 devGuide/Field
 devGuide/IO
+devGuide/IOStreams
 devGuide/Halo
 devGuide/HorzMesh
 devGuide/HorzOperators

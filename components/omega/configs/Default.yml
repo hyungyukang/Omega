@@ -82,3 +82,6 @@ Omega:
       EndTime: 0001-06-30_00.00.00
       Contents:
         - Tracers
+  Tracers:
+    Base: [Temp, Salt]
+    Debug: [Debug1, Debug2, Debug3]

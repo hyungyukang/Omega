@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Horizontal Mesh</title>
@@ -13,10 +13,9 @@
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/doctools.js"></script>
         <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/js/theme.js"></script>
@@ -160,7 +159,7 @@
            <div itemprop="articleBody">
              
   <section id="horizontal-mesh">
-<h1>Horizontal Mesh<a class="headerlink" href="#horizontal-mesh" title="Permalink to this heading"></a></h1>
+<span id="omega-user-horz-mesh"></span><h1>Horizontal Mesh<a class="headerlink" href="#horizontal-mesh" title="Permalink to this heading"></a></h1>
 <p>Omega uses the MPAS mesh specification found
 <a class="reference external" href="https://mpas-dev.github.io/files/documents/MPAS-MeshSpec.pdf">here</a>. The names
 of the mesh variables have been retained, with the caveat that they now begin
@@ -174,7 +173,7 @@ additional mesh variables, which are not required for Decomp.</p>
 <p>Currently, the Mesh class reads in all variables from the MPAS mesh
 specification except those read by <a class="reference internal" href="../devGuide/Decomp.html#omega-dev-decomp"><span class="std std-ref">Decomp</span></a>.
 This includes the following variables:</p>
-<table class="colwidths-auto docutils align-default">
+<table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>Variable Name</p></th>
 <th class="head"><p>Description</p></th>

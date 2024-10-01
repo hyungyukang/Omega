@@ -14,6 +14,7 @@
 #include "DataTypes.h"
 #include "HorzMesh.h"
 #include "OceanState.h"
+#include "share/ManufacturedSolution.h"
 
 namespace OMEGA {
 
@@ -40,6 +41,27 @@ int Tendencies::init() {
 
    Tendencies::DefaultTendencies =
        create("Default", DefHorzMesh, NVertLevels, &TendConfig);
+
+
+   // Check if use the manufactured solution test
+   bool UseManufacturedSolution = false;
+   Config ManufacturedSolutionConfig("ManufacturedSolution");
+   if (OmegaConfig->existsGroup("ManufacturedSolution")) {
+      Err = OmegaConfig->get(ManufacturedSolutionConfig);
+      if (ManufacturedSolutionConfig.existsVar("UseManufacturedSolution")) {
+         Err = ManufacturedSolutionConfig.get("UseManufacturedSolution", UseManufacturedSolution);
+      }
+   }
+
+   if (UseManufacturedSolution) {
+      // Clear tendencies
+      Tendencies::clear();
+
+      // Re-create tendencies with the manufactured solution
+      Tendencies::DefaultTendencies =
+          create("Default", DefHorzMesh, NVertLevels, &TendConfig,
+                 ManufacturedThicknessTendency{}, ManufacturedVelocityTendency{});
+   }
 
    Err = DefaultTendencies->readTendConfig(&TendConfig);
 

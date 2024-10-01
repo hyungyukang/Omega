@@ -85,3 +85,5 @@ Omega:
   Tracers:
     Base: [Temp, Salt]
     Debug: [Debug1, Debug2, Debug3]
+  ManufacturedSolution:
+    UseManufacturedSolution: true

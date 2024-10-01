@@ -52,6 +52,14 @@ class Tracers {
    // if it is over max index
    static I4 CurTimeIndex; ///< Time dimension array index for current level
 
+   /////////////////////////////////////////////////
+   static I4 read(int StateFileID, I4 CellDecompR8);
+
+   static I4 initParallelIO(I4 &CellDecompR8, Decomp *MeshDecomp);
+
+   static I4 finalizeParallelIO(I4 CellDecompR8);
+   /////////////////////////////////////////////////
+
    // locally defines all tracers but do not allocates memory
    static I4
    define(const std::string &Name,        ///< [in] Name of tracer
@@ -193,6 +201,10 @@ class Tracers {
    /// Copy tracers variables from device to host
    static I4 copyToHost(const I4 TimeLevel ///< [in] tracer time level
    );
+
+   /////////////////////////////////////////////////////////////////////////////
+   static I4 loadTracersFromFile(const std::string &TracerFileName, Decomp *MeshDecomp);
+   /////////////////////////////////////////////////////////////////////////////
 
    //---------------------------------------------------------------------------
    // Forbid copy and move construction

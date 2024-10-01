@@ -10,6 +10,7 @@
 #include "Tracers.h"
 #include "Decomp.h"
 #include "IO.h"
+#include "Field.h"
 #include "Logging.h"
 #include "TimeStepper.h"
 
@@ -47,6 +48,7 @@ I4 Tracers::init() {
 
    // Retrieve mesh cell/edge/vertex totals from Decomp
    HorzMesh *DefHorzMesh = HorzMesh::getDefault();
+   Decomp *DefDecomp     = Decomp::getDefault();
 
    NCellsOwned = DefHorzMesh->NCellsOwned;
    NCellsAll   = DefHorzMesh->NCellsAll;
@@ -173,6 +175,10 @@ I4 Tracers::init() {
          }
       }
    }
+
+   /////////////////////////////////////////////////////////////////////////
+   loadTracersFromFile(DefHorzMesh->MeshFileName, DefDecomp);
+   /////////////////////////////////////////////////////////////////////////
 
    return 0;
 }
@@ -515,6 +521,129 @@ I4 Tracers::updateTimeLevels() {
    }
 
    return 0;
+}
+
+//---------------------------------------------------------------------------
+//  Load tracers from file
+//---------------------------------------------------------------------------
+I4 Tracers::loadTracersFromFile(const std::string &TracerFileName,
+                                  Decomp *MeshDecomp) {
+
+   int TracerFileID;
+   I4 CellDecompR8;
+
+   // Open the state file for reading (assume IO has already been initialized)
+   I4 Err;
+   Err = IO::openFile(TracerFileID, TracerFileName, IO::ModeRead);
+   if (Err != 0)
+      LOG_CRITICAL("Tracers: error opening tracer file");
+
+   // Create the parallel IO decompositions required to read in state variables
+   Err = initParallelIO(CellDecompR8, MeshDecomp);
+
+   // Read temperature and salinity
+   Err = read(TracerFileID, CellDecompR8);
+
+   // Destroy the parallel IO decompositions
+   Err = finalizeParallelIO(CellDecompR8);
+
+   // Sync with device
+   copyToDevice(CurTimeIndex);
+
+   return 0;
+} // end loadTracersFromFile
+
+//------------------------------------------------------------------------------
+// Initialize the parallel IO decompositions for the mesh variables
+//---------------------------------------------------------------------------
+I4 Tracers::initParallelIO(I4 &CellDecompR8,
+                                Decomp *MeshDecomp) {
+
+   I4 Err;
+   I4 NDims             = 3;
+   IO::Rearranger Rearr = IO::RearrBox;
+
+   // Create the IO decomp for arrays with (NCells) dimensions
+   std::vector<I4> CellDims{1, MeshDecomp->NCellsGlobal, NVertLevels};
+   std::vector<I4> CellID(NCellsAll * NVertLevels, -1);
+   for (int Cell = 0; Cell < NCellsAll; ++Cell) {
+      for (int Level = 0; Level < NVertLevels; ++Level) {
+         I4 GlobalID = (MeshDecomp->CellIDH(Cell) - 1) * NVertLevels + Level;
+         CellID[Cell * NVertLevels + Level] = GlobalID;
+      }
+   }
+
+   Err = IO::createDecomp(CellDecompR8, IO::IOTypeR8, NDims, CellDims,
+                          NCellsAll * NVertLevels, CellID, Rearr);
+   if (Err != 0)
+      LOG_CRITICAL("Tracers: error creating cell IO decomposition");
+
+   return Err;
+
+} // end initParallelIO
+
+//------------------------------------------------------------------------------
+// Destroy parallel decompositions
+//---------------------------------------------------------------------------
+I4 Tracers::finalizeParallelIO(I4 CellDecompR8) {
+
+   int Err = 0; // default return code
+
+   // Destroy the IO decomp for arrays with (NCells) dimensions
+   Err = IO::destroyDecomp(CellDecompR8);
+   if (Err != 0)
+      LOG_CRITICAL("Tracers: error destroying cell IO decomposition");
+
+   return Err;
+
+} // end finalizeParallelIO
+
+//---------------------------------------------------------------------------
+//  Read Tracer State
+//---------------------------------------------------------------------------
+I4 Tracers::read(int TracerFileID, I4 CellDecompR8) {
+
+   I4 Err;
+
+   Array2DReal TmpArray2D;
+
+   // Read Temperature
+   int TemperatureID;
+
+   Err = IO::readArray(TmpArray2D.data(),NCellsAll,
+                       "temperature", TracerFileID, CellDecompR8,
+                       TemperatureID);
+
+   // TODO: Get the tracer index by name later
+   for (int Cell = 0; Cell < NCellsAll; ++Cell) {
+      for (int Level = 0; Level < NVertLevels; ++Level) {
+         TracerArraysH[0](0,Cell,Level) = TmpArray2D(Cell,Level);
+      }
+   }
+
+
+   if (Err != 0)
+      LOG_CRITICAL("Tracers: error reading temperature");
+
+   // Read Salinity
+   int SalinityID;
+
+   Err = IO::readArray(TmpArray2D.data(),NCellsAll,
+                       "salinity", TracerFileID, CellDecompR8,
+                       SalinityID);
+
+   // TODO: Get the tracer index by name later
+   for (int Cell = 0; Cell < NCellsAll; ++Cell) {
+      for (int Level = 0; Level < NVertLevels; ++Level) {
+         TracerArraysH[0](1,Cell,Level) = TmpArray2D(Cell,Level);
+      }
+   }
+
+   if (Err != 0)
+      LOG_CRITICAL("Tracers: error reading salinity");
+
+   return Err;
+
 }
 
 } // namespace OMEGA

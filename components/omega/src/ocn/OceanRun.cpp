@@ -29,6 +29,19 @@ int ocnRun(TimeInstant &CurrTime, ///< [inout] current sim time
    Clock OmegaClock(CurrTime, TimeStep);
    Err = OmegaClock.attachAlarm(&EndAlarm);
 
+
+   /////////////////////////////////////////
+   R8 ElapsedTimeSec;
+
+   TimeInstant StartTime = OmegaClock.getStartTime();
+   LOG_INFO("ocnRun: Time step starts at {}:",
+            StartTime.getString(4, 4, "-"));
+   TimeFrac ElapsedTime = StartTime.getElapsedTime();
+   ElapsedTimeSec = ElapsedTime.getSeconds();
+   TimeInterval RefInterval;
+   Err = RefInterval.set(ElapsedTimeSec,TimeUnits::Seconds);
+   /////////////////////////////////////////
+
    if (TimeStep == ZeroInterval) {
       LOG_ERROR("ocnRun: TimeStep must be initialized");
       ++Err;
@@ -47,6 +60,8 @@ int ocnRun(TimeInstant &CurrTime, ///< [inout] current sim time
 
       // do forward time step
       TimeInstant SimTime = OmegaClock.getPreviousTime();
+      TimeInstant CurrRunDuration = SimTime - RefInterval;
+
       DefTimeStepper->doStep(DefOceanState, SimTime);
 
       // write restart file/output, anything needed post-timestep

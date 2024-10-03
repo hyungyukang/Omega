@@ -177,7 +177,7 @@ I4 Tracers::init() {
    }
 
    /////////////////////////////////////////////////////////////////////////
-   loadTracersFromFile(DefHorzMesh->MeshFileName, DefDecomp);
+   Err = loadTracersFromFile(DefHorzMesh->MeshFileName, DefDecomp);
    /////////////////////////////////////////////////////////////////////////
 
    return 0;
@@ -605,7 +605,7 @@ I4 Tracers::read(int TracerFileID, I4 CellDecompR8) {
 
    I4 Err;
 
-   Array2DReal TmpArray2D;
+   Array2DReal TmpArray2D("TmpArray2D",NCellsAll,NVertLevels);
 
    // Read Temperature
    int TemperatureID;
@@ -618,6 +618,7 @@ I4 Tracers::read(int TracerFileID, I4 CellDecompR8) {
    for (int Cell = 0; Cell < NCellsAll; ++Cell) {
       for (int Level = 0; Level < NVertLevels; ++Level) {
          TracerArraysH[0](0,Cell,Level) = TmpArray2D(Cell,Level);
+         LOG_INFO("Temperature: {}",TmpArray2D(Cell,Level));
       }
    }
 
@@ -636,11 +637,32 @@ I4 Tracers::read(int TracerFileID, I4 CellDecompR8) {
    for (int Cell = 0; Cell < NCellsAll; ++Cell) {
       for (int Level = 0; Level < NVertLevels; ++Level) {
          TracerArraysH[0](1,Cell,Level) = TmpArray2D(Cell,Level);
+         LOG_INFO("Salinity: {}",TmpArray2D(Cell,Level));
       }
    }
 
    if (Err != 0)
       LOG_CRITICAL("Tracers: error reading salinity");
+
+
+
+   // Read tracer1
+   int Tracer1ID;
+
+   Err = IO::readArray(TmpArray2D.data(),NCellsAll,
+                       "tracer1", TracerFileID, CellDecompR8,
+                       Tracer1ID);
+
+   // TODO: Get the tracer index by name later
+   for (int Cell = 0; Cell < NCellsAll; ++Cell) {
+      for (int Level = 0; Level < NVertLevels; ++Level) {
+         TracerArraysH[0](2,Cell,Level) = TmpArray2D(Cell,Level);
+         LOG_INFO("tracer1: {}",TmpArray2D(Cell,Level));
+      }
+   }
+
+   if (Err != 0)
+      LOG_CRITICAL("Tracers: error reading tracer1");
 
    return Err;
 

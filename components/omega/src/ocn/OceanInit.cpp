@@ -22,6 +22,7 @@
 #include "TendencyTerms.h"
 #include "TimeMgr.h"
 #include "TimeStepper.h"
+#include "Tracers.h"
 
 #include "mpi.h"
 
@@ -220,6 +221,12 @@ int initOmegaModules(MPI_Comm Comm) {
    Err = OceanState::init();
    if (Err != 0) {
       LOG_CRITICAL("ocnInit: Error initializing default state");
+      return Err;
+   }
+
+   Err = Tracers::init();
+   if (Err != 0) {
+      LOG_CRITICAL("ocnInit: Error initializing default tracers");
       return Err;
    }
 

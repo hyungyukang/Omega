@@ -746,6 +746,15 @@ int IOStream::computeDecomp(
       LocalSize *= DimLengths[IDim];
       GlobalSize *= DimLengthGlobal[IDim];
       OffsetLoopLim[IDim] = DimLengths[IDim];
+
+      // Reduce loops over (-1) DimOffsets
+      I4 NReduce = 0;
+      for ( int I = 0; I < OffsetLoopLim[IDim]; ++I ){
+         if ( (DimOffsets[IDim])(I) < 0 ) {
+            NReduce++;
+         }
+      }
+     OffsetLoopLim[IDim] = OffsetLoopLim[IDim] - NReduce;
    }
 
    // Create the data decomposition based on dimension information
@@ -755,12 +764,14 @@ int IOStream::computeDecomp(
    // The linear offset along each dimension has already been computed
    // by the dimension class.
 
-   std::vector<I4> Offset(LocalSize);
+   std::vector<I4> Offset(LocalSize,-1);
 
    // Compute strides in linear space for each dimension
    std::vector<I4> Strides(MaxDims, 1);
+   std::vector<I4> LocalStrides(MaxDims, 1);
    for (int IDim = 1; IDim < NDims; ++IDim) {
-      Strides[IDim] = Strides[IDim - 1] * DimLengthGlobal[IDim - 1];
+      Strides[IDim] = DimLengthGlobal[IDim];
+      LocalStrides[IDim] = DimLengths[IDim];
    }
 
    // Compute full array offsets based on each dimensions linear offset
@@ -783,10 +794,10 @@ int IOStream::computeDecomp(
                   JGlob = (DimOffsets[1])(J);
                for (int I = 0; I < OffsetLoopLim[0]; ++I) {
                   I4 IGlob    = (DimOffsets[0])(I);
-                  Offset[Add] = IGlob * Strides[0] + JGlob * Strides[1] +
-                                KGlob * Strides[2] + MGlob * Strides[3] +
-                                NGlob * Strides[4];
-                  ++Add;
+                  Add         = I * LocalStrides[1] + J * LocalStrides[2] +
+                                K * LocalStrides[3] + M * LocalStrides[4] + N;
+                  Offset[Add] =  IGlob * Strides[1] +  JGlob * Strides[2] +
+                                 KGlob * Strides[3] +  MGlob * Strides[4] + NGlob;
                }
             }
          }

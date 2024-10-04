@@ -44,6 +44,13 @@ class IOStream {
    Alarm MyAlarm;        ///< time mgr alarm for read/write
    bool OnStartup;       ///< flag to read/write on model startup
    bool OnShutdown;      ///< flag to read/write on model shutdown
+   bool StackTime;       ///< flag to stack output over time
+
+   int OutFileID;       ///< flag to stack output over time
+   std::map<std::string, int> FieldIDs;
+   std::map<std::string, int> AllDimIDs;
+
+   int TimeIndex;
 
    /// A pointer file is used if we wish OMEGA to read the name of the file
    /// from another file. This is useful for writing the name of a restart

@@ -1,4 +1,5 @@
 #include "ForwardBackwardStepper.h"
+#include "Tracers.h"
 
 namespace OMEGA {
 
@@ -32,6 +33,9 @@ void ForwardBackwardStepper::doStep(OceanState *State, TimeInstant Time) const {
    // Update time levels (New -> Old) of prognostic variables with halo
    // exchanges
    State->updateTimeLevels();
+
+   Tracers::updateTimeLevels();
+
 }
 
 } // namespace OMEGA

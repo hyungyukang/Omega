@@ -1,4 +1,5 @@
 #include "RungeKutta4Stepper.h"
+#include "Tracers.h"
 
 namespace OMEGA {
 
@@ -70,6 +71,8 @@ void RungeKutta4Stepper::doStep(OceanState *State, TimeInstant Time) const {
    // Update time levels (New -> Old) of prognostic variables with halo
    // exchanges
    State->updateTimeLevels();
+
+   Tracers::updateTimeLevels();
 }
 
 } // namespace OMEGA

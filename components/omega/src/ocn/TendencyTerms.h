@@ -315,7 +315,8 @@ class TracerHorzAdvOnCell {
 // Tracer horizontal diffusion term
 class TracerDiffOnCell {
  public:
-   bool Enabled;
+   bool Disabled;
+   //bool Enabled;
 
    Real EddyDiff2;
 
@@ -368,7 +369,8 @@ class TracerDiffOnCell {
 // Tracer biharmonic horizontal mixing term
 class TracerHyperDiffOnCell {
  public:
-   bool Enabled;
+   bool Disabled;
+   //bool Enabled;
 
    Real EddyDiff4;
 
@@ -427,6 +429,7 @@ class Tendencies {
    // Arrays for accumulating tendencies
    Array2DReal LayerThicknessTend;
    Array2DReal NormalVelocityTend;
+   std::vector<Array3DReal> TracerTend;
 
    // Instances of tendency terms
    ThicknessFluxDivOnCell ThicknessFluxDiv;
@@ -435,6 +438,7 @@ class Tendencies {
    SSHGradOnEdge SSHGrad;
    VelocityDiffusionOnEdge VelocityDiffusion;
    VelocityHyperDiffOnEdge VelocityHyperDiff;
+   TracerHorzAdvOnCell TracerHorzAdv;
 
    // Methods to compute tendency groups
    void computeThicknessTendencies(const OceanState *State,
@@ -457,6 +461,16 @@ class Tendencies {
                                       const AuxiliaryState *AuxState,
                                       int ThickTimeLevel, int VelTimeLevel,
                                       TimeInstant Time);
+
+   void computeTracerTendencies(const OceanState *State,
+                                   const AuxiliaryState *AuxState,
+                                   int ThickTimeLevel, int VelTimeLevel,
+                                   TimeInstant Time);
+   void computeTracerTendenciesOnly(const OceanState *State,
+                                       const AuxiliaryState *AuxState,
+                                       int ThickTimeLevel, int VelTimeLevel,
+                                       TimeInstant Time);
+
 
    // Create a non-default group of tendencies
    template <class... ArgTypes>
@@ -525,6 +539,7 @@ class Tendencies {
    // Mesh sizes
    I4 NCellsAll; ///< Number of cells including full halo
    I4 NEdgesAll; ///< Number of edges including full halo
+   I4 NTracers;  ///< Number of tracers
    I4 NChunks;   ///< Number of vertical level chunks
 
    // Pointer to default tendencies

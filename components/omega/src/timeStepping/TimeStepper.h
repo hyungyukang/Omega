@@ -18,6 +18,7 @@
 #include "OceanState.h"
 #include "TendencyTerms.h"
 #include "TimeMgr.h"
+#include "Tracers.h"
 
 #include <map>
 #include <memory>
@@ -102,6 +103,10 @@ class TimeStepper {
    void updateVelocityByTend(OceanState *State1, int TimeLevel1,
                              OceanState *State2, int TimeLevel2,
                              TimeInterval Coeff) const;
+
+   void updateTracersByTend(OceanState *State1, int TimeLevel1,
+                            OceanState *State2, int TimeLevel2,
+                            TimeInterval Coeff) const;
 
  protected:
    // Name of time stepper

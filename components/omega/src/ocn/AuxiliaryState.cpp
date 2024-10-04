@@ -1,6 +1,7 @@
 #include "AuxiliaryState.h"
 #include "Config.h"
 #include "Field.h"
+#include "Tracers.h"
 #include "Logging.h"
 
 namespace OMEGA {
@@ -17,7 +18,9 @@ AuxiliaryState::AuxiliaryState(const std::string &Name, const HorzMesh *Mesh,
     : Mesh(Mesh), Name(Name), KineticAux(Name, Mesh, NVertLevels),
       LayerThicknessAux(Name, Mesh, NVertLevels),
       VorticityAux(Name, Mesh, NVertLevels),
-      VelocityDel2Aux(Name, Mesh, NVertLevels) {
+      VelocityDel2Aux(Name, Mesh, NVertLevels),
+      TracerAux(Name, Mesh, NVertLevels, 5) {
+      //TracerAux(Name, Mesh, NVertLevels, 5) {
 
    GroupName = "AuxiliaryState";
    if (Name != "Default") {
@@ -31,6 +34,7 @@ AuxiliaryState::AuxiliaryState(const std::string &Name, const HorzMesh *Mesh,
    LayerThicknessAux.registerFields(GroupName, AuxMeshName);
    VorticityAux.registerFields(GroupName, AuxMeshName);
    VelocityDel2Aux.registerFields(GroupName, AuxMeshName);
+   //TracerAux.registerFields(GroupName, AuxMeshName);
 }
 
 // Destructor. Unregisters the fields with IOStreams and destroys this auxiliary
@@ -40,6 +44,7 @@ AuxiliaryState::~AuxiliaryState() {
    LayerThicknessAux.unregisterFields();
    VorticityAux.unregisterFields();
    VelocityDel2Aux.unregisterFields();
+   //TracerAux.unregisterFields();
 
    int Err = FieldGroup::destroy(GroupName);
    if (Err != 0)

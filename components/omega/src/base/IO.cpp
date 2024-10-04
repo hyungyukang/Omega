@@ -359,7 +359,14 @@ int defineDim(int FileID,                 // [in] ID of the file containing dim
 
    int Err = 0;
 
-   Err = PIOc_def_dim(FileID, DimName.c_str(), Length, &DimID);
+   if ( DimName.c_str() == "Time" ) {
+      Err = PIOc_def_dim(FileID, DimName.c_str(), PIO_UNLIMITED, &DimID);
+      LOG_INFO("Dim::Time {}", DimName.c_str());
+   } else {
+      Err = PIOc_def_dim(FileID, DimName.c_str(), Length, &DimID);
+   }
+
+
    if (Err != PIO_NOERR) {
       LOG_ERROR(
           "IO::defineDim: PIO error while defining dimension for dimension {}",

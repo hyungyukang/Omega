@@ -8,6 +8,7 @@
 #include "OceanDriver.h"
 #include "OceanState.h"
 #include "TimeStepper.h"
+#include "IOStream.h"
 
 namespace OMEGA {
 
@@ -17,6 +18,7 @@ int ocnRun(TimeInstant &CurrTime, ///< [inout] current sim time
 
    // error code
    I4 Err = 0;
+   I4 ErrIO = 0;
 
    // fetch default OceanState and TimeStepper
    OceanState *DefOceanState   = OceanState::getDefault();
@@ -42,6 +44,11 @@ int ocnRun(TimeInstant &CurrTime, ///< [inout] current sim time
    Err = RefInterval.set(ElapsedTimeSec,TimeUnits::Seconds);
    /////////////////////////////////////////
 
+   Err = ocnIOInit(OmegaClock);
+
+   /////////////////////////////////////////
+
+
    if (TimeStep == ZeroInterval) {
       LOG_ERROR("ocnRun: TimeStep must be initialized");
       ++Err;
@@ -65,11 +72,17 @@ int ocnRun(TimeInstant &CurrTime, ///< [inout] current sim time
       DefTimeStepper->doStep(DefOceanState, SimTime);
 
       // write restart file/output, anything needed post-timestep
+     ErrIO = IOStream::writeAll(OmegaClock);
 
       CurrTime = OmegaClock.getCurrentTime();
       LOG_INFO("ocnRun: Time step {} complete, clock time: {}", IStep,
                CurrTime.getString(4, 4, "-"));
    }
+
+
+   // Finalize IOStream
+   IOStream::finalize(OmegaClock);
+
 
    return Err;
 

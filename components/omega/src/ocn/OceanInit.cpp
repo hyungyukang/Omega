@@ -23,6 +23,7 @@
 #include "TimeMgr.h"
 #include "TimeStepper.h"
 #include "Tracers.h"
+#include "IOStream.h"
 
 #include "mpi.h"
 
@@ -160,6 +161,19 @@ int initTimeManagement(Calendar &OmegaCal, TimeInstant &StartTime,
    TimeInstant EndTime = StartTime + RunInterval;
    EndAlarm            = Alarm("End Alarm", EndTime);
 
+
+/////////////////////////////////////////////////////////
+//   TimeStepper *DefTimeStepper = TimeStepper::getDefault();
+//
+//   // set simulation clock and attach EndAlarm
+//   TimeInterval TimeStep = DefTimeStepper->getTimeStep();
+//   Clock OmegaClock(StartTime, TimeStep);
+//
+//   Err = IOStream::init(OmegaClock);
+//
+/////////////////////////////////////////////////////////
+
+
    return Err;
 } // end initTimeManagement
 
@@ -229,6 +243,54 @@ int initOmegaModules(MPI_Comm Comm) {
       LOG_CRITICAL("ocnInit: Error initializing default tracers");
       return Err;
    }
+
+//   ///////////////////////////////////////////////////////////////////
+//   // destroy default Calendar to keep static NumCalendars member
+//   // accurate, then construct requested Calendar
+//   Config *OmegaConfig = Config::getOmegaConfig();
+//   Config TimeMgmtConfig("TimeManagement");
+//   Err = OmegaConfig->get(TimeMgmtConfig);
+//   std::string ConfigCalStr;
+//
+//   CalendarKind ConfigCalKind = CalendarUnknown;
+//   I4 ICalType                = CalendarUnknown;
+//   for (I4 I = 0; I < NUM_SUPPORTED_CALENDARS; ++I) {
+//      if (ConfigCalStr == CalendarKindName[I]) {
+//         ICalType      = I;
+//         ConfigCalKind = (CalendarKind)(ICalType + 1);
+//         break;
+//      }
+//   }
+//   Err = TimeMgmtConfig.get("CalendarType", ConfigCalStr);
+//   Calendar OmegaCal;
+//   OmegaCal.~Calendar();
+//   OmegaCal = Calendar(ConfigCalStr, ConfigCalKind);
+//
+//   // retrieve start time from config
+//   std::string StartTimeStr;
+//   Err = TimeMgmtConfig.get("StartTime", StartTimeStr);
+//   if (Err != 0) {
+//      LOG_CRITICAL("ocnInit: StartTime not found in TimeMgmtConfig");
+//      return Err;
+//   }
+//   TimeInstant StartTime = TimeInstant(&OmegaCal, StartTimeStr);
+//
+//   std::string NoneStr("none");
+//
+//   TimeStepper *DefTimeStepper = TimeStepper::getDefault();
+//   TimeInterval TimeStep, ZeroInterval;
+//
+//   // set simulation clock and attach EndAlarm
+//   TimeStep = DefTimeStepper->getTimeStep();
+//   Clock OmegaClock(StartTime, TimeStep);
+//
+//   if (TimeStep == ZeroInterval) {
+//      LOG_ERROR("ocnRun: TimeStep must be initialized");
+//      ++Err;
+//   }
+//
+//   Err = IOStream::init(OmegaClock);
+//   ///////////////////////////////////////////////////////////////////
 
    return Err;
 } // end initOmegaModules

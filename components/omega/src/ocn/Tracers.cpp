@@ -21,6 +21,7 @@ namespace OMEGA {
 // Initialize static member variables
 std::vector<Array3DReal> Tracers::TracerArrays;
 std::vector<HostArray3DReal> Tracers::TracerArraysH;
+std::vector<Array3DReal> Tracers::TracerTend;
 
 std::map<std::string, std::pair<I4, I4>> Tracers::TracerGroups;
 std::map<std::string, I4> Tracers::TracerIndexes;
@@ -36,6 +37,7 @@ I4 Tracers::NTimeLevels  = 0;
 I4 Tracers::NVertLevels  = 0;
 I4 Tracers::CurTimeIndex = 0;
 I4 Tracers::NumTracers   = 0;
+
 
 //---------------------------------------------------------------------------
 // Initialization
@@ -54,6 +56,7 @@ I4 Tracers::init() {
    NCellsAll   = DefHorzMesh->NCellsAll;
    NCellsSize  = DefHorzMesh->NCellsSize;
    NVertLevels = DefHorzMesh->NVertLevels;
+
 
    MeshHalo = Halo::getDefault();
 
@@ -176,6 +179,10 @@ I4 Tracers::init() {
       }
    }
 
+
+   /////////////////////////////////////////////////////////////////////////
+   TracerTend.resize(1);
+   TracerTend[0]=Array3DReal("TracerTend", NumTracers,NCellsSize, NVertLevels);
    /////////////////////////////////////////////////////////////////////////
    Err = loadTracersFromFile(DefHorzMesh->MeshFileName, DefDecomp);
    /////////////////////////////////////////////////////////////////////////
@@ -230,6 +237,7 @@ I4 Tracers::clear() {
    // Deallocate memory for tracer arrays
    TracerArrays.clear();
    TracerArraysH.clear();
+   TracerTend.clear();
 
    TracerGroups.clear();
    TracerIndexes.clear();
@@ -618,7 +626,9 @@ I4 Tracers::read(int TracerFileID, I4 CellDecompR8) {
    for (int Cell = 0; Cell < NCellsAll; ++Cell) {
       for (int Level = 0; Level < NVertLevels; ++Level) {
          TracerArraysH[0](0,Cell,Level) = TmpArray2D(Cell,Level);
-         LOG_INFO("Temperature: {}",TmpArray2D(Cell,Level));
+          TracerArrays[0](0,Cell,Level) = TmpArray2D(Cell,Level);
+         TracerArraysH[1](0,Cell,Level) = TmpArray2D(Cell,Level);
+          TracerArrays[1](0,Cell,Level) = TmpArray2D(Cell,Level);
       }
    }
 
@@ -637,7 +647,9 @@ I4 Tracers::read(int TracerFileID, I4 CellDecompR8) {
    for (int Cell = 0; Cell < NCellsAll; ++Cell) {
       for (int Level = 0; Level < NVertLevels; ++Level) {
          TracerArraysH[0](1,Cell,Level) = TmpArray2D(Cell,Level);
-         LOG_INFO("Salinity: {}",TmpArray2D(Cell,Level));
+          TracerArrays[0](1,Cell,Level) = TmpArray2D(Cell,Level);
+         TracerArraysH[1](1,Cell,Level) = TmpArray2D(Cell,Level);
+          TracerArrays[1](1,Cell,Level) = TmpArray2D(Cell,Level);
       }
    }
 
@@ -657,7 +669,9 @@ I4 Tracers::read(int TracerFileID, I4 CellDecompR8) {
    for (int Cell = 0; Cell < NCellsAll; ++Cell) {
       for (int Level = 0; Level < NVertLevels; ++Level) {
          TracerArraysH[0](2,Cell,Level) = TmpArray2D(Cell,Level);
-         LOG_INFO("tracer1: {}",TmpArray2D(Cell,Level));
+          TracerArrays[0](2,Cell,Level) = TmpArray2D(Cell,Level);
+         TracerArraysH[1](2,Cell,Level) = TmpArray2D(Cell,Level);
+          TracerArrays[1](2,Cell,Level) = TmpArray2D(Cell,Level);
       }
    }
 

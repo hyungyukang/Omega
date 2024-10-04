@@ -53,6 +53,7 @@ class Tracers {
    static I4 CurTimeIndex; ///< Time dimension array index for current level
 
    /////////////////////////////////////////////////
+
    static I4 read(int StateFileID, I4 CellDecompR8);
 
    static I4 initParallelIO(I4 &CellDecompR8, Decomp *MeshDecomp);
@@ -80,6 +81,7 @@ class Tracers {
    static I4
        NCellsSize; ///< Array size (incl padding, bndy cell) for cell arrays
 
+   static std::vector<Array3DReal> TracerTend;
    //---------------------------------------------------------------------------
    // Initialization
    //---------------------------------------------------------------------------
@@ -205,6 +207,10 @@ class Tracers {
    /////////////////////////////////////////////////////////////////////////////
    static I4 loadTracersFromFile(const std::string &TracerFileName, Decomp *MeshDecomp);
    /////////////////////////////////////////////////////////////////////////////
+   std::vector<Array3DReal> getTracerArrays(void) const;
+   /////////////////////////////////////////////////////////////////////////////
+
+
 
    //---------------------------------------------------------------------------
    // Forbid copy and move construction

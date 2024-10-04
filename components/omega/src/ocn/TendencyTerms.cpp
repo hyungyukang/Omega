@@ -14,6 +14,7 @@
 #include "DataTypes.h"
 #include "HorzMesh.h"
 #include "OceanState.h"
+#include "Tracers.h"
 #include "share/ManufacturedSolution.h"
 
 namespace OMEGA {
@@ -175,6 +176,8 @@ int Tendencies::readTendConfig(Config *TendConfig ///< [in] Tendencies subconfig
       return ViscDel4;
    }
 
+   TracerHorzAdv.Enabled = true;
+
    return Err;
 }
 
@@ -187,7 +190,7 @@ Tendencies::Tendencies(const std::string &Name, ///< [in] Name for tendencies
                        CustomTendencyType InCustomThicknessTend,
                        CustomTendencyType InCustomVelocityTend)
     : ThicknessFluxDiv(Mesh), PotientialVortHAdv(Mesh), KEGrad(Mesh),
-      SSHGrad(Mesh), VelocityDiffusion(Mesh), VelocityHyperDiff(Mesh),
+      SSHGrad(Mesh), VelocityDiffusion(Mesh), VelocityHyperDiff(Mesh), TracerHorzAdv(Mesh),
       CustomThicknessTend(InCustomThicknessTend),
       CustomVelocityTend(InCustomVelocityTend) {
 
@@ -197,9 +200,18 @@ Tendencies::Tendencies(const std::string &Name, ///< [in] Name for tendencies
    NormalVelocityTend =
        Array2DReal("NormalVelocityTend", Mesh->NEdgesSize, NVertLevels);
 
+   // Tracer tendency array
+   //TracerTend =
+   //    Array3DReal("TracerTend",Tracers::getNumTracers(), Mesh->NCellsSize,NVertLevels);
+
+   //std::vector<Array3DReal> TracerTend;
+
+   //LOG_INFO("TracerTendSize {} {} {}",Tracers::getNumTracers(), Mesh->NCellsSize,NVertLevels);
+
    // Array dimension lengths
    NCellsAll = Mesh->NCellsAll;
    NEdgesAll = Mesh->NEdgesAll;
+   //NTracers  = Tracers::getNumTracers();
    NChunks   = NVertLevels / VecLength;
 
 } // end constructor
@@ -328,6 +340,7 @@ void Tendencies::computeVelocityTendenciesOnly(
 
 } // end velocity tendency compute
 
+//------------------------------------------------------------------------------
 void Tendencies::computeThicknessTendencies(
     const OceanState *State,        ///< [in] State variables
     const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
@@ -363,6 +376,77 @@ void Tendencies::computeVelocityTendencies(
                                  Time);
 }
 
+
+//------------------------------------------------------------------------------
+void Tendencies::computeTracerTendencies(
+    const OceanState *State,        ///< [in] State variables
+    const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
+    int ThickTimeLevel,             ///< [in] Time level
+    int VelTimeLevel,               ///< [in] Time level
+    TimeInstant Time                ///< [in] Time
+) {
+   // only need LayerThicknessAux on edge
+   OMEGA_SCOPE(TracerAux, AuxState->TracerAux);
+   OMEGA_SCOPE(LayerThickCell, State->LayerThickness[ThickTimeLevel]);
+   OMEGA_SCOPE(NormalVelEdge, State->NormalVelocity[VelTimeLevel]);
+   OMEGA_SCOPE(LocTracerTend, Tracers::TracerTend[0]);
+
+   int NTracers = Tracers::getNumTracers();
+
+   LOG_INFO("NTracers in Tendency {}", NTracers);
+
+   int NVertLevels = LayerThickCell.extent_int(1);
+   Array3DReal TracersArray("TracersArray", NTracers,NCellsAll,NVertLevels);
+   int Err = Tracers::getAll(TracersArray,VelTimeLevel-1);
+
+   OMEGA_SCOPE(TracersCell, TracersArray);
+
+   parallelFor(
+       "computeTracerAux", {NTracers, NEdgesAll, NChunks},
+       KOKKOS_LAMBDA(int LTracer, int IEdge, int KChunk) {
+          TracerAux.computeVarsOnEdge(LTracer, IEdge, KChunk,
+                                      NormalVelEdge, LayerThickCell,
+                                      TracersCell);
+       });
+
+   computeTracerTendenciesOnly(State, AuxState, ThickTimeLevel, VelTimeLevel,
+                               Time);
+}
+
+//------------------------------------------------------------------------------
+// Compute tracer tendencies
+void Tendencies::computeTracerTendenciesOnly(
+    const OceanState *State,        ///< [in] State variables
+    const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
+    int ThickTimeLevel,             ///< [in] Time level
+    int VelTimeLevel,               ///< [in] Time level
+    TimeInstant Time                ///< [in] Time
+) {
+
+   OMEGA_SCOPE(LocTracerTend, Tracers::TracerTend[0]);
+   OMEGA_SCOPE(LocTracerHorzAdv, TracerHorzAdv);
+   const Array2DReal &NormalVelEdge = State->NormalVelocity[VelTimeLevel];
+   const Array2DReal &LayerThickCell = State->LayerThickness[ThickTimeLevel];
+
+   deepCopy(LocTracerTend, 0);
+
+   int NTracers = Tracers::getNumTracers();
+
+   // Compute thickness flux divergence
+   const Array3DReal &HTracersEdge =
+         AuxState->TracerAux.HTracersOnEdge;
+
+     LOG_INFO("Ntracers {}", NTracers);
+
+      parallelFor(
+          {NTracers, NCellsAll, NChunks}, KOKKOS_LAMBDA(int LTracer, int ICell, int KChunk) {
+             LocTracerHorzAdv(LocTracerTend, LTracer, ICell, KChunk,
+                              NormalVelEdge, HTracersEdge);
+          });
+
+} // end tracer tendency compute
+
+
 //------------------------------------------------------------------------------
 // Compute both layer thickness and normal velocity tendencies
 void Tendencies::computeAllTendencies(
@@ -373,6 +457,8 @@ void Tendencies::computeAllTendencies(
     TimeInstant Time                ///< [in] Time
 ) {
 
+   computeTracerTendencies(State, AuxState, ThickTimeLevel, VelTimeLevel,
+                                  Time);
    AuxState->computeAll(State, ThickTimeLevel, VelTimeLevel);
    computeThicknessTendenciesOnly(State, AuxState, ThickTimeLevel, VelTimeLevel,
                                   Time);

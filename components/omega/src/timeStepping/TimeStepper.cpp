@@ -208,12 +208,47 @@ void TimeStepper::updateVelocityByTend(OceanState *State1, int TimeLevel1,
        });
 }
 
+void TimeStepper::updateTracersByTend(OceanState *State1, int TimeLevel1,
+                                      OceanState *State2, int TimeLevel2,
+                                      TimeInterval Coeff) const {
+
+   const auto &LayerThick1    = State1->LayerThickness[TimeLevel1];
+   const auto &LayerThick2    = State2->LayerThickness[TimeLevel2];
+   //const auto &TracerTend     = Tend->TracerTend;
+   const int NVertLevels      = LayerThick1.extent_int(1);
+   int NTracers = Tracers::getNumTracers();
+
+   LOG_INFO("NTracers in Stepper {}", NTracers);
+
+   Array3DReal TracersArray1("TracersArray1",NTracers,Mesh->NCellsAll,NVertLevels);
+   Array3DReal TracersArray2("TracersArray2",NTracers,Mesh->NCellsAll,NVertLevels);
+   int Err;
+   Err = Tracers::getAll(TracersArray1,TimeLevel1-1);
+   Err = Tracers::getAll(TracersArray2,TimeLevel2-1);
+
+
+   Real CoeffSeconds;
+   Coeff.get(CoeffSeconds, TimeUnits::Seconds);
+
+   parallelFor(
+       "updateTracerByTend", {NTracers, Mesh->NCellsAll, NVertLevels},
+       KOKKOS_LAMBDA(int LTracer, int ICell, int K) {
+              //LOG_INFO("TracerTend {} TracersArray1 {} TracersArray2 {}",TracerTend(LTracer,ICell,K),TracersArray1(LTracer, ICell, K),TracersArray2(LTracer, ICell, K));
+          TracersArray1(LTracer, ICell, K) =
+              TracersArray2(LTracer, ICell, K)*LayerThick2(ICell,K) + CoeffSeconds * Tracers::TracerTend[0](LTracer, ICell, K);
+          TracersArray1(LTracer, ICell, K) = TracersArray1(LTracer,ICell,K) / LayerThick1(ICell,K);
+
+          //LOG_INFO("TracerTend {} TracersArray1 {} TracersArray2 {}",Tracers::TracerTend[0](LTracer,ICell,K),TracersArray1(LTracer, ICell, K),TracersArray2(LTracer, ICell, K));
+       });
+}
+
 // State1(TimeLevel1) = State2(TimeLevel2) + Coeff * Tend
 void TimeStepper::updateStateByTend(OceanState *State1, int TimeLevel1,
                                     OceanState *State2, int TimeLevel2,
                                     TimeInterval Coeff) const {
    updateThicknessByTend(State1, TimeLevel1, State2, TimeLevel2, Coeff);
    updateVelocityByTend(State1, TimeLevel1, State2, TimeLevel2, Coeff);
+   updateTracersByTend(State1, TimeLevel1, State2, TimeLevel2, Coeff);
 }
 
 } // namespace OMEGA

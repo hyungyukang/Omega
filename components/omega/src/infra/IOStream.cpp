@@ -13,6 +13,7 @@
 #include "Dimension.h"
 #include "Field.h"
 #include "IO.h"
+#include "Decomp.h"
 #include "Logging.h"
 #include "OmegaKokkos.h"
 #include "TimeMgr.h"
@@ -57,6 +58,9 @@ int IOStream::init(Clock &ModelClock //< [inout] Omega model clock
 
       // Get the stream name and the sub-configuration associated with it
       std::string StreamName = It->first.as<std::string>();
+
+      LOG_INFO("StreamName {}", StreamName);
+
       Config StreamCfg(StreamName);
       Err = StreamsCfgAll.get(StreamCfg);
       if (Err != 0) {
@@ -322,6 +326,7 @@ IOStream::IOStream() {
    ReducePrecision    = false;
    OnStartup          = false;
    OnShutdown         = false;
+   StackTime          = false;
    UsePointer         = false;
    PtrFilename        = " ";
    UseStartEnd        = false;
@@ -356,6 +361,13 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
    // Create a new pointer and set name
    auto NewStream  = std::make_shared<IOStream>();
    NewStream->Name = StreamName;
+
+   // Initialize ID for output
+   NewStream->OutFileID = 0;
+   //NewStream->FieldIDs = 0;
+   //NewStream->AllDimIDs = 0;
+
+   NewStream->TimeIndex = -1;
 
    // Set file mode (Read/Write)
    std::string StreamMode;
@@ -468,6 +480,11 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
    NewStream->OnStartup  = false;
    NewStream->OnShutdown = false;
 
+   std::string s = IOFreqUnits;
+   std::string delimiter = ",";
+   std::string token = s.substr(0,s.find(delimiter));
+   LOG_INFO("IOFreqUnits {}", token[0],token[1]);
+
    if (IOFreqUnits == "years") {
 
       TimeInterval AlarmInt(IOFreq, TimeUnits::Years);
@@ -553,6 +570,13 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
          return Err;
       }
    }
+
+   // Set StackTime from Config - default is false
+   if ( StreamConfig.existsVar("StackTime") ) {
+      Err = StreamConfig.get("StackTime", NewStream->StackTime);
+      LOG_INFO("StackTime {}", NewStream->StackTime);
+   }
+
 
    // Use a start and end time to define an interval in which stream is active
    Err = StreamConfig.get("UseStartEnd", NewStream->UseStartEnd);
@@ -680,7 +704,12 @@ int IOStream::defineAllDims(
       // For output files, we need to define the dimension
       if (Mode == IO::ModeWrite) {
 
-         Err = IO::defineDim(FileID, DimName, Length, DimID);
+         if ( DimName == "Time" ) {
+            Err = IO::defineDim(FileID, DimName, PIO_UNLIMITED, DimID);
+            LOG_INFO("IOstream Time {}",DimName);
+         } else {
+            Err = IO::defineDim(FileID, DimName, Length, DimID);
+         }
          if (Err != 0) {
             LOG_ERROR("Error defining dimension {} for output stream {}",
                       DimName, Name);
@@ -745,6 +774,7 @@ int IOStream::computeDecomp(
       DimOffsets[IDim]                   = ThisDim->getOffset();
       LocalSize *= DimLengths[IDim];
       GlobalSize *= DimLengthGlobal[IDim];
+
       OffsetLoopLim[IDim] = DimLengths[IDim];
 
       // Reduce loops over (-1) DimOffsets
@@ -755,6 +785,7 @@ int IOStream::computeDecomp(
          }
       }
      OffsetLoopLim[IDim] = OffsetLoopLim[IDim] - NReduce;
+
    }
 
    // Create the data decomposition based on dimension information
@@ -775,6 +806,7 @@ int IOStream::computeDecomp(
    }
 
    // Compute full array offsets based on each dimensions linear offset
+
    I4 Add = 0; // linear address of offset vector
    for (int N = 0; N < OffsetLoopLim[4]; ++N) {
       I4 NGlob = 0;
@@ -1539,6 +1571,8 @@ int IOStream::writeFieldData(
       break;
 
    } // end switch data type
+
+
 
    // Write the data
    Err = OMEGA::IO::writeArray(DataPtr, LocSize, FillValPtr, FileID, MyDecompID,
@@ -2365,6 +2399,8 @@ int IOStream::writeStream(
 
    int Err = 0; // default return code
 
+   LOG_ERROR("Here 1 StackTime {}",StackTime);
+
    // First check that this is an output stream
    if (Mode != IO::ModeWrite) {
       LOG_ERROR("IOStream write: cannot write stream defined as input stream");
@@ -2382,10 +2418,14 @@ int IOStream::writeStream(
       if (EndAlarm.isRinging())
          return Err;
    }
+   LOG_ERROR("Here 2");
 
    // Get current simulation time and time string
    TimeInstant SimTime    = ModelClock.getCurrentTime();
    std::string SimTimeStr = SimTime.getString(4, 0, "_");
+   TimeIndex++;
+
+   LOG_INFO("TimeIndex {}",TimeIndex);
 
    // Reset alarms and flags
    if (OnStartup)
@@ -2393,6 +2433,7 @@ int IOStream::writeStream(
    if (MyAlarm.isRinging())
       MyAlarm.reset(SimTime);
 
+   LOG_ERROR("Here 3");
    // Create filename
    std::string OutFileName;
    if (FilenameIsTemplate) {
@@ -2402,15 +2443,22 @@ int IOStream::writeStream(
       OutFileName = Filename;
    }
 
-   // Open output file
-   int OutFileID;
-   Err = OMEGA::IO::openFile(OutFileID, OutFileName, Mode, IO::FmtDefault,
-                             ExistAction);
-   if (Err != 0) {
-      LOG_ERROR("IOStream::write: error opening file {} for output",
-                OutFileName);
-      return Err;
-   }
+   LOG_ERROR("Here 4 StackTime {}",StackTime);
+
+   //// If stack output over time, open file once at the first writing
+   if (StackTime) {
+      // Open output file
+      //int OutFileID;
+      Err = OMEGA::IO::openFile(OutFileID, OutFileName, Mode, IO::FmtDefault,
+                                ExistAction);
+      if (Err != 0) {
+         LOG_ERROR("IOStream::write: error opening file {} for output",
+                   OutFileName);
+         return Err;
+      }
+
+
+   LOG_ERROR("Here 5");
 
    // Write Metadata for global metadata (Code and Simulation)
    // Always add current simulation time to Simulation metadata
@@ -2419,6 +2467,7 @@ int IOStream::writeStream(
       LOG_ERROR("Error writing Code Metadata to file {}", OutFileName);
       return Err;
    }
+   LOG_ERROR("Here 6");
    std::shared_ptr<Field> SimField = Field::get(SimMeta);
    // Add the simulation time - if it was added previously, remove and
    // re-add the current time
@@ -2435,16 +2484,19 @@ int IOStream::writeStream(
       return Err;
    }
 
+
    // Assign dimension IDs for all defined dimensions
-   std::map<std::string, int> AllDimIDs;
+   //std::map<std::string, int> AllDimIDs;
    Err = defineAllDims(OutFileID, AllDimIDs);
    if (Err != 0) {
       LOG_ERROR("Error defined dimensions for file {}", OutFileName);
       return Err;
    }
+   LOG_ERROR("Here 7");
+
 
    // Define each field and write field metadata
-   std::map<std::string, int> FieldIDs;
+   //std::map<std::string, int> FieldIDs;
    I4 NDims;
    std::vector<std::string> DimNames;
    std::vector<int> FieldDims;
@@ -2495,6 +2547,7 @@ int IOStream::writeStream(
          return Err;
       }
    }
+   LOG_ERROR("Here 8");
 
    // End define mode
    Err = IO::endDefinePhase(OutFileID);
@@ -2502,6 +2555,11 @@ int IOStream::writeStream(
       LOG_ERROR("Error ending define phase for stream {}", Name);
       return Err;
    }
+
+      StackTime = false;
+   } // StackTime
+
+
 
    // Now write data arrays for all fields in contents
    for (auto IFld = Contents.begin(); IFld != Contents.end(); ++IFld) {
@@ -2511,6 +2569,12 @@ int IOStream::writeStream(
       std::shared_ptr<Field> ThisField = Field::get(FieldName);
       int FieldID                      = FieldIDs[FieldName];
 
+      // HGKANG
+      PIOc_setframe(OutFileID, FieldID, TimeIndex);
+      //PIOc_setframe(OutFileID, FieldID, 0);
+
+      //FieldID                      = FieldIDs[FieldName];
+
       // Extract and write the data array
       Err = this->writeFieldData(ThisField, OutFileID, FieldID, AllDimIDs);
       if (Err != 0) {
@@ -2519,13 +2583,20 @@ int IOStream::writeStream(
          return Err;
       }
    }
+   LOG_ERROR("Here 9");
 
+   LOG_INFO("StackTime {} OnShutdown {}", StackTime,OnShutdown);
+
+   if ( StackTime and OnShutdown) {
    // Close output file
    Err = IO::closeFile(OutFileID);
    if (Err != 0) {
       LOG_ERROR("Error closing output file {}", OutFileName);
       return Err;
    }
+   LOG_ERROR("Here 10");
+
+   } // end if StackTime
 
    // If using pointer files for this stream, write the filename to the pointer
    // after the file is successfully written

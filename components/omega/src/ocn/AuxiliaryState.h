@@ -9,6 +9,7 @@
 #include "auxiliaryVars/LayerThicknessAuxVars.h"
 #include "auxiliaryVars/VelocityDel2AuxVars.h"
 #include "auxiliaryVars/VorticityAuxVars.h"
+#include "auxiliaryVars/TracerAuxVars.h"
 
 #include <memory>
 #include <string>
@@ -33,6 +34,7 @@ class AuxiliaryState {
    LayerThicknessAuxVars LayerThicknessAux;
    VorticityAuxVars VorticityAux;
    VelocityDel2AuxVars VelocityDel2Aux;
+   TracerAuxVars TracerAux;
 
    ~AuxiliaryState();
 

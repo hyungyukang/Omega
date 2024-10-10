@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tendencies</title>
+  <title>IO Streams (IOStream)</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
@@ -21,8 +21,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Ocean State" href="OceanState.html" />
-    <link rel="prev" title="Tendency Terms" href="TendencyTerms.html" />
+    <link rel="next" title="Halo Exchanges (Halo)" href="Halo.html" />
+    <link rel="prev" title="Parallel IO (IO)" href="IO.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -96,20 +96,14 @@
 <li class="toctree-l1"><a class="reference internal" href="Dimension.html">Dimension</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Field.html">Fields and Metadata (Field)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="IO.html">Parallel IO (IO)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="IOStreams.html">IO Streams (IOStream)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">IO Streams (IOStream)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Halo.html">Halo Exchanges (Halo)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="HorzMesh.html">Horizontal Mesh</a></li>
 <li class="toctree-l1"><a class="reference internal" href="HorzOperators.html">Horizontal Operators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="AuxiliaryVariables.html">Auxiliary Variables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="AuxiliaryState.html">Auxiliary State</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TendencyTerms.html">Tendency Terms</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Tendencies</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#initialization">Initialization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#creation-of-non-default-tendencies">Creation of non-default tendencies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#computation-of-tendencies">Computation of tendencies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#removal-of-tendencies">Removal of tendencies</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="Tendencies.html">Tendencies</a></li>
 <li class="toctree-l1"><a class="reference internal" href="OceanState.html">Ocean State</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">Time Manager (TimeMgr)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TimeStepping.html">Time stepping</a></li>
@@ -158,9 +152,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Tendencies</li>
+      <li class="breadcrumb-item active">IO Streams (IOStream)</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/devGuide/Tendencies.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/devGuide/IOStreams.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -168,86 +162,97 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="tendencies">
-<span id="omega-dev-tendencies"></span><h1>Tendencies<a class="headerlink" href="#tendencies" title="Permalink to this heading"></a></h1>
-<p>The <code class="docutils literal notranslate"><span class="pre">Tendencies</span></code> class groups together all of the OMEGA <a class="reference internal" href="TendencyTerms.html#omega-dev-tend-terms"><span class="std std-ref">tendency terms</span></a>.
-It is responsible for managing their lifetime and providing functions that compute the
-tendency terms and the <a class="reference internal" href="AuxiliaryState.html#omega-dev-aux-state"><span class="std std-ref">auxiliary state</span></a>.
-It is possible to have multiple <code class="docutils literal notranslate"><span class="pre">Tendencies</span></code> instances in OMEGA. Every instance has a name
-and is tracked in a static C++ map called <code class="docutils literal notranslate"><span class="pre">AllTendencies</span></code>.</p>
-<section id="initialization">
-<h2>Initialization<a class="headerlink" href="#initialization" title="Permalink to this heading"></a></h2>
-<p>An instance of the <code class="docutils literal notranslate"><span class="pre">Tendencies</span></code> class requires a <a class="reference internal" href="HorzMesh.html#omega-dev-horz-mesh"><span class="std std-ref"><code class="docutils literal notranslate"><span class="pre">HorzMesh</span></code></span></a>, so
-the mesh class and all of its dependencies need to be initialized before the <code class="docutils literal notranslate"><span class="pre">Tendencies</span></code> class
-can be. The static method:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">init</span><span class="p">();</span>
+  <section id="io-streams-iostream">
+<span id="omega-dev-iostreams"></span><h1>IO Streams (IOStream)<a class="headerlink" href="#io-streams-iostream" title="Permalink to this heading"></a></h1>
+<p>Most input and output for Omega occurs through IOStreams. Each stream
+defines a file, the contents to be read/written and the time frequency
+for reading and writing. Defining streams via the input configuration
+file is described in the <a class="reference internal" href="../userGuide/IOStreams.html#omega-user-iostreams"><span class="std std-ref">User Guide</span></a>. IOStreams
+are built on top of the parallel IO infrastructure described in the
+<a class="reference internal" href="IO.html#omega-dev-io"><span class="std std-ref">IO Section</span></a> and the Field and Metadata described in the
+<a class="reference internal" href="Field.html#omega-dev-field"><span class="std std-ref">Field Section</span></a>. Here we describe the classes and functions
+used to implement IOStreams. Any module accessing an IOStream instance
+or related functions must include the <code class="docutils literal notranslate"><span class="pre">IOStream.h</span></code> header file.</p>
+<p>All IOStreams are initialized in a two-step process. A call to the
+init routine should take place early in the Omega initialization after
+the ModelClock has been initialized using:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IOStream</span><span class="o">::</span><span class="n">init</span><span class="p">(</span><span class="n">ModelClock</span><span class="p">);</span>
 </pre></div>
 </div>
-<p>initializes the default <code class="docutils literal notranslate"><span class="pre">Tendencies</span></code>. A pointer to it can be retrieved at any time using:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">*</span><span class="w"> </span><span class="n">DefTendencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">getDefault</span><span class="p">();</span>
+<p>This routine extracts all the stream definitions from the input configuration
+file and creates all the Streams. This initialization also defines the
+contents of each Stream but does not yet validate those contents against all
+the defined Fields. The contents of all streams should be validated at the
+end of initialization (when all Fields have been defined) using the call:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">bool</span><span class="w"> </span><span class="n">AllValidate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IOStream</span><span class="o">::</span><span class="n">validateAll</span><span class="p">();</span>
 </pre></div>
 </div>
-<p>The constructor of the <code class="docutils literal notranslate"><span class="pre">Tendencies</span></code> class initializes member instances of each of the
-tendency terms, which each store constant mesh information as private member variables.</p>
-</section>
-<section id="creation-of-non-default-tendencies">
-<h2>Creation of non-default tendencies<a class="headerlink" href="#creation-of-non-default-tendencies" title="Permalink to this heading"></a></h2>
-<p>A non-default tendency group can be created with or without custom tendencies.
-Without custom tendencies, it is created from a string <code class="docutils literal notranslate"><span class="pre">Name</span></code>, horizontal mesh <code class="docutils literal notranslate"><span class="pre">Mesh</span></code>, number of
-vertical levels <code class="docutils literal notranslate"><span class="pre">NVertLevels</span></code>, and a configuration <code class="docutils literal notranslate"><span class="pre">Options</span></code>:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">*</span><span class="w">  </span><span class="n">NewTendencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">create</span><span class="p">(</span><span class="n">Name</span><span class="p">,</span><span class="w"> </span><span class="n">Mesh</span><span class="p">,</span><span class="w"> </span><span class="n">NVertLevels</span><span class="p">,</span><span class="w"> </span><span class="n">Options</span><span class="p">);</span>
+<p>However, if a stream is needed (eg a read stream) during initialization
+before the validateAll call, a single stream can be validated using</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">bool</span><span class="w"> </span><span class="n">Validated</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MyStream</span><span class="p">.</span><span class="n">validate</span><span class="p">();</span>
 </pre></div>
 </div>
-<p>For convenience, this returns a pointer to the newly created instance.
-To allow the user to provide custom tendencies, the <code class="docutils literal notranslate"><span class="pre">create</span></code> function can take two additional arguments
-<code class="docutils literal notranslate"><span class="pre">CustomThicknessTend</span></code> and <code class="docutils literal notranslate"><span class="pre">CustomVelocityTend</span></code></p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">*</span><span class="w">  </span><span class="n">NewTendencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">create</span><span class="p">(</span><span class="n">Name</span><span class="p">,</span><span class="w"> </span><span class="n">Mesh</span><span class="p">,</span><span class="w"> </span><span class="n">NVertLevels</span><span class="p">,</span><span class="w"> </span><span class="n">Options</span><span class="p">,</span><span class="w"> </span><span class="n">CustomThicknessTend</span><span class="p">,</span><span class="w"> </span><span class="n">CustomVelocityTend</span><span class="p">);</span>
+<p>and the validation status can be checked with</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">bool</span><span class="w"> </span><span class="n">Validate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MyStream</span><span class="p">.</span><span class="n">isValidated</span><span class="p">();</span>
 </pre></div>
 </div>
-<p>The two custom tendency arguments need to be callable objects that take a Kokkos array <code class="docutils literal notranslate"><span class="pre">Tend</span></code>, ocean state <code class="docutils literal notranslate"><span class="pre">State</span></code>,
-auxiliary state <code class="docutils literal notranslate"><span class="pre">AuxState</span></code>, two integers: <code class="docutils literal notranslate"><span class="pre">ThickTimeLevel</span></code> and <code class="docutils literal notranslate"><span class="pre">VelTimeLevel</span></code>, and time instant <code class="docutils literal notranslate"><span class="pre">Time</span></code>.</p>
-<p>Given its name, a pointer to a named tendency group
-can be obtained at any time by calling the static <code class="docutils literal notranslate"><span class="pre">get</span></code> method:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">*</span><span class="w"> </span><span class="n">NewTendencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">Name</span><span class="p">);</span>
+<p>All streams must be validated before use to make sure the Fields have
+been defined and the relevant data arrays have been attached to Fields and
+are available to access.  At the end of a simulation, IOStreams must be
+finalized using</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IOStream</span><span class="o">::</span><span class="n">finalize</span><span class="p">(</span><span class="n">ModelClock</span><span class="p">);</span>
 </pre></div>
 </div>
-</section>
-<section id="computation-of-tendencies">
-<h2>Computation of tendencies<a class="headerlink" href="#computation-of-tendencies" title="Permalink to this heading"></a></h2>
-<p>To compute all tendencies for both layer thickness and normal velocity equations,
-given ocean state, <code class="docutils literal notranslate"><span class="pre">State</span></code>, a group of auxiliary variables, <code class="docutils literal notranslate"><span class="pre">AuxState</span></code>, thickness
-time level ‘ThickTimeLevel’, velocity time level <code class="docutils literal notranslate"><span class="pre">VelTimeLevel</span></code>, and time instant <code class="docutils literal notranslate"><span class="pre">Time</span></code> do:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Tendencies</span><span class="p">.</span><span class="n">computeAllTendencies</span><span class="p">(</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">AuxState</span><span class="p">,</span><span class="w"> </span><span class="n">ThickTimeLevel</span><span class="p">,</span><span class="w"> </span><span class="n">VelTimeLevel</span><span class="p">,</span><span class="w"> </span><span class="n">Time</span><span class="p">);</span>
+<p>so that any final writes can take place for the OnShutdown streams and to
+deallocate all defined streams and arrays. If a stream needs to be removed
+before that time, an erase function is provided:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="n">IOStream</span><span class="o">::</span><span class="n">erase</span><span class="p">(</span><span class="n">StreamName</span><span class="p">);</span>
 </pre></div>
 </div>
-<p>To call only the layer thickness tendency terms:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Tendencies</span><span class="p">.</span><span class="n">computeThicknessTendencies</span><span class="p">(</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">AuxState</span><span class="p">,</span><span class="w"> </span><span class="n">ThickTimeLevel</span><span class="p">,</span><span class="w"> </span><span class="n">VelTimeLevel</span><span class="p">,</span><span class="w"> </span><span class="n">Time</span><span class="p">);</span>
+<p>For most output streams, we provide a writeAll interface that should be placed
+at an appropriate time during the time step loop:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IOStream</span><span class="o">::</span><span class="n">writeAll</span><span class="p">(</span><span class="n">ModelClock</span><span class="p">);</span>
 </pre></div>
 </div>
-<p>To call only the normal velocity tendency terms:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Tendencies</span><span class="p">.</span><span class="n">computeVelocityTendencies</span><span class="p">(</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">AuxState</span><span class="p">,</span><span class="w"> </span><span class="n">ThickTimeLevel</span><span class="p">,</span><span class="w"> </span><span class="n">VelTimeLevel</span><span class="p">,</span><span class="w"> </span><span class="n">Time</span><span class="p">);</span>
+<p>This function checks each write stream and writes the file if it is time, based
+on a time manager alarm that is defined during initialization for each stream
+based on the time frequency in the streams configuration. After writing the
+file, the alarm is reset for the next write time. If a file must be written
+outside of this routine, a single-stream write can take place using:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IOStream</span><span class="o">::</span><span class="n">write</span><span class="p">(</span><span class="n">StreamName</span><span class="p">,</span><span class="w"> </span><span class="n">ModelClock</span><span class="p">);</span>
 </pre></div>
 </div>
-</section>
-<section id="removal-of-tendencies">
-<h2>Removal of tendencies<a class="headerlink" href="#removal-of-tendencies" title="Permalink to this heading"></a></h2>
-<p>To erase a specific named tendencies instance use <code class="docutils literal notranslate"><span class="pre">erase</span></code></p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">erase</span><span class="p">(</span><span class="n">Name</span><span class="p">);</span>
+<p>Reading files (eg for initialization, restart or forcing) does not often
+take place all at once, so no readAll interface is provided. Instead, each
+input stream is read using:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="kt">int</span><span class="w"> </span><span class="n">Err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IOStream</span><span class="o">::</span><span class="n">read</span><span class="p">(</span><span class="n">StreamName</span><span class="p">,</span><span class="w"> </span><span class="n">ModelClock</span><span class="p">,</span><span class="w"> </span><span class="n">ReqMetadata</span><span class="p">);</span>
 </pre></div>
 </div>
-<p>To clear all instances do:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Tendencies</span><span class="o">::</span><span class="n">clear</span><span class="p">();</span>
+<p>where ReqMetadata is a variable of type Metadata (defined in Field but
+essentially a <code class="docutils literal notranslate"><span class="pre">std::map&lt;std::string,</span> <span class="pre">std::any&gt;</span></code> for the name/value pair).
+This variable should incude the names of global metadata that are desired
+from the input file. For example, if a time string is needed to verify the
+input file corresponds to a desired time, the required metadata can be
+initialized with</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="n">Metadata</span><span class="w"> </span><span class="n">ReqMetadata</span><span class="p">;</span>
+<span class="w">   </span><span class="n">ReqMetadata</span><span class="p">[</span><span class="s">&quot;ForcingTime&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="p">;</span>
 </pre></div>
 </div>
-</section>
+<p>The Metadata corresponding to ForcingTime will then be read from the file
+and inserted as the Metadata value. If no metadata is to be read from the
+file, then an empty ReqMetadata variable can be passed.</p>
+<p>As described in the <a class="reference internal" href="../userGuide/IOStreams.html#omega-user-iostreams"><span class="std std-ref">User Guide</span></a>, all streams are
+defined in the input configuration file and most other IOStream functions
+are associated either with that initialization or to support the read/write
+functions above.</p>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="TendencyTerms.html" class="btn btn-neutral float-left" title="Tendency Terms" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="OceanState.html" class="btn btn-neutral float-right" title="Ocean State" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="IO.html" class="btn btn-neutral float-left" title="Parallel IO (IO)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Halo.html" class="btn btn-neutral float-right" title="Halo Exchanges (Halo)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

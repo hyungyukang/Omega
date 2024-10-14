@@ -701,7 +701,11 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
       std::string StartName     = StreamName + "Start";
       std::string EndName       = StreamName + "End";
       NewStream->StartAlarm     = Alarm(StartName, Start);
-      NewStream->EndAlarm       = Alarm(EndName, End+AlarmInt);
+      NewStream->EndAlarm       = Alarm(EndName, End);
+      if (StreamConfig.existsVar("FileFreq")) {
+         NewStream->MyFileAlarm    = Alarm(AlarmName, FileAlarmInt, Start-FileAlarmInt);
+         NewStream->MyFileEndAlarm = Alarm(AlarmName, FileAlarmInt, Start-AlarmInt);
+      }
       Err                   = ModelClock.attachAlarm(&(NewStream->StartAlarm));
       if (Err != 0) {
          LOG_ERROR("Error attaching start alarm to model clock for stream {}",

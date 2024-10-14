@@ -2568,12 +2568,6 @@ int IOStream::writeStream(
          LOG_ERROR("Error writing Code Metadata to file {}", OutFileName);
          return Err;
       }
-      // Add the simulation time - if it was added previously, remove and
-      // re-add the current time
-
-      //if (SimField->hasMetadata("SimulationTime"))
-      //   Err = SimField->removeMetadata("SimulationTime");
-      //Err = SimField->addMetadata("SimulationTime", SimTimeStr);
 
       if (Err != 0) {
          LOG_ERROR("Error adding current sim time to output {}", OutFileName);
@@ -2652,6 +2646,18 @@ int IOStream::writeStream(
       }
    } // end if MyFileAlarm.isRinging
 
+   // Add the simulation time - if it was added previously, remove and
+   // re-add the current time
+   // TODO: The time string metadata will be deleted when the IOStreams
+   //       are adjusted in conjunction with the OceanDriver.
+   std::string TimeIndexStr = std::to_string(TimeIndex);
+   std::string SimTimeString = "SimulationTime"+TimeIndexStr;
+   if (SimField->hasMetadata(SimTimeString))
+      Err = SimField->removeMetadata(SimTimeString);
+   Err = SimField->addMetadata(SimTimeString, SimTimeStr);
+   Err = writeFieldMeta(SimMeta, OutFileID, IO::GlobalID);
+   Err = SimField->removeMetadata(SimTimeString);
+
    // Now write data arrays for all fields in contents
    for (auto IFld = Contents.begin(); IFld != Contents.end(); ++IFld) {
 
@@ -2671,17 +2677,6 @@ int IOStream::writeStream(
          return Err;
       }
    }
-
-   // Write metadata for simulating time (delete - add - write - delete)
-   // TODO: The time string metadata will be deleted when the IOStreams
-   //       are adjusted in conjunction with the OceanDriver.
-   std::string TimeIndexStr = std::to_string(TimeIndex);
-   std::string SimTimeString = "SimulationTime"+TimeIndexStr;
-   if (SimField->hasMetadata(SimTimeString))
-      Err = SimField->removeMetadata(SimTimeString);
-   Err = SimField->addMetadata(SimTimeString, SimTimeStr);
-   Err = writeFieldMeta(SimMeta, OutFileID, IO::GlobalID);
-   Err = SimField->removeMetadata(SimTimeString);
 
    // Increase time frame index
    TimeIndex++;

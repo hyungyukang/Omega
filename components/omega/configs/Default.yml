@@ -93,6 +93,8 @@ Omega:
       Precision: single
       Freq: 10
       FreqUnits: days
+      FileFreq: 1
+      FileFreqUnits: months
       UseStartEnd: true
       StartTime: 0001-06-01_00:00:00
       EndTime: 0001-06-30_00:00:00

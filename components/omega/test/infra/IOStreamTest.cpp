@@ -143,7 +143,7 @@ int initIOStreamTest(std::shared_ptr<Clock> &ModelClock, // Model clock
    DimNames[1] = "NCells";
    DimNames[2] = "NVertLevels";
 
-   // 2D Fields on device
+   // 3D Fields on device
 
    DimNames[0]    = "Time";
    DimNames[1]    = "NCells";

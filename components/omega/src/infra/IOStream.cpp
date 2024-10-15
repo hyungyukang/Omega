@@ -1744,6 +1744,25 @@ int IOStream::readFieldData(
       return Err;
    }
 
+   // Retrieve dimension names
+   std::vector<std::string> DimNames(NDims);
+   Err = FieldPtr->getDimNames(DimNames);
+   if (Err != 0) {
+      LOG_ERROR("Error retrieving dimension names for Field {}", FieldName);
+      return Err;
+   }
+
+   // If the first dimension is 'Time', reduce the number of dimensions by one,
+   // as the field array to be written is declared without the 'Time' dimension.
+   // Additionally, the field array is assumed to be a time series if the first
+   // dimension is 'Time' and NDims is 1.
+   // TODO: Future work is required for this section, as it currently assumes
+   //       that the time dimension has a size of 1.
+   if ( DimNames[0] == "Time" and NDims > 1) {
+      LOG_INFO("TimeTime");
+      NDims = NDims-1;
+   }
+
    // Compute the parallel decomposition
    int DecompID;
    int LocSize;

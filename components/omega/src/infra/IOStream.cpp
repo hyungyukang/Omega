@@ -1759,7 +1759,6 @@ int IOStream::readFieldData(
    // TODO: Future work is required for this section, as it currently assumes
    //       that the time dimension has a size of 1.
    if ( DimNames[0] == "Time" and NDims > 1) {
-      LOG_INFO("TimeTime");
       NDims = NDims-1;
    }
 

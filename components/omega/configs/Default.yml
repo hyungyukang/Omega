@@ -100,3 +100,7 @@ Omega:
       EndTime: 0001-06-30_00:00:00
       Contents:
         - Tracers
+  ManufacturedSolution:
+    UseManufacturedSolution: true
+    Amplitude: 1.0
+    RestingThickness: 1000.0

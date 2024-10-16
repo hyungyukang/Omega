@@ -1764,16 +1764,6 @@ int IOStream::readFieldData(
       return Err;
    }
 
-   // If the first dimension is 'Time', reduce the number of dimensions by one,
-   // as the field array to be written is declared without the 'Time' dimension.
-   // Additionally, the field array is assumed to be a time series if the first
-   // dimension is 'Time' and NDims is 1.
-   // TODO: Future work is required for this section, as it currently assumes
-   //       that the time dimension has a size of 1.
-   if (DimNames[0] == "Time" and NDims > 1) {
-      NDims = NDims - 1;
-   }
-
    // Compute the parallel decomposition
    int DecompID;
    int LocSize;
@@ -1782,6 +1772,18 @@ int IOStream::readFieldData(
    if (Err != 0) {
       LOG_ERROR("Error computing decomposition for Field {}", FieldName);
       return Err;
+   }
+
+   // If the first dimension is 'Time', reduce the number of dimensions by one,
+   // as the field array to be written is declared without the 'Time' dimension.
+   // Additionally, the field array is assumed to be a time series if the first
+   // dimension is 'Time' and NDims is 1.
+   // TODO: Additional work is required for this section if variables are
+   //       declared in the Time dimension.
+   LOG_INFO("Ndims {}", NDims);
+   if (DimNames[0] == "Time" and NDims > 1) {
+      NDims = NDims - 1;
+      DimLengths.erase(DimLengths.begin());
    }
 
    // The IO routines require a pointer to a contiguous memory on the host

@@ -483,10 +483,10 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
    NewStream->OnShutdown = false;
 
    TimeInterval AlarmInt;
-   for ( int i = 0; i < IOFreqUnitsSplit.size(); i++ ) {
+   for (int i = 0; i < IOFreqUnitsSplit.size(); i++) {
       if (IOFreqUnitsSplit[i] == "years") {
 
-         Err = AlarmInt.set(IOFreq, TimeUnits::Years);
+         Err                       = AlarmInt.set(IOFreq, TimeUnits::Years);
          NewStream->MyAlarm        = Alarm(AlarmName, AlarmInt, ClockStart);
          NewStream->MyFileAlarm    = Alarm(AlarmName, AlarmInt, ClockStart);
          NewStream->MyFileEndAlarm = Alarm(AlarmName, AlarmInt, ClockStart);
@@ -494,7 +494,7 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
 
       } else if (IOFreqUnitsSplit[i] == "months") {
 
-         Err = AlarmInt.set(IOFreq, TimeUnits::Months);
+         Err                       = AlarmInt.set(IOFreq, TimeUnits::Months);
          NewStream->MyAlarm        = Alarm(AlarmName, AlarmInt, ClockStart);
          NewStream->MyFileAlarm    = Alarm(AlarmName, AlarmInt, ClockStart);
          NewStream->MyFileEndAlarm = Alarm(AlarmName, AlarmInt, ClockStart);
@@ -502,7 +502,7 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
 
       } else if (IOFreqUnitsSplit[i] == "days") {
 
-         Err = AlarmInt.set(IOFreq, TimeUnits::Days);
+         Err                       = AlarmInt.set(IOFreq, TimeUnits::Days);
          NewStream->MyAlarm        = Alarm(AlarmName, AlarmInt, ClockStart);
          NewStream->MyFileAlarm    = Alarm(AlarmName, AlarmInt, ClockStart);
          NewStream->MyFileEndAlarm = Alarm(AlarmName, AlarmInt, ClockStart);
@@ -510,7 +510,7 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
 
       } else if (IOFreqUnitsSplit[i] == "hours") {
 
-         Err = AlarmInt.set(IOFreq, TimeUnits::Hours);
+         Err                       = AlarmInt.set(IOFreq, TimeUnits::Hours);
          NewStream->MyAlarm        = Alarm(AlarmName, AlarmInt, ClockStart);
          NewStream->MyFileAlarm    = Alarm(AlarmName, AlarmInt, ClockStart);
          NewStream->MyFileEndAlarm = Alarm(AlarmName, AlarmInt, ClockStart);
@@ -518,7 +518,7 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
 
       } else if (IOFreqUnitsSplit[i] == "minutes") {
 
-         Err = AlarmInt.set(IOFreq, TimeUnits::Minutes);
+         Err                       = AlarmInt.set(IOFreq, TimeUnits::Minutes);
          NewStream->MyAlarm        = Alarm(AlarmName, AlarmInt, ClockStart);
          NewStream->MyFileAlarm    = Alarm(AlarmName, AlarmInt, ClockStart);
          NewStream->MyFileEndAlarm = Alarm(AlarmName, AlarmInt, ClockStart);
@@ -526,7 +526,7 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
 
       } else if (IOFreqUnitsSplit[i] == "seconds") {
 
-         Err = AlarmInt.set(IOFreq, TimeUnits::Seconds);
+         Err                       = AlarmInt.set(IOFreq, TimeUnits::Seconds);
          NewStream->MyAlarm        = Alarm(AlarmName, AlarmInt, ClockStart);
          NewStream->MyFileAlarm    = Alarm(AlarmName, AlarmInt, ClockStart);
          NewStream->MyFileEndAlarm = Alarm(AlarmName, AlarmInt, ClockStart);
@@ -540,12 +540,14 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
 
          NewStream->OnShutdown = true;
 
-      } else if (IOFreqUnitsSplit[i] == "attime" or IOFreqUnitsSplit[i] == "ontime" or
-                 IOFreqUnitsSplit[i] == "time"   or IOFreqUnitsSplit[i] == "timeinstant") {
+      } else if (IOFreqUnitsSplit[i] == "attime" or
+                 IOFreqUnitsSplit[i] == "ontime" or
+                 IOFreqUnitsSplit[i] == "time" or
+                 IOFreqUnitsSplit[i] == "timeinstant") {
 
          // A one-time event for this stream - use the StartTime string
          // as the time instant to use
-         if (HasAlarm or NewStream->OnStartup or NewStream->OnShutdown ) {
+         if (HasAlarm or NewStream->OnStartup or NewStream->OnShutdown) {
             LOG_ERROR("Stream {} requests a one-time read/write but another"
                       "frequency is specified.",
                       StreamName);
@@ -584,10 +586,10 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
       }
    } // end for IOFreqUnitsSplit
 
-
    // Set File IO frequency for time-stacked output streams
-   // If 'FileFreq' does not exist in omega.yml for the stream, the file frequency
-   // is defined the same as the IO frequency without stacking over time.
+   // If 'FileFreq' does not exist in omega.yml for the stream, the file
+   // frequency is defined the same as the IO frequency without stacking over
+   // time.
    TimeInterval FileAlarmInt;
 
    if (StreamConfig.existsVar("FileFreq")) {
@@ -597,7 +599,7 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
       // Get FileFreq & FreqUnits from Config
       Err = StreamConfig.get("FileFreq", IOFileFreq);
       Err = StreamConfig.get("FileFreqUnits", IOFileFreqUnits);
-      if ( Err != 0) {
+      if (Err != 0) {
          LOG_ERROR("FileFreq of Stream {} is specified, but FileFreqUnits"
                    "is not provided",
                    StreamName);
@@ -629,20 +631,24 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
 
       } else {
          if (!NewStream->OnStartup and !NewStream->OnShutdown) {
-            LOG_ERROR("Unknown IOFileFreqUnits option for stream {}", StreamName);
+            LOG_ERROR("Unknown IOFileFreqUnits option for stream {}",
+                      StreamName);
             Err = 4;
             return Err;
          }
       }
 
-      if ( ClockStart+AlarmInt > ClockStart+FileAlarmInt ) {
-         LOG_ERROR("AlarmInt is longer than FileAlarmInt for stream {}", StreamName);
+      if (ClockStart + AlarmInt > ClockStart + FileAlarmInt) {
+         LOG_ERROR("AlarmInt is longer than FileAlarmInt for stream {}",
+                   StreamName);
          Err = 4;
          return Err;
       } else {
 
-         NewStream->MyFileAlarm = Alarm(AlarmName, FileAlarmInt, ClockStart-FileAlarmInt);
-         NewStream->MyFileEndAlarm = Alarm(AlarmName, FileAlarmInt,ClockStart-AlarmInt);
+         NewStream->MyFileAlarm =
+             Alarm(AlarmName, FileAlarmInt, ClockStart - FileAlarmInt);
+         NewStream->MyFileEndAlarm =
+             Alarm(AlarmName, FileAlarmInt, ClockStart - AlarmInt);
       }
 
    } else {
@@ -654,9 +660,11 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
    } // end if StreamConfig.existsVar("FileFreq")
 
    // Reset Alarm for OnStartup
-   if ( HasAlarm and NewStream->OnStartup ) {
-      NewStream->MyFileAlarm    = Alarm(AlarmName, FileAlarmInt, ClockStart-FileAlarmInt);
-      NewStream->MyFileEndAlarm = Alarm(AlarmName, FileAlarmInt, ClockStart-AlarmInt);
+   if (HasAlarm and NewStream->OnStartup) {
+      NewStream->MyFileAlarm =
+          Alarm(AlarmName, FileAlarmInt, ClockStart - FileAlarmInt);
+      NewStream->MyFileEndAlarm =
+          Alarm(AlarmName, FileAlarmInt, ClockStart - AlarmInt);
       NewStream->MyFileAlarm.updateStatus(ClockStart);
       NewStream->MyFileEndAlarm.updateStatus(ClockStart);
    }
@@ -698,15 +706,17 @@ int IOStream::create(const std::string &StreamName, //< [in] name of stream
       }
       TimeInstant Start(CalendarPtr, StartTimeStr);
       TimeInstant End(CalendarPtr, EndTimeStr);
-      std::string StartName     = StreamName + "Start";
-      std::string EndName       = StreamName + "End";
-      NewStream->StartAlarm     = Alarm(StartName, Start);
-      NewStream->EndAlarm       = Alarm(EndName, End);
+      std::string StartName = StreamName + "Start";
+      std::string EndName   = StreamName + "End";
+      NewStream->StartAlarm = Alarm(StartName, Start);
+      NewStream->EndAlarm   = Alarm(EndName, End);
       if (StreamConfig.existsVar("FileFreq")) {
-         NewStream->MyFileAlarm    = Alarm(AlarmName, FileAlarmInt, Start-FileAlarmInt);
-         NewStream->MyFileEndAlarm = Alarm(AlarmName, FileAlarmInt, Start-AlarmInt);
+         NewStream->MyFileAlarm =
+             Alarm(AlarmName, FileAlarmInt, Start - FileAlarmInt);
+         NewStream->MyFileEndAlarm =
+             Alarm(AlarmName, FileAlarmInt, Start - AlarmInt);
       }
-      Err                   = ModelClock.attachAlarm(&(NewStream->StartAlarm));
+      Err = ModelClock.attachAlarm(&(NewStream->StartAlarm));
       if (Err != 0) {
          LOG_ERROR("Error attaching start alarm to model clock for stream {}",
                    StreamName);
@@ -803,7 +813,7 @@ int IOStream::defineAllDims(
       // For output files, we need to define the dimension
       if (Mode == IO::ModeWrite) {
 
-         if ( DimName == "Time" ) {
+         if (DimName == "Time") {
             // UNLIMITED length for time dimension to allow stacking over time
             Err = IO::defineDim(FileID, DimName, PIO_UNLIMITED, DimID);
          } else {
@@ -1065,8 +1075,8 @@ int IOStream::writeFieldData(
    // dimension is 'Time' and NDims is 1.
    // TODO: Future work is required for this section, as it currently assumes
    //       that the time dimension has a size of 1.
-   if ( DimNames[0] == "Time" and NDims > 1) {
-      NDims = NDims-1;
+   if (DimNames[0] == "Time" and NDims > 1) {
+      NDims = NDims - 1;
    }
 
    // Create the decomposition needed for parallel I/O
@@ -1758,8 +1768,8 @@ int IOStream::readFieldData(
    // dimension is 'Time' and NDims is 1.
    // TODO: Future work is required for this section, as it currently assumes
    //       that the time dimension has a size of 1.
-   if ( DimNames[0] == "Time" and NDims > 1) {
-      NDims = NDims-1;
+   if (DimNames[0] == "Time" and NDims > 1) {
+      NDims = NDims - 1;
    }
 
    // Compute the parallel decomposition
@@ -2575,7 +2585,7 @@ int IOStream::writeStream(
 
    // Open a new file if MyFileAlarm is ringing
    std::shared_ptr<Field> SimField = Field::get(SimMeta);
-   if ( MyFileAlarm.isRinging()) {
+   if (MyFileAlarm.isRinging()) {
 
       // Create filename
       if (FilenameIsTemplate) {
@@ -2643,7 +2653,8 @@ int IOStream::writeStream(
          FieldDims.resize(NDims);
          Err = ThisField->getDimNames(DimNames);
          if (Err != 0) {
-            LOG_ERROR("Error retrieving dimension names for Field {}", FieldName);
+            LOG_ERROR("Error retrieving dimension names for Field {}",
+                      FieldName);
             return Err;
          }
          for (int IDim = 0; IDim < NDims; ++IDim) {
@@ -2657,8 +2668,8 @@ int IOStream::writeStream(
 
          // Define the field and assign a FieldID
          int FieldID;
-         Err = defineVar(OutFileID, FieldName, MyIOType, NDims, FieldDims.data(),
-                         FieldID);
+         Err = defineVar(OutFileID, FieldName, MyIOType, NDims,
+                         FieldDims.data(), FieldID);
          if (Err != 0) {
             LOG_ERROR("Error defining field {} in stream {}", FieldName, Name);
             return Err;
@@ -2686,8 +2697,8 @@ int IOStream::writeStream(
    // re-add the current time
    // TODO: The time string metadata will be deleted when the IOStreams
    //       are adjusted in conjunction with the OceanDriver.
-   std::string TimeIndexStr = std::to_string(TimeIndex);
-   std::string SimTimeString = "SimulationTime"+TimeIndexStr;
+   std::string TimeIndexStr  = std::to_string(TimeIndex);
+   std::string SimTimeString = "SimulationTime" + TimeIndexStr;
    if (SimField->hasMetadata(SimTimeString))
       Err = SimField->removeMetadata(SimTimeString);
    Err = SimField->addMetadata(SimTimeString, SimTimeStr);

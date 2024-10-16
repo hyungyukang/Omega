@@ -9,6 +9,7 @@ target_include_directories(
     ${OMEGA_SOURCE_DIR}/src/base
     ${OMEGA_SOURCE_DIR}/src/infra
     ${OMEGA_SOURCE_DIR}/src/ocn
+    ${OMEGA_SOURCE_DIR}/src/ocn/share
     ${OMEGA_SOURCE_DIR}/src/timeStepping
     ${PIOC_SOURCE_DIR}
     ${PIOC_BINARY_DIR}
@@ -47,7 +48,7 @@ if(GKlib_FOUND)
 endif()
 
 # Add source files for the library
-file(GLOB_RECURSE _LIBSRC_FILES infra/*.cpp base/*.cpp ocn/*.cpp timeStepping/*.cpp)
+file(GLOB_RECURSE _LIBSRC_FILES infra/*.cpp base/*.cpp ocn/*.cpp ocn/share/*.cpp timeStepping/*.cpp)
 
 add_library(${OMEGA_LIB_NAME} ${_LIBSRC_FILES})
 

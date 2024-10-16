@@ -47,6 +47,8 @@ class IOStream {
    bool OnStartup;       ///< flag to read/write on model startup
    bool OnShutdown;      ///< flag to read/write on model shutdown
 
+   int XtimeID;
+
    int OutFileID;                        ///< ID assigned to the output file
    std::map<std::string, int> FieldIDs;  ///< ID assigned to fields
    std::map<std::string, int> AllDimIDs; ///< ID assigned to dimensions

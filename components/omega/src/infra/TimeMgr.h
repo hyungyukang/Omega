@@ -597,6 +597,10 @@ class TimeInstant {
    /// Default constructor creates empty time instant
    TimeInstant(void);
 
+   /// Retrieves elapsed time since reference time for this time instant
+   TimeFrac getElapsedTime(void) const;
+
+
    /// Construct time instant from date, time, calendar
    /// Where seconds is supplied as real number.
    TimeInstant(Calendar *Cal,   ///< [in] Calendar to use

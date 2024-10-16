@@ -1082,6 +1082,8 @@ I4 TimeFrac::simplify(void) {
 
 } // end TimeFrac::simplify
 
+
+
 //------------------------------------------------------------------------------
 // Calendar definitions
 //------------------------------------------------------------------------------
@@ -4323,6 +4325,11 @@ TimeInterval Clock::getTimeStep(void) const { return TimeStep; }
 // Clock::attachAlarm - Attaches an alarm to this clock
 // Attaches an alarm to this clock. The clock simply stores a pointer to this
 // alarm, so user must be careful not to destroy any alarms before the clock.
+
+//------------------------------------------------------------------------------
+// TimeFrac::getElapsedTime - Retrieves elapsed time of this time instant
+// Returns the elapsed time since reference time for this time instant
+TimeFrac TimeInstant::getElapsedTime(void) const { return ElapsedTime; }
 
 I4 Clock::attachAlarm(Alarm *InAlarm // [in] pointer to alarm to attach
 ) {

@@ -1570,6 +1570,7 @@ int IOStream::writeFieldData(
       case 1:
          if (OnHost) {
             HostArray1DR8 Data = FieldPtr->getDataArray<HostArray1DR8>();
+            LOG_INFO("DimL {}", DimLengths[0]);
             for (int I = 0; I < DimLengths[0]; ++I) {
                DataR8[I] = Data(I);
             }
@@ -1583,6 +1584,7 @@ int IOStream::writeFieldData(
          break;
       case 2:
          if (OnHost) {
+            LOG_INFO("DimL {} {}", DimLengths[0],DimLengths[1]);
             HostArray2DR8 Data = FieldPtr->getDataArray<HostArray2DR8>();
             int VecAdd         = 0;
             for (int J = 0; J < DimLengths[0]; ++J) {
@@ -2674,11 +2676,13 @@ int IOStream::writeStream(
          int FieldID;
          Err = defineVar(OutFileID, FieldName, MyIOType, NDims,
                          FieldDims.data(), FieldID);
+
          if (Err != 0) {
             LOG_ERROR("Error defining field {} in stream {}", FieldName, Name);
             return Err;
          }
          FieldIDs[FieldName] = FieldID;
+
 
          // Now we can write the field metadata
          Err = writeFieldMeta(FieldName, OutFileID, FieldID);
@@ -2689,6 +2693,12 @@ int IOStream::writeStream(
          }
       }
 
+      // xtime info
+      //if (DimNames[0] == "Time") {
+         int TimeStrDim[2] = {AllDimIDs["Time"],AllDimIDs["StrLen"]};
+         Err = defineVar(OutFileID, "xtime", IO::IOTypeChar, 2, TimeStrDim, XtimeID);
+      //}
+
       // End define mode
       Err = IO::endDefinePhase(OutFileID);
       if (Err != 0) {
@@ -2696,6 +2706,7 @@ int IOStream::writeStream(
          return Err;
       }
    } // end if MyFileAlarm.isRinging
+
 
    // Add the simulation time - if it was added previously, remove and
    // re-add the current time
@@ -2708,6 +2719,15 @@ int IOStream::writeStream(
    Err = SimField->addMetadata(SimTimeString, SimTimeStr);
    Err = writeFieldMeta(SimMeta, OutFileID, IO::GlobalID);
    Err = SimField->removeMetadata(SimTimeString);
+
+   // Writing xtime info
+   char xtime[64] = {{' '}};
+   char *cstr = SimTimeStr.data();
+   strncpy (xtime,cstr,strlen(cstr)+1);
+   PIOc_setframe(OutFileID, XtimeID, TimeIndex);
+   PIO_Offset start[2] = {TimeIndex, 0};  // Start at this timestep
+   PIO_Offset count[2] = {1, 64};  // Number of characters to write
+   Err = PIOc_put_vara_text(OutFileID, XtimeID, start, count, &xtime[0]);
 
    // Now write data arrays for all fields in contents
    for (auto IFld = Contents.begin(); IFld != Contents.end(); ++IFld) {

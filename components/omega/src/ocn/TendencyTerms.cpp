@@ -14,6 +14,7 @@
 #include "DataTypes.h"
 #include "HorzMesh.h"
 #include "OceanState.h"
+#include "share/ManufacturedSolution.h"
 
 namespace OMEGA {
 
@@ -40,6 +41,42 @@ int Tendencies::init() {
 
    Tendencies::DefaultTendencies =
        create("Default", DefHorzMesh, NVertLevels, &TendConfig);
+
+   // Check if use the manufactured solution test
+   bool UseManufacturedSolution = false;
+   Config MSConfig("ManufacturedSolution");
+   Err = OmegaConfig->get(MSConfig);
+   if ( Err != 0 ) {
+      LOG_ERROR("Tendencies:: ManufacturedSolution group not found in Config");
+      return Err;
+   }
+
+   Err = MSConfig.get("UseManufacturedSolution", UseManufacturedSolution);
+   if ( Err != 0 ) {
+      LOG_ERROR("Tendencies:: ManufacturedSolution: UseManufacturedSolution "
+                "not found in Config");
+      return Err;
+   }
+
+   if (UseManufacturedSolution) {
+      // Clear tendencies previously created
+      Tendencies::clear();
+
+      // Initialize Manufactured Solution
+      ManufacturedSolution ManufacturedSol;
+      Err = ManufacturedSol.init();
+
+      if ( Err != 0 ) {
+         LOG_ERROR("Tendencies:: Error initializing ManufacturedSolution");
+         return Err;
+      }
+
+      // Re-create tendencies with the manufactured tendencies
+      Tendencies::DefaultTendencies =
+          create("Default", DefHorzMesh, NVertLevels, &TendConfig,
+                 ManufacturedSol.ManufacturedThickTend,
+                 ManufacturedSol.ManufacturedVelTend);
+   } // end if UseManufacturedSolution
 
    Err = DefaultTendencies->readTendConfig(&TendConfig);
 

@@ -1,14 +1,14 @@
 Omega:
   TimeManagement:
     StartTime: 0001-01-01_00:00:00
-    StopTime: 0001-01-01_10:00:00
+    StopTime: 0001-01-01_02:00:00
     RunDuration: none
     CalendarType: No Leap
   TimeIntegration:
-    TimeStepper: RungeKutta2
+    TimeStepper: Forward-Backward
     TimeStep: 0000_00:10:00
   Dimension:
-    NVertLevels: 1
+    NVertLevels: 60
   Decomp:
     HaloWidth: 3
     DecompMethod: MetisKWay
@@ -21,9 +21,9 @@ Omega:
     PVTendencyEnable: true
     KETendencyEnable: true
     SSHTendencyEnable: true
-    VelDiffTendencyEnable: false
+    VelDiffTendencyEnable: true
     ViscDel2: 1.0e3
-    VelHyperDiffTendencyEnable: false
+    VelHyperDiffTendencyEnable: true
     ViscDel4: 1.2e11
   Tracers:
     Base: [Temp, Salt]
@@ -76,15 +76,15 @@ Omega:
       Mode: write
       IfExists: replace
       Precision: double
-      Freq: 10
-      FreqUnits: hours,OnStartup
+      Freq: 1
+      FreqUnits: months,OnStartup
       # If FileFreq and FileFreqUnits are commented out,
       # the output file frequency will default to the IO frequency.
       FileFreq: 1
       FileFreqUnits: years
       UseStartEnd: false
       Contents:
-        - States
+        - Tracers
     Highfreq:
       UsePointerFile: false
       Filename: ocn.hifreq.$Y-$M-$D_$h.$m.$s
@@ -100,7 +100,3 @@ Omega:
       EndTime: 0001-06-30_00:00:00
       Contents:
         - Tracers
-  ManufacturedSolution:
-    UseManufacturedSolution: true
-    Amplitude: 1.0
-    RestingThickness: 1000.0

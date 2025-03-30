@@ -41,12 +41,14 @@ Explicitly including a time argument in the RHS functions is necessary to accura
 The split explicit method separates ocean velocity into depth-integrated barotropic and depth-dependent baroclinic components. This separation allows computationally expensive baroclinic modes to run at longer timesteps and computationally efficient barotropic modes to run at shorter timesteps, enhancing computational efficiency and accuracy.
 
 - **Barotropic Equations:**
+
 $$
   \[\frac{\partial \zeta}{\partial t} + \nabla \cdot \left(u \sum_k h_k^{\text{edge}}\right) = 0\]
   \[\frac{\partial u}{\partial t} + fu^\perp = -g\nabla\zeta + G\]
 $$
 
 - **Baroclinic Equations:**
+
 $$
   \[\frac{\partial u'_k}{\partial t} = -fu'^\perp_k + T(u_k, w_k, p_k) + g\nabla\zeta - G\]
 $$

@@ -28,7 +28,7 @@ Modularity ensures ease of testing and future-proofing of the Omega1 codebase. I
 
 ## 2.5 Conservation
 
-Ensuring conservation of physical properties like mass and tracers is essential for the physical reliability of ocean model simulations. Omega1 must rigorously conserve total mass (volume-integrated layer thickness, $\(h\)$) and total tracers (area-integrated $\(\phi\)$), thereby ensuring accurate long-term climate simulations and realistic modeling of biogeochemical processes.
+Ensuring conservation of physical properties like mass and tracers is essential for the physical reliability of ocean model simulations. Omega1 must rigorously conserve total mass (volume-integrated layer thickness, $h$) and total tracers (area-integrated $\phi$), thereby ensuring accurate long-term climate simulations and realistic modeling of biogeochemical processes.
 
 ## 2.6 Explicit Time Argument for RHS
 
@@ -43,14 +43,14 @@ The split explicit method separates ocean velocity into depth-integrated barotro
 - **Barotropic Equations:**
 
 $$
-  \[\frac{\partial \zeta}{\partial t} + \nabla \cdot \left(u \sum_k h_k^{\text{edge}}\right) = 0\]
-  \[\frac{\partial u}{\partial t} + fu^\perp = -g\nabla\zeta + G\]
+  \frac{\partial \zeta}{\partial t} + \nabla \cdot \left(u \sum_k h_k^{\text{edge}}\right) = 0
+  \frac{\partial u}{\partial t} + fu^\perp = -g\nabla\zeta + G
 $$
 
 - **Baroclinic Equations:**
 
 $$
-  \[\frac{\partial u'_k}{\partial t} = -fu'^\perp_k + T(u_k, w_k, p_k) + g\nabla\zeta - G\]
+  \frac{\partial u'_k}{\partial t} = -fu'^\perp_k + T(u_k, w_k, p_k) + g\nabla\zeta - G
 $$
 
 ## 3.2 Runge-Kutta 4th Order (RK4) Scheme
@@ -103,9 +103,9 @@ Comprehensive testing ensures robustness, accuracy, and scalability:
 Verification equations:
 
 $$
-\[\frac{\partial u}{\partial t} = -R u\]
-\[\frac{\partial h}{\partial t} = 0\]
-\[\frac{\partial h\phi}{\partial t} = \frac{h}{\tau}(\phi - \phi_0)\]
+\frac{\partial u}{\partial t} = -R u
+\frac{\partial h}{\partial t} = 0
+\frac{\partial h\phi}{\partial t} = \frac{h}{\tau}(\phi - \phi_0)
 $$
 
 These verification tests validate that the implemented schemes accurately represent known dynamics such as exponential decay processes and tracer restoration, common in ocean biogeochemical modeling.

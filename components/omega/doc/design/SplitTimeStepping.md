@@ -1,14 +1,14 @@
-# MPAS-Ocean Time Stepping Design
+# Omega1 Split Time Stepping Design
 
 # 1 Overview
 
-This document describes the time-stepping methods used in MPAS-Ocean, particularly emphasizing the split explicit scheme adapted for z-level vertical coordinates, following the methods described by Higdon (2005). The primary objective is to achieve stable, efficient, and accurate numerical integration of ocean circulation model equations.
+This document describes the time-stepping methods used in Omega1, particularly emphasizing the split explicit scheme adapted for p-level vertical coordinates, following the methods described by Higdon (2005). The primary objective is to achieve stable, efficient, and accurate numerical integration of ocean circulation model equations.
 
 # 2 Requirements
 
 ## 2.1 Accurate Discretization
 
-Temporal discretization in ocean modeling is crucial because inaccuracies can accumulate and degrade long-term simulations. Therefore, MPAS-Ocean must maintain at least second-order accuracy in time to ensure high fidelity in representing ocean dynamics, especially when simulating long-term climate scenarios or capturing fine-scale oceanographic processes.
+Temporal discretization in ocean modeling is crucial because inaccuracies can accumulate and degrade long-term simulations. Therefore, Omega1 must maintain at least second-order accuracy in time to ensure high fidelity in representing ocean dynamics, especially when simulating long-term climate scenarios or capturing fine-scale oceanographic processes.
 
 ## 2.2 Stability
 
@@ -16,7 +16,7 @@ Stability in numerical ocean modeling dictates the largest feasible timestep, di
 
 ## 2.3 Performance
 
-Ocean models like MPAS-Ocean are typically run on high-performance computing (HPC) platforms. Hence, the implemented scheme must efficiently scale across:
+Ocean models like Omega1 are typically run on high-performance computing (HPC) platforms. Hence, the implemented scheme must efficiently scale across:
 
 - Single CPU performance to enable rapid development and debugging.
 - Parallel CPU architectures to utilize multiple nodes efficiently, reducing wall-clock time for operational and research simulations.
@@ -24,11 +24,11 @@ Ocean models like MPAS-Ocean are typically run on high-performance computing (HP
 
 ## 2.4 Modularity
 
-Modularity ensures ease of testing and future-proofing of the MPAS-Ocean codebase. Implementing a modular design enables straightforward integration of alternative time-stepping schemes, facilitates easier maintenance, and encourages contributions from a broader scientific community, thereby enhancing innovation and flexibility.
+Modularity ensures ease of testing and future-proofing of the Omega1 codebase. Implementing a modular design enables straightforward integration of alternative time-stepping schemes, facilitates easier maintenance, and encourages contributions from a broader scientific community, thereby enhancing innovation and flexibility.
 
 ## 2.5 Conservation
 
-Ensuring conservation of physical properties like mass and tracers is essential for the physical reliability of ocean model simulations. MPAS-Ocean must rigorously conserve total mass (volume-integrated layer thickness, \(h\)) and total tracers (area-integrated \(\phi\)), thereby ensuring accurate long-term climate simulations and realistic modeling of biogeochemical processes.
+Ensuring conservation of physical properties like mass and tracers is essential for the physical reliability of ocean model simulations. Omega1 must rigorously conserve total mass (volume-integrated layer thickness, $\(h\)$) and total tracers (area-integrated $\(\phi\)$), thereby ensuring accurate long-term climate simulations and realistic modeling of biogeochemical processes.
 
 ## 2.6 Explicit Time Argument for RHS
 
@@ -41,11 +41,15 @@ Explicitly including a time argument in the RHS functions is necessary to accura
 The split explicit method separates ocean velocity into depth-integrated barotropic and depth-dependent baroclinic components. This separation allows computationally expensive baroclinic modes to run at longer timesteps and computationally efficient barotropic modes to run at shorter timesteps, enhancing computational efficiency and accuracy.
 
 - **Barotropic Equations:**
+$$
   \[\frac{\partial \zeta}{\partial t} + \nabla \cdot \left(u \sum_k h_k^{\text{edge}}\right) = 0\]
   \[\frac{\partial u}{\partial t} + fu^\perp = -g\nabla\zeta + G\]
+$$
 
 - **Baroclinic Equations:**
+$$
   \[\frac{\partial u'_k}{\partial t} = -fu'^\perp_k + T(u_k, w_k, p_k) + g\nabla\zeta - G\]
+$$
 
 ## 3.2 Runge-Kutta 4th Order (RK4) Scheme
 
@@ -96,13 +100,15 @@ Comprehensive testing ensures robustness, accuracy, and scalability:
 
 Verification equations:
 
+$$
 \[\frac{\partial u}{\partial t} = -R u\]
 \[\frac{\partial h}{\partial t} = 0\]
 \[\frac{\partial h\phi}{\partial t} = \frac{h}{\tau}(\phi - \phi_0)\]
+$$
 
 These verification tests validate that the implemented schemes accurately represent known dynamics such as exponential decay processes and tracer restoration, common in ocean biogeochemical modeling.
 
 # 6 Summary
 
-This enhanced design document details a structured approach for robust, efficient, and accurate ocean model simulations, ensuring MPAS-Ocean's continued development as a leading ocean modeling tool for climate research and operational forecasting.
+This enhanced design document details a structured approach for robust, efficient, and accurate ocean model simulations, ensuring Omega1's continued development as a leading ocean modeling tool for climate research and operational forecasting.
 

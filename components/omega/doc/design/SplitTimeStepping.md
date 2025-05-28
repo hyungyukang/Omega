@@ -2,37 +2,32 @@
 
 # 1 Overview
 
-This document describes the time-stepping methods used in Omega1, particularly emphasizing the split explicit scheme adapted for p-level vertical coordinates, following the methods described by Higdon (2005). The primary objective is to achieve stable, efficient, and accurate numerical integration of ocean circulation model equations.
+To enhance computational efficiency by allowing longer timesteps, ocean models require split barotropic–baroclinic time stepping methods. The implementation described here is based on the approach of Higdon (2005) and was employed in MPAS-Ocean, where the approach explicitly subcycles the barotropic terms. The split-explicit time stepping scheme in Omega1 is nearly identical to the `split_explicit` scheme in MPAS-Ocean, but in the tilted pressure $\(p^\*\)$ coordinate. Therefore, this document focuses specifically on split explicit timestepping in the $p^\*$ coordinate. The implicit treatment of the barotropic terms is planned for a future stage.
 
+The split explicit method involves the following sequence:
+ 1) Decompose velocity into barotropic and baroclinic components.
+ 2) Advance the baroclinic velocities using a large timestep, and compute the vertically averaged forcing $\(\boldsymbol{\overline{G}})$
+ 3) Subcycle the barotropic velocity using small explicit timesteps.
+ 4) Recombine velocities and update other relevant variables.
+
+    
 # 2 Requirements
 
-## 2.1 Accurate Discretization
+## 2.1 Requirement: A split time-stepping in the tilted pressure $\(p^*\)$ coordinate
 
-Temporal discretization in ocean modeling is crucial because inaccuracies can accumulate and degrade long-term simulations. Therefore, Omega1 must maintain at least second-order accuracy in time to ensure high fidelity in representing ocean dynamics, especially when simulating long-term climate scenarios or capturing fine-scale oceanographic processes.
+The algorithm should be based on Section 2.3 of Higdon (2005), with modifications to accommodate the $p^\*$ coordinate variables. It should accept input parameters for the time-stepping scheme, the number of split-explicit iterations, the number of barotropic subcycles, and the number of baroclinic Coriolis iterations. An unsplit variant will also be included, which mirrors the split-explicit approach except that the full velocity is solved during the baroclinic stage, with no operations performed in the barotropic stage.
 
-## 2.2 Stability
+## 2.2 Requirement: Stable time integration for long-term and high-resolution simulations
 
-Stability in numerical ocean modeling dictates the largest feasible timestep, directly influencing computational cost. The implemented time-stepping methods must allow for reasonably long timesteps while preventing numerical instabilities, such as those arising from internal gravity waves and barotropic modes, particularly important in global-scale and high-resolution ocean modeling.
+Stability constrains the maximum allowable timestep, which in turn affects computational cost. The implemented split-explicit time stepping methods must allow for reasonably long timesteps while preventing numerical instabilities, such as those arising from internal gravity waves and barotropic modes, particularly important in global-scale and high-resolution ocean modeling. At a minimum, the time-stepping approach used in Omega1 should accommodate the same timestep sizes as MPAS-Ocean for both the baroclinic and barotropic subsystems.
 
-## 2.3 Performance
+## 2.3 Requirement: Modularization of baroclinic and barotropic time-stepping methods
 
-Ocean models like Omega1 are typically run on high-performance computing (HPC) platforms. Hence, the implemented scheme must efficiently scale across:
+Modularity ensures ease of testing and future-proofing of the Omega1 codebase. Implementing a modular design enables mix and match time-stepping schemes of the baroclinic and barotropic subsystems, straightforward integration of alternative time-stepping schemes, facilitates easier maintenance by separating the baroclinic and barotropic time stepping codes,
 
-- Single CPU performance to enable rapid development and debugging.
-- Parallel CPU architectures to utilize multiple nodes efficiently, reducing wall-clock time for operational and research simulations.
-- GPU acceleration for massively parallel architectures, significantly enhancing computational speed and efficiency.
+thereby enhancing innovation and flexibility.
 
-## 2.4 Modularity
 
-Modularity ensures ease of testing and future-proofing of the Omega1 codebase. Implementing a modular design enables straightforward integration of alternative time-stepping schemes, facilitates easier maintenance, and encourages contributions from a broader scientific community, thereby enhancing innovation and flexibility.
-
-## 2.5 Conservation
-
-Ensuring conservation of physical properties like mass and tracers is essential for the physical reliability of ocean model simulations. Omega1 must rigorously conserve total mass (volume-integrated layer thickness, $h$) and total tracers (area-integrated $\phi$), thereby ensuring accurate long-term climate simulations and realistic modeling of biogeochemical processes.
-
-## 2.6 Explicit Time Argument for RHS
-
-Explicitly including a time argument in the RHS functions is necessary to accurately handle time-dependent forcing terms (e.g., tides, seasonal wind stresses, and surface buoyancy fluxes). This allows precise alignment of model forcing with observational datasets or climate model outputs, significantly improving model realism and predictability.
 
 # 3 Algorithmic Formulation
 
@@ -109,8 +104,4 @@ $$
 $$
 
 These verification tests validate that the implemented schemes accurately represent known dynamics such as exponential decay processes and tracer restoration, common in ocean biogeochemical modeling.
-
-# 6 Summary
-
-This enhanced design document details a structured approach for robust, efficient, and accurate ocean model simulations, ensuring Omega1's continued development as a leading ocean modeling tool for climate research and operational forecasting.
 

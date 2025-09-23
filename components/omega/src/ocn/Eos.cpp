@@ -22,17 +22,21 @@ Teos10Eos::Teos10Eos(int NVertLayers) : NVertLayers(NVertLayers) {
 LinearEos::LinearEos() {}
 
 /// Constructor for Teos10 Brunt-Vaisala frequency
-Teos10BruntVaisalaFreq::Teos10BruntVaisalaFreq() {}
+Teos10BruntVaisalaFreq::Teos10BruntVaisalaFreq(const HorzMesh *Mesh) 
+    : NVertLevels(Mesh->NVertLevels), LatCell(Mesh->LatCellH) {}
 
-/// Constructor for Linear Brunt-Vaisala frequency
-LinearBruntVaisalaFreq::LinearBruntVaisalaFreq() {}
+/// Constructor for Simple Brunt-Vaisala frequency
+SimpleBruntVaisalaFreq::SimpleBruntVaisalaFreq(int NVertLevels) : NVertLevels(NVertLevels) {}
 
 /// Constructor for Eos
 Eos::Eos(const std::string &Name_, ///< [in] Name for eos object
          const HorzMesh *Mesh,     ///< [in] Horizontal mesh
          int NVertLayers           ///< [in] Number of vertical layers
          )
-    : ComputeSpecVolTeos10(NVertLayers) {
+    : ComputeSpecVolLinear(),
+      ComputeBruntVaisalaFreqSimple(NVertLayers),
+      ComputeBruntVaisalaFreqTeos10(Mesh),
+      ComputeSpecVolTeos10(NVertLayers) {
    SpecVol = Array2DReal("SpecVol", Mesh->NCellsAll, NVertLayers);
    SpecVolDisplaced =
      Array2DReal("SpecVolDisplaced", Mesh->NCellsAll, NVertLayers);
@@ -42,6 +46,7 @@ Eos::Eos(const std::string &Name_, ///< [in] Name for eos object
    NCellsAll = Mesh->NCellsAll;
    NChunks   = NVertLayers / VecLength;
    Name      = Name_;
+   Mesh      = Mesh;
 
    defineFields();
 }
@@ -179,7 +184,8 @@ void Eos::computeSpecVolDisp(const Array2DReal &ConservTemp,
           "eos-teos10", {NCellsAll, NChunks},
           KOKKOS_LAMBDA(I4 ICell, I4 KChunk) {
              LocComputeSpecVolTeos10(LocSpecVolDisplaced, ICell, KChunk,
-                                     ConservTemp, AbsSalinity, Pressure, KDisp);
+                                     ConservTemp, AbsSalinity, Pressure, 
+                                     KDisp);
           });
    }
 }
@@ -192,29 +198,34 @@ void Eos::computeBruntVaisalaFreq(const Array2DReal &ConservTemp,
                                   const Array2DReal &ZMid) {
    OMEGA_SCOPE(LocBruntVaisalaFreq,
                BruntVaisalaFreq); /// Local view for computation
-   OMEGA_SCOPE(LocComputeBruntVaisalaFreqLinear,
-               ComputeBruntVaisalaFreqLinear); /// Local view for linear EOS computation
+   OMEGA_SCOPE(LocComputeBruntVaisalaFreqSimple,
+               ComputeBruntVaisalaFreqSimple); /// Local view for simple computation
    OMEGA_SCOPE(LocComputeBruntVaisalaFreqTeos10,
                ComputeBruntVaisalaFreqTeos10); /// Local view for TEOS-10 computation
+   OMEGA_SCOPE(LocComputeSpecVolTeos10,
+               ComputeSpecVolTeos10); /// Local view for TEOS-10 computation
    deepCopy(LocBruntVaisalaFreq,
-            0); /// Initialize local specific volume to zero
+            0); /// Initialize local Brunt-Vaisala frequency to zero
+   //OMEGA_SCOPE(LocLatCell, Mesh->LatCellH);
 
    /// Dispatch to the correct Brunt-Vaisala frequency calculation
    if (EosChoice == EosType::LinearEos) {
-      //LOG_INFO("Eos::computeBruntVaisalaFreq called with Linear EOS.");
+      /// If Linear EOS, use simple Brunt-Vaisala frequency calculation
       parallelFor(
-          "eos-linear", {NCellsAll, NChunks},
-          KOKKOS_LAMBDA(I4 ICell, I4 KChunk) {
-             LocComputeBruntVaisalaFreqLinear(LocBruntVaisalaFreq, ICell, KChunk,
+          "bvf-linear", {NCellsAll},
+          KOKKOS_LAMBDA(I4 ICell) {
+             LocComputeBruntVaisalaFreqSimple(LocBruntVaisalaFreq, ICell,
                                      SpecVol, ZMid);
           });
    } else if (EosChoice == EosType::Teos10Eos) {
+      /// If TEOS-10 EOS, use TEOS-10 Brunt-Vaisala frequency calculation
       parallelFor(
-          "eos-teos10", {NCellsAll, NChunks},
-          KOKKOS_LAMBDA(I4 ICell, I4 KChunk) {
-             LocComputeBruntVaisalaFreqTeos10(LocBruntVaisalaFreq, ICell, KChunk,
+          "bvf-teos10", {NCellsAll},
+          KOKKOS_LAMBDA(I4 ICell) {
+             /// Compute Brunt-Vaisala frequency
+             LocComputeBruntVaisalaFreqTeos10(LocBruntVaisalaFreq, ICell,
                                      ConservTemp, AbsSalinity, Pressure,
-                                     SpecVol);
+                                     SpecVol, ZMid);
           });
    }
 }

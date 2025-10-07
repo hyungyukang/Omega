@@ -467,5 +467,5 @@ add_omega_test(
     VERTMIX_TEST
     testVertMix.exe
     ocn/VertMixTest.cpp
-    "-n;2"
+    "-n;4"
 )

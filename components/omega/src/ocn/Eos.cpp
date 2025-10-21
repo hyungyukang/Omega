@@ -15,12 +15,11 @@ namespace OMEGA {
 
 /// Constructor for Teos10Eos
 Teos10Eos::Teos10Eos(const VertCoord *VCoord)
-    : NVertLayers(VCoord->NVertLayers) {
-   SpecVolPCoeffs = Array2DReal("SpecVolPCoeffs", 6, VecLength);
-}
+    : NVertLayers(VCoord->NVertLayers) {}
 
 /// Constructor for LinearEos
-LinearEos::LinearEos() {}
+LinearEos::LinearEos(const VertCoord *VCoord)
+    : NVertLayers(VCoord->NVertLayers) {}
 
 /// Constructor for Teos10 Brunt-Vaisala frequency
 Teos10BruntVaisalaFreq::Teos10BruntVaisalaFreq(const HorzMesh *Mesh,
@@ -37,7 +36,7 @@ Eos::Eos(const std::string &Name_, ///< [in] Name for eos object
          const HorzMesh *Mesh,     ///< [in] Horizontal mesh
          const VertCoord *VCoord   ///< [in] Vertical coordinate
          )
-    : ComputeSpecVolLinear(), ComputeBruntVaisalaFreqLinear(VCoord),
+    : ComputeSpecVolLinear(VCoord), ComputeBruntVaisalaFreqLinear(VCoord),
       ComputeBruntVaisalaFreqTeos10(Mesh, VCoord),
       ComputeSpecVolTeos10(VCoord) {
    SpecVol = Array2DReal("SpecVol", Mesh->NCellsAll, VCoord->NVertLayers);

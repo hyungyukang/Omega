@@ -50,6 +50,7 @@ userGuide/Tracers
 userGuide/TridiagonalSolvers
 userGuide/VertCoord
 userGuide/Timing
+userGuide/VerticalMixingCoeff
 ```
 
 ```{toctree}
@@ -90,6 +91,7 @@ devGuide/Tracers
 devGuide/TridiagonalSolvers
 devGuide/VertCoord
 devGuide/Timing
+devGuide/VerticalMixingCoeff
 ```
 
 ```{toctree}

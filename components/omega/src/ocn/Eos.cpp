@@ -22,10 +22,8 @@ LinearEos::LinearEos(const VertCoord *VCoord)
     : NVertLayers(VCoord->NVertLayers) {}
 
 /// Constructor for Teos10 Brunt-Vaisala frequency
-Teos10BruntVaisalaFreq::Teos10BruntVaisalaFreq(const HorzMesh *Mesh,
-                                               const VertCoord *VCoord)
-    : NVertLayers(VCoord->NVertLayers), ZMid(VCoord->ZMid),
-      LatCell(Mesh->LatCell) {}
+Teos10BruntVaisalaFreq::Teos10BruntVaisalaFreq(const VertCoord *VCoord)
+    : NVertLayers(VCoord->NVertLayers) {}
 
 /// Constructor for Linear Brunt-Vaisala frequency
 LinearBruntVaisalaFreq::LinearBruntVaisalaFreq(const VertCoord *VCoord)
@@ -37,8 +35,7 @@ Eos::Eos(const std::string &Name_, ///< [in] Name for eos object
          const VertCoord *VCoord   ///< [in] Vertical coordinate
          )
     : ComputeSpecVolLinear(VCoord), ComputeBruntVaisalaFreqLinear(VCoord),
-      ComputeBruntVaisalaFreqTeos10(Mesh, VCoord),
-      ComputeSpecVolTeos10(VCoord) {
+      ComputeBruntVaisalaFreqTeos10(VCoord), ComputeSpecVolTeos10(VCoord) {
    SpecVol = Array2DReal("SpecVol", Mesh->NCellsAll, VCoord->NVertLayers);
    SpecVolDisplaced =
        Array2DReal("SpecVolDisplaced", Mesh->NCellsAll, VCoord->NVertLayers);
@@ -240,7 +237,8 @@ void Eos::defineFields() {
    }
 
    /// Create fields for state variables
-   int NDims = 2;
+   const Real FillValue = -9.99e30;
+   int NDims            = 2;
    std::vector<std::string> DimNames(NDims);
    DimNames[0] = "NCells";
    DimNames[1] = "NVertLayers";
@@ -252,8 +250,8 @@ void Eos::defineFields() {
                      "m3 kg-1",                        // Units
                      "sea_water_specific_volume",      // CF-ish Name
                      0.0,                              // Min valid value
-                     9.99E+30,                         // Max valid value
-                     -9.99E+30, // Scalar used for undefined entries
+                     std::numeric_limits<Real>::max(), // Max valid value
+                     FillValue, // Scalar used for undefined entries
                      NDims,     // Number of dimensions
                      DimNames   // Dimension names
        );
@@ -265,8 +263,8 @@ void Eos::defineFields() {
                      "m3 kg-1",                             // Units
                      "sea_water_specific_volume_displaced", // CF-ish Name
                      0.0,                                   // Min valid value
-                     9.99E+30,                              // Max valid value
-                     -9.99E+30, // Scalar used for undefined entried
+                     std::numeric_limits<Real>::max(),      // Max valid value
+                     FillValue, // Scalar used for undefined entried
                      NDims,     // Number of dimensions
                      DimNames   // Dimension names
        );
@@ -276,9 +274,9 @@ void Eos::defineFields() {
                      "Brunt-Vaisala frequency squared",           // Long Name
                      "s-2",                                       // Units
                      "sea_water_brunt_vaisala_frequency_squared", // CF-ish Name
-                     0.0,       // Min valid value
-                     9.99E+30,  // Max valid value
-                     -9.99E+30, // Scalar used for undefined entries
+                     std::numeric_limits<Real>::min(), // Min valid value
+                     std::numeric_limits<Real>::max(), // Max valid value
+                     FillValue, // Scalar used for undefined entries
                      NDims,     // Number of dimensions
                      DimNames   // Dimension names
        );

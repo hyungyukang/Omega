@@ -67,9 +67,10 @@ class Tendencies {
    VelocityHyperDiffOnEdge VelocityHyperDiff;
    WindForcingOnEdge WindForcing;
    BottomDragOnEdge BottomDrag;
-   TracerHorzAdvOnCell TracerHorzAdv;
    TracerDiffOnCell TracerDiffusion;
    TracerHyperDiffOnCell TracerHyperDiff;
+   TracerHorzAdvOnCell TracerHorzAdv;
+   TracerHighOrderHorzAdvOnCell TracerHighOrderHorzAdv;
 
    std::string Name;
 

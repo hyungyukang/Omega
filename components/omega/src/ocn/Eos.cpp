@@ -116,7 +116,7 @@ void Eos::init() {
               (EosTypeStr == "TEOS-10")) {
       eos->EosChoice = EosType::Teos10Eos;
    } else {
-      LOG_ERROR("Eos::init: Unknown EosType requested");
+      ABORT_ERROR("Eos::init: Unknown EosType requested");
    }
 } // end init
 
@@ -168,9 +168,6 @@ void Eos::computeSpecVolDisp(const Array2DReal &ConservTemp,
    /// If EosChoice is Linear, the displaced specific
    /// volume is the same as the specific volume
    if (EosChoice == EosType::LinearEos) {
-      LOG_INFO("Eos::computeSpecVolDisp called with Linear EOS. "
-               "SpecVol is independent of pressure/depth, so the "
-               "displaced value will be the same as SpecVol.");
       parallelFor(
           "eos-linear", {NCellsAll, NChunks},
           KOKKOS_LAMBDA(I4 ICell, I4 KChunk) {

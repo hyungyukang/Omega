@@ -180,11 +180,12 @@ void Tendencies::readTendConfig(
          this->TracerHorzAdv.Enabled = true;
       else if (Order == 2)
          this->TracerHighOrderHorzAdv.Enabled = true;
-      else  {
+      else {
          const std::string msg =
-            "TracerHorzAdvTendencyOrder: Only values are 1 and 2, found "+std::to_string(Order);
+             "TracerHorzAdvTendencyOrder: Only values are 1 and 2, found " +
+             std::to_string(Order);
          ABORT_ERROR(msg);
-     }
+      }
    }
    Err += TendConfig->get("TracerDiffTendencyEnable",
                           this->TracerDiffusion.Enabled);
@@ -556,9 +557,10 @@ void Tendencies::computeTracerTendenciesOnly(
        });
 
    // compute tracer horizotal advection
-   const Array2DReal &NormalVelEdge      = State->NormalVelocity[VelTimeLevel];
-   const Array3DReal &HTracersEdge       = AuxState->TracerAux.HTracersEdge;
-   const Array2DReal &FluxLayerThickEdge = AuxState->LayerThicknessAux.FluxLayerThickEdge;
+   const Array2DReal &NormalVelEdge = State->NormalVelocity[VelTimeLevel];
+   const Array3DReal &HTracersEdge  = AuxState->TracerAux.HTracersEdge;
+   const Array2DReal &FluxLayerThickEdge =
+       AuxState->LayerThicknessAux.FluxLayerThickEdge;
    if (LocTracerHorzAdv.Enabled) {
       Pacer::start("Tend:tracerHorzAdv", 2);
       parallelForOuter(
@@ -581,7 +583,7 @@ void Tendencies::computeTracerTendenciesOnly(
           {NTracers, NEdgesAll, NChunks},
           KOKKOS_LAMBDA(int L, int IEdge, int KChunk) {
              LocTracerHighOrderHorzAdv(L, IEdge, KChunk, TracerArray,
-                            FluxLayerThickEdge, NormalVelEdge);
+                                       FluxLayerThickEdge, NormalVelEdge);
           });
       parallelFor(
           {NTracers, NCellsAll, NChunks},

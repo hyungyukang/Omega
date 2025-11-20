@@ -33,6 +33,8 @@ Omega:
     InterpType: Isotropic
   VertCoord:
     MovementWeightType: Uniform
+  PressureGrad:
+    PressureGradType: Centered
   Tendencies:
     ThicknessFluxTendencyEnable: true
     PVTendencyEnable: true

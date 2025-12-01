@@ -10,7 +10,9 @@
 
 #include "Tendencies.h"
 #include "CustomTendencyTerms.h"
+#include "Eos.h"
 #include "Error.h"
+#include "PGrad.h"
 #include "Pacer.h"
 #include "Tracers.h"
 

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Data Types and Precision &mdash; Omega develop documentation</title>
+  <title>Timing &mdash; Omega develop documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
@@ -19,8 +19,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Machine Environment (MachEnv)" href="MachEnv.html" />
-    <link rel="prev" title="CMake-based Omega Build" href="OmegaBuild.html" />
+    <link rel="next" title="Quick Start for Developers" href="../devGuide/QuickStart.html" />
+    <link rel="prev" title="Vertical Coordinate" href="VertCoord.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -48,7 +48,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="QuickStart.html">Quick Start for Users</a></li>
 <li class="toctree-l1"><a class="reference internal" href="OmegaBuild.html">CMake-based Omega Build</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Data Types and Precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">Data Types and Precision</a></li>
 <li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Config.html">Model Configuration (Config)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Broadcast</a></li>
@@ -75,7 +75,10 @@
 <li class="toctree-l1"><a class="reference internal" href="Tracers.html">Tracers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TridiagonalSolvers.html">Tridiagonal Solvers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VertCoord.html">Vertical Coordinate</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Timing.html">Timing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Timing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#integration-with-external-profiling-tools">Integration with external profiling tools</a></li>
+</ul>
+</li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
 <ul>
@@ -170,9 +173,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Data Types and Precision</li>
+      <li class="breadcrumb-item active">Timing</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/userGuide/DataTypes.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/userGuide/Timing.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -180,25 +183,57 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="data-types-and-precision">
-<span id="omega-user-data-types"></span><h1>Data Types and Precision<a class="headerlink" href="#data-types-and-precision" title="Permalink to this heading"></a></h1>
-<p>Omega supports all standard data types and uses some specific defined
-types to guarantee a specific level of precision. There is only one
-user-configurable option for precision. When a specific floating point
-precision is not required, we use a Real data type that is, by default,
-double precision (8 bytes/64-bit) but if the code is built with a
-<code class="docutils literal notranslate"><span class="pre">-DOMEGA_SINGLE_PRECISION</span></code> (see insert link to build system) preprocessor flag,
-the default Real becomes single precision (4-byte/32-bit). Users are
-encouraged to use the default double precision unless exploring the
-performance or accuracy characteristics of single precision.</p>
+  <section class="tex2jax_ignore mathjax_ignore" id="timing">
+<span id="omega-user-timing"></span><h1>Timing<a class="headerlink" href="#timing" title="Permalink to this heading"></a></h1>
+<p>Omega uses the Pacer library for timing the code and incorporates timers around
+various parts of the code.</p>
+<p>By default, the timing output is written to two files: <code class="docutils literal notranslate"><span class="pre">omega.summary</span></code> and <code class="docutils literal notranslate"><span class="pre">omega.timing0</span></code>.
+The <code class="docutils literal notranslate"><span class="pre">omega.summary</span></code> file presents accumulated timing statistics across all MPI ranks.
+The <code class="docutils literal notranslate"><span class="pre">omega.timing.0</span></code> show timing result only from the first rank.</p>
+<p>There are four parameters that are set by the user in the input configuration
+file that control the timing behavior. These are:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">Timing</span><span class="p">:</span>
+<span class="w">   </span><span class="nt">Level</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">   </span><span class="nt">AutoFence</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">   </span><span class="nt">TimingBarriers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">   </span><span class="nt">PrintAllRanks</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">Level</span></code> parameter is a non-negative integer that determines the granularity of timers.
+Increasing it will turn on more timers.
+Having more timers provides more detailed information, but it also comes with increased overhead,
+and may be counter-productive if a high-level look at model performance is sufficient.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">Autofence</span></code> Boolean option determines if Kokkos fences are automatically added before every timer call.
+This option <strong>needs</strong> to be true for accurate timing using Omega timers on GPU-based systems.
+However, there are circumstances when turning off automatic fences is useful.
+The main use case is using external profiling tools.
+Another one is measuring the overhead of automatic synchronization for very high timing levels.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">TimingLevel</span></code> Boolean option determines if MPI barriers are added before or after certain timers.
+Adding barriers may be necessary to properly measure communication time, but it can add top much overhead in
+production runs.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">PrintAllRanks</span></code> Boolean option determines if all ranks should print their timing information. If this
+option is set to <code class="docutils literal notranslate"><span class="pre">true</span></code> the output will include additional files <code class="docutils literal notranslate"><span class="pre">omega.timing.i</span></code> with the
+timing data from rank <code class="docutils literal notranslate"><span class="pre">i</span></code>.</p>
+<section id="integration-with-external-profiling-tools">
+<h2>Integration with external profiling tools<a class="headerlink" href="#integration-with-external-profiling-tools" title="Permalink to this heading"></a></h2>
+<p>External profilers often include APIs to mark regions of code for detailed profiling.
+On some platforms, Omega timers automatically add these annotations.
+Currently, this is only implemented on systems with NVIDIA GPUs using NVTX.</p>
+<p>This allows, for example, to use the Nsight Compute kernel profiler to obtain
+detailed kernel information for all kernels enclosed in the <code class="docutils literal notranslate"><span class="pre">Tend:computeVelocityTendencies</span></code>
+Omega timer.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun<span class="w"> </span>-np<span class="w"> </span><span class="m">1</span><span class="w"> </span>ncu<span class="w"> </span>--nvtx<span class="w"> </span>--nvtx-include<span class="w"> </span><span class="s2">&quot;Tend:computeVelocityTendencies/&quot;</span><span class="w"> </span>omega.exe
+</pre></div>
+</div>
+</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="OmegaBuild.html" class="btn btn-neutral float-left" title="CMake-based Omega Build" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="MachEnv.html" class="btn btn-neutral float-right" title="Machine Environment (MachEnv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="VertCoord.html" class="btn btn-neutral float-left" title="Vertical Coordinate" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../devGuide/QuickStart.html" class="btn btn-neutral float-right" title="Quick Start for Developers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

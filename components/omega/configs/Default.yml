@@ -41,6 +41,7 @@ Omega:
     DivFactor: 1.0
     PresForceTendencyEnable: true
     PresGradForceTendencyEnable: true
+    GeoptGradTendencyEnable: true
     WindForcingTendencyEnable: false
     Density0: 1026.0
     BottomDragTendencyEnable: false

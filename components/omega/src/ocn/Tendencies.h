@@ -65,6 +65,7 @@ class Tendencies {
    VelocityHyperDiffOnEdge VelocityHyperDiff;
    PresGradZOnEdge PresGradZ;
    PresGradForceOnEdge PresGradForce;
+   GeoptGradOnEdge GeoptGrad;
    WindForcingOnEdge WindForcing;
    BottomDragOnEdge BottomDrag;
    TracerHorzAdvOnCell TracerHorzAdv;

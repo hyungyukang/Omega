@@ -312,7 +312,7 @@ class PresGradZOnEdge {
    PresGradZOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
 
    /// The functor takes edge index, vertical chunk index, and arrays for
-   /// interface height, layer specific volume, layer thickness on edge,
+   /// layer specific volume, layer thickness on edge,
    /// interface pressure, and outputs tendency array
    KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
                                    const Array2DReal &SpecVol,
@@ -435,8 +435,8 @@ class PresGradForceOnEdge {
    PresGradForceOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
 
    /// The functor takes edge index, vertical chunk index, and arrays for
-   /// interface height, layer specific volume, layer thickness on edge,
-   /// interface pressure, and outputs tendency array
+   /// layer specific volume, layer thickness on edge, layer thickness on cell,
+   /// layer-mean pressure, and outputs tendency array
    KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
                                    const Array2DReal &SpecVol,
                                    const Array2DReal &LayerThickEdge,
@@ -467,6 +467,45 @@ class PresGradForceOnEdge {
              LayerThickEdge(IEdge, K);
 
          Tend(IEdge, K) += EdgeMask(IEdge, K) * PGFTerm;
+
+      }
+   }
+
+ private:
+   Array2DI4 CellsOnEdge;
+   Array1DReal DcEdge;
+   Array2DReal EdgeMask;
+   Array1DI4 MinLayerEdgeBot;
+   Array1DI4 MaxLayerEdgeTop;
+};
+
+/// Gradient of geopotential
+class GeoptGradOnEdge {
+ public:
+   bool Enabled;
+
+   /// constructor declaration
+   GeoptGradOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
+
+   /// The functor takes edge index, vertical chunk index, and arrays for
+   /// geopotential, and outputs tendency array
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+                                   const Array2DReal &GeoptMid) const {
+
+      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
+      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+      const I4 ICell0 = CellsOnEdge(IEdge, 0);
+      const I4 ICell1 = CellsOnEdge(IEdge, 1);
+      const Real InvDcEdge = 1._Real / DcEdge(IEdge);
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K = KStart + KVec;
+
+         // -grad(Geopotential)
+         const Real GeoptGradTerm =
+             - InvDcEdge * (GeoptMid(ICell1, K) - GeoptMid(ICell0, K));
+
+         Tend(IEdge, K) += EdgeMask(IEdge, K) * GeoptGradTerm;
 
       }
    }

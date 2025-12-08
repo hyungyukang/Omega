@@ -176,6 +176,10 @@ void Tendencies::readTendConfig(
    CHECK_ERROR_ABORT(Err,
                      "Tendencies: PresGradForceTendencyEnable not found in TendConfig");
 
+   Err += TendConfig->get("GeoptGradTendencyEnable", this->GeoptGrad.Enabled);
+   CHECK_ERROR_ABORT(Err,
+                     "Tendencies: GeoptGradTendencyEnable not found in TendConfig");
+
    Err += TendConfig->get("TracerHorzAdvTendencyEnable",
                           this->TracerHorzAdv.Enabled);
    CHECK_ERROR_ABORT(
@@ -237,7 +241,7 @@ Tendencies::Tendencies(const std::string &Name, ///< [in] Name for tendencies
       PotientialVortHAdv(Mesh, VCoord), KEGrad(Mesh, VCoord),
       SSHGrad(Mesh, VCoord), VelocityDiffusion(Mesh, VCoord),
       VelocityHyperDiff(Mesh, VCoord), PresGradZ(Mesh, VCoord),
-      PresGradForce(Mesh,VCoord),
+      PresGradForce(Mesh,VCoord),GeoptGrad(Mesh,VCoord),
       WindForcing(Mesh, VCoord), BottomDrag(Mesh, VCoord),
       TracerHorzAdv(Mesh, VCoord), TracerDiffusion(Mesh, VCoord),
       TracerHyperDiff(Mesh, VCoord), CustomThicknessTend(InCustomThicknessTend),
@@ -346,6 +350,7 @@ void Tendencies::computeVelocityTendenciesOnly(
    OMEGA_SCOPE(LocVelocityHyperDiff, VelocityHyperDiff);
    OMEGA_SCOPE(LocPresGradZ, PresGradZ);
    OMEGA_SCOPE(LocPresGradForce, PresGradForce);
+   OMEGA_SCOPE(LocGeoptGrad, GeoptGrad);
    OMEGA_SCOPE(LocWindForcing, WindForcing);
    OMEGA_SCOPE(LocBottomDrag, BottomDrag);
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
@@ -471,13 +476,13 @@ void Tendencies::computeVelocityTendenciesOnly(
        AuxState->LayerThicknessAux.MeanLayerThickEdge;
 
    if (LocPresGradZ.Enabled) {
-      Pacer::start("Tend:presGradZ", 2);
+      Pacer::start("Tend:pressureForce", 2);
 
       Eos *EosInstance = Eos::getInstance();
 
       if (!EosInstance) {
          LOG_WARN("Eos has not been initialized. Skipping calculation of "
-                  "presGradZ tendency");
+                  "PresGradZ tendency");
       } else {
 
          const Array2DReal &SpecVol           = EosInstance->SpecVol;
@@ -496,18 +501,18 @@ void Tendencies::computeVelocityTendenciesOnly(
                                     PressureInterface);
                     });
              });
-         Pacer::stop("Tend:presGradZ", 2);
+         Pacer::stop("Tend:pressureForce", 2);
       }
    }
 
    if (LocPresGradForce.Enabled) {
-      Pacer::start("Tend:presGradForce", 2);
+      Pacer::start("Tend:pressureGradForce", 2);
 
       Eos *EosInstance = Eos::getInstance();
 
       if (!EosInstance) {
          LOG_WARN("Eos has not been initialized. Skipping calculation of "
-                  "presGradForce tendency");
+                  "PresGradForce tendency");
       } else {
 
          const Array2DReal &SpecVol     = EosInstance->SpecVol;
@@ -526,7 +531,35 @@ void Tendencies::computeVelocityTendenciesOnly(
                                     PressureMid);
                     });
              });
-         Pacer::stop("Tend:presGradForce", 2);
+         Pacer::stop("Tend:pressureGradForce", 2);
+      }
+   }
+
+   if (LocGeoptGrad.Enabled) {
+      Pacer::start("Tend:geopotentialGrad", 2);
+
+      Eos *EosInstance = Eos::getInstance();
+
+      if (!EosInstance) {
+         LOG_WARN("Eos has not been initialized. Skipping calculation of "
+                  "GeoptGrad tendency");
+      } else {
+
+         const Array2DReal &GeoptMid = VCoord->GeopotentialMid;
+
+         parallelForOuter(
+             {Mesh->NEdgesAll},
+             KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+                const int KMin   = MinLayerEdgeBot(IEdge);
+                const int KMax   = MaxLayerEdgeTop(IEdge);
+                const int KRange = vertRangeChunked(KMin, KMax);
+                parallelForInner(
+                    Team, KRange, INNER_LAMBDA(int KChunk) {
+                       LocGeoptGrad(LocNormalVelocityTend, IEdge, KChunk,
+                                    GeoptMid);
+                    });
+             });
+         Pacer::stop("Tend:geopotentialGrad", 2);
       }
    }
 

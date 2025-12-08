@@ -165,10 +165,12 @@ void Tendencies::readTendConfig(
       CHECK_ERROR_ABORT(Err, "Tendencies: DivFactor not found in TendConfig");
    }
 
-   Err += TendConfig->get("PresGradZEnable", this->PresGradZ.Enabled);
+   Err += TendConfig->get("PresForceTendencyEnable", this->PresGradZ.Enabled);
 
    CHECK_ERROR_ABORT(Err,
-                     "Tendencies: PresGradZEnable not found in TendConfig");
+                     "Tendencies: PresForceTendencyEnable not found in TendConfig");
+   Err += TendConfig->get("Density0", this->PresGradZ.Density0);
+   CHECK_ERROR_ABORT(Err, "Tendencies: Density0 not found in TendConfig");
 
    Err += TendConfig->get("TracerHorzAdvTendencyEnable",
                           this->TracerHorzAdv.Enabled);

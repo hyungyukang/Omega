@@ -327,8 +327,7 @@ class PresGradZOnEdge {
 
       const Real InvDcEdge = 1._Real / DcEdge(IEdge);
 
-      const Real InvDensity0Gravity
-                 = 1._Real / (Density0 * Gravity);
+      const Real InvDensity0Gravity = 1._Real / (Density0 * Gravity);
 
       // This tendency term has 0 value at Floor and Surface by the boundary
       // condition.
@@ -342,16 +341,16 @@ class PresGradZOnEdge {
          // LayerThickEdge at Top (K)
          const Real LayerThickEdgeTopK =
              0.5_Real *
-             (LayerThickEdge(IEdge, K-1) + LayerThickEdge(IEdge, K));
+             (LayerThickEdge(IEdge, K - 1) + LayerThickEdge(IEdge, K));
 
          // LayerThickEdge at Top (K+1)
          const Real LayerThickEdgeTopKP1 =
              0.5_Real *
-             (LayerThickEdge(IEdge, K) + LayerThickEdge(IEdge, K+1));
+             (LayerThickEdge(IEdge, K) + LayerThickEdge(IEdge, K + 1));
 
          // SpecVolEdge at (K-1)
          const Real SpecVolEdgeKM1 =
-             0.5_Real * (SpecVol(ICell0, K-1) + SpecVol(ICell1, K-1));
+             0.5_Real * (SpecVol(ICell0, K - 1) + SpecVol(ICell1, K - 1));
 
          // SpecVolEdge at (K)
          const Real SpecVolEdgeK =
@@ -359,60 +358,56 @@ class PresGradZOnEdge {
 
          // SpecVolEdge at (K+1)
          const Real SpecVolEdgeKP1 =
-             0.5_Real * (SpecVol(ICell0, K+1) + SpecVol(ICell1, K+1));
+             0.5_Real * (SpecVol(ICell0, K + 1) + SpecVol(ICell1, K + 1));
 
          // SpecVol at edge at Top (K)
          const Real SpecVolEdgeTopK =
              0.5_Real *
-             (SpecVolEdgeKM1 * LayerThickEdge(IEdge, K-1) +
-              SpecVolEdgeK   * LayerThickEdge(IEdge, K)) /
+             (SpecVolEdgeKM1 * LayerThickEdge(IEdge, K - 1) +
+              SpecVolEdgeK * LayerThickEdge(IEdge, K)) /
              LayerThickEdgeTopK;
 
          // SpecVol at edge at Top (K+1)
          const Real SpecVolEdgeTopKP1 =
              0.5_Real *
-             (SpecVolEdgeK   * LayerThickEdge(IEdge, K) +
-              SpecVolEdgeKP1 * LayerThickEdge(IEdge, K+1)) /
+             (SpecVolEdgeK * LayerThickEdge(IEdge, K) +
+              SpecVolEdgeKP1 * LayerThickEdge(IEdge, K + 1)) /
              LayerThickEdgeTopKP1;
 
          const Real PAlphaEdgeTopK =
              0.5_Real *
-             (PressureInterface(ICell0, K) +
-              PressureInterface(ICell1, K)) *
+             (PressureInterface(ICell0, K) + PressureInterface(ICell1, K)) *
              SpecVolEdgeTopK;
 
-         const Real PAlphaEdgeTopKP1 =
-             0.5_Real *
-             (PressureInterface(ICell0, K+1) +
-              PressureInterface(ICell1, K+1)) *
-             SpecVolEdgeTopKP1;
+         const Real PAlphaEdgeTopKP1 = 0.5_Real *
+                                       (PressureInterface(ICell0, K + 1) +
+                                        PressureInterface(ICell1, K + 1)) *
+                                       SpecVolEdgeTopKP1;
 
          // Compute grad(\tilde{z}) = grad(-p) / (Rho0 * Gravity)
          const Real GradZTildeTopK =
-             (-PressureInterface(ICell1,K) +
-               PressureInterface(ICell0,K)) *
+             (-PressureInterface(ICell1, K) + PressureInterface(ICell0, K)) *
              InvDensity0Gravity;
-         const Real GradZTildeTopKP1 =
-             (-PressureInterface(ICell1,K+1) +
-               PressureInterface(ICell0,K+1)) *
-             InvDensity0Gravity;
+         const Real GradZTildeTopKP1 = (-PressureInterface(ICell1, K + 1) +
+                                        PressureInterface(ICell0, K + 1)) *
+                                       InvDensity0Gravity;
 
          const Real InvLayerThickEdge = 1._Real / LayerThickEdge(IEdge, K);
 
-         Real PresAlphaGradZK   = PAlphaEdgeTopK   * GradZTildeTopK;
+         Real PresAlphaGradZK   = PAlphaEdgeTopK * GradZTildeTopK;
          Real PresAlphaGradZKP1 = PAlphaEdgeTopKP1 * GradZTildeTopKP1;
 
          // 0 at surface
-         if (K == KMin) PresAlphaGradZK   = 0._Real;
+         if (K == KMin)
+            PresAlphaGradZK = 0._Real;
          // 0 at floor
-         if (K == KMax) PresAlphaGradZKP1 = 0._Real;
+         if (K == KMax)
+            PresAlphaGradZKP1 = 0._Real;
 
-         const Real ZGradTerm =
-             -InvDcEdge * InvLayerThickEdge *
-             (PresAlphaGradZK - PresAlphaGradZKP1);
+         const Real ZGradTerm = -InvDcEdge * InvLayerThickEdge *
+                                (PresAlphaGradZK - PresAlphaGradZKP1);
 
          Tend(IEdge, K) += EdgeMask(IEdge, K) * ZGradTerm;
-
       }
    }
 
@@ -424,7 +419,6 @@ class PresGradZOnEdge {
    Array1DI4 MinLayerEdgeBot;
    Array1DI4 MaxLayerEdgeTop;
 };
-
 
 /// Pressure gradient force
 class PresGradForceOnEdge {
@@ -453,21 +447,20 @@ class PresGradForceOnEdge {
          const I4 K = KStart + KVec;
 
          // LayerThick * SpecVol * Pressure : (A)
-         const Real LayerSpecVolPresCell0 =
-             LayerThickCell(ICell0, K) * SpecVol(ICell0, K) *
-             PressureMid(ICell0, K);
+         const Real LayerSpecVolPresCell0 = LayerThickCell(ICell0, K) *
+                                            SpecVol(ICell0, K) *
+                                            PressureMid(ICell0, K);
 
-         const Real LayerSpecVolPresCell1 =
-             LayerThickCell(ICell1, K) * SpecVol(ICell1, K) *
-             PressureMid(ICell1, K);
+         const Real LayerSpecVolPresCell1 = LayerThickCell(ICell1, K) *
+                                            SpecVol(ICell1, K) *
+                                            PressureMid(ICell1, K);
 
          // -grad(A) / LayerThick
-         const Real PGFTerm =
-             - InvDcEdge * (LayerSpecVolPresCell1 - LayerSpecVolPresCell0) /
-             LayerThickEdge(IEdge, K);
+         const Real PGFTerm = -InvDcEdge *
+                              (LayerSpecVolPresCell1 - LayerSpecVolPresCell0) /
+                              LayerThickEdge(IEdge, K);
 
          Tend(IEdge, K) += EdgeMask(IEdge, K) * PGFTerm;
-
       }
    }
 
@@ -503,10 +496,9 @@ class GeoptGradOnEdge {
 
          // -grad(Geopotential)
          const Real GeoptGradTerm =
-             - InvDcEdge * (GeoptMid(ICell1, K) - GeoptMid(ICell0, K));
+             -InvDcEdge * (GeoptMid(ICell1, K) - GeoptMid(ICell0, K));
 
          Tend(IEdge, K) += EdgeMask(IEdge, K) * GeoptGradTerm;
-
       }
    }
 

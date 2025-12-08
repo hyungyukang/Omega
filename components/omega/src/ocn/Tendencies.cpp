@@ -166,19 +166,20 @@ void Tendencies::readTendConfig(
    }
 
    Err += TendConfig->get("PresForceTendencyEnable", this->PresGradZ.Enabled);
-   CHECK_ERROR_ABORT(Err,
-                     "Tendencies: PresForceTendencyEnable not found in TendConfig");
+   CHECK_ERROR_ABORT(
+       Err, "Tendencies: PresForceTendencyEnable not found in TendConfig");
 
    Err += TendConfig->get("Density0", this->PresGradZ.Density0);
    CHECK_ERROR_ABORT(Err, "Tendencies: Density0 not found in TendConfig");
 
-   Err += TendConfig->get("PresGradForceTendencyEnable", this->PresGradForce.Enabled);
-   CHECK_ERROR_ABORT(Err,
-                     "Tendencies: PresGradForceTendencyEnable not found in TendConfig");
+   Err += TendConfig->get("PresGradForceTendencyEnable",
+                          this->PresGradForce.Enabled);
+   CHECK_ERROR_ABORT(
+       Err, "Tendencies: PresGradForceTendencyEnable not found in TendConfig");
 
    Err += TendConfig->get("GeoptGradTendencyEnable", this->GeoptGrad.Enabled);
-   CHECK_ERROR_ABORT(Err,
-                     "Tendencies: GeoptGradTendencyEnable not found in TendConfig");
+   CHECK_ERROR_ABORT(
+       Err, "Tendencies: GeoptGradTendencyEnable not found in TendConfig");
 
    Err += TendConfig->get("TracerHorzAdvTendencyEnable",
                           this->TracerHorzAdv.Enabled);
@@ -241,7 +242,7 @@ Tendencies::Tendencies(const std::string &Name, ///< [in] Name for tendencies
       PotientialVortHAdv(Mesh, VCoord), KEGrad(Mesh, VCoord),
       SSHGrad(Mesh, VCoord), VelocityDiffusion(Mesh, VCoord),
       VelocityHyperDiff(Mesh, VCoord), PresGradZ(Mesh, VCoord),
-      PresGradForce(Mesh,VCoord),GeoptGrad(Mesh,VCoord),
+      PresGradForce(Mesh, VCoord), GeoptGrad(Mesh, VCoord),
       WindForcing(Mesh, VCoord), BottomDrag(Mesh, VCoord),
       TracerHorzAdv(Mesh, VCoord), TracerDiffusion(Mesh, VCoord),
       TracerHyperDiff(Mesh, VCoord), CustomThicknessTend(InCustomThicknessTend),
@@ -527,8 +528,8 @@ void Tendencies::computeVelocityTendenciesOnly(
                 parallelForInner(
                     Team, KRange, INNER_LAMBDA(int KChunk) {
                        LocPresGradForce(LocNormalVelocityTend, IEdge, KChunk,
-                                    SpecVol, MeanLayerThickEdge, LayerThickCell,
-                                    PressureMid);
+                                        SpecVol, MeanLayerThickEdge,
+                                        LayerThickCell, PressureMid);
                     });
              });
          Pacer::stop("Tend:pressureGradForce", 2);

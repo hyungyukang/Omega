@@ -61,20 +61,18 @@ VelocityHyperDiffOnEdge::VelocityHyperDiffOnEdge(const HorzMesh *Mesh,
 
 PresGradZOnEdge::PresGradZOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord)
     : CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
-      EdgeMask(Mesh->EdgeMask),
-      MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
+      EdgeMask(Mesh->EdgeMask), MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
 
-PresGradForceOnEdge::PresGradForceOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord)
+PresGradForceOnEdge::PresGradForceOnEdge(const HorzMesh *Mesh,
+                                         const VertCoord *VCoord)
     : CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
-      EdgeMask(Mesh->EdgeMask),
-      MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
+      EdgeMask(Mesh->EdgeMask), MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
 
 GeoptGradOnEdge::GeoptGradOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord)
     : CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
-      EdgeMask(Mesh->EdgeMask),
-      MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
+      EdgeMask(Mesh->EdgeMask), MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
 
 WindForcingOnEdge::WindForcingOnEdge(const HorzMesh *Mesh,

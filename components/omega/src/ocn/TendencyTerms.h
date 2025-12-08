@@ -315,7 +315,6 @@ class PresGradZOnEdge {
    /// interface height, layer specific volume, layer thickness on edge,
    /// interface pressure, and outputs tendency array
    KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
-                                   const Array2DReal &ZInterface,
                                    const Array2DReal &SpecVol,
                                    const Array2DReal &LayerThickEdge,
                                    const Array2DReal &PressureInterface) const {
@@ -422,8 +421,60 @@ class PresGradZOnEdge {
    Array2DI4 CellsOnEdge;
    Array1DReal DcEdge;
    Array2DReal EdgeMask;
-   Array1DI4 MinLayerCell;
-   Array1DI4 MaxLayerCell;
+   Array1DI4 MinLayerEdgeBot;
+   Array1DI4 MaxLayerEdgeTop;
+};
+
+
+/// Pressure gradient force
+class PresGradForceOnEdge {
+ public:
+   bool Enabled;
+
+   /// constructor declaration
+   PresGradForceOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
+
+   /// The functor takes edge index, vertical chunk index, and arrays for
+   /// interface height, layer specific volume, layer thickness on edge,
+   /// interface pressure, and outputs tendency array
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+                                   const Array2DReal &SpecVol,
+                                   const Array2DReal &LayerThickEdge,
+                                   const Array2DReal &LayerThickCell,
+                                   const Array2DReal &PressureMid) const {
+
+      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
+      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+      const I4 ICell0 = CellsOnEdge(IEdge, 0);
+      const I4 ICell1 = CellsOnEdge(IEdge, 1);
+      const Real InvDcEdge = 1._Real / DcEdge(IEdge);
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K = KStart + KVec;
+
+         // LayerThick * SpecVol * Pressure : (A)
+         const Real LayerSpecVolPresCell0 =
+             LayerThickCell(ICell0, K) * SpecVol(ICell0, K) *
+             PressureMid(ICell0, K);
+
+         const Real LayerSpecVolPresCell1 =
+             LayerThickCell(ICell1, K) * SpecVol(ICell1, K) *
+             PressureMid(ICell1, K);
+
+         // -grad(A) / LayerThick
+         const Real PGFTerm =
+             - InvDcEdge * (LayerSpecVolPresCell1 - LayerSpecVolPresCell0) /
+             LayerThickEdge(IEdge, K);
+
+         Tend(IEdge, K) += EdgeMask(IEdge, K) * PGFTerm;
+
+      }
+   }
+
+ private:
+   Array2DI4 CellsOnEdge;
+   Array1DReal DcEdge;
+   Array2DReal EdgeMask;
    Array1DI4 MinLayerEdgeBot;
    Array1DI4 MaxLayerEdgeTop;
 };

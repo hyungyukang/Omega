@@ -166,11 +166,15 @@ void Tendencies::readTendConfig(
    }
 
    Err += TendConfig->get("PresForceTendencyEnable", this->PresGradZ.Enabled);
-
    CHECK_ERROR_ABORT(Err,
                      "Tendencies: PresForceTendencyEnable not found in TendConfig");
+
    Err += TendConfig->get("Density0", this->PresGradZ.Density0);
    CHECK_ERROR_ABORT(Err, "Tendencies: Density0 not found in TendConfig");
+
+   Err += TendConfig->get("PresGradForceTendencyEnable", this->PresGradForce.Enabled);
+   CHECK_ERROR_ABORT(Err,
+                     "Tendencies: PresGradForceTendencyEnable not found in TendConfig");
 
    Err += TendConfig->get("TracerHorzAdvTendencyEnable",
                           this->TracerHorzAdv.Enabled);
@@ -233,6 +237,7 @@ Tendencies::Tendencies(const std::string &Name, ///< [in] Name for tendencies
       PotientialVortHAdv(Mesh, VCoord), KEGrad(Mesh, VCoord),
       SSHGrad(Mesh, VCoord), VelocityDiffusion(Mesh, VCoord),
       VelocityHyperDiff(Mesh, VCoord), PresGradZ(Mesh, VCoord),
+      PresGradForce(Mesh,VCoord),
       WindForcing(Mesh, VCoord), BottomDrag(Mesh, VCoord),
       TracerHorzAdv(Mesh, VCoord), TracerDiffusion(Mesh, VCoord),
       TracerHyperDiff(Mesh, VCoord), CustomThicknessTend(InCustomThicknessTend),
@@ -340,6 +345,7 @@ void Tendencies::computeVelocityTendenciesOnly(
    OMEGA_SCOPE(LocVelocityDiffusion, VelocityDiffusion);
    OMEGA_SCOPE(LocVelocityHyperDiff, VelocityHyperDiff);
    OMEGA_SCOPE(LocPresGradZ, PresGradZ);
+   OMEGA_SCOPE(LocPresGradForce, PresGradForce);
    OMEGA_SCOPE(LocWindForcing, WindForcing);
    OMEGA_SCOPE(LocBottomDrag, BottomDrag);
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
@@ -360,7 +366,8 @@ void Tendencies::computeVelocityTendenciesOnly(
               });
        });
 
-   const Array2DReal &NormalVelEdge = State->NormalVelocity[VelTimeLevel];
+   const Array2DReal &NormalVelEdge  = State->NormalVelocity[VelTimeLevel];
+   const Array2DReal &LayerThickCell = State->LayerThickness[ThickTimeLevel];
 
    // Compute potential vorticity horizontal advection
    const Array2DReal &FluxLayerThickEdge =
@@ -473,7 +480,6 @@ void Tendencies::computeVelocityTendenciesOnly(
                   "presGradZ tendency");
       } else {
 
-         const Array2DReal &ZInterface        = VCoord->ZInterface;
          const Array2DReal &SpecVol           = EosInstance->SpecVol;
          const Array2DReal &PressureInterface = VCoord->PressureInterface;
 
@@ -486,11 +492,41 @@ void Tendencies::computeVelocityTendenciesOnly(
                 parallelForInner(
                     Team, KRange, INNER_LAMBDA(int KChunk) {
                        LocPresGradZ(LocNormalVelocityTend, IEdge, KChunk,
-                                    ZInterface, SpecVol, MeanLayerThickEdge,
+                                    SpecVol, MeanLayerThickEdge,
                                     PressureInterface);
                     });
              });
          Pacer::stop("Tend:presGradZ", 2);
+      }
+   }
+
+   if (LocPresGradForce.Enabled) {
+      Pacer::start("Tend:presGradForce", 2);
+
+      Eos *EosInstance = Eos::getInstance();
+
+      if (!EosInstance) {
+         LOG_WARN("Eos has not been initialized. Skipping calculation of "
+                  "presGradForce tendency");
+      } else {
+
+         const Array2DReal &SpecVol     = EosInstance->SpecVol;
+         const Array2DReal &PressureMid = VCoord->PressureMid;
+
+         parallelForOuter(
+             {Mesh->NEdgesAll},
+             KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+                const int KMin   = MinLayerEdgeBot(IEdge);
+                const int KMax   = MaxLayerEdgeTop(IEdge);
+                const int KRange = vertRangeChunked(KMin, KMax);
+                parallelForInner(
+                    Team, KRange, INNER_LAMBDA(int KChunk) {
+                       LocPresGradForce(LocNormalVelocityTend, IEdge, KChunk,
+                                    SpecVol, MeanLayerThickEdge, LayerThickCell,
+                                    PressureMid);
+                    });
+             });
+         Pacer::stop("Tend:presGradForce", 2);
       }
    }
 

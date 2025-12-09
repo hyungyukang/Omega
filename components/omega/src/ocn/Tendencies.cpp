@@ -245,6 +245,7 @@ Tendencies::Tendencies(const std::string &Name, ///< [in] Name for tendencies
       BottomDrag(Mesh, VCoord), TracerHorzAdv(Mesh, VCoord),
       TracerDiffusion(Mesh, VCoord), TracerHyperDiff(Mesh, VCoord),
       TracerHighOrderHorzAdv(Mesh),
+      TracerHighOrderHorzAdv(Mesh, VCoord),
       CustomThicknessTend(InCustomThicknessTend),
       CustomVelocityTend(InCustomVelocityTend) {
 

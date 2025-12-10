@@ -16,7 +16,6 @@ namespace OMEGA {
 /// Constructor for Teos10Eos
 Teos10Eos::Teos10Eos(const VertCoord *VCoord)
     : MinLayerCell(VCoord->MinLayerCell), MaxLayerCell(VCoord->MaxLayerCell) {
-   SpecVolPCoeffs = Array2DReal("SpecVolPCoeffs", 6, VecLength);
 }
 
 /// Constructor for LinearEos
@@ -120,7 +119,7 @@ void Eos::computeSpecVol(const Array2DReal &ConservTemp,
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
 
-   deepCopy(LocSpecVol, 0); /// Initialize local specific volume to zero
+   deepCopy(LocSpecVol, 0.); /// Initialize local specific volume to zero
 
    I4 KDisp = 0; /// No displacement in this case
 
@@ -171,7 +170,7 @@ void Eos::computeSpecVolDisp(const Array2DReal &ConservTemp,
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
 
    deepCopy(LocSpecVolDisplaced,
-            0); /// Initialize local specific volume to zero
+            0.); /// Initialize local specific volume to zero
 
    /// Dispatch to the correct EOS calculation
    /// If EosChoice is Linear, the displaced specific

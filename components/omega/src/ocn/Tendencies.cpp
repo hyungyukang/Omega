@@ -498,7 +498,7 @@ void Tendencies::computeVelocityTendenciesOnly(
                 parallelForInner(
                     Team, KRange, INNER_LAMBDA(int KChunk) {
                        LocPresGradZ(LocNormalVelocityTend, IEdge, KChunk,
-                                    SpecVol, MeanLayerThickEdge,
+                                    SpecVol, MeanLayerThickEdge, LayerThickCell,
                                     PressureInterface);
                     });
              });

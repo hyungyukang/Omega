@@ -89,6 +89,12 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    Array1DReal SurfacePressure("SurfacePressure", Mesh->NCellsSize);
    deepCopy(SurfacePressure, 1e5);
 
+   // TODO: retrieve TidalPotential and SelfAttractionLoading
+   Array1DReal TidalPotential("TidalPotential", Mesh->NCellsSize);
+   Array1DReal SelfAttractionLoading("SelfAttractionLoading", Mesh->NCellsSize);
+   deepCopy(TidalPotential, 0.0);
+   deepCopy(SelfAttractionLoading, 0.0);
+
    // compute pressure
    VCoord->computePressure(LayerThickCell, SurfacePressure);
 
@@ -116,6 +122,9 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
 
    // compute height
    VCoord->computeZHeight(LayerThickCell, EosInstance->SpecVol);
+
+   // compute geopotential
+   VCoord->computeGeopotential(TidalPotential,SelfAttractionLoading);
 }
 
 // Compute the auxiliary variables needed for momentum equation

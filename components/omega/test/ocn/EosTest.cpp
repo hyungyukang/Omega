@@ -153,21 +153,19 @@ void testEosLinear() {
    auto SpecVolH = createHostMirrorCopy(SpecVol);
 
    if (NumMismatches != 0) {
-      parallelForOuter(
-          {Mesh->NCellsAll}, KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
-             const int KMin   = MinLayerCell(ICell);
-             const int KMax   = MaxLayerCell(ICell);
-             const int KRange = vertRange(KMin, KMax);
-             parallelForInner(
-                 Team, KRange, INNER_LAMBDA(int KChunk) {
-                    const int K = KMin + KChunk;
 
-                    if (!isApprox(SpecVolH(ICell, K), LinearExpValue, RTol))
-                       LOG_ERROR("EosTest: SpecVol Linear Bad Value: "
-                                 "SpecVol({},{}) = {}; Expected {}",
-                                 ICell, K, SpecVolH(ICell, K), LinearExpValue);
-                 });
-          });
+      for (int ICell = 0; ICell < Mesh->NCellsAll; ++ICell) {
+         const int KMin = MinLayerCell(ICell);
+         const int KMax = MaxLayerCell(ICell);
+
+         for (int K = KMin; K <= KMax; ++K) {
+            if (!isApprox(SpecVolH(ICell, K), LinearExpValue, RTol)) {
+               LOG_ERROR("EosTest: SpecVol Linear Bad Value: "
+                         "SpecVol({},{}) = {}; Expected {}",
+                         ICell, K, SpecVolH(ICell, K), LinearExpValue);
+            }
+         }
+      }
       ABORT_ERROR("EosTest: SpecVol Linear FAIL with {} bad values",
                   NumMismatches);
    }
@@ -230,27 +228,21 @@ void testEosLinearDisplaced() {
    auto SpecVolDisplacedH = createHostMirrorCopy(SpecVolDisplaced);
 
    if (NumMismatches != 0) {
-      parallelForOuter(
-          {Mesh->NCellsAll}, KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
-             const int KMin   = MinLayerCell(ICell);
-             const int KMax   = MaxLayerCell(ICell);
-             const int KRange = vertRange(KMin, KMax);
-             parallelForInner(
-                 Team, KRange, INNER_LAMBDA(int KChunk) {
-                    const int K = KMin + KChunk;
 
-                    if (!isApprox(SpecVolDisplacedH(ICell, K), LinearExpValue,
-                                  RTol))
-                       LOG_ERROR("EosTest: SpecVol Linear Displaced Bad Value: "
-                                 "SpecVol({},{}) = {}; Expected {}",
-                                 ICell, K, SpecVolDisplacedH(ICell, K),
-                                 LinearExpValue);
-                 });
-          });
+      for (int ICell = 0; ICell < Mesh->NCellsAll; ++ICell) {
+         const int KMin = MinLayerCell(ICell);
+         const int KMax = MaxLayerCell(ICell);
+
+         for (int K = KMin; K <= KMax; ++K) {
+            if (!isApprox(SpecVolDisplacedH(ICell, K), LinearExpValue, RTol))
+               LOG_ERROR("EosTest: SpecVol Linear Displaced Bad Value: "
+                         "SpecVol({},{}) = {}; Expected {}",
+                         ICell, K, SpecVolDisplacedH(ICell, K), LinearExpValue);
+         }
+      }
       ABORT_ERROR("EosTest: Linear SpecVolDisp FAIL with {} bad values ",
                   NumMismatches);
    }
-
    return;
 }
 
@@ -361,40 +353,37 @@ void testBruntVaisalaFreqLinear() {
    // If test fails, print bad values and abort
    auto BruntVaisalaFreqH = createHostMirrorCopy(BruntVaisalaFreq);
    if (NumMismatches != 0) {
-      parallelForOuter(
-          {Mesh->NCellsAll}, KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
-             const int KMin   = MinLayerCell(ICell);
-             const int KMax   = MaxLayerCell(ICell);
-             const int KRange = vertRange(KMin, KMax);
-             parallelForInner(
-                 Team, KRange, INNER_LAMBDA(int KChunk) {
-                    const int K = KMin + KChunk;
 
-                    if (K == 0) {
-                       // top layer should be zero
-                       if (BruntVaisalaFreqH(ICell, 0) != 0.0)
-                          LOG_ERROR("EosTest: Brunt-Vaisala Linear Bad Value: "
-                                    "BruntVaisala({},{}) = {}; Expected {}",
-                                    ICell, 0, BruntVaisalaFreqH(ICell, 0), 0.0);
-                    } else if (K == 1) {
-                       // K = 1 should be ref value
-                       if (!isApprox(BruntVaisalaFreqH(ICell, 1),
-                                     LinearBVFExpValue, RTol))
-                          LOG_ERROR("EosTest: Brunt-Vaisala Linear Bad Value: "
-                                    "BruntVaisala({},{}) = {}; Expected {}",
-                                    ICell, 1, BruntVaisalaFreqH(ICell, 1),
-                                    LinearBVFExpValue);
-                    } else {
-                       // remaining values just check for other conditions
-                       if (BruntVaisalaFreqH(ICell, K) == 0.0 or
-                           Kokkos::isnan(BruntVaisalaFreqH(ICell, K)) or
-                           Kokkos::isinf(BruntVaisalaFreqH(ICell, K)))
-                          LOG_ERROR("EosTest: Brunt-Vaisala Linear Bad Value: "
-                                    "BruntVaisala({},{}) = {}",
-                                    ICell, K, BruntVaisalaFreqH(ICell, K));
-                    }
-                 });
-          });
+      for (int ICell = 0; ICell < Mesh->NCellsAll; ++ICell) {
+         const int KMin = MinLayerCell(ICell);
+         const int KMax = MaxLayerCell(ICell);
+
+         for (int K = KMin; K <= KMax; ++K) {
+            if (K == 0) {
+               // top layer should be zero
+               if (BruntVaisalaFreqH(ICell, 0) != 0.0)
+                  LOG_ERROR("EosTest: Brunt-Vaisala Linear Bad Value: "
+                            "BruntVaisala({},{}) = {}; Expected {}",
+                            ICell, 0, BruntVaisalaFreqH(ICell, 0), 0.0);
+            } else if (K == 1) {
+               // K = 1 should be ref value
+               if (!isApprox(BruntVaisalaFreqH(ICell, 1), LinearBVFExpValue,
+                             RTol))
+                  LOG_ERROR("EosTest: Brunt-Vaisala Linear Bad Value: "
+                            "BruntVaisala({},{}) = {}; Expected {}",
+                            ICell, 1, BruntVaisalaFreqH(ICell, 1),
+                            LinearBVFExpValue);
+            } else {
+               // remaining values just check for other conditions
+               if (BruntVaisalaFreqH(ICell, K) == 0.0 or
+                   Kokkos::isnan(BruntVaisalaFreqH(ICell, K)) or
+                   Kokkos::isinf(BruntVaisalaFreqH(ICell, K)))
+                  LOG_ERROR("EosTest: Brunt-Vaisala Linear Bad Value: "
+                            "BruntVaisala({},{}) = {}",
+                            ICell, K, BruntVaisalaFreqH(ICell, K));
+            }
+         }
+      }
       ABORT_ERROR("EosTest: BruntVaisala Linear FAIL with {} bad values",
                   NumMismatches);
    }
@@ -456,21 +445,18 @@ void testEosTeos10() {
    auto SpecVolH = createHostMirrorCopy(SpecVol);
 
    if (NumMismatches != 0) {
-      parallelForOuter(
-          {Mesh->NCellsAll}, KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
-             const int KMin   = MinLayerCell(ICell);
-             const int KMax   = MaxLayerCell(ICell);
-             const int KRange = vertRange(KMin, KMax);
-             parallelForInner(
-                 Team, KRange, INNER_LAMBDA(int KChunk) {
-                    const int K = KMin + KChunk;
 
-                    if (!isApprox(SpecVolH(ICell, K), LinearExpValue, RTol))
-                       LOG_ERROR("EosTest: SpecVol TEOS Bad Value: "
-                                 "SpecVol({},{}) = {}; Expected {}",
-                                 ICell, K, SpecVolH(ICell, K), LinearExpValue);
-                 });
-          });
+      for (int ICell = 0; ICell < Mesh->NCellsAll; ++ICell) {
+         const int KMin = MinLayerCell(ICell);
+         const int KMax = MaxLayerCell(ICell);
+
+         for (int K = KMin; K <= KMax; ++K) {
+            if (!isApprox(SpecVolH(ICell, K), LinearExpValue, RTol))
+               LOG_ERROR("EosTest: SpecVol TEOS Bad Value: "
+                         "SpecVol({},{}) = {}; Expected {}",
+                         ICell, K, SpecVolH(ICell, K), LinearExpValue);
+         }
+      }
       ABORT_ERROR("EosTest: SpecVol TEOS FAIL with {} bad values",
                   NumMismatches);
    }
@@ -533,23 +519,18 @@ void testEosTeos10Displaced() {
    auto SpecVolDisplacedH = createHostMirrorCopy(SpecVolDisplaced);
 
    if (NumMismatches != 0) {
-      parallelForOuter(
-          {Mesh->NCellsAll}, KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
-             const int KMin   = MinLayerCell(ICell);
-             const int KMax   = MaxLayerCell(ICell);
-             const int KRange = vertRange(KMin, KMax);
-             parallelForInner(
-                 Team, KRange, INNER_LAMBDA(int KChunk) {
-                    const int K = KMin + KChunk;
 
-                    if (!isApprox(SpecVolDisplacedH(ICell, K), LinearExpValue,
-                                  RTol))
-                       LOG_ERROR("EosTest: SpecVol Displaced TEOS Bad Value: "
-                                 "SpecVol({},{}) = {}; Expected {}",
-                                 ICell, K, SpecVolDisplacedH(ICell, K),
-                                 LinearExpValue);
-                 });
-          });
+      for (int ICell = 0; ICell < Mesh->NCellsAll; ++ICell) {
+         const int KMin = MinLayerCell(ICell);
+         const int KMax = MaxLayerCell(ICell);
+
+         for (int K = KMin; K <= KMax; ++K) {
+            if (!isApprox(SpecVolDisplacedH(ICell, K), LinearExpValue, RTol))
+               LOG_ERROR("EosTest: SpecVol Displaced TEOS Bad Value: "
+                         "SpecVol({},{}) = {}; Expected {}",
+                         ICell, K, SpecVolDisplacedH(ICell, K), LinearExpValue);
+         }
+      }
       ABORT_ERROR("EosTest: SpecVol Displaced TEOS FAIL with {} bad values",
                   NumMismatches);
    }
@@ -654,37 +635,34 @@ void testBruntVaisalaFreqTeos10() {
    auto BruntVaisalaFreqH = createHostMirrorCopy(BruntVaisalaFreq);
 
    if (NumMismatches != 0) {
-      parallelForOuter(
-          {Mesh->NCellsAll}, KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
-             const int KMin   = MinLayerCell(ICell);
-             const int KMax   = MaxLayerCell(ICell);
-             const int KRange = vertRange(KMin, KMax);
-             parallelForInner(
-                 Team, KRange, INNER_LAMBDA(int KChunk) {
-                    const int K = KMin + KChunk;
 
-                    if (K == 0) {
-                       if (BruntVaisalaFreqH(ICell, K) != 0.0)
-                          LOG_ERROR("EosTest: Brunt-Vaisala TEOS Bad Value: "
-                                    "BruntVaisala({},{}) = {}; Expected {}",
-                                    ICell, 0, BruntVaisalaFreqH(ICell, 0), 0.0);
-                    } else if (K == 1) {
-                       if (!isApprox(BruntVaisalaFreqH(ICell, 1),
-                                     TeosBVFExpValue, RTol))
-                          LOG_ERROR("EosTest: Brunt-Vaisala TEOS Bad Value: "
-                                    "BruntVaisala({},{}) = {}; Expected {}",
-                                    ICell, 1, BruntVaisalaFreqH(ICell, 1),
-                                    TeosBVFExpValue);
-                    } else {
-                       if (BruntVaisalaFreqH(ICell, K) == 0.0 or
-                           Kokkos::isnan(BruntVaisalaFreqH(ICell, K)) or
-                           Kokkos::isinf(BruntVaisalaFreqH(ICell, K)))
-                          LOG_ERROR("EosTest: Brunt-Vaisala TEOS Bad Value: "
-                                    "BruntVaisala({},{}) = {}",
-                                    ICell, K, BruntVaisalaFreqH(ICell, 1));
-                    }
-                 });
-          });
+      for (int ICell = 0; ICell < Mesh->NCellsAll; ++ICell) {
+         const int KMin = MinLayerCell(ICell);
+         const int KMax = MaxLayerCell(ICell);
+
+         for (int K = KMin; K <= KMax; ++K) {
+            if (K == 0) {
+               if (BruntVaisalaFreqH(ICell, K) != 0.0)
+                  LOG_ERROR("EosTest: Brunt-Vaisala TEOS Bad Value: "
+                            "BruntVaisala({},{}) = {}; Expected {}",
+                            ICell, 0, BruntVaisalaFreqH(ICell, 0), 0.0);
+            } else if (K == 1) {
+               if (!isApprox(BruntVaisalaFreqH(ICell, 1), TeosBVFExpValue,
+                             RTol))
+                  LOG_ERROR("EosTest: Brunt-Vaisala TEOS Bad Value: "
+                            "BruntVaisala({},{}) = {}; Expected {}",
+                            ICell, 1, BruntVaisalaFreqH(ICell, 1),
+                            TeosBVFExpValue);
+            } else {
+               if (BruntVaisalaFreqH(ICell, K) == 0.0 or
+                   Kokkos::isnan(BruntVaisalaFreqH(ICell, K)) or
+                   Kokkos::isinf(BruntVaisalaFreqH(ICell, K)))
+                  LOG_ERROR("EosTest: Brunt-Vaisala TEOS Bad Value: "
+                            "BruntVaisala({},{}) = {}",
+                            ICell, K, BruntVaisalaFreqH(ICell, 1));
+            }
+         }
+      }
       ABORT_ERROR("EosTest: BruntVaisala TEOS FAIL with {} bad values",
                   NumMismatches);
    }

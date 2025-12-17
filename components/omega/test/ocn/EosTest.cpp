@@ -14,12 +14,16 @@
 #include "DataTypes.h"
 #include "Decomp.h"
 #include "Dimension.h"
+#include "Error.h"
+#include "Halo.h"
 #include "IO.h"
+#include "IOStream.h"
 #include "Logging.h"
 #include "MachEnv.h"
 #include "OceanTestCommon.h"
 #include "OmegaKokkos.h"
 #include "Pacer.h"
+#include "TimeStepper.h"
 #include "mpi.h"
 
 // added for debug
@@ -60,6 +64,8 @@ const Real RTol = 1e-10; // Relative tolerance for isApprox checks
 /// init routines, including the creation of the default decomposition.
 void initEosTest(const std::string &mesh) {
 
+   int Err = 0;
+
    /// Initialize the Machine Environment class - this also creates
    /// the default MachEnv. Then retrieve the default environment and
    /// some needed data members.
@@ -75,19 +81,33 @@ void initEosTest(const std::string &mesh) {
    Config("Omega");
    Config::readAll("omega.yml");
 
+   // First step of time stepper initialization needed for IOstream
+   TimeStepper::init1();
+
    /// Initialize parallel IO
    IO::init(DefComm);
 
    /// Initialize decomposition
    Decomp::init(mesh);
 
+   // Initialize streams
+   IOStream::init();
+
+   // Initialize the default halo
+   Err = Halo::init();
+   if (Err != 0)
+      LOG_ERROR("VertCoordTest: error initializing default halo");
+
    /// Initialize vertical coordinate (phase 1)
    VertCoord::init1();
-   auto VCoord         = VertCoord::getDefault();
-   VCoord->NVertLayers = NVertLayers;
 
    /// Initialize mesh
    HorzMesh::init();
+
+   // Initialize the vertical coordinate (phase 2)
+   VertCoord::init2();
+   auto VCoord         = VertCoord::getDefault();
+   VCoord->NVertLayers = NVertLayers;
 
    /// Initialize Eos
    Eos::init();
@@ -671,6 +691,8 @@ void testBruntVaisalaFreqTeos10() {
 
 /// Finalize and clean up all test infrastructure
 void finalizeEosTest() {
+   IOStream::finalize();
+   TimeStepper::clear();
    Eos::destroyInstance();
    HorzMesh::clear();
    VertCoord::clear();

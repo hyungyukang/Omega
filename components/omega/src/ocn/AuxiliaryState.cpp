@@ -26,6 +26,7 @@ AuxiliaryState::AuxiliaryState(const std::string &Name, const HorzMesh *Mesh,
       VorticityAux(stripDefault(Name), Mesh, VCoord),
       VelocityDel2Aux(stripDefault(Name), Mesh, VCoord),
       WindForcingAux(stripDefault(Name), Mesh),
+      TangentAux(stripDefault(Name), Mesh, VCoord),
       TracerAux(stripDefault(Name), Mesh, VCoord, NTracers) {
 
    GroupName = "AuxiliaryState";
@@ -41,6 +42,7 @@ AuxiliaryState::AuxiliaryState(const std::string &Name, const HorzMesh *Mesh,
    VorticityAux.registerFields(GroupName, AuxMeshName);
    VelocityDel2Aux.registerFields(GroupName, AuxMeshName);
    WindForcingAux.registerFields(GroupName, AuxMeshName);
+   TangentAux.registerFields(GroupName, AuxMeshName);
    TracerAux.registerFields(GroupName, AuxMeshName);
 }
 
@@ -52,6 +54,7 @@ AuxiliaryState::~AuxiliaryState() {
    VorticityAux.unregisterFields();
    VelocityDel2Aux.unregisterFields();
    WindForcingAux.unregisterFields();
+   TangentAux.unregisterFields();
    TracerAux.unregisterFields();
 
    FieldGroup::destroy(GroupName);
@@ -124,7 +127,7 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    VCoord->computeZHeight(LayerThickCell, EosInstance->SpecVol);
 
    // compute geopotential
-   VCoord->computeGeopotential(TidalPotential,SelfAttractionLoading);
+   VCoord->computeGeopotential(TidalPotential, SelfAttractionLoading);
 }
 
 // Compute the auxiliary variables needed for momentum equation
@@ -144,6 +147,7 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
    OMEGA_SCOPE(LocVorticityAux, VorticityAux);
    OMEGA_SCOPE(LocVelocityDel2Aux, VelocityDel2Aux);
    OMEGA_SCOPE(LocWindForcingAux, WindForcingAux);
+   OMEGA_SCOPE(LocTangentAux, TangentAux);
 
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
@@ -226,6 +230,19 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
           parallelForInner(
               Team, KRange, INNER_LAMBDA(int KChunk) {
                  LocVorticityAux.computeVarsOnEdge(IEdge, KChunk);
+              });
+       });
+
+   parallelForOuter(
+       "edgeAuxState2", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          const int KMin   = MinLayerEdgeBot(IEdge);
+          const int KMax   = MaxLayerEdgeTop(IEdge);
+          const int KRange = vertRangeChunked(KMin, KMax);
+
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 LocTangentAux.computeVarsOnEdge(IEdge, KChunk, NormalVelEdge);
               });
        });
    Pacer::stop("AuxState:edgeAuxState2", 2);

@@ -28,6 +28,7 @@
 #include "TimeStepper.h"
 #include "Tracers.h"
 #include "VertCoord.h"
+#include "VertMix.h"
 
 #include "mpi.h"
 
@@ -137,6 +138,7 @@ int initOmegaModules(MPI_Comm Comm) {
    Tendencies::init();
    TimeStepper::init2();
    Eos::init();
+   VertMix::init();
 
    Err = OceanState::init();
    if (Err != 0) {

@@ -74,7 +74,7 @@ class AuxiliaryState {
    I4 exchangeHalo();
 
    void computeVertAux(const OceanState *State, const Array3DReal &TracerArray,
-                       int ThickTimeLevel) const;
+                       int ThickTimeLevel, int VelTimeLevel) const;
 
    // Compute all auxiliary variables needed for momentum equation
    void computeMomAux(const OceanState *State, const Array3DReal &TracerArray,

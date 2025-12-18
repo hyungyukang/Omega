@@ -1,6 +1,7 @@
 #include "AuxiliaryState.h"
 #include "Config.h"
 #include "Eos.h"
+#include "VertMix.h"
 #include "Field.h"
 #include "Logging.h"
 #include "Pacer.h"
@@ -63,7 +64,7 @@ AuxiliaryState::~AuxiliaryState() {
 // Compute the auxiliary variables needed for vertical dynamics
 void AuxiliaryState::computeVertAux(const OceanState *State,
                                     const Array3DReal &TracerArray,
-                                    int ThickTimeLevel) const {
+                                    int ThickTimeLevel, int VelTimeLevel) const {
 
    Eos *EosInstance = Eos::getInstance();
 
@@ -73,9 +74,37 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
       return;
    }
 
+   VertMix *VertMixInstance = VertMix::getInstance();
+
+   if (!VertMixInstance) {
+      LOG_WARN("VertMix has not been initialized. Skipping calculation of vertical "
+               "auxiliary variables");
+      return;
+   }
+
    // get layer thickness
    Array2DReal LayerThickCell;
    State->getLayerThickness(LayerThickCell, ThickTimeLevel);
+   // get normal velocity
+   Array2DReal NormalVelEdge;
+   State->getNormalVelocity(NormalVelEdge, VelTimeLevel);
+
+   // compute tangential velocity
+   OMEGA_SCOPE(LocTangentAux, TangentAux);
+   OMEGA_SCOPE(MinLayerEdgeTop, VCoord->MinLayerEdgeTop);
+   OMEGA_SCOPE(MaxLayerEdgeBot, VCoord->MaxLayerEdgeBot);
+   parallelForOuter(
+       "edgeAuxState1", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          const int KMin   = MinLayerEdgeTop(IEdge);
+          const int KMax   = MaxLayerEdgeBot(IEdge);
+          const int KRange = vertRangeChunked(KMin, KMax);
+
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 LocTangentAux.computeVarsOnEdge(IEdge, KChunk, NormalVelEdge);
+              });
+       });
 
    // get temperature and salinity
    I4 ConservTempIdx;
@@ -107,6 +136,7 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    const auto &MinLayerCell = VCoord->MinLayerCell;
    const auto &MaxLayerCell = VCoord->MaxLayerCell;
    const auto &PressureMid  = VCoord->PressureMid;
+
    parallelForOuter(
        "convertPresDbar", {Mesh->NCellsAll},
        KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
@@ -123,11 +153,21 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    // compute specific volume
    EosInstance->computeSpecVol(ConservTemp, AbsSalinity, PressureMidDbar);
 
+   // compute Brunt-Vaisala frequency (NSquared)
+   const auto &PressureInterface  = VCoord->PressureInterface;
+   const auto &SpecVol  = EosInstance->SpecVol;
+   EosInstance->computeBruntVaisalaFreq(ConservTemp, AbsSalinity, PressureInterface, SpecVol);
+
    // compute height
    VCoord->computeZHeight(LayerThickCell, EosInstance->SpecVol);
 
    // compute geopotential
    VCoord->computeGeopotential(TidalPotential, SelfAttractionLoading);
+
+   // compute vertical mixing coefficient
+   const auto &TangentVelEdge = TangentAux.TangentVelEdge;
+   VertMixInstance->computeVertMix(NormalVelEdge, TangentVelEdge, EosInstance->BruntVaisalaFreq);
+
 }
 
 // Compute the auxiliary variables needed for momentum equation
@@ -135,7 +175,7 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
                                    const Array3DReal &TracerArray,
                                    int ThickTimeLevel, int VelTimeLevel) const {
 
-   computeVertAux(State, TracerArray, ThickTimeLevel);
+   computeVertAux(State, TracerArray, ThickTimeLevel, VelTimeLevel);
 
    Array2DReal LayerThickCell;
    Array2DReal NormalVelEdge;
@@ -147,7 +187,6 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
    OMEGA_SCOPE(LocVorticityAux, VorticityAux);
    OMEGA_SCOPE(LocVelocityDel2Aux, VelocityDel2Aux);
    OMEGA_SCOPE(LocWindForcingAux, WindForcingAux);
-   OMEGA_SCOPE(LocTangentAux, TangentAux);
 
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
@@ -233,18 +272,6 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
               });
        });
 
-   parallelForOuter(
-       "edgeAuxState2", {Mesh->NEdgesAll},
-       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
-          const int KMin   = MinLayerEdgeBot(IEdge);
-          const int KMax   = MaxLayerEdgeTop(IEdge);
-          const int KRange = vertRangeChunked(KMin, KMax);
-
-          parallelForInner(
-              Team, KRange, INNER_LAMBDA(int KChunk) {
-                 LocTangentAux.computeVarsOnEdge(IEdge, KChunk, NormalVelEdge);
-              });
-       });
    Pacer::stop("AuxState:edgeAuxState2", 2);
 
    Pacer::start("AuxState:vertexAuxState2", 2);
@@ -291,6 +318,7 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
                                                          LayerThickCell);
               });
        });
+
    Pacer::stop("AuxState:cellAuxState3", 2);
 
    Pacer::stop("AuxState:computeMomAux", 1);

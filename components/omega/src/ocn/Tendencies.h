@@ -63,6 +63,7 @@ class Tendencies {
    SSHGradOnEdge SSHGrad;
    VelocityDiffusionOnEdge VelocityDiffusion;
    VelocityHyperDiffOnEdge VelocityHyperDiff;
+   VelVertMixOnEdge VelVertMix;
    PresGradZOnEdge PresGradZ;
    PresGradForceOnEdge PresGradForce;
    GeoptGradOnEdge GeoptGrad;
@@ -71,6 +72,7 @@ class Tendencies {
    TracerHorzAdvOnCell TracerHorzAdv;
    TracerDiffOnCell TracerDiffusion;
    TracerHyperDiffOnCell TracerHyperDiff;
+   TracerVertMixOnCell TracerVertMix;
 
    // Methods to compute tendency groups
    void computeThicknessTendencies(const OceanState *State,

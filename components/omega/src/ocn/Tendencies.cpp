@@ -14,6 +14,7 @@
 #include "Error.h"
 #include "Pacer.h"
 #include "Tracers.h"
+#include "VertMix.h"
 
 namespace OMEGA {
 
@@ -165,6 +166,10 @@ void Tendencies::readTendConfig(
       CHECK_ERROR_ABORT(Err, "Tendencies: DivFactor not found in TendConfig");
    }
 
+   Err += TendConfig->get("VelVertMixTendencyEneable", this->VelVertMix.Enabled);
+   CHECK_ERROR_ABORT(
+       Err, "Tendencies: VelVertMixTendencyEneable not found in TendConfig");
+
    Err += TendConfig->get("PresForceTendencyEnable", this->PresGradZ.Enabled);
    CHECK_ERROR_ABORT(
        Err, "Tendencies: PresForceTendencyEnable not found in TendConfig");
@@ -227,6 +232,10 @@ void Tendencies::readTendConfig(
       Err += TendConfig->get("EddyDiff4", this->TracerHyperDiff.EddyDiff4);
       CHECK_ERROR_ABORT(Err, "Tendencies: EddyDiff4 not found in TendConfig");
    }
+
+   Err += TendConfig->get("TracerVertMixTendencyEneable", this->TracerVertMix.Enabled);
+   CHECK_ERROR_ABORT(
+       Err, "Tendencies: TracerVertMixTendencyEneable not found in TendConfig");
 }
 
 //------------------------------------------------------------------------------
@@ -241,11 +250,13 @@ Tendencies::Tendencies(const std::string &Name, ///< [in] Name for tendencies
     : Mesh(Mesh), VCoord(VCoord), ThicknessFluxDiv(Mesh, VCoord),
       PotientialVortHAdv(Mesh, VCoord), KEGrad(Mesh, VCoord),
       SSHGrad(Mesh, VCoord), VelocityDiffusion(Mesh, VCoord),
-      VelocityHyperDiff(Mesh, VCoord), PresGradZ(Mesh, VCoord),
+      VelocityHyperDiff(Mesh, VCoord), VelVertMix(Mesh, VCoord),
+      PresGradZ(Mesh, VCoord),
       PresGradForce(Mesh, VCoord), GeoptGrad(Mesh, VCoord),
       WindForcing(Mesh, VCoord), BottomDrag(Mesh, VCoord),
       TracerHorzAdv(Mesh, VCoord), TracerDiffusion(Mesh, VCoord),
-      TracerHyperDiff(Mesh, VCoord), CustomThicknessTend(InCustomThicknessTend),
+      TracerHyperDiff(Mesh, VCoord), TracerVertMix(Mesh, VCoord),
+      CustomThicknessTend(InCustomThicknessTend),
       CustomVelocityTend(InCustomVelocityTend) {
 
    // Tendency arrays
@@ -322,6 +333,7 @@ void Tendencies::computeThicknessTendenciesOnly(
       Pacer::stop("Tend:thicknessFluxDiv", 2);
    }
 
+   // Custom thickness tendencies
    if (CustomThicknessTend) {
       Pacer::start("Tend:customThicknessTend", 2);
       CustomThicknessTend(LocLayerThicknessTend, State, AuxState,
@@ -349,6 +361,7 @@ void Tendencies::computeVelocityTendenciesOnly(
    OMEGA_SCOPE(LocSSHGrad, SSHGrad);
    OMEGA_SCOPE(LocVelocityDiffusion, VelocityDiffusion);
    OMEGA_SCOPE(LocVelocityHyperDiff, VelocityHyperDiff);
+   OMEGA_SCOPE(LocVelVertMix, VelVertMix);
    OMEGA_SCOPE(LocPresGradZ, PresGradZ);
    OMEGA_SCOPE(LocPresGradForce, PresGradForce);
    OMEGA_SCOPE(LocGeoptGrad, GeoptGrad);
@@ -593,6 +606,41 @@ void Tendencies::computeVelocityTendenciesOnly(
       Pacer::stop("Tend:bottomDrag", 2);
    }
 
+   if (LocVelVertMix.Enabled) {
+      Pacer::start("Tend:velocityVertMix", 2);
+
+      Eos *EosInstance = Eos::getInstance();
+      VertMix *VertMixInstance = VertMix::getInstance();
+
+      if (!EosInstance) {
+         LOG_WARN("Eos has not been initialized. Skipping calculation of "
+                  "VelVertMix tendency");
+      } else if (!VertMixInstance) {
+         LOG_WARN("VertMix has not been initialized. Skipping calculation of "
+                  "VelVertMix tendency");
+      } else {
+
+//         const Array2DReal &SpecVol           = EosInstance->SpecVol;
+         const Array2DReal &PressureInterface = VCoord->PressureInterface;
+//
+//         parallelForOuter(
+//             {Mesh->NEdgesAll},
+//             KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+//                const int KMin   = MinLayerEdgeBot(IEdge);
+//                const int KMax   = MaxLayerEdgeTop(IEdge);
+//                const int KRange = vertRangeChunked(KMin, KMax);
+//                parallelForInner(
+//                    Team, KRange, INNER_LAMBDA(int KChunk) {
+//                       LocPresGradZ(LocNormalVelocityTend, IEdge, KChunk,
+//                                    SpecVol, MeanLayerThickEdge, LayerThickCell,
+//                                    PressureInterface);
+//                    });
+//             });
+         Pacer::stop("Tend:velocityVertMix", 2);
+      }
+   }
+
+
    if (CustomVelocityTend) {
       Pacer::start("Tend:customVelocityTend", 2);
       CustomVelocityTend(LocNormalVelocityTend, State, AuxState, ThickTimeLevel,
@@ -616,6 +664,7 @@ void Tendencies::computeTracerTendenciesOnly(
    OMEGA_SCOPE(LocTracerHorzAdv, TracerHorzAdv);
    OMEGA_SCOPE(LocTracerDiffusion, TracerDiffusion);
    OMEGA_SCOPE(LocTracerHyperDiff, TracerHyperDiff);
+   OMEGA_SCOPE(LocTracerVertMix, TracerVertMix);
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
 
@@ -694,6 +743,40 @@ void Tendencies::computeTracerTendenciesOnly(
                  });
           });
       Pacer::stop("Tend:tracerHyperDiff", 2);
+   }
+
+   if (LocTracerVertMix.Enabled) {
+      Pacer::start("Tend:tracerVertMix", 2);
+
+      Eos *EosInstance = Eos::getInstance();
+      VertMix *VertMixInstance = VertMix::getInstance();
+
+      if (!EosInstance) {
+         LOG_WARN("Eos has not been initialized. Skipping calculation of "
+                  "PresGradZ tendency");
+      } else if (!VertMixInstance) {
+         LOG_WARN("VertMix has not been initialized. Skipping calculation of "
+                  "VelVertMix tendency");
+      } else {
+
+//         const Array2DReal &SpecVol           = EosInstance->SpecVol;
+         const Array2DReal &PressureInterface = VCoord->PressureInterface;
+
+//      parallelForOuter(
+//          {Mesh->NCellsAll}, KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
+//             const int KMin   = MinLayerCell(ICell);
+//             const int KMax   = MaxLayerCell(ICell);
+//             const int KRange = vertRangeChunked(KMin, KMax);
+//
+//             parallelForInner(
+//                 Team, KRange, INNER_LAMBDA(int KChunk) {
+//                    LocThicknessFluxDiv(LocLayerThicknessTend, ICell, KChunk,
+//                                        ThickFluxEdge, NormalVelEdge);
+//                 });
+//          });
+
+         Pacer::stop("Tend:tracerVertMix", 2);
+      }
    }
 
    Pacer::stop("Tend:computeTracerTendenciesOnly", 1);

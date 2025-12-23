@@ -52,6 +52,7 @@ Omega:
     EddyDiff4: 0.0
     UseCustomTendency: false
     ManufacturedSolutionTendency: false
+    PressureGradTendencyEnable: true
   Tracers:
     Base: [Temperature, Salinity]
     Debug: [Debug1, Debug2, Debug3]

@@ -38,6 +38,8 @@
 #include "TendencyTerms.h"
 #include "TimeMgr.h"
 #include "VertCoord.h"
+#include "PGrad.h"
+#include "Eos.h"
 
 #include <functional>
 #include <memory>
@@ -151,6 +153,8 @@ class Tendencies {
    Tendencies(const std::string &Name, ///< [in] Name for tendencies
               const HorzMesh *Mesh,    ///< [in] Horizontal mesh
               const VertCoord *VCoord, ///< [in] Vertical coordinate
+              const PressureGrad *PGrad,      ///< [in] Pressure gradient
+              const Eos *EqState,      ///< [in] Equation of state
               int NTracersIn,          ///< [in] Number of tracers
               Config *Options,         ///< [in] Configuration options
               CustomTendencyType InCustomThicknessTend,
@@ -159,9 +163,13 @@ class Tendencies {
    Tendencies(const std::string &Name, ///< [in] Name for tendencies
               const HorzMesh *Mesh,    ///< [in] Horizontal mesh
               const VertCoord *VCoord, ///< [in] Vertical coordinate
+              const PressureGrad *PGrad,      ///< [in] Pressure gradient
+              const Eos *EqState,      ///< [in] Equation of state
               int NTracersIn,          ///< [in] Number of tracers
               Config *Options          ///< [in] Configuration options
    );
+
+   void defineFields();
 
    // forbid copy and move construction
    Tendencies(const Tendencies &) = delete;
@@ -169,6 +177,8 @@ class Tendencies {
 
    const HorzMesh *Mesh;    ///< Pointer to horizontal mesh
    const VertCoord *VCoord; ///< Pointer to vertical coordinate
+   const PressureGrad *PGrad; ///< Pointer to pressure gradient
+   const Eos *EqState;       ///< Pointer to equation of state
    I4 NTracers;             ///< Number of tracers
 
    // Pointer to default tendencies

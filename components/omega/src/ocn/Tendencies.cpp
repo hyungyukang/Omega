@@ -13,7 +13,9 @@
 #include "Eos.h"
 #include "Error.h"
 #include "Pacer.h"
+#include "TimeStepper.h"
 #include "Tracers.h"
+#include "TriDiagSolvers.h"
 #include "VertMix.h"
 
 namespace OMEGA {
@@ -166,9 +168,13 @@ void Tendencies::readTendConfig(
       CHECK_ERROR_ABORT(Err, "Tendencies: DivFactor not found in TendConfig");
    }
 
-   Err += TendConfig->get("VelVertMixTendencyEneable", this->VelVertMix.Enabled);
+   Err += TendConfig->get("VelVertMixTendencyEnable",
+                          this->VelVertMixSetup.Enabled);
    CHECK_ERROR_ABORT(
-       Err, "Tendencies: VelVertMixTendencyEneable not found in TendConfig");
+       Err, "Tendencies: VelVertMixTendencyEnable not found in TendConfig");
+
+   Err += TendConfig->get("Density0", this->VelVertMixSetup.Density0);
+   CHECK_ERROR_ABORT(Err, "Tendencies: Density0 not found in TendConfig");
 
    Err += TendConfig->get("PresForceTendencyEnable", this->PresGradZ.Enabled);
    CHECK_ERROR_ABORT(
@@ -233,9 +239,13 @@ void Tendencies::readTendConfig(
       CHECK_ERROR_ABORT(Err, "Tendencies: EddyDiff4 not found in TendConfig");
    }
 
-   Err += TendConfig->get("TracerVertMixTendencyEneable", this->TracerVertMix.Enabled);
+   Err += TendConfig->get("TracerVertMixTendencyEnable",
+                          this->TracerVertMixSetup.Enabled);
    CHECK_ERROR_ABORT(
-       Err, "Tendencies: TracerVertMixTendencyEneable not found in TendConfig");
+       Err, "Tendencies: TracerVertMixTendencyEnable not found in TendConfig");
+
+   Err += TendConfig->get("Density0", this->TracerVertMixSetup.Density0);
+   CHECK_ERROR_ABORT(Err, "Tendencies: Density0 not found in TendConfig");
 }
 
 //------------------------------------------------------------------------------
@@ -250,12 +260,12 @@ Tendencies::Tendencies(const std::string &Name, ///< [in] Name for tendencies
     : Mesh(Mesh), VCoord(VCoord), ThicknessFluxDiv(Mesh, VCoord),
       PotientialVortHAdv(Mesh, VCoord), KEGrad(Mesh, VCoord),
       SSHGrad(Mesh, VCoord), VelocityDiffusion(Mesh, VCoord),
-      VelocityHyperDiff(Mesh, VCoord), VelVertMix(Mesh, VCoord),
-      PresGradZ(Mesh, VCoord),
-      PresGradForce(Mesh, VCoord), GeoptGrad(Mesh, VCoord),
-      WindForcing(Mesh, VCoord), BottomDrag(Mesh, VCoord),
-      TracerHorzAdv(Mesh, VCoord), TracerDiffusion(Mesh, VCoord),
-      TracerHyperDiff(Mesh, VCoord), TracerVertMix(Mesh, VCoord),
+      VelocityHyperDiff(Mesh, VCoord), VelVertMixSetup(Mesh, VCoord),
+      PresGradZ(Mesh, VCoord), PresGradForce(Mesh, VCoord),
+      GeoptGrad(Mesh, VCoord), WindForcing(Mesh, VCoord),
+      BottomDrag(Mesh, VCoord), TracerHorzAdv(Mesh, VCoord),
+      TracerDiffusion(Mesh, VCoord), TracerHyperDiff(Mesh, VCoord),
+      TracerVertMixSetup(Mesh, VCoord),
       CustomThicknessTend(InCustomThicknessTend),
       CustomVelocityTend(InCustomVelocityTend) {
 
@@ -361,7 +371,6 @@ void Tendencies::computeVelocityTendenciesOnly(
    OMEGA_SCOPE(LocSSHGrad, SSHGrad);
    OMEGA_SCOPE(LocVelocityDiffusion, VelocityDiffusion);
    OMEGA_SCOPE(LocVelocityHyperDiff, VelocityHyperDiff);
-   OMEGA_SCOPE(LocVelVertMix, VelVertMix);
    OMEGA_SCOPE(LocPresGradZ, PresGradZ);
    OMEGA_SCOPE(LocPresGradForce, PresGradForce);
    OMEGA_SCOPE(LocGeoptGrad, GeoptGrad);
@@ -560,6 +569,7 @@ void Tendencies::computeVelocityTendenciesOnly(
       } else {
 
          const Array2DReal &GeoptMid = VCoord->GeopotentialMid;
+         // OMEGA_SCOPE(LocGeoptMid, VCoord->GeopotentialMid);
 
          parallelForOuter(
              {Mesh->NEdgesAll},
@@ -606,41 +616,6 @@ void Tendencies::computeVelocityTendenciesOnly(
       Pacer::stop("Tend:bottomDrag", 2);
    }
 
-   if (LocVelVertMix.Enabled) {
-      Pacer::start("Tend:velocityVertMix", 2);
-
-      Eos *EosInstance = Eos::getInstance();
-      VertMix *VertMixInstance = VertMix::getInstance();
-
-      if (!EosInstance) {
-         LOG_WARN("Eos has not been initialized. Skipping calculation of "
-                  "VelVertMix tendency");
-      } else if (!VertMixInstance) {
-         LOG_WARN("VertMix has not been initialized. Skipping calculation of "
-                  "VelVertMix tendency");
-      } else {
-
-//         const Array2DReal &SpecVol           = EosInstance->SpecVol;
-         const Array2DReal &PressureInterface = VCoord->PressureInterface;
-//
-//         parallelForOuter(
-//             {Mesh->NEdgesAll},
-//             KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
-//                const int KMin   = MinLayerEdgeBot(IEdge);
-//                const int KMax   = MaxLayerEdgeTop(IEdge);
-//                const int KRange = vertRangeChunked(KMin, KMax);
-//                parallelForInner(
-//                    Team, KRange, INNER_LAMBDA(int KChunk) {
-//                       LocPresGradZ(LocNormalVelocityTend, IEdge, KChunk,
-//                                    SpecVol, MeanLayerThickEdge, LayerThickCell,
-//                                    PressureInterface);
-//                    });
-//             });
-         Pacer::stop("Tend:velocityVertMix", 2);
-      }
-   }
-
-
    if (CustomVelocityTend) {
       Pacer::start("Tend:customVelocityTend", 2);
       CustomVelocityTend(LocNormalVelocityTend, State, AuxState, ThickTimeLevel,
@@ -664,7 +639,6 @@ void Tendencies::computeTracerTendenciesOnly(
    OMEGA_SCOPE(LocTracerHorzAdv, TracerHorzAdv);
    OMEGA_SCOPE(LocTracerDiffusion, TracerDiffusion);
    OMEGA_SCOPE(LocTracerHyperDiff, TracerHyperDiff);
-   OMEGA_SCOPE(LocTracerVertMix, TracerVertMix);
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
 
@@ -743,40 +717,6 @@ void Tendencies::computeTracerTendenciesOnly(
                  });
           });
       Pacer::stop("Tend:tracerHyperDiff", 2);
-   }
-
-   if (LocTracerVertMix.Enabled) {
-      Pacer::start("Tend:tracerVertMix", 2);
-
-      Eos *EosInstance = Eos::getInstance();
-      VertMix *VertMixInstance = VertMix::getInstance();
-
-      if (!EosInstance) {
-         LOG_WARN("Eos has not been initialized. Skipping calculation of "
-                  "PresGradZ tendency");
-      } else if (!VertMixInstance) {
-         LOG_WARN("VertMix has not been initialized. Skipping calculation of "
-                  "VelVertMix tendency");
-      } else {
-
-//         const Array2DReal &SpecVol           = EosInstance->SpecVol;
-         const Array2DReal &PressureInterface = VCoord->PressureInterface;
-
-//      parallelForOuter(
-//          {Mesh->NCellsAll}, KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
-//             const int KMin   = MinLayerCell(ICell);
-//             const int KMax   = MaxLayerCell(ICell);
-//             const int KRange = vertRangeChunked(KMin, KMax);
-//
-//             parallelForInner(
-//                 Team, KRange, INNER_LAMBDA(int KChunk) {
-//                    LocThicknessFluxDiv(LocLayerThicknessTend, ICell, KChunk,
-//                                        ThickFluxEdge, NormalVelEdge);
-//                 });
-//          });
-
-         Pacer::stop("Tend:tracerVertMix", 2);
-      }
    }
 
    Pacer::stop("Tend:computeTracerTendenciesOnly", 1);
@@ -921,6 +861,182 @@ void Tendencies::computeAllTendencies(
                                VelTimeLevel, Time);
 
    Pacer::stop("Tend:computeAllTendencies", 1);
+}
+
+void Tendencies::applyVelVertMixImplicit(
+    OceanState *State,              ///< [in] State variables
+    const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
+    int ThickTimeLevel,             ///< [in] Time level
+    int VelTimeLevel,               ///< [in] Time level
+    TimeInstant Time                ///< [in] Time
+) {
+
+   OMEGA_SCOPE(LocVelVertMixSetup, VelVertMixSetup);
+   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
+   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+
+   const Array2DReal &NormalVelEdge  = State->NormalVelocity[VelTimeLevel];
+   const Array2DReal &LayerThickCell = State->LayerThickness[ThickTimeLevel];
+
+   // Compute velocity vertical mixing
+   if (LocVelVertMixSetup.Enabled) {
+      Pacer::start("Tend:velocityVertMix", 2);
+
+      Eos *EosInstance         = Eos::getInstance();
+      VertMix *VertMixInstance = VertMix::getInstance();
+
+      if (!EosInstance) {
+         LOG_WARN("Eos has not been initialized. Skipping calculation of "
+                  "VelVertMix tendency");
+      } else if (!VertMixInstance) {
+         LOG_WARN("VertMix has not been initialized. Skipping calculation of "
+                  "VelVertMix tendency");
+      } else {
+
+         // Obtain TimeStep
+         const auto *DefTimeStepper  = TimeStepper::getDefault();
+         const TimeInterval TimeStep = DefTimeStepper->getTimeStep();
+         R8 DT;
+         TimeStep.get(DT, TimeUnits::Seconds);
+
+         auto &GWorkEdge = VertMixInstance->GWorkEdge;
+         auto &HWorkEdge = VertMixInstance->HWorkEdge;
+         auto &XWorkEdge = VertMixInstance->XWorkEdge;
+
+         const auto &SpecVol  = EosInstance->SpecVol;
+         const auto &VertVisc = VertMixInstance->VertVisc;
+         const auto &LayerThickEdge =
+             AuxState->LayerThicknessAux.MeanLayerThickEdge;
+
+         const I4 NVertLayers = VCoord->NVertLayers;
+         const I4 KMin        = 0;
+         const I4 KMax        = NVertLayers - 1;
+
+         parallelForOuter(
+             {Mesh->NEdgesAll},
+             KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+                const int KRange = vertRangeChunked(KMin, KMax);
+                parallelForInner(
+                    Team, KRange, INNER_LAMBDA(int KChunk) {
+                       LocVelVertMixSetup(
+                           IEdge, KChunk, DT, SpecVol, LayerThickEdge, VertVisc,
+                           NormalVelEdge, GWorkEdge, HWorkEdge, XWorkEdge);
+                    });
+             });
+
+         // Solve the system AY = X
+         // The solution Y is stored in X
+         TriDiagDiffSolver::solve(GWorkEdge, HWorkEdge, XWorkEdge);
+
+         //
+         parallelForOuter(
+             {Mesh->NEdgesAll},
+             KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+                const int KMin   = MinLayerEdgeBot(IEdge);
+                const int KMax   = MaxLayerEdgeTop(IEdge);
+                const int KRange = vertRangeChunked(KMin, KMax);
+                parallelForInner(
+                    Team, KRange, INNER_LAMBDA(int KChunk) {
+                       const int K             = KMin + KChunk;
+                       NormalVelEdge(IEdge, K) = XWorkEdge(IEdge, K);
+                    });
+             });
+      }
+      Pacer::stop("Tend:velocityVertMix", 2);
+   }
+}
+
+void Tendencies::applyTracerVertMixImplicit(
+    OceanState *State,              ///< [in] State variables
+    const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
+    Array3DReal &TracerArray,       ///< [in] Tracer array
+    int ThickTimeLevel,             ///< [in] Time level
+    int VelTimeLevel,               ///< [in] Time level
+    TimeInstant Time                ///< [in] Time
+) {
+
+   OMEGA_SCOPE(LocTracerVertMixSetup, TracerVertMixSetup);
+   OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
+   OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
+
+   const Array2DReal &NormalVelEdge  = State->NormalVelocity[VelTimeLevel];
+   const Array2DReal &LayerThickCell = State->LayerThickness[ThickTimeLevel];
+
+   if (LocTracerVertMixSetup.Enabled) {
+      Pacer::start("Tend:tracerVertMix", 2);
+
+      Eos *EosInstance         = Eos::getInstance();
+      VertMix *VertMixInstance = VertMix::getInstance();
+
+      if (!EosInstance) {
+         LOG_WARN("Eos has not been initialized. Skipping calculation of "
+                  "PresGradZ tendency");
+      } else if (!VertMixInstance) {
+         LOG_WARN("VertMix has not been initialized. Skipping calculation of "
+                  "VelVertMix tendency");
+      } else {
+
+         // Obtain TimeStep
+         const auto *DefTimeStepper  = TimeStepper::getDefault();
+         const TimeInterval TimeStep = DefTimeStepper->getTimeStep();
+         R8 DT;
+         TimeStep.get(DT, TimeUnits::Seconds);
+
+         auto &GWorkCell = VertMixInstance->GWorkCell;
+         auto &HWorkCell = VertMixInstance->HWorkCell;
+         auto &XWorkCell = VertMixInstance->XWorkCell;
+
+         const auto &SpecVol  = EosInstance->SpecVol;
+         const auto &VertDiff = VertMixInstance->VertDiff;
+         const Array2DReal &LayerThickCell =
+             State->LayerThickness[ThickTimeLevel];
+
+         // Setup G, H, X vectors
+
+         const I4 NVertLayers = VCoord->NVertLayers;
+         const I4 KMin        = 0;
+         const I4 KMax        = NVertLayers - 1;
+
+         for (int LT = 0; LT < NTracers; ++LT) {
+            const I4 L = LT;
+
+            // Provisional update for tracer and divide by LayerThick
+
+            parallelForOuter(
+                {Mesh->NCellsAll},
+                KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
+                   const int KRange = vertRange(KMin, KMax);
+                   parallelForInner(
+                       Team, KRange, INNER_LAMBDA(int KChunk) {
+                          LocTracerVertMixSetup(L, ICell, KChunk, DT, SpecVol,
+                                                LayerThickCell, VertDiff,
+                                                TracerArray, GWorkCell,
+                                                HWorkCell, XWorkCell);
+                       });
+                });
+
+            // Solve the system AY = X
+            // The solution Y is stored in X
+            TriDiagDiffSolver::solve(GWorkCell, HWorkCell, XWorkCell);
+
+            parallelForOuter(
+                {Mesh->NCellsAll},
+                KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
+                   const int KMin   = MinLayerCell(ICell);
+                   const int KMax   = MaxLayerCell(ICell);
+                   const int KRange = vertRangeChunked(KMin, KMax);
+                   parallelForInner(
+                       Team, KRange, INNER_LAMBDA(int KChunk) {
+                          const int K = KMin + KChunk;
+
+                          TracerArray(L, ICell, K) = XWorkCell(ICell, K);
+                       });
+                });
+
+         } // for LT
+      }
+      Pacer::stop("Tend:tracerVertMix", 2);
+   }
 
 } // end all tendency compute
 

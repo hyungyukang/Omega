@@ -59,9 +59,9 @@ VelocityHyperDiffOnEdge::VelocityHyperDiffOnEdge(const HorzMesh *Mesh,
       MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
 
-VelVertMixOnEdge::VelVertMixOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord)
-    : CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
-      MinLayerCell(VCoord->MinLayerCell), MaxLayerCell(VCoord->MaxLayerCell),
+VelVertMixSetupOnEdge::VelVertMixSetupOnEdge(const HorzMesh *Mesh,
+                                             const VertCoord *VCoord)
+    : CellsOnEdge(Mesh->CellsOnEdge), NVertLayers(VCoord->NVertLayers),
       EdgeMask(Mesh->EdgeMask), MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
 
@@ -122,15 +122,10 @@ TracerHyperDiffOnCell::TracerHyperDiffOnCell(const HorzMesh *Mesh,
       MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
 
-TracerVertMixOnCell::TracerVertMixOnCell(const HorzMesh *Mesh,
-                                         const VertCoord *VCoord)
-    : NEdgesOnCell(Mesh->NEdgesOnCell), EdgesOnCell(Mesh->EdgesOnCell),
-      CellsOnEdge(Mesh->CellsOnEdge), EdgeSignOnCell(Mesh->EdgeSignOnCell),
-      DvEdge(Mesh->DvEdge), AreaCell(Mesh->AreaCell), EdgeMask(Mesh->EdgeMask),
-      MinLayerCell(VCoord->MinLayerCell), MaxLayerCell(VCoord->MaxLayerCell),
-      MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
-      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
-
+TracerVertMixSetupOnCell::TracerVertMixSetupOnCell(const HorzMesh *Mesh,
+                                                   const VertCoord *VCoord)
+    : NVertLayers(VCoord->NVertLayers), MinLayerCell(VCoord->MinLayerCell),
+      MaxLayerCell(VCoord->MaxLayerCell) {}
 
 } // end namespace OMEGA
 

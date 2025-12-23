@@ -159,6 +159,18 @@ class VertMix {
    std::string VertMixGroupName; ///< VertMix group name (for config)
    std::string Name;             ///< Name of this VertMix instance
 
+   // TODO: Temporary array allocations for tridiagonal solver
+   //       This array allocation makes debugging easier, but requires more
+   //       memory and possibly degrades performance.
+   //       Once debugging is done, tridiagonal solver with Kokkos Scratch
+   //       should be implemented.
+   Array2DReal GWorkEdge;
+   Array2DReal HWorkEdge;
+   Array2DReal XWorkEdge;
+   Array2DReal GWorkCell;
+   Array2DReal HWorkCell;
+   Array2DReal XWorkCell;
+
    // Background mixing parameters
    Real BackDiff = 1.0e-5; ///< Background vertical diffusivity (m^2 s^-1)
    Real BackVisc = 1.0e-4; ///< Background vertical viscosity (m^2 s^-1)

@@ -14,8 +14,8 @@
 #include "HorzMesh.h"
 #include "MachEnv.h"
 #include "OceanState.h"
-#include "VertCoord.h"
 #include "TriDiagSolvers.h"
+#include "VertCoord.h"
 
 #include <functional>
 #include <memory>
@@ -305,32 +305,30 @@ class VelocityHyperDiffOnEdge {
 
 // TODO: Implement VelVertMix. Now it's just a placeholder.
 /// Velocity vertical mixing
-class VelVertMixOnEdge {
+class VelVertMixSetupOnEdge {
  public:
    bool Enabled;
+   Real Density0;
 
    /// constructor declaration
-   VelVertMixOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
+   VelVertMixSetupOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
 
    /// The functor takes edge index, vertical chunk index, and arrays for
    /// layer specific volume, layer thickness on edge,
    /// interface pressure, and outputs tendency array
-   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
-                                   const Array2DReal &SpecVol,
-                                   const Array2DReal &LayerThickEdge,
-                                   const Array2DReal &LayerThickCell,
-                                   const Array2DReal &PressureInterface) const {
+   KOKKOS_FUNCTION void
+   operator()(I4 IEdge, I4 KChunk, Real DT, const Array2DReal &SpecVol,
+              const Array2DReal &LayerThickEdge, const Array2DReal &VertVisc,
+              const Array2DReal &NormalVelEdge, const Array2DReal &GWorkEdge,
+              const Array2DReal &HWorkEdge,
+              const Array2DReal &XWorkEdge) const {
 
-      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
-      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+      const I4 NVertLayers1 = NVertLayers - 1;
+      const I4 KStart       = chunkStart(KChunk, 0);
+      const I4 KLen         = chunkLength(KChunk, KStart, NVertLayers1);
 
       const I4 ICell0 = CellsOnEdge(IEdge, 0);
       const I4 ICell1 = CellsOnEdge(IEdge, 1);
-
-      const Real InvDcEdge = 1._Real / DcEdge(IEdge);
-
-      // This tendency term has 0 value at Floor and Surface by the boundary
-      // condition.
 
       const I4 KMin = MinLayerEdgeBot(IEdge);
       const I4 KMax = MaxLayerEdgeTop(IEdge);
@@ -338,51 +336,55 @@ class VelVertMixOnEdge {
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const I4 K = KStart + KVec;
 
-         const I4 KM1Cell0 = Kokkos::max(K - 1, MinLayerCell(ICell0));
-         const I4 KM1Cell1 = Kokkos::max(K - 1, MinLayerCell(ICell1));
-         const I4 KP1Cell0 = Kokkos::min(K + 1, MaxLayerCell(ICell0));
-         const I4 KP1Cell1 = Kokkos::min(K + 1, MaxLayerCell(ICell1));
+         if (K < KMin) {
+            // For K <= KMin, set unit diagonal
+            GWorkEdge(IEdge, K) = 0.0_Real;
+            HWorkEdge(IEdge, K) = 1.0_Real;
+            XWorkEdge(IEdge, K) = 1.0_Real;
+         } else if (K == KMin) {
+            // For K <= KMin, set unit diagonal
+            GWorkEdge(IEdge, K) = 0.0_Real;
+            HWorkEdge(IEdge, K) = 1.0_Real;
+            XWorkEdge(IEdge, K) = NormalVelEdge(IEdge, K);
+         } else if (K == KMax) {
+            // For K <= KMin, set unit diagonal
+            GWorkEdge(IEdge, K) = 0.0_Real;
+            HWorkEdge(IEdge, K) = 1.0_Real;
+            XWorkEdge(IEdge, K) = NormalVelEdge(IEdge, K);
+         } else if (K > KMax) {
+            // For K >= KMax, set unit diagonal
+            GWorkEdge(IEdge, K) = 0.0_Real;
+            HWorkEdge(IEdge, K) = 1.0_Real;
+            XWorkEdge(IEdge, K) = 1.0_Real;
+         } else {
 
-//         // Pressue * SpecVol at Top (K+1)
-//         const Real PSpecVolEdgeTopKP1 =
-//             0.5_Real *
-//             (PressureInterface(ICell0, KP1Cell0) * SpecVolCell0TopKP1 +
-//              PressureInterface(ICell1, KP1Cell1) * SpecVolCell1TopKP1);
-//
-//         // Compute grad(\tilde{z}) = grad(-p) / (Rho0 * Gravity)
-//         const Real GradZTildeTopK =
-//             (-PressureInterface(ICell1, K) + PressureInterface(ICell0, K)) *
-//             InvDensity0Gravity;
-//         const Real GradZTildeTopKP1 = (-PressureInterface(ICell1, KP1Cell1) +
-//                                        PressureInterface(ICell0, KP1Cell0)) *
-//                                       InvDensity0Gravity;
-//
-//         const Real InvLayerThickEdge = 1._Real / LayerThickEdge(IEdge, K);
-//
-//         Real PresSpecVolGradZK   = PSpecVolEdgeTopK * GradZTildeTopK;
-//         Real PresSpecVolGradZKP1 = PSpecVolEdgeTopKP1 * GradZTildeTopKP1;
-//
-//         // 0 at surface
-//         if (K == KMin)
-//            PresSpecVolGradZK = 0._Real;
-//         // 0 at floor
-//         if (K == KMax)
-//            PresSpecVolGradZKP1 = 0._Real;
-//
-//         const Real ZGradTerm = -InvDcEdge * InvLayerThickEdge *
-//                                (PresSpecVolGradZK - PresSpecVolGradZKP1);
-//
-//         Tend(IEdge, K) += EdgeMask(IEdge, K) * ZGradTerm;
+            const Real LayerThickEdgeTop =
+                0.5 * (LayerThickEdge(IEdge, K - 1) + LayerThickEdge(IEdge, K));
+
+            const Real SpecVolEdgeTop =
+                0.5 * (0.5 * (SpecVol(ICell0, K - 1) + SpecVol(ICell1, K - 1)) +
+                       0.5 * (SpecVol(ICell0, K) + SpecVol(ICell1, K)));
+
+            const Real ViscAlphaEdgeTop =
+                0.5 * (VertVisc(ICell0, K) + VertVisc(ICell1, K)) /
+                (Density0 * SpecVolEdgeTop);
+
+            const Real LayerThickEdgeTopDT = LayerThickEdgeTop / DT;
+
+            GWorkEdge(IEdge, K - 1) =
+                -ViscAlphaEdgeTop / (LayerThickEdgeTopDT * LayerThickEdgeTop);
+
+            HWorkEdge(IEdge, K) = 1.0_Real;
+
+            XWorkEdge(IEdge, K) = NormalVelEdge(IEdge, K);
+         }
       }
    }
 
  private:
-   Real Gravity = 9.80665_Real;
+   I4 NVertLayers;
    Array2DI4 CellsOnEdge;
-   Array1DReal DcEdge;
    Array2DReal EdgeMask;
-   Array1DI4 MinLayerCell;
-   Array1DI4 MaxLayerCell;
    Array1DI4 MinLayerEdgeBot;
    Array1DI4 MaxLayerEdgeTop;
 };
@@ -858,54 +860,75 @@ class TracerHyperDiffOnCell {
 
 // TODO: Implement TracerVertMix. Now it's just a placeholder.
 // Tracer vertical mixing term
-class TracerVertMixOnCell {
+class TracerVertMixSetupOnCell {
  public:
    bool Enabled;
+   Real Density0;
 
-   TracerVertMixOnCell(const HorzMesh *Mesh, const VertCoord *VCoord);
+   TracerVertMixSetupOnCell(const HorzMesh *Mesh, const VertCoord *VCoord);
 
-   KOKKOS_FUNCTION void operator()(const Array3DReal &Tend, I4 L, I4 ICell,
-                                   I4 KChunk, const Array2DReal &NormVelEdge,
-                                   const Array3DReal &HTracersOnEdge) const {
+   KOKKOS_FUNCTION void
+   operator()(I4 L, I4 ICell, I4 KChunk, R8 DT, const Array2DReal &SpecVol,
+              const Array2DReal &LayerThickCell, const Array2DReal &VertDiff,
+              const Array3DReal &TracersOnCell, const Array2DReal &GWorkCell,
+              const Array2DReal &HWorkCell,
+              const Array2DReal &XWorkCell) const {
 
-      const I4 KStartCell = chunkStart(KChunk, MinLayerCell(ICell));
-      const I4 KLenCell = chunkLength(KChunk, KStartCell, MaxLayerCell(ICell));
-      const I4 KEndCell = KStartCell + KLenCell - 1;
-      const Real InvAreaCell = 1._Real / AreaCell(ICell);
-//
-//      Real HAdvTmp[VecLength] = {0};
-//
-//      for (int J = 0; J < NEdgesOnCell(ICell); ++J) {
-//         const I4 JEdge      = EdgesOnCell(ICell, J);
-//         const I4 KStartEdge = Kokkos::max(KStartCell, MinLayerEdgeBot(JEdge));
-//         const I4 KEndEdge   = Kokkos::min(KEndCell, MaxLayerEdgeTop(JEdge));
-//
-//         for (int K = KStartEdge; K <= KEndEdge; ++K) {
-//            const I4 KVec = K - KStartCell;
-//            HAdvTmp[KVec] -= EdgeMask(JEdge, K) * DvEdge(JEdge) *
-//                             EdgeSignOnCell(ICell, J) *
-//                             HTracersOnEdge(L, JEdge, K) *
-//                             NormVelEdge(JEdge, K) * InvAreaCell;
-//         }
-//      }
-//      for (int KVec = 0; KVec < KLenCell; ++KVec) {
-//         const I4 K = KStartCell + KVec;
-//         Tend(L, ICell, K) -= HAdvTmp[KVec];
-//      }
+      const I4 NVertLayers1 = NVertLayers - 1;
+      const I4 KStart       = chunkStart(KChunk, 0);
+      const I4 KLen         = chunkLength(KChunk, KStart, NVertLayers1);
+
+      const I4 KMin = MinLayerCell(ICell);
+      const I4 KMax = MaxLayerCell(ICell);
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K = KStart + KVec;
+
+         if (K < KMin) {
+            // For K <= KMin, set unit diagonal
+            GWorkCell(ICell, K) = 0.0_Real;
+            HWorkCell(ICell, K) = 1.0_Real;
+            XWorkCell(ICell, K) = 1.0_Real;
+         } else if (K == KMin) {
+            // For K <= KMin, set unit diagonal
+            GWorkCell(ICell, K) = 0.0_Real;
+            HWorkCell(ICell, K) = 1.0_Real;
+            XWorkCell(ICell, K) = TracersOnCell(L, ICell, K);
+         } else if (K == KMax) {
+            // For K <= KMin, set unit diagonal
+            GWorkCell(ICell, K) = 0.0_Real;
+            HWorkCell(ICell, K) = 1.0_Real;
+            XWorkCell(ICell, K) = TracersOnCell(L, ICell, K);
+         } else if (K > KMax) {
+            // For K >= KMax, set unit diagonal
+            GWorkCell(ICell, K) = 0.0_Real;
+            HWorkCell(ICell, K) = 1.0_Real;
+            XWorkCell(ICell, K) = 1.0_Real;
+         } else {
+
+            const Real LayerThickCellTop =
+                0.5 * (LayerThickCell(ICell, K - 1) + LayerThickCell(ICell, K));
+
+            const Real SpecVolCellTop =
+                0.5 * (SpecVol(ICell, K - 1) + SpecVol(ICell, K));
+
+            const Real DiffAlphaCellTop =
+                VertDiff(ICell, K) / (Density0 * SpecVolCellTop);
+
+            GWorkCell(ICell, K - 1) =
+                -DT * DiffAlphaCellTop / LayerThickCellTop;
+
+            HWorkCell(ICell, K) = 1.0_Real;
+
+            XWorkCell(ICell, K) = TracersOnCell(L, ICell, K);
+         }
+      }
    }
 
  private:
-   Array1DI4 NEdgesOnCell;
-   Array2DI4 EdgesOnCell;
-   Array2DI4 CellsOnEdge;
-   Array2DReal EdgeSignOnCell;
-   Array1DReal DvEdge;
-   Array1DReal AreaCell;
-   Array2DReal EdgeMask;
+   I4 NVertLayers;
    Array1DI4 MinLayerCell;
    Array1DI4 MaxLayerCell;
-   Array1DI4 MinLayerEdgeBot;
-   Array1DI4 MaxLayerEdgeTop;
 };
 
 } // namespace OMEGA

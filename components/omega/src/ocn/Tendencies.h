@@ -63,7 +63,7 @@ class Tendencies {
    SSHGradOnEdge SSHGrad;
    VelocityDiffusionOnEdge VelocityDiffusion;
    VelocityHyperDiffOnEdge VelocityHyperDiff;
-   VelVertMixOnEdge VelVertMix;
+   VelVertMixSetupOnEdge VelVertMixSetup;
    PresGradZOnEdge PresGradZ;
    PresGradForceOnEdge PresGradForce;
    GeoptGradOnEdge GeoptGrad;
@@ -72,7 +72,7 @@ class Tendencies {
    TracerHorzAdvOnCell TracerHorzAdv;
    TracerDiffOnCell TracerDiffusion;
    TracerHyperDiffOnCell TracerHyperDiff;
-   TracerVertMixOnCell TracerVertMix;
+   TracerVertMixSetupOnCell TracerVertMixSetup;
 
    // Methods to compute tendency groups
    void computeThicknessTendencies(const OceanState *State,
@@ -106,6 +106,14 @@ class Tendencies {
                                     const Array3DReal &TracerArray,
                                     int ThickTimeLevel, int VelTimeLevel,
                                     TimeInstant Time);
+   void applyVelVertMixImplicit(OceanState *State,
+                                const AuxiliaryState *AuxState,
+                                int ThickTimeLevel, int VelTimeLevel,
+                                TimeInstant Time);
+   void applyTracerVertMixImplicit(OceanState *State,
+                                   const AuxiliaryState *AuxState,
+                                   Array3DReal &TracerArray, int ThickTimeLevel,
+                                   int VelTimeLevel, TimeInstant Time);
 
    // Create a non-default group of tendencies
    template <class... ArgTypes>

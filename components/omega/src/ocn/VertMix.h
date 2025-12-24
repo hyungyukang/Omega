@@ -110,7 +110,7 @@ class ShearMix {
       for (int KVec = 0; KVec < KLenCell; ++KVec) {
          const I4 K = KStartCell + KVec;
 
-         if (K == 0) {
+         if (K == MinLayerCell(ICell)) {
             VertVisc(ICell, MinLayerCell(ICell)) = 0.0_Real;
             VertDiff(ICell, MinLayerCell(ICell)) = 0.0_Real;
          } else {

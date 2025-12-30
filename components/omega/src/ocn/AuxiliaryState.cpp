@@ -1,5 +1,7 @@
 #include "AuxiliaryState.h"
 #include "Config.h"
+#include "Eos.h"
+#include "VertMix.h"
 #include "Field.h"
 #include "Logging.h"
 #include "Pacer.h"
@@ -59,9 +61,101 @@ AuxiliaryState::~AuxiliaryState() {
    FieldGroup::destroy(GroupName);
 }
 
+// Compute the auxiliary variables needed for vertical dynamics
+void AuxiliaryState::computeVertAux(const OceanState *State,
+                                    const Array3DReal &TracerArray,
+                                    int ThickTimeLevel, int VelTimeLevel) const {
+
+   Eos *EosInstance = Eos::getInstance();
+
+   if (!EosInstance) {
+      LOG_WARN("Eos has not been initialized. Skipping calculation of vertical "
+               "auxiliary variables");
+      return;
+   }
+
+   VertMix *VertMixInstance = VertMix::getInstance();
+
+   if (!VertMixInstance) {
+      LOG_WARN("VertMix has not been initialized. Skipping calculation of vertical "
+               "auxiliary variables");
+      return;
+   }
+
+   // get layer thickness
+   Array2DReal LayerThickCell;
+   State->getLayerThickness(LayerThickCell, ThickTimeLevel);
+   // get normal velocity
+   Array2DReal NormalVelEdge;
+   State->getNormalVelocity(NormalVelEdge, VelTimeLevel);
+
+   // get temperature and salinity
+   I4 ConservTempIdx;
+   I4 AbsSalinityIdx;
+   Tracers::getIndex(ConservTempIdx, "Temperature");
+   Tracers::getIndex(AbsSalinityIdx, "Salinity");
+
+   const auto ConservTemp =
+       Kokkos::subview(TracerArray, ConservTempIdx, Kokkos::ALL, Kokkos::ALL);
+   const auto AbsSalinity =
+       Kokkos::subview(TracerArray, AbsSalinityIdx, Kokkos::ALL, Kokkos::ALL);
+
+   // TODO: compute surface pressure
+   Array1DReal SurfacePressure("SurfacePressure", Mesh->NCellsSize);
+   deepCopy(SurfacePressure, 1e5);
+
+   // TODO: retrieve TidalPotential and SelfAttractionLoading
+   Array1DReal TidalPotential("TidalPotential", Mesh->NCellsSize);
+   Array1DReal SelfAttractionLoading("SelfAttractionLoading", Mesh->NCellsSize);
+   deepCopy(TidalPotential, 0.0);
+   deepCopy(SelfAttractionLoading, 0.0);
+
+   // compute pressure
+   VCoord->computePressure(LayerThickCell, SurfacePressure);
+
+   // convert PressureMid to dbars since that's what Eos expects
+   // TODO: allocating a new array here is slow
+   Array2DReal PressureMidDbar("PressureMidDbar", VCoord->PressureMid.layout());
+   const auto &MinLayerCell = VCoord->MinLayerCell;
+   const auto &MaxLayerCell = VCoord->MaxLayerCell;
+   const auto &PressureMid  = VCoord->PressureMid;
+
+   parallelForOuter(
+       "convertPresDbar", {Mesh->NCellsAll},
+       KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
+          const int KMin   = MinLayerCell(ICell);
+          const int KMax   = MaxLayerCell(ICell);
+          const int KRange = vertRange(KMin, KMax);
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 const int K               = KMin + KChunk;
+                 PressureMidDbar(ICell, K) = PressureMid(ICell, K) / 1e5;
+              });
+       });
+
+   // compute specific volume
+   EosInstance->computeSpecVol(ConservTemp, AbsSalinity, PressureMidDbar);
+
+   // compute Brunt-Vaisala frequency (NSquared)
+   const auto &PressureInterface  = VCoord->PressureInterface;
+   const auto &SpecVol  = EosInstance->SpecVol;
+   EosInstance->computeBruntVaisalaFreqSq(ConservTemp, AbsSalinity, PressureInterface, SpecVol);
+
+   // compute height
+   VCoord->computeZHeight(LayerThickCell, EosInstance->SpecVol);
+
+   // compute geopotential
+   VCoord->computeGeopotential(TidalPotential, SelfAttractionLoading);
+
+}
+
 // Compute the auxiliary variables needed for momentum equation
-void AuxiliaryState::computeMomAux(const OceanState *State, int ThickTimeLevel,
-                                   int VelTimeLevel) const {
+void AuxiliaryState::computeMomAux(const OceanState *State,
+                                   const Array3DReal &TracerArray,
+                                   int ThickTimeLevel, int VelTimeLevel) const {
+
+   computeVertAux(State, TracerArray, ThickTimeLevel, VelTimeLevel);
+
    Array2DReal LayerThickCell;
    Array2DReal NormalVelEdge;
    State->getLayerThickness(LayerThickCell, ThickTimeLevel);
@@ -159,6 +253,7 @@ void AuxiliaryState::computeMomAux(const OceanState *State, int ThickTimeLevel,
                  LocVorticityAux.computeVarsOnEdge(IEdge, KChunk);
               });
        });
+
    Pacer::stop("AuxState:edgeAuxState2", 2);
 
    Pacer::start("AuxState:vertexAuxState2", 2);
@@ -206,6 +301,7 @@ void AuxiliaryState::computeMomAux(const OceanState *State, int ThickTimeLevel,
                      TimeStepSeconds);
               });
        });
+
    Pacer::stop("AuxState:cellAuxState3", 2);
 
    Pacer::start("AuxState:computeVerticalVelocity", 2);
@@ -241,7 +337,7 @@ void AuxiliaryState::computeAll(const OceanState *State,
 
    Pacer::start("AuxState:computeAll", 1);
 
-   computeMomAux(State, ThickTimeLevel, VelTimeLevel);
+   computeMomAux(State, TracerArray, ThickTimeLevel, VelTimeLevel);
 
    Pacer::start("AuxState:cellAuxState3", 2);
    parallelForOuter(

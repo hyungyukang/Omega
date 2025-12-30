@@ -36,6 +36,18 @@ VertMix::VertMix(const std::string &Name, ///< [in] Name for VertMix object
    VertVisc = Array2DReal("VertVisc", Mesh->NCellsAll, VCoord->NVertLayers);
 
    defineFields();
+
+   // TODO: Temporary array allocations for tridiagonal solver
+   //       This array allocation makes debugging easier, but requires more
+   //       memory and possibly degrades performance.
+   //       Once debugging is done, tridiagonal solver with Kokkos Scratch
+   //       should be implemented.
+   GWorkEdge = Array2DReal("GWorkEdge", Mesh->NEdgesAll, VCoord->NVertLayers);
+   HWorkEdge = Array2DReal("HWorkEdge", Mesh->NEdgesAll, VCoord->NVertLayers);
+   XWorkEdge = Array2DReal("XWorkEdge", Mesh->NEdgesAll, VCoord->NVertLayers);
+   GWorkCell = Array2DReal("GWorkCell", Mesh->NCellsAll, VCoord->NVertLayers);
+   HWorkCell = Array2DReal("HWorkCell", Mesh->NCellsAll, VCoord->NVertLayers);
+   XWorkCell = Array2DReal("XWorkCell", Mesh->NCellsAll, VCoord->NVertLayers);
 }
 
 /// Destructor for VertMix

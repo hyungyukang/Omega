@@ -67,6 +67,14 @@ void ForwardBackwardStepper::doStep(
    // u^{n+1} = u^{n} + R_u^{n+1}
    updateVelocityByTend(State, NextLevel, State, CurLevel, TimeStep);
 
+   // Apply vertical mixing to tracers
+   Tend->applyTracerVertMixImplicit(State, AuxState, NextTracerArray, NextLevel,
+                                    NextLevel, SimTime);
+
+   // Apply vertical mixing to velocity
+   Tend->applyVelVertMixImplicit(State, AuxState, NextLevel, NextLevel,
+                                 SimTime);
+
    // Update time levels (New -> Old) of prognostic variables with halo
    // exchanges
    const MPI_Comm Comm = MeshHalo->getComm();

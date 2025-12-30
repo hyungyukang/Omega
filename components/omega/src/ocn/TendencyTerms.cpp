@@ -59,6 +59,23 @@ VelocityHyperDiffOnEdge::VelocityHyperDiffOnEdge(const HorzMesh *Mesh,
       MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
 
+PresGradZOnEdge::PresGradZOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord)
+    : CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
+      MinLayerCell(VCoord->MinLayerCell), MaxLayerCell(VCoord->MaxLayerCell),
+      EdgeMask(VCoord->EdgeMask), MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
+      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
+
+PresGradForceOnEdge::PresGradForceOnEdge(const HorzMesh *Mesh,
+                                         const VertCoord *VCoord)
+    : CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
+      EdgeMask(VCoord->EdgeMask), MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
+      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
+
+GeoptGradOnEdge::GeoptGradOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord)
+    : CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
+      EdgeMask(VCoord->EdgeMask), MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
+      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
+
 WindForcingOnEdge::WindForcingOnEdge(const HorzMesh *Mesh,
                                      const VertCoord *VCoord)
     : Enabled(false), LocRhoSw(RhoSw), EdgeMask(VCoord->EdgeMask),

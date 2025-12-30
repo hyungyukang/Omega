@@ -10,9 +10,12 @@
 
 #include "Tendencies.h"
 #include "CustomTendencyTerms.h"
+#include "Eos.h"
 #include "Error.h"
 #include "Pacer.h"
+#include "TimeStepper.h"
 #include "Tracers.h"
+#include "VertMix.h"
 
 namespace OMEGA {
 
@@ -164,6 +167,19 @@ void Tendencies::readTendConfig(
       CHECK_ERROR_ABORT(Err, "Tendencies: DivFactor not found in TendConfig");
    }
 
+   Err += TendConfig->get("PresForceTendencyEnable", this->PresGradZ.Enabled);
+   CHECK_ERROR_ABORT(
+       Err, "Tendencies: PresForceTendencyEnable not found in TendConfig");
+
+   Err += TendConfig->get("PresGradForceTendencyEnable",
+                          this->PresGradForce.Enabled);
+   CHECK_ERROR_ABORT(
+       Err, "Tendencies: PresGradForceTendencyEnable not found in TendConfig");
+
+   Err += TendConfig->get("GeoptGradTendencyEnable", this->GeoptGrad.Enabled);
+   CHECK_ERROR_ABORT(
+       Err, "Tendencies: GeoptGradTendencyEnable not found in TendConfig");
+
    Err += TendConfig->get("TracerHorzAdvTendencyEnable",
                           this->TracerHorzAdv.Enabled);
    CHECK_ERROR_ABORT(
@@ -207,6 +223,7 @@ void Tendencies::readTendConfig(
       Err += TendConfig->get("EddyDiff4", this->TracerHyperDiff.EddyDiff4);
       CHECK_ERROR_ABORT(Err, "Tendencies: EddyDiff4 not found in TendConfig");
    }
+
 }
 
 //------------------------------------------------------------------------------
@@ -222,6 +239,8 @@ Tendencies::Tendencies(const std::string &Name, ///< [in] Name for tendencies
       PotientialVortHAdv(Mesh, VCoord), KEGrad(Mesh, VCoord),
       SSHGrad(Mesh, VCoord), VelocityDiffusion(Mesh, VCoord),
       VelocityHyperDiff(Mesh, VCoord), WindForcing(Mesh, VCoord),
+      PresGradZ(Mesh, VCoord), PresGradForce(Mesh, VCoord),
+      GeoptGrad(Mesh, VCoord),
       BottomDrag(Mesh, VCoord), TracerHorzAdv(Mesh, VCoord),
       TracerDiffusion(Mesh, VCoord), TracerHyperDiff(Mesh, VCoord),
       CustomThicknessTend(InCustomThicknessTend),
@@ -328,6 +347,9 @@ void Tendencies::computeVelocityTendenciesOnly(
    OMEGA_SCOPE(LocSSHGrad, SSHGrad);
    OMEGA_SCOPE(LocVelocityDiffusion, VelocityDiffusion);
    OMEGA_SCOPE(LocVelocityHyperDiff, VelocityHyperDiff);
+   OMEGA_SCOPE(LocPresGradZ, PresGradZ);
+   OMEGA_SCOPE(LocPresGradForce, PresGradForce);
+   OMEGA_SCOPE(LocGeoptGrad, GeoptGrad);
    OMEGA_SCOPE(LocWindForcing, WindForcing);
    OMEGA_SCOPE(LocBottomDrag, BottomDrag);
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
@@ -349,6 +371,7 @@ void Tendencies::computeVelocityTendenciesOnly(
        });
 
    const Array2DReal &NormalVelEdge = State->NormalVelocity[VelTimeLevel];
+   const Array2DReal &LayerThickCell = State->LayerThickness[ThickTimeLevel];
 
    // Compute potential vorticity horizontal advection
    const Array2DReal &FluxLayerThickEdge =
@@ -448,10 +471,101 @@ void Tendencies::computeVelocityTendenciesOnly(
       Pacer::stop("Tend:velocityHyperDiff", 2);
    }
 
-   // Compute wind forcing
-   const auto &NormalStressEdge = AuxState->WindForcingAux.NormalStressEdge;
    const auto &MeanLayerThickEdge =
        AuxState->LayerThicknessAux.MeanLayerThickEdge;
+
+   if (LocPresGradZ.Enabled) {
+      Pacer::start("Tend:pressureForce", 2);
+
+      Eos *EosInstance = Eos::getInstance();
+
+      if (!EosInstance) {
+         LOG_WARN("Eos has not been initialized. Skipping calculation of "
+                  "PresGradZ tendency");
+      } else {
+
+         const Array2DReal &SpecVol           = EosInstance->SpecVol;
+         const Array2DReal &PressureInterface = VCoord->PressureInterface;
+
+         parallelForOuter(
+             {Mesh->NEdgesAll},
+             KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+                const int KMin   = MinLayerEdgeBot(IEdge);
+                const int KMax   = MaxLayerEdgeTop(IEdge);
+                const int KRange = vertRangeChunked(KMin, KMax);
+                parallelForInner(
+                    Team, KRange, INNER_LAMBDA(int KChunk) {
+                       LocPresGradZ(LocNormalVelocityTend, IEdge, KChunk,
+                                    SpecVol, MeanLayerThickEdge, LayerThickCell,
+                                    PressureInterface);
+                    });
+             });
+         Pacer::stop("Tend:pressureForce", 2);
+      }
+   }
+
+   if (LocPresGradForce.Enabled) {
+      Pacer::start("Tend:pressureGradForce", 2);
+
+      Eos *EosInstance = Eos::getInstance();
+
+      if (!EosInstance) {
+         LOG_WARN("Eos has not been initialized. Skipping calculation of "
+                  "PresGradForce tendency");
+      } else {
+
+         const Array2DReal &SpecVol     = EosInstance->SpecVol;
+         const Array2DReal &PressureMid = VCoord->PressureMid;
+
+         parallelForOuter(
+             {Mesh->NEdgesAll},
+             KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+                const int KMin   = MinLayerEdgeBot(IEdge);
+                const int KMax   = MaxLayerEdgeTop(IEdge);
+                const int KRange = vertRangeChunked(KMin, KMax);
+                parallelForInner(
+                    Team, KRange, INNER_LAMBDA(int KChunk) {
+                       LocPresGradForce(LocNormalVelocityTend, IEdge, KChunk,
+                                        SpecVol, MeanLayerThickEdge,
+                                        LayerThickCell, PressureMid);
+                    });
+             });
+         Pacer::stop("Tend:pressureGradForce", 2);
+      }
+   }
+
+   if (LocGeoptGrad.Enabled) {
+      Pacer::start("Tend:geopotentialGrad", 2);
+
+      Eos *EosInstance = Eos::getInstance();
+
+      if (!EosInstance) {
+         LOG_WARN("Eos has not been initialized. Skipping calculation of "
+                  "GeoptGrad tendency");
+      } else {
+
+         const Array2DReal &GeoptMid = VCoord->GeopotentialMid;
+         // OMEGA_SCOPE(LocGeoptMid, VCoord->GeopotentialMid);
+
+         parallelForOuter(
+             {Mesh->NEdgesAll},
+             KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+                const int KMin   = MinLayerEdgeBot(IEdge);
+                const int KMax   = MaxLayerEdgeTop(IEdge);
+                const int KRange = vertRangeChunked(KMin, KMax);
+                parallelForInner(
+                    Team, KRange, INNER_LAMBDA(int KChunk) {
+                       LocGeoptGrad(LocNormalVelocityTend, IEdge, KChunk,
+                                    GeoptMid);
+                    });
+             });
+         Pacer::stop("Tend:geopotentialGrad", 2);
+      }
+   }
+
+   // Compute wind forcing
+   const auto &NormalStressEdge = AuxState->WindForcingAux.NormalStressEdge;
+
    if (LocWindForcing.Enabled) {
       Pacer::start("Tend:windForcing", 2);
       parallelForOuter(

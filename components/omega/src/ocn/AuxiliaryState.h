@@ -10,6 +10,7 @@
 #include "VertCoord.h"
 #include "auxiliaryVars/KineticAuxVars.h"
 #include "auxiliaryVars/LayerThicknessAuxVars.h"
+#include "auxiliaryVars/TangentAuxVars.h"
 #include "auxiliaryVars/TracerAuxVars.h"
 #include "auxiliaryVars/VelocityDel2AuxVars.h"
 #include "auxiliaryVars/VorticityAuxVars.h"
@@ -40,6 +41,7 @@ class AuxiliaryState {
    VorticityAuxVars VorticityAux;
    VelocityDel2AuxVars VelocityDel2Aux;
    WindForcingAuxVars WindForcingAux;
+   TangentAuxVars TangentAux;
 
    ~AuxiliaryState();
 

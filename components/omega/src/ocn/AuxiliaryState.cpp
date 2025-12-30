@@ -30,6 +30,7 @@ AuxiliaryState::AuxiliaryState(const std::string &Name, const HorzMesh *Mesh,
       VorticityAux(stripDefault(Name), Mesh, VCoord),
       VelocityDel2Aux(stripDefault(Name), Mesh, VCoord),
       WindForcingAux(stripDefault(Name), Mesh),
+      TangentAux(stripDefault(Name), Mesh, VCoord),
       TracerAux(stripDefault(Name), Mesh, VCoord, NTracers) {
 
    GroupName = "AuxiliaryState";
@@ -45,6 +46,7 @@ AuxiliaryState::AuxiliaryState(const std::string &Name, const HorzMesh *Mesh,
    VorticityAux.registerFields(GroupName, AuxMeshName);
    VelocityDel2Aux.registerFields(GroupName, AuxMeshName);
    WindForcingAux.registerFields(GroupName, AuxMeshName);
+   TangentAux.registerFields(GroupName, AuxMeshName);
    TracerAux.registerFields(GroupName, AuxMeshName);
 }
 
@@ -56,6 +58,7 @@ AuxiliaryState::~AuxiliaryState() {
    VorticityAux.unregisterFields();
    VelocityDel2Aux.unregisterFields();
    WindForcingAux.unregisterFields();
+   TangentAux.unregisterFields();
    TracerAux.unregisterFields();
 
    FieldGroup::destroy(GroupName);
@@ -88,6 +91,23 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    // get normal velocity
    Array2DReal NormalVelEdge;
    State->getNormalVelocity(NormalVelEdge, VelTimeLevel);
+
+   // compute tangential velocity
+   OMEGA_SCOPE(LocTangentAux, TangentAux);
+   OMEGA_SCOPE(MinLayerEdgeTop, VCoord->MinLayerEdgeTop);
+   OMEGA_SCOPE(MaxLayerEdgeBot, VCoord->MaxLayerEdgeBot);
+   parallelForOuter(
+       "edgeAuxState1", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          const int KMin   = MinLayerEdgeTop(IEdge);
+          const int KMax   = MaxLayerEdgeBot(IEdge);
+          const int KRange = vertRangeChunked(KMin, KMax);
+
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 LocTangentAux.computeVarsOnEdge(IEdge, KChunk, NormalVelEdge);
+              });
+       });
 
    // get temperature and salinity
    I4 ConservTempIdx;
@@ -146,6 +166,10 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
 
    // compute geopotential
    VCoord->computeGeopotential(TidalPotential, SelfAttractionLoading);
+
+   // compute vertical mixing coefficient
+   const auto &TangentVelEdge = TangentAux.TangentialVelocity;
+   VertMixInstance->computeVertMix(NormalVelEdge, TangentVelEdge, EosInstance->BruntVaisalaFreqSq);
 
 }
 

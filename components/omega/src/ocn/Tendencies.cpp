@@ -630,13 +630,14 @@ void Tendencies::computeThicknessTendencies(
 void Tendencies::computeVelocityTendencies(
     const OceanState *State,        ///< [in] State variables
     const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
+    const Array3DReal &TracerArray, ///< [in] Tracer array
     int ThickTimeLevel,             ///< [in] Time level
     int VelTimeLevel,               ///< [in] Time level
     TimeInstant Time                ///< [in] Time
 ) {
    Pacer::start("Tend:computeVelocityTendencies", 1);
 
-   AuxState->computeMomAux(State, ThickTimeLevel, VelTimeLevel);
+   AuxState->computeMomAux(State, TracerArray, ThickTimeLevel, VelTimeLevel);
    computeVelocityTendenciesOnly(State, AuxState, ThickTimeLevel, VelTimeLevel,
                                  Time);
 

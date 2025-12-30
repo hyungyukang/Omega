@@ -149,7 +149,7 @@ int testAuxState() {
 
    const auto *Mesh   = HorzMesh::getDefault();
    auto *MeshHalo     = Halo::getDefault();
-   const auto *VCoord = VertCoord::getDefault();
+   auto *VCoord = VertCoord::getDefault();
    // test creation of another auxiliary state
    AuxiliaryState::create("AnotherAuxState", Mesh, MeshHalo, VCoord, 3);
 

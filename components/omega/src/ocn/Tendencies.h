@@ -76,6 +76,7 @@ class Tendencies {
                                    TimeInstant Time);
    void computeVelocityTendencies(const OceanState *State,
                                   const AuxiliaryState *AuxState,
+                                  const Array3DReal &TracerArray,
                                   int ThickTimeLevel, int VelTimeLevel,
                                   TimeInstant Time);
    void computeTracerTendencies(const OceanState *State,

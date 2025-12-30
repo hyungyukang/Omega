@@ -40,6 +40,9 @@ Omega:
     VelHyperDiffTendencyEnable: true
     ViscDel4: 1.2e11
     DivFactor: 1.0
+    PresForceTendencyEnable: true
+    PresGradForceTendencyEnable: true
+    GeoptGradTendencyEnable: true
     WindForcingTendencyEnable: false
     BottomDragTendencyEnable: false
     BottomDragCoeff: 0.0

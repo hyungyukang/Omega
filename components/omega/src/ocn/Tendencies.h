@@ -63,6 +63,9 @@ class Tendencies {
    SSHGradOnEdge SSHGrad;
    VelocityDiffusionOnEdge VelocityDiffusion;
    VelocityHyperDiffOnEdge VelocityHyperDiff;
+   PresGradZOnEdge PresGradZ;
+   PresGradForceOnEdge PresGradForce;
+   GeoptGradOnEdge GeoptGrad;
    WindForcingOnEdge WindForcing;
    BottomDragOnEdge BottomDrag;
    TracerDiffOnCell TracerDiffusion;

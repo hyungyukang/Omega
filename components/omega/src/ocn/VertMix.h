@@ -43,7 +43,7 @@ class ConvectiveMix {
 
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const I4 K = KStart + KVec;
-         if (K == 0) {
+         if (K == MinLayerCell(ICell)) {
             VertVisc(ICell, K) = 0.0_Real;
             VertDiff(ICell, K) = 0.0_Real;
          } else {
@@ -81,36 +81,45 @@ class ShearMix {
               const Array2DReal &TangentialVelocity,
               const Array2DReal &BruntVaisalaFreqSq) const {
 
-      const I4 KStart = chunkStart(KChunk, MinLayerCell(ICell));
-      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerCell(ICell));
+      const I4 KStartCell = chunkStart(KChunk, MinLayerCell(ICell));
+      const I4 KLenCell = chunkLength(KChunk, KStartCell, MaxLayerCell(ICell));
+      const I4 KEndCell = KStartCell + KLenCell - 1;
 
-      for (int KVec = 0; KVec < KLen; ++KVec) {
-         const I4 K = KStart + KVec;
-         if (K == 0) {
-            VertVisc(ICell, K) = 0.0_Real;
-            VertDiff(ICell, K) = 0.0_Real;
+      Real ShearSquared[VecLength] = {0};
+      const Real InvAreaCell       = 1.0_Real / AreaCell(ICell);
+
+      for (int J = 0; J < NEdgesOnCell(ICell); ++J) {
+         const I4 JEdge      = EdgesOnCell(ICell, J);
+         const I4 KStartEdge = Kokkos::max(KStartCell, MinLayerEdgeBot(JEdge));
+         const I4 KEndEdge   = Kokkos::min(KEndCell, MaxLayerEdgeTop(JEdge));
+
+         const Real Factor =
+             0.5_Real * DcEdge(JEdge) * DvEdge(JEdge) * InvAreaCell;
+
+         for (int K = KStartEdge; K <= KEndEdge; ++K) {
+            const I4 KVec = K - KStartCell;
+
+            const Real DelNormVel =
+                NormalVelocity(JEdge, K - 1) - NormalVelocity(JEdge, K);
+            const Real DelTangVel =
+                TangentialVelocity(JEdge, K - 1) - TangentialVelocity(JEdge, K);
+            ShearSquared[KVec] +=
+                Factor * (DelNormVel * DelNormVel + DelTangVel * DelTangVel);
+         }
+      }
+      for (int KVec = 0; KVec < KLenCell; ++KVec) {
+         const I4 K = KStartCell + KVec;
+
+         if (K == MinLayerCell(ICell)) {
+            VertVisc(ICell, MinLayerCell(ICell)) = 0.0_Real;
+            VertDiff(ICell, MinLayerCell(ICell)) = 0.0_Real;
          } else {
-            Real ShearViscVal = 0.0;
-            Real InvAreaCell  = 1.0_Real / AreaCell(ICell);
-            Real ShearSquared = 0.0;
-            for (int J = 0; J < NEdgesOnCell(ICell); ++J) {
-               I4 JEdge = EdgesOnCell(ICell, J);
-               Real Factor =
-                   0.5_Real * DcEdge(JEdge) * DvEdge(JEdge) * InvAreaCell;
-               Real DelNormVel =
-                   NormalVelocity(JEdge, K - 1) - NormalVelocity(JEdge, K);
-               Real DelTangVel = TangentialVelocity(JEdge, K - 1) -
-                                 TangentialVelocity(JEdge, K);
-               ShearSquared = ShearSquared + Factor * (DelNormVel * DelNormVel +
-                                                       DelTangVel * DelTangVel);
-            }
-            Real DelZMid = ZMid(ICell, K - 1) - ZMid(ICell, K);
-            ShearSquared = ShearSquared / (DelZMid * DelZMid);
-
-            Real RichardsonNum = BruntVaisalaFreqSq(ICell, K) /
-                                 Kokkos::max(1.0e-12_Real, ShearSquared);
-
-            ShearViscVal =
+            const Real DelZMid = ZMid(ICell, K - 1) - ZMid(ICell, K);
+            ShearSquared[KVec] /= (DelZMid * DelZMid);
+            const Real RichardsonNum =
+                BruntVaisalaFreqSq(ICell, K) /
+                Kokkos::max(1.0e-12_Real, ShearSquared[KVec]);
+            const Real ShearViscVal =
                 ShearNuZero / Kokkos::pow(1.0_Real + ShearAlpha * RichardsonNum,
                                           ShearExponent);
             VertVisc(ICell, K) += ShearViscVal;
@@ -129,6 +138,8 @@ class ShearMix {
    Array2DI4 EdgesOnCell;
    Array1DI4 MinLayerCell;
    Array1DI4 MaxLayerCell;
+   Array1DI4 MinLayerEdgeBot;
+   Array1DI4 MaxLayerEdgeTop;
 };
 
 /// Class for Vertical Mixing Coefficient (VertMix) calculations

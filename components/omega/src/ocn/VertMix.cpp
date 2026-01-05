@@ -18,6 +18,8 @@ namespace OMEGA {
 
 ShearMix::ShearMix(const HorzMesh *Mesh, const VertCoord *VCoord)
     : MinLayerCell(VCoord->MinLayerCell), MaxLayerCell(VCoord->MaxLayerCell),
+      MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
+      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop),
       ZMid(VCoord->ZMid), NEdgesOnCell(Mesh->NEdgesOnCell),
       AreaCell(Mesh->AreaCell), EdgesOnCell(Mesh->EdgesOnCell),
       DvEdge(Mesh->DvEdge), DcEdge(Mesh->DcEdge) {}

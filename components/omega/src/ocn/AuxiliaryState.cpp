@@ -156,16 +156,16 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    // compute specific volume
    EosInstance->computeSpecVol(ConservTemp, AbsSalinity, PressureMidDbar);
 
-   // compute Brunt-Vaisala frequency (NSquared)
-   const auto &PressureInterface  = VCoord->PressureInterface;
-   const auto &SpecVol  = EosInstance->SpecVol;
-   EosInstance->computeBruntVaisalaFreqSq(ConservTemp, AbsSalinity, PressureInterface, SpecVol);
-
    // compute height
    VCoord->computeZHeight(LayerThickCell, EosInstance->SpecVol);
 
    // compute geopotential
    VCoord->computeGeopotential(TidalPotential, SelfAttractionLoading);
+
+   // compute Brunt-Vaisala frequency (NSquared)
+   const auto &PressureInterface  = VCoord->PressureInterface;
+   const auto &SpecVol  = EosInstance->SpecVol;
+   EosInstance->computeBruntVaisalaFreqSq(ConservTemp, AbsSalinity, PressureInterface, SpecVol);
 
    // compute vertical mixing coefficient
    const auto &TangentVelEdge = TangentAux.TangentialVelocity;

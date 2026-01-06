@@ -509,7 +509,7 @@ class LinearBruntVaisalaFreqSq {
 
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const I4 K = KStart + KVec;
-         if (K == 0) {
+         if (K == MinLayerCell(ICell)) {
             /// No Brunt-Vaisala frequency at the top level
             BruntVaisalaFreqSq(ICell, K) = 0.0_Real;
          } else {

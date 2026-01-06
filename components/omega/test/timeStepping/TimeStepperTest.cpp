@@ -272,6 +272,8 @@ void timeLoop(TimeInstant TimeStart, Real TimeEnd) {
 void finalizeTimeStepperTest() {
    Tracers::clear();
    TimeStepper::clear();
+   PressureGrad::clear();
+   Eos::destroyInstance();
    Tendencies::clear();
    AuxiliaryState::clear();
    OceanState::clear();

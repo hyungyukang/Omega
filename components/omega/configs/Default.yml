@@ -23,8 +23,11 @@ Omega:
   State:
     NTimeLevels: 2
   Advection:
+    Coef3rdOrder: 0.25
     FluxThicknessType: Center
     FluxTracerType: Center
+    VerticalTracerFluxLimiterEnabled: true
+    VerticalTracerFluxOrder: 3
   WindStress:
     InterpType: Isotropic
   VertCoord:
@@ -53,6 +56,9 @@ Omega:
     UseCustomTendency: false
     ManufacturedSolutionTendency: false
     PressureGradTendencyEnable: true
+    ThicknessVertAdvTendencyEnable: true
+    VelocityVertAdvTendencyEnable: true
+    TracerVertAdvTendencyEnable: true
   Tracers:
     Base: [Temperature, Salinity]
     Debug: [Debug1, Debug2, Debug3]

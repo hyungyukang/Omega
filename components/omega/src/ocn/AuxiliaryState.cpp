@@ -202,6 +202,8 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
 
    Pacer::start("AuxState:computeMomAux", 1);
 
+   const auto &PressureInterface  = VCoord->PressureInterface;
+
    Pacer::start("AuxState:vertexAuxState1", 2);
    parallelForOuter(
        "vertexAuxState1", {Mesh->NVerticesAll},
@@ -213,7 +215,8 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
           parallelForInner(
               Team, KRange, INNER_LAMBDA(int KChunk) {
                  LocVorticityAux.computeVarsOnVertex(
-                     IVertex, KChunk, LayerThickCell, NormalVelEdge);
+                     IVertex, KChunk, LayerThickCell, NormalVelEdge,
+                     PressureInterface);
               });
        });
    Pacer::stop("AuxState:vertexAuxState1", 2);
@@ -228,7 +231,8 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
 
           parallelForInner(
               Team, KRange, INNER_LAMBDA(int KChunk) {
-                 LocKineticAux.computeVarsOnCell(ICell, KChunk, NormalVelEdge);
+                 LocKineticAux.computeVarsOnCell(ICell, KChunk, NormalVelEdge,
+                    LayerThickCell, PressureInterface);
               });
        });
    Pacer::stop("AuxState:cellAuxState1", 2);

@@ -302,6 +302,73 @@ class VelocityHyperDiffOnEdge {
    Array1DI4 MaxLayerEdgeTop;
 };
 
+/// Laplacian horizontal projection velocity mixing, for momentum equation
+class ProjVelDiffusionOnEdge {
+ public:
+   bool Enabled;
+
+   Real ViscDel2;
+
+   /// constructor declaration
+   ProjVelDiffusionOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
+
+   /// The functor takes edge index, vertical chunk index, and arrays for
+   /// divergence of horizontal velocity (defined at cell centers) and relative
+   /// vorticity (defined at vertices), outputs tendency array
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+                                   const Array2DReal &LayerThickEdge,
+                                   const Array2DReal &ProjDivCell,
+                                   const Array2DReal &ProjRVortVertex) const {
+
+      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
+      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+      const I4 ICell0 = CellsOnEdge(IEdge, 0);
+      const I4 ICell1 = CellsOnEdge(IEdge, 1);
+
+      const I4 IVertex0 = VerticesOnEdge(IEdge, 0);
+      const I4 IVertex1 = VerticesOnEdge(IEdge, 1);
+
+      const Real DcEdgeInv = 1._Real / DcEdge(IEdge);
+      const Real DvEdgeInv = 1._Real / DvEdge(IEdge);
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K = KStart + KVec;
+
+         if ( K == MinLayerEdgeBot(IEdge) or K == MaxLayerEdgeTop(IEdge) ) {
+            ProjRVortVertex(IVertex1, K) = 0._Real;
+         } else {
+         const Real Del2UKP1 =
+             ((ProjDivCell(ICell1, K+1) -
+               ProjDivCell(ICell0, K+1)) * DcEdgeInv -
+              (ProjRVortVertex(IVertex1, K+1) -
+               ProjRVortVertex(IVertex0, K+1)) * DvEdgeInv);
+         const Real Del2U =
+             ((ProjDivCell(ICell1, K) - ProjDivCell(ICell0, K)) * DcEdgeInv -
+              (ProjRVortVertex(IVertex1, K) - ProjRVortVertex(IVertex0, K)) *
+                DvEdgeInv);
+
+         const Real temp1 =
+             EdgeMask(IEdge, K) * ViscDel2 * MeshScalingDel2(IEdge) *
+             ((Del2UKP1 - Del2U) / LayerThickEdge(IEdge,K));
+
+         Tend(IEdge, K) +=
+             EdgeMask(IEdge, K) * ViscDel2 * MeshScalingDel2(IEdge) *
+             ((Del2UKP1 - Del2U) / LayerThickEdge(IEdge,K));
+         }
+      }
+   }
+
+ private:
+   Array2DI4 CellsOnEdge;
+   Array2DI4 VerticesOnEdge;
+   Array1DReal DcEdge;
+   Array1DReal DvEdge;
+   Array1DReal MeshScalingDel2;
+   Array2DReal EdgeMask;
+   Array1DI4 MinLayerEdgeBot;
+   Array1DI4 MaxLayerEdgeTop;
+};
+
 /// Velocity vertical mixing
 class VelVertMixSetupOnEdge {
  public:

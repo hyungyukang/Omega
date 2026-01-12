@@ -60,6 +60,14 @@ VelocityHyperDiffOnEdge::VelocityHyperDiffOnEdge(const HorzMesh *Mesh,
       MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
 
+ProjVelDiffusionOnEdge::ProjVelDiffusionOnEdge(const HorzMesh *Mesh,
+                                                 const VertCoord *VCoord)
+    : CellsOnEdge(Mesh->CellsOnEdge), VerticesOnEdge(Mesh->VerticesOnEdge),
+      DcEdge(Mesh->DcEdge), DvEdge(Mesh->DvEdge),
+      MeshScalingDel2(Mesh->MeshScalingDel2), EdgeMask(VCoord->EdgeMask),
+      MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
+      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
+
 VelVertMixSetupOnEdge::VelVertMixSetupOnEdge(const HorzMesh *Mesh,
                                              const VertCoord *VCoord)
     : LocRhoSw(RhoSw), CellsOnEdge(Mesh->CellsOnEdge),

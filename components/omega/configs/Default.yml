@@ -47,6 +47,7 @@ Omega:
     PresForceTendencyEnable: true
     PresGradForceTendencyEnable: true
     GeoptGradTendencyEnable: true
+    ProjVelDiffTendencyEnable: true
     WindForcingTendencyEnable: false
     BottomDragTendencyEnable: false
     BottomDragCoeff: 0.0

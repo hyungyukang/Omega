@@ -318,11 +318,13 @@ constexpr char DefaultMeshFile[] = "OmegaSphereMesh.nc";
 using TestSetup                  = TestSetupSphere;
 #endif
 
-constexpr int NVertLayers = 16;
+constexpr int NVertLayers   = 16;
+constexpr int NVertLayersP1 = 17;
 constexpr int NTracers    = 3;
 
 int initState(const Array2DReal &LayerThickCell,
-              const Array2DReal &NormalVelEdge, HorzMesh *Mesh) {
+              const Array2DReal &NormalVelEdge,
+              const Array2DReal &PresInterfaceCell, HorzMesh *Mesh) {
    int Err = 0;
 
    TestSetup Setup;
@@ -349,7 +351,8 @@ int initState(const Array2DReal &LayerThickCell,
 }
 
 int testKineticAuxVars(const Array2DReal &LayerThicknessCell,
-                       const Array2DReal &NormalVelocityEdge, Real RTol) {
+                       const Array2DReal &NormalVelocityEdge,
+                       const Array2DReal &PresInterfaceCell, Real RTol) {
    int Err = 0;
    TestSetup Setup;
 
@@ -376,7 +379,9 @@ int testKineticAuxVars(const Array2DReal &LayerThicknessCell,
 
    parallelFor(
        {Mesh->NCellsOwned, NVertLayers}, KOKKOS_LAMBDA(int ICell, int KLayer) {
-          KineticAux.computeVarsOnCell(ICell, KLayer, NormalVelocityEdge);
+          KineticAux.computeVarsOnCell(ICell, KLayer, NormalVelocityEdge,
+                                       LayerThicknessCell,
+                                       PresInterfaceCell);
        });
    const auto &NumKineticEnergyCell = KineticAux.KineticEnergyCell;
    const auto &NumVelocityDivCell   = KineticAux.VelocityDivCell;
@@ -548,7 +553,8 @@ int testLayerThicknessAuxVars(const Array2DReal &LayerThickCell,
 }
 
 int testVorticityAuxVars(const Array2DReal &LayerThickCell,
-                         const Array2DReal &NormalVelEdge, Real RTol) {
+                         const Array2DReal &NormalVelEdge,
+                         const Array2DReal &PresInterfaceCell, Real RTol) {
    TestSetup Setup;
    int Err = 0;
 
@@ -587,7 +593,7 @@ int testVorticityAuxVars(const Array2DReal &LayerThickCell,
        {Decomp->NVerticesHaloH(0), NVertLayers},
        KOKKOS_LAMBDA(int IVertex, int KLayer) {
           VorticityAux.computeVarsOnVertex(IVertex, KLayer, LayerThickCell,
-                                           NormalVelEdge);
+                                           NormalVelEdge, PresInterfaceCell);
        });
 
    const auto &NumRelVortVertex        = VorticityAux.RelVortVertex;
@@ -884,8 +890,9 @@ int initAuxVarsTest(const std::string &mesh) {
    HorzMesh::init();
 
    // initialize vertical coordinate, do not read stream and use local
-   // NVertLayers value
+   // NVertLayers and NVertLayersP1 values
    VertCoord::init(false, NVertLayers);
+   VertCoord::init(false, NVertLayersP1);
 
    return Err;
 }
@@ -910,15 +917,16 @@ int auxVarsTest(const std::string &mesh = DefaultMeshFile) {
 
    Array2DReal LayerThickCell("LayerThickCell", Mesh->NCellsSize, NVertLayers);
    Array2DReal NormalVelEdge("NormalVelEdge", Mesh->NEdgesSize, NVertLayers);
-   Err += initState(LayerThickCell, NormalVelEdge, Mesh);
+   Array2DReal PresInterfaceCell("PresInterfaceCell", Mesh->NEdgesSize, NVertLayersP1);
+   Err += initState(LayerThickCell, NormalVelEdge, PresInterfaceCell, Mesh);
 
    const Real RTol = sizeof(Real) == 4 ? 1e-2 : 2e-4;
 
-   Err += testKineticAuxVars(LayerThickCell, NormalVelEdge, RTol);
+   Err += testKineticAuxVars(LayerThickCell, NormalVelEdge, PresInterfaceCell, RTol);
 
    Err += testLayerThicknessAuxVars(LayerThickCell, NormalVelEdge, RTol);
 
-   Err += testVorticityAuxVars(LayerThickCell, NormalVelEdge, RTol);
+   Err += testVorticityAuxVars(LayerThickCell, NormalVelEdge, PresInterfaceCell, RTol);
 
    Err += testVelocityDel2AuxVars(RTol);
 

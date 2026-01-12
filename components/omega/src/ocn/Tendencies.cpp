@@ -190,6 +190,11 @@ void Tendencies::readTendConfig(
          ABORT_ERROR(msg);
       }
    }
+
+   Err += TendConfig->get("ProjVelDiffTendencyEnable", this->ProjVelDiffusion.Enabled);
+   CHECK_ERROR_ABORT(
+       Err, "Tendencies: ProjVelDiffTendencyEnable not found in TendConfig");
+
    Err += TendConfig->get("VelVertMixTendencyEnable",
                           this->VelVertMixSetup.Enabled);
    CHECK_ERROR_ABORT(
@@ -263,6 +268,7 @@ Tendencies::Tendencies(const std::string &Name, ///< [in] Name for tendencies
     : Mesh(Mesh), VCoord(VCoord), VAdv(VAdv), ThicknessFluxDiv(Mesh, VCoord),
       PotientialVortHAdv(Mesh, VCoord), KEGrad(Mesh, VCoord),
       SSHGrad(Mesh, VCoord), VelocityDiffusion(Mesh, VCoord),
+      ProjVelDiffusion(Mesh, VCoord),
       VelocityHyperDiff(Mesh, VCoord), VelVertMixSetup(Mesh, VCoord),
       PresGradZ(Mesh, VCoord), PresGradForce(Mesh, VCoord),
       GeoptGrad(Mesh, VCoord), WindForcing(Mesh, VCoord),
@@ -382,6 +388,7 @@ void Tendencies::computeVelocityTendenciesOnly(
    OMEGA_SCOPE(LocSSHGrad, SSHGrad);
    OMEGA_SCOPE(LocVelocityDiffusion, VelocityDiffusion);
    OMEGA_SCOPE(LocVelocityHyperDiff, VelocityHyperDiff);
+   OMEGA_SCOPE(LocProjVelDiffusion, ProjVelDiffusion);
    OMEGA_SCOPE(LocPresGradZ, PresGradZ);
    OMEGA_SCOPE(LocPresGradForce, PresGradForce);
    OMEGA_SCOPE(LocGeoptGrad, GeoptGrad);
@@ -516,6 +523,26 @@ void Tendencies::computeVelocityTendenciesOnly(
    const auto &NormalStressEdge = AuxState->WindForcingAux.NormalStressEdge;
    const auto &MeanLayerThickEdge =
        AuxState->LayerThicknessAux.MeanLayerThickEdge;
+
+   // Compute del2 horizontal projection velocity diffusion
+   const Array2DReal &ProjDivCell     = AuxState->KineticAux.ProjVelDivCell;
+   const Array2DReal &ProjRVortVertex = AuxState->VorticityAux.ProjRelVortVertex;
+   if (LocProjVelDiffusion.Enabled) {
+      Pacer::start("Tend:projVelDiffusion", 2);
+      parallelForOuter(
+          {Mesh->NEdgesAll}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+             const int KMin   = MinLayerEdgeBot(IEdge);
+             const int KMax   = MaxLayerEdgeTop(IEdge);
+             const int KRange = vertRangeChunked(KMin, KMax);
+             parallelForInner(
+                 Team, KRange, INNER_LAMBDA(int KChunk) {
+                    LocProjVelDiffusion(LocNormalVelocityTend, IEdge, KChunk,
+                                         MeanLayerThickEdge,
+                                         ProjDivCell, ProjRVortVertex);
+                 });
+          });
+      Pacer::stop("Tend:projVelDiffusion", 2);
+   }
 
    if (LocPresGradZ.Enabled) {
       Pacer::start("Tend:pressureForce", 2);

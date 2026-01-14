@@ -53,37 +53,35 @@ class KineticAuxVars {
                                         EdgeSignOnCell(ICell, J) *
                                         NormalVelEdge(JEdge, K);
 
-            if ( K == MinLayerCell(ICell) or K == MaxLayerCell(ICell) ) {
-               ProjVelDivCellTmp[KVec] = 0._Real;
-            } else {
-               const Real GradZTildeEdgeTop = (PressureInterface(JCell1,K) -
-                                              PressureInterface(JCell0,K) ) /
-                                             (Gravity * LocRhoSw * DcEdge(JEdge));
-
-               const Real LayerThickEdgeKM1
-                   = 0.5 * (LayerThickCell(JCell0,K-1) +
-                            LayerThickCell(JCell1,K-1));
-               const Real LayerThickEdge
-                   = 0.5 * (LayerThickCell(JCell0,K) +
-                            LayerThickCell(JCell1,K));
-
-               const Real NormalVelEdgeTop
-                   = 0.5 * (NormalVelEdge(JEdge,K-1) * LayerThickEdgeKM1 +
-                            NormalVelEdge(JEdge,K) * LayerThickEdge) /
-                     (0.5 * (LayerThickEdgeKM1 + LayerThickEdge));
-
-               ProjVelDivCellTmp[KVec] -= DvEdge(JEdge) * InvAreaCell *
-                                          EdgeSignOnCell(ICell, J) *
-                                          NormalVelEdgeTop *
-                                          GradZTildeEdgeTop;
-            }
+            const Real GradZTildeEdgeTop = (PressureInterface(JCell1,K) -
+                                           PressureInterface(JCell0,K) ) /
+                                          (Gravity * LocRhoSw * DcEdge(JEdge));
+            const Real LayerThickEdgeKM1
+                = 0.5 * (LayerThickCell(JCell0,K-1) +
+                         LayerThickCell(JCell1,K-1));
+            const Real LayerThickEdge
+                = 0.5 * (LayerThickCell(JCell0,K) +
+                         LayerThickCell(JCell1,K));
+            const Real NormalVelEdgeTop
+                = 0.5 * (NormalVelEdge(JEdge,K-1) * LayerThickEdgeKM1 +
+                         NormalVelEdge(JEdge,K) * LayerThickEdge) /
+                  (0.5 * (LayerThickEdgeKM1 + LayerThickEdge));
+            ProjVelDivCellTmp[KVec] -= DvEdge(JEdge) * InvAreaCell *
+                                       EdgeSignOnCell(ICell, J) *
+                                       NormalVelEdgeTop *
+                                       GradZTildeEdgeTop;
          }
       }
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const int K                 = KStart + KVec;
          KineticEnergyCell(ICell, K) = KineticEnergyCellTmp[KVec];
          VelocityDivCell(ICell, K)   = VelocityDivCellTmp[KVec];
-         ProjVelDivCell(ICell, K)   = ProjVelDivCellTmp[KVec];
+
+         if (K == MinLayerCell(ICell)) {
+            ProjVelDivCell(ICell, K)   = 0._Real;
+         } else {
+            ProjVelDivCell(ICell, K)   = ProjVelDivCellTmp[KVec];
+         }
       }
    }
 

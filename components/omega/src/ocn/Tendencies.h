@@ -64,6 +64,7 @@ class Tendencies {
    VelocityDiffusionOnEdge VelocityDiffusion;
    VelocityHyperDiffOnEdge VelocityHyperDiff;
    ProjVelDiffusionOnEdge ProjVelDiffusion;
+   ProjVelHyperDiffOnEdge ProjVelHyperDiff;
    VelVertMixSetupOnEdge VelVertMixSetup;
    PresGradZOnEdge PresGradZ;
    PresGradForceOnEdge PresGradForce;

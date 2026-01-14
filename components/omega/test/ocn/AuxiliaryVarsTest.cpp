@@ -710,6 +710,8 @@ int testVelocityDel2AuxVars(Real RTol) {
        {Decomp->NEdgesHaloH(1), NVertLayers},
        KOKKOS_LAMBDA(int IEdge, int KLayer) {
           VelocityDel2Aux.computeVarsOnEdge(IEdge, KLayer, ExactVelocityDivCell,
+                                            ExactRelVortVertex,
+                                            ExactVelocityDivCell,
                                             ExactRelVortVertex);
        });
    const auto &NumDel2Edge = VelocityDel2Aux.Del2Edge;

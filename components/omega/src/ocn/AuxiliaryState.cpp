@@ -240,8 +240,10 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
        });
    Pacer::stop("AuxState:cellAuxState1", 2);
 
-   const auto &VelocityDivCell = KineticAux.VelocityDivCell;
-   const auto &RelVortVertex   = VorticityAux.RelVortVertex;
+   const auto &VelocityDivCell   = KineticAux.VelocityDivCell;
+   const auto &RelVortVertex     = VorticityAux.RelVortVertex;
+   const auto &ProjVelDivCell    = KineticAux.ProjVelDivCell;
+   const auto &ProjRelVortVertex = VorticityAux.ProjRelVortVertex;
 
    Pacer::start("AuxState:edgeAuxState1", 2);
    parallelFor(
@@ -263,7 +265,8 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
                  LocLayerThicknessAux.computeVarsOnEdge(
                      IEdge, KChunk, LayerThickCell, NormalVelEdge);
                  LocVelocityDel2Aux.computeVarsOnEdge(
-                     IEdge, KChunk, VelocityDivCell, RelVortVertex);
+                     IEdge, KChunk, VelocityDivCell, RelVortVertex,
+                     ProjVelDivCell, ProjRelVortVertex);
               });
        });
 

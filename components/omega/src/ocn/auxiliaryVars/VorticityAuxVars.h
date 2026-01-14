@@ -70,32 +70,23 @@ class VorticityAuxVars {
                                       EdgeSignOnVertex(IVertex, J) *
                                       NormalVelEdge(JEdge, K);
 
-
-            if ( K <= KStartVertex or K >= KEndVertex) {
-               ProjRelVortVertexTmp[KVec] = 0._Real;
-            } else {
-               const Real GradZTildeEdgeTop = (PressureInterface(JCell1,K) -
-                                              PressureInterface(JCell0,K) ) /
-                                             (Gravity * LocRhoSw * DcEdge(JEdge));
-
-               const Real LayerThickEdgeKM1
-                   = 0.5 * (LayerThickCell(JCell0,K-1) +
-                            LayerThickCell(JCell1,K-1));
-               const Real LayerThickEdge
-                   = 0.5 * (LayerThickCell(JCell0,K) +
-                            LayerThickCell(JCell1,K));
-
-               const Real NormalVelEdgeTop
-                   = 0.5 * (NormalVelEdge(JEdge,K-1) * LayerThickEdgeKM1 +
-                            NormalVelEdge(JEdge,K) * LayerThickEdge) /
-                     (0.5 * (LayerThickEdgeKM1 + LayerThickEdge));
-
-               ProjRelVortVertexTmp[KVec] += InvAreaTriangle * DcEdge(JEdge) *
-                                         EdgeSignOnVertex(IVertex, J) *
-                                         NormalVelEdgeTop *
-                                         GradZTildeEdgeTop;
-            }
-
+            const Real GradZTildeEdgeTop = (PressureInterface(JCell1,K) -
+                                           PressureInterface(JCell0,K) ) /
+                                          (Gravity * LocRhoSw * DcEdge(JEdge));
+            const Real LayerThickEdgeKM1
+                = 0.5 * (LayerThickCell(JCell0,K-1) +
+                         LayerThickCell(JCell1,K-1));
+            const Real LayerThickEdge
+                = 0.5 * (LayerThickCell(JCell0,K) +
+                         LayerThickCell(JCell1,K));
+            const Real NormalVelEdgeTop
+                = 0.5 * (NormalVelEdge(JEdge,K-1) * LayerThickEdgeKM1 +
+                         NormalVelEdge(JEdge,K) * LayerThickEdge) /
+                  (0.5 * (LayerThickEdgeKM1 + LayerThickEdge));
+            ProjRelVortVertexTmp[KVec] += InvAreaTriangle * DcEdge(JEdge) *
+                                      EdgeSignOnVertex(IVertex, J) *
+                                      NormalVelEdgeTop *
+                                      GradZTildeEdgeTop;
          }
       }
 
@@ -104,11 +95,16 @@ class VorticityAuxVars {
          const Real InvLayerThickVertex = 1._Real / LayerThickVertex[KVec];
 
          RelVortVertex(IVertex, K) = RelVortVertexTmp[KVec];
-         ProjRelVortVertex(IVertex, K) = ProjRelVortVertexTmp[KVec];
          NormRelVortVertex(IVertex, K) =
              RelVortVertexTmp[KVec] * InvLayerThickVertex;
          NormPlanetVortVertex(IVertex, K) =
              FVertex(IVertex) * InvLayerThickVertex;
+
+        if (K == MinLayerVertexTop(IVertex)) {
+            ProjRelVortVertex(IVertex, K) = 0._Real;
+        } else {
+            ProjRelVortVertex(IVertex, K) = ProjRelVortVertexTmp[KVec];
+        }
       }
    }
 

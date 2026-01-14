@@ -66,7 +66,7 @@ void KineticAuxVars::registerFields(
        DimNames                             // dimension names
    );
 
-   // Velocity divergence on cells
+   // Projected velocity divergence on cells
    DimNames[0]                 = "NCells" + DimSuffix;
    DimNames[1]                 = "NVertLayersP1";
    auto ProjVelDivCellField = Field::create(

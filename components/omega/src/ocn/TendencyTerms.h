@@ -369,6 +369,61 @@ class ProjVelDiffusionOnEdge {
    Array1DI4 MaxLayerEdgeTop;
 };
 
+/// Biharmonic horizontal projected velocity mixing at top,
+/// for momentum equation
+class ProjVelHyperDiffOnEdge {
+ public:
+   bool Enabled;
+
+   Real ViscDel4;
+   Real DivFactor;
+
+   /// Constructor declaration
+   ProjVelHyperDiffOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
+
+   /// The functor takes the edge index, vertical chunk index, and arrays for
+   /// the laplacian of divergence of horizontal velocity and the laplacian of
+   /// the relative vorticity, outputs tendency array
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+                                   const Array2DReal &Del2ProjDivCell,
+                                   const Array2DReal &Del2ProjRVortVertex)
+                                                                         const {
+
+      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
+      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+      const I4 ICell0 = CellsOnEdge(IEdge, 0);
+      const I4 ICell1 = CellsOnEdge(IEdge, 1);
+
+      const I4 IVertex0 = VerticesOnEdge(IEdge, 0);
+      const I4 IVertex1 = VerticesOnEdge(IEdge, 1);
+
+      const Real DcEdgeInv = 1._Real / DcEdge(IEdge);
+      const Real DvEdgeInv = 1._Real / DvEdge(IEdge);
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K = KStart + KVec;
+         const Real Del2ProjU = (DivFactor *
+             (Del2ProjDivCell(ICell1, K) -
+              Del2ProjDivCell(ICell0, K)) * DcEdgeInv -
+             (Del2ProjRVortVertex(IVertex1, K) -
+              Del2ProjRVortVertex(IVertex0, K)) * DvEdgeInv);
+
+         Tend(IEdge, K) -=
+             EdgeMask(IEdge, K) * ViscDel4 * MeshScalingDel4(IEdge) * Del2ProjU;
+      }
+   }
+
+ private:
+   Array2DI4 CellsOnEdge;
+   Array2DI4 VerticesOnEdge;
+   Array1DReal DcEdge;
+   Array1DReal DvEdge;
+   Array1DReal MeshScalingDel4;
+   Array2DReal EdgeMask;
+   Array1DI4 MinLayerEdgeBot;
+   Array1DI4 MaxLayerEdgeTop;
+};
+
 /// Velocity vertical mixing
 class VelVertMixSetupOnEdge {
  public:

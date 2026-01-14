@@ -168,9 +168,15 @@ void Tendencies::readTendConfig(
       CHECK_ERROR_ABORT(Err, "Tendencies: DivFactor not found in TendConfig");
    }
 
-   Err += TendConfig->get("ProjVelDiffTendencyEnable", this->ProjVelDiffusion.Enabled);
+   Err += TendConfig->get("ProjVelDiffTendencyEnable",
+                          this->ProjVelDiffusion.Enabled);
    CHECK_ERROR_ABORT(
        Err, "Tendencies: ProjVelDiffTendencyEnable not found in TendConfig");
+
+   Err += TendConfig->get("ProjVelHyperDiffTendencyEnable",
+                          this->ProjVelHyperDiff.Enabled);
+   CHECK_ERROR_ABORT(
+       Err, "Tendencies: ProjVelHyperDiffTendencyEnable not found in TendConfig");
 
    Err += TendConfig->get("VelVertMixTendencyEnable",
                           this->VelVertMixSetup.Enabled);
@@ -253,8 +259,8 @@ Tendencies::Tendencies(const std::string &Name, ///< [in] Name for tendencies
     : Mesh(Mesh), VCoord(VCoord), ThicknessFluxDiv(Mesh, VCoord),
       PotientialVortHAdv(Mesh, VCoord), KEGrad(Mesh, VCoord),
       SSHGrad(Mesh, VCoord), VelocityDiffusion(Mesh, VCoord),
-      ProjVelDiffusion(Mesh, VCoord),
       VelocityHyperDiff(Mesh, VCoord), VelVertMixSetup(Mesh, VCoord),
+      ProjVelDiffusion(Mesh, VCoord), ProjVelHyperDiff(Mesh, VCoord),
       PresGradZ(Mesh, VCoord), PresGradForce(Mesh, VCoord),
       GeoptGrad(Mesh, VCoord), WindForcing(Mesh, VCoord),
       BottomDrag(Mesh, VCoord), TracerHorzAdv(Mesh, VCoord),
@@ -365,6 +371,7 @@ void Tendencies::computeVelocityTendenciesOnly(
    OMEGA_SCOPE(LocVelocityDiffusion, VelocityDiffusion);
    OMEGA_SCOPE(LocVelocityHyperDiff, VelocityHyperDiff);
    OMEGA_SCOPE(LocProjVelDiffusion, ProjVelDiffusion);
+   OMEGA_SCOPE(LocProjVelHyperDiff, ProjVelHyperDiff);
    OMEGA_SCOPE(LocPresGradZ, PresGradZ);
    OMEGA_SCOPE(LocPresGradForce, PresGradForce);
    OMEGA_SCOPE(LocGeoptGrad, GeoptGrad);
@@ -510,6 +517,27 @@ void Tendencies::computeVelocityTendenciesOnly(
                  });
           });
       Pacer::stop("Tend:projVelDiffusion", 2);
+   }
+
+   // Compute del4 horizontal diffusion
+   const Array2DReal &Del2ProjDivCell =
+       AuxState->VelocityDel2Aux.Del2ProjDivCell;
+   const Array2DReal &Del2ProjRVortVertex =
+       AuxState->VelocityDel2Aux.Del2ProjRelVortVertex;
+   if (LocProjVelHyperDiff.Enabled) {
+      Pacer::start("Tend:projVelocityHyperDiff", 2);
+      parallelForOuter(
+          {Mesh->NEdgesAll}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+             const int KMin   = MinLayerEdgeBot(IEdge);
+             const int KMax   = MaxLayerEdgeTop(IEdge);
+             const int KRange = vertRangeChunked(KMin, KMax);
+             parallelForInner(
+                 Team, KRange, INNER_LAMBDA(int KChunk) {
+                    LocProjVelHyperDiff(LocNormalVelocityTend, IEdge, KChunk,
+                                        Del2ProjDivCell, Del2ProjRVortVertex);
+                 });
+          });
+      Pacer::stop("Tend:projVelocityHyperDiff", 2);
    }
 
    if (LocPresGradZ.Enabled) {

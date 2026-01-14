@@ -65,10 +65,12 @@ void VorticityAuxVars::registerFields(const std::string &AuxGroupName,
        DimNames   // dimension names
    );
 
+   // Relative vorticity of projected velocity on vertices
    auto ProjRelVortVertexField = Field::create(
-       ProjRelVortVertex.label(),                                    // field name
-       "curl of projected horizontal velocity, defined at vertices", // long name/describe
-       "s^-1",                                                       // units
+       ProjRelVortVertex.label(),                 // field name
+       "curl of projected horizontal velocity, "
+       "defined at vertices",                     // long name/describe
+       "s^-1",                                    // units
        "",                               // CF standard Name
        std::numeric_limits<Real>::min(), // min valid value
        std::numeric_limits<Real>::max(), // max valid value

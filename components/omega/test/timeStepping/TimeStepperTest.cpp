@@ -33,6 +33,7 @@
 #include "TimeMgr.h"
 #include "Tracers.h"
 #include "VertCoord.h"
+#include "VertAdv.h"
 #include "mpi.h"
 
 #include <cmath>
@@ -166,6 +167,9 @@ int initTimeStepperTest(const std::string &mesh) {
    // NVertLayers value
    VertCoord::init(false, NVertLayers);
    auto *DefVertCoord = VertCoord::getDefault();
+
+   VertAdv::init();
+   auto *DefVertAdv = VertAdv::getDefault();
 
    Tracers::init();
 

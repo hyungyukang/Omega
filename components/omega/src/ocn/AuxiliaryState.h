@@ -10,6 +10,7 @@
 #include "Tracers.h"
 #include "VertAdv.h"
 #include "VertCoord.h"
+#include "VertAdv.h"
 #include "auxiliaryVars/KineticAuxVars.h"
 #include "auxiliaryVars/LayerThicknessAuxVars.h"
 #include "auxiliaryVars/TangentAuxVars.h"

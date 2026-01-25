@@ -30,6 +30,7 @@
 #include "VertAdv.h"
 #include "VertCoord.h"
 #include "VertMix.h"
+#include "VertAdv.h"
 
 #include "mpi.h"
 

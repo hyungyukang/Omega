@@ -19,6 +19,7 @@
 #include "TimeStepper.h"
 #include "Tracers.h"
 #include "VertCoord.h"
+#include "VertAdv.h"
 
 namespace OMEGA {
 
@@ -33,6 +34,7 @@ int ocnFinalize(const TimeInstant &CurrTime ///< [in] current sim time
    // clean up all objects
    Tracers::clear();
    TimeStepper::clear();
+   VertAdv::clear();
    Tendencies::clear();
    AuxiliaryState::clear();
    OceanState::clear();

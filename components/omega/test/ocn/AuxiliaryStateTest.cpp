@@ -17,6 +17,7 @@
 #include "TimeStepper.h"
 #include "Tracers.h"
 #include "VertCoord.h"
+#include "VertAdv.h"
 #include "mpi.h"
 
 #include <cmath>
@@ -54,6 +55,7 @@ int initState() {
    auto *Mesh   = HorzMesh::getDefault();
    auto *State  = OceanState::getDefault();
    auto *VCoord = VertCoord::getDefault();
+   auto *VAdv   = VertAdv::getDefault();
 
    Array2DReal LayerThickCell = State->getLayerThickness(0);
    Array2DReal NormalVelEdge  = State->getNormalVelocity(0);
@@ -116,6 +118,8 @@ int initAuxStateTest(const std::string &mesh) {
    HorzMesh::init();
 
    VertCoord::init();
+
+   VertAdv::init();
 
    Tracers::init();
    int StateErr = OceanState::init();

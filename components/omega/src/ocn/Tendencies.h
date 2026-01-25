@@ -37,6 +37,7 @@
 #include "OceanState.h"
 #include "TendencyTerms.h"
 #include "TimeMgr.h"
+#include "VertCoord.h"
 #include "VertAdv.h"
 
 #include <functional>
@@ -80,6 +81,7 @@ class Tendencies {
    // Methods to compute tendency groups
    void computeThicknessTendencies(const OceanState *State,
                                    const AuxiliaryState *AuxState,
+                                   const Array3DReal &TracerArray,
                                    int ThickTimeLevel, int VelTimeLevel,
                                    TimeInstant Time);
    void computeVelocityTendencies(const OceanState *State,

@@ -19,6 +19,7 @@
 #include <string>
 #include "TriDiagSolvers.h"
 #include "VertMix.h"
+#include "VertAdv.h"
 
 namespace OMEGA {
 
@@ -373,6 +374,8 @@ void Tendencies::computeThicknessTendenciesOnly(
                           ThickTimeLevel, VelTimeLevel, Time);
       Pacer::stop("Tend:customThicknessTend", 2);
    }
+
+   // Compute thickness vertical advection tendency
 
    Pacer::stop("Tend:computeThicknessTendenciesOnly", 1);
 
@@ -845,6 +848,7 @@ void Tendencies::computeTracerTendenciesOnly(
 void Tendencies::computeThicknessTendencies(
     const OceanState *State,        ///< [in] State variables
     const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
+    const Array3DReal &TracerArray, ///< [in] Tracer array
     int ThickTimeLevel,             ///< [in] Time level
     int VelTimeLevel,               ///< [in] Time level
     TimeInstant Time                ///< [in] Time
@@ -878,6 +882,7 @@ void Tendencies::computeThicknessTendencies(
        });
    Pacer::stop("Tend:computeLayerThickAux", 2);
 
+   AuxState->computeVertAux(State, TracerArray, ThickTimeLevel, VelTimeLevel);
    computeThicknessTendenciesOnly(State, AuxState, ThickTimeLevel, VelTimeLevel,
                                   Time);
 
@@ -970,8 +975,8 @@ void Tendencies::computeAllTendencies(
     TimeInstant Time                ///< [in] Time
 ) {
    AuxState->computeAll(State, TracerArray, ThickTimeLevel, VelTimeLevel);
-   computeThicknessTendenciesOnly(State, AuxState, ThickTimeLevel, VelTimeLevel,
-                                  Time);
+   computeThicknessTendenciesOnly(State, AuxState, ThickTimeLevel,
+                                  VelTimeLevel, Time);
    computeVelocityTendenciesOnly(State, AuxState, ThickTimeLevel, VelTimeLevel,
                                  Time);
    computeTracerTendenciesOnly(State, AuxState, TracerArray, ThickTimeLevel,

@@ -171,6 +171,28 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    const auto &TangentVelEdge = TangentAux.TangentialVelocity;
    VertMixInstance->computeVertMix(NormalVelEdge, TangentVelEdge, EosInstance->BruntVaisalaFreqSq);
 
+
+   // compute FluxLayerThickEdge here to compute the vertical velocity
+   OMEGA_SCOPE(LocLayerThicknessAux, LayerThicknessAux);
+   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
+   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+   parallelForOuter(
+       "edgeAuxState2", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          const int KMin   = MinLayerEdgeBot(IEdge);
+          const int KMax   = MaxLayerEdgeTop(IEdge);
+          const int KRange = vertRangeChunked(KMin, KMax);
+
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 LocLayerThicknessAux.computeVarsOnEdge(
+                     IEdge, KChunk, LayerThickCell, NormalVelEdge);
+              });
+       });
+   const auto &FluxLayerThickEdge = LayerThicknessAux.FluxLayerThickEdge;
+
+   // compute vertical velocity
+   VAdv->computeVerticalVelocity(NormalVelEdge, FluxLayerThickEdge);
 }
 
 // Compute the auxiliary variables needed for momentum equation
@@ -178,7 +200,7 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
                                    const Array3DReal &TracerArray,
                                    int ThickTimeLevel, int VelTimeLevel) const {
 
-   computeVertAux(State, TracerArray, ThickTimeLevel, VelTimeLevel);
+// computeVertAux(State, TracerArray, ThickTimeLevel, VelTimeLevel);
 
    Array2DReal LayerThickCell;
    Array2DReal NormalVelEdge;
@@ -264,8 +286,8 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
 
           parallelForInner(
               Team, KRange, INNER_LAMBDA(int KChunk) {
-                 LocLayerThicknessAux.computeVarsOnEdge(
-                     IEdge, KChunk, LayerThickCell, NormalVelEdge);
+                 //LocLayerThicknessAux.computeVarsOnEdge(
+                 //    IEdge, KChunk, LayerThickCell, NormalVelEdge);
                  LocVelocityDel2Aux.computeVarsOnEdge(
                      IEdge, KChunk, VelocityDivCell, RelVortVertex,
                      ProjVelDivCell, ProjRelVortVertex);
@@ -368,6 +390,7 @@ void AuxiliaryState::computeAll(const OceanState *State,
 
    Pacer::start("AuxState:computeAll", 1);
 
+   computeVertAux(State, TracerArray, ThickTimeLevel, VelTimeLevel);
    computeMomAux(State, TracerArray, ThickTimeLevel, VelTimeLevel);
 
    Pacer::start("AuxState:cellAuxState3", 2);

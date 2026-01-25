@@ -18,6 +18,7 @@
 #include "Pacer.h"
 #include "TimeStepper.h"
 #include "VertCoord.h"
+#include "VertAdv.h"
 #include "mpi.h"
 
 #include <cmath>
@@ -55,6 +56,7 @@ int initState() {
    TestSetup Setup;
    auto *Mesh   = HorzMesh::getDefault();
    auto *VCoord = VertCoord::getDefault();
+   auto *VAdv = VertAdv::getDefault();
    auto *State  = OceanState::getDefault();
 
    Array2DReal LayerThickCell;
@@ -125,6 +127,7 @@ int initTendenciesTest(const std::string &mesh) {
 
    HorzMesh::init();
    VertCoord::init();
+   VertAdv::init();
    Tracers::init();
    VertAdv::init();
 
@@ -245,6 +248,7 @@ void finalizeTendenciesTest() {
    OceanState::clear();
    VertAdv::clear();
    VertCoord::clear();
+   VertAdv::clear();
    HorzMesh::clear();
    Field::clear();
    Dimension::clear();

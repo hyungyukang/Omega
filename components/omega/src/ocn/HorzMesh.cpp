@@ -497,11 +497,17 @@ void HorzMesh::readWeights() {
 // Read the Coriolis parameter at the cells, edges, and vertices
 void HorzMesh::readCoriolis() {
 
-   readCellArray(FCellH, "fCell");
+   //readCellArray(FCellH, "fCell");
+   FCellH = HostArray1DReal("FCellH", NCellsSize);
+   deepCopy(FCellH,0._Real);
 
-   readVertexArray(FVertexH, "fVertex");
+   //readVertexArray(FVertexH, "fVertex");
+   FVertexH = HostArray1DReal("FVertexH", NVerticesSize);
+   deepCopy(FVertexH,0._Real);
 
-   readEdgeArray(FEdgeH, "fEdge");
+   //readEdgeArray(FEdgeH, "fEdge");
+   FEdgeH = HostArray1DReal("FEdgeH", NEdgesSize);
+   deepCopy(FEdgeH,0._Real);
 
 } // end readCoriolis
 

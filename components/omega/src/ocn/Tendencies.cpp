@@ -375,6 +375,7 @@ void Tendencies::computeThicknessTendenciesOnly(
    }
 
    // Compute thickness vertical advection tendency
+   VAdv->computeThicknessVAdvTend(LocLayerThicknessTend);
 
    Pacer::stop("Tend:computeThicknessTendenciesOnly", 1);
 
@@ -662,6 +663,10 @@ void Tendencies::computeVelocityTendenciesOnly(
       }
    }
 
+   // Compute velocity vertical advection tendency
+   VAdv->computeVelocityVAdvTend(LocNormalVelocityTend,LocNormalVelocityTend,
+                                 FluxLayerThickEdge);
+
    // Compute wind forcing
    const auto &NormalStressEdge = AuxState->WindForcingAux.NormalStressEdge;
 
@@ -836,7 +841,7 @@ void Tendencies::computeTracerTendenciesOnly(
    } else if (VAdv->VertAdvChoice == VertAdvOption::FCT) {
       ThicknessForVAdv = AuxState->LayerThicknessAux.ProvThickness;
    }
-   VAdv->computeTracerVAdvTend(TracerTend, TracerArray, ThicknessForVAdv,
+   VAdv->computeTracerVAdvTend(LocTracerTend, TracerArray, ThicknessForVAdv,
                                TimeStep);
    Pacer::stop("Tend:computeTracerVAdvTend", 2);
 
@@ -970,6 +975,8 @@ void Tendencies::computeAllTendencies(
     int VelTimeLevel,               ///< [in] Time level
     TimeInstant Time                ///< [in] Time
 ) {
+   Pacer::start("Tend:computeAllTendencies", 1);
+
    AuxState->computeAll(State, TracerArray, ThickTimeLevel, VelTimeLevel);
    computeThicknessTendenciesOnly(State, AuxState, ThickTimeLevel,
                                   VelTimeLevel, Time);

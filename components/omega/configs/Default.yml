@@ -26,7 +26,7 @@ Omega:
     Coef3rdOrder: 0.25
     FluxThicknessType: Center
     FluxTracerType: Center
-    VerticalTracerFluxLimiterEnabled: true
+    VerticalTracerFluxLimiterEnable: true
     VerticalTracerFluxOrder: 3
   WindStress:
     InterpType: Isotropic

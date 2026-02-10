@@ -153,7 +153,7 @@ class Tendencies {
    Tendencies(const std::string &Name, ///< [in] Name for tendencies
               const HorzMesh *Mesh,    ///< [in] Horizontal mesh
               VertCoord *VCoord, ///< [in] Vertical coordinate
-              const PressureGrad *PGrad,      ///< [in] Pressure gradient
+              PressureGrad *PGrad,      ///< [in] Pressure gradient
               Eos *EqState,      ///< [in] Equation of state
               int NTracersIn,          ///< [in] Number of tracers
               Config *Options,         ///< [in] Configuration options
@@ -163,7 +163,7 @@ class Tendencies {
    Tendencies(const std::string &Name, ///< [in] Name for tendencies
               const HorzMesh *Mesh,    ///< [in] Horizontal mesh
               VertCoord *VCoord, ///< [in] Vertical coordinate
-              const PressureGrad *PGrad,      ///< [in] Pressure gradient
+              PressureGrad *PGrad,      ///< [in] Pressure gradient
               Eos *EqState,      ///< [in] Equation of state
               int NTracersIn,          ///< [in] Number of tracers
               Config *Options          ///< [in] Configuration options
@@ -177,7 +177,7 @@ class Tendencies {
 
    const HorzMesh *Mesh;    ///< Pointer to horizontal mesh
    VertCoord *VCoord; ///< Pointer to vertical coordinate
-   const PressureGrad *PGrad; ///< Pointer to pressure gradient
+   PressureGrad *PGrad; ///< Pointer to pressure gradient
    Eos *EqState;       ///< Pointer to equation of state
    I4 NTracers;             ///< Number of tracers
 

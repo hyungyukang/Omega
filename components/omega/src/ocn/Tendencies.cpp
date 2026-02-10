@@ -246,6 +246,11 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
       Err += TendConfig.get("EddyDiff4", this->TracerHyperDiff.EddyDiff4);
       CHECK_ERROR_ABORT(Err, "Tendencies: EddyDiff4 not found in TendConfig");
    }
+
+   Err += TendConfig->get("PressureGradTendencyEnable",
+                          this->PGrad->Enabled);
+   CHECK_ERROR_ABORT(
+       Err, "Tendencies: PressureGradTendencyEnable not found in TendConfig");
 }
 
 //------------------------------------------------------------------------------
@@ -313,9 +318,9 @@ void Tendencies::defineFields() {
 // Construct a new group of tendencies
 Tendencies::Tendencies(const std::string &Name, ///< [in] Name for tendencies
                        const HorzMesh *Mesh,    ///< [in] Horizontal mesh
-                       VertCoord *VCoord,       ///< [in] Vertical coordinate
-                       VertAdv *VAdv,           ///< [in] Vertical advection
-                       const PressureGrad *PGrad,      ///< [in] Pressure gradient
+                       VertCoord *VCoord,              ///< [in] Vertical coordinate
+                       VertAdv *VAdv,                  ///< [in] Vertical advection
+                       PressureGrad *PGrad,            ///< [in] Pressure gradient
                        Eos *EqState,  ///< [in] Equation of state
                        int NTracersIn,          ///< [in] Number of tracers
                        TimeInterval TimeStepIn, ///< [in] Time step
@@ -349,9 +354,9 @@ Tendencies::Tendencies(const std::string &Name, ///< [in] Name for tendencies
 
 Tendencies::Tendencies(const std::string &Name, ///< [in] Name for tendencies
                        const HorzMesh *Mesh,    ///< [in] Horizontal mesh
-                       VertCoord *VCoord,       ///< [in] Vertical coordinate
-                       VertAdv *VAdv,           ///< [in] Vertical advection
-                       const PressureGrad *PGrad,      ///< [in] Pressure gradient
+                       VertCoord *VCoord,              ///< [in] Vertical coordinate
+                       VertAdv *VAdv,                  ///< [in] Vertical advection
+                       PressureGrad *PGrad,            ///< [in] Pressure gradient
                        Eos *EqState,  ///< [in] Equation of state
                        int NTracersIn,          ///< [in] Number of tracers
                        TimeInterval TimeStepIn, ///< [in] Time step
@@ -611,7 +616,7 @@ void Tendencies::computeVelocityTendenciesOnly(
       Array2DReal Temp;
       Array2DReal Salinity;
       Array2DReal LayerThick;
-
+      
       // Temporary handling of surface pressure
       Array1DReal SurfacePressure("SurfacePressure", Mesh->NCellsSize);
       deepCopy(SurfacePressure, 0.0_Real);

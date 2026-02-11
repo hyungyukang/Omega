@@ -255,6 +255,7 @@ void finalizeTendenciesTest() {
    Eos::destroyInstance();
    AuxiliaryState::clear();
    OceanState::clear();
+   VertAdv::clear();
    VertCoord::clear();
    HorzMesh::clear();
    Field::clear();

@@ -172,7 +172,7 @@ int initTimeStepperTest(const std::string &mesh) {
    Tracers::init();
 
    VertAdv::init();
-   auto *DefVertAdv = VertAdv::getDefault();
+   auto *DefVAdv = VertAdv::getDefault();
 
    AuxiliaryState::init();
    Eos::init();
@@ -205,9 +205,10 @@ int initTimeStepperTest(const std::string &mesh) {
       LOG_ERROR("TimeStepperTest: error creating test state");
    }
 
-   TimeInterval ZeroTimeStep;
-   auto *TestAuxState = AuxiliaryState::create(
-       "TestAuxState", DefMesh, DefHalo, DefVertCoord, NTracers, ZeroTimeStep);
+   TimeInterval ZeroTimeStep; // Zero-length time step placeholder
+   auto *TestAuxState =
+       AuxiliaryState::create("TestAuxState", DefMesh, DefHalo, DefVertCoord,
+                              DefVAdv, NTracers, ZeroTimeStep);
 
    Config *OmegaConfig = Config::getOmegaConfig();
    TestAuxState->readConfigOptions(OmegaConfig);
@@ -241,9 +242,9 @@ int initTimeStepperTest(const std::string &mesh) {
    TestTendencies->TracerHyperDiff.Enabled    = false;
    TestTendencies->WindForcing.Enabled        = false;
    TestTendencies->BottomDrag.Enabled         = false;
-   DefVertAdv->ThickVertAdvEnabled            = false;
-   DefVertAdv->VelVertAdvEnabled              = false;
-   DefVertAdv->TracerVertAdvEnabled           = false;
+   DefVAdv->ThickVertAdvEnabled               = false;
+   DefVAdv->VelVertAdvEnabled                 = false;
+   DefVAdv->TracerVertAdvEnabled              = false;
 
    return Err;
 }

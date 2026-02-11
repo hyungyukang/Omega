@@ -133,6 +133,7 @@ int initTendenciesTest(const std::string &mesh) {
    Tracers::init();
    PressureGrad::init();
    Eos::init();
+   VertAdv::init();
 
    int StateErr = OceanState::init();
    if (StateErr != 0) {
@@ -167,6 +168,7 @@ int testTendencies() {
    const auto VCoord   = VertCoord::getDefault();
    const auto PGrad    = PressureGrad::getDefault();
    const auto EqState  = Eos::getInstance();
+   const auto VAdv     = VertAdv::getDefault();
    VCoord->NVertLayers = 12;
 
    // test creation of another tendencies

@@ -17,6 +17,7 @@
 #include "PGrad.h"
 #include "Pacer.h"
 #include "Tracers.h"
+#include "VertAdv.h"
 
 namespace OMEGA {
 
@@ -33,6 +34,7 @@ void Tendencies::init() {
    VertCoord *DefVertCoord = VertCoord::getDefault();
    Eos *DefEos             = Eos::getInstance();
    PressureGrad *DefPGrad  = PressureGrad::getDefault();
+   VertAdv *DefVertAdv     = VertAdv::getDefault();
 
    I4 NTracers = Tracers::getNumTracers();
 
@@ -277,13 +279,14 @@ void Tendencies::defineFields() {
 Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
                        const HorzMesh *Mesh,     ///< [in] Horizontal mesh
                        VertCoord *VCoord,        ///< [in] Vertical coordinate
+                       VertAdv *VAdv,           ///< [in] Vertical advection
                        PressureGrad *PGrad,      ///< [in] Pressure gradient
                        Eos *EqState,             ///< [in] Equation of state
                        int NTracersIn,           ///< [in] Number of tracers
                        Config *Options,          ///< [in] Configuration options
                        CustomTendencyType InCustomThicknessTend,
                        CustomTendencyType InCustomVelocityTend)
-    : Mesh(Mesh), VCoord(VCoord), ThicknessFluxDiv(Mesh, VCoord),
+    : Mesh(Mesh), VCoord(VCoord), VAdv(VAdv), ThicknessFluxDiv(Mesh, VCoord),
       PotientialVortHAdv(Mesh, VCoord), KEGrad(Mesh, VCoord),
       SSHGrad(Mesh, VCoord), VelocityDiffusion(Mesh, VCoord),
       VelocityHyperDiff(Mesh, VCoord), WindForcing(Mesh, VCoord),
@@ -311,11 +314,12 @@ Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
 Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
                        const HorzMesh *Mesh,     ///< [in] Horizontal mesh
                        VertCoord *VCoord,        ///< [in] Vertical coordinate
+                       VertAdv *VAdv,           ///< [in] Vertical advection
                        PressureGrad *PGrad,      ///< [in] Pressure gradient
                        Eos *EqState,             ///< [in] Equation of state
                        int NTracersIn,           ///< [in] Number of tracers
                        Config *Options)          ///< [in] Configuration options
-    : Tendencies(Name_, Mesh, VCoord, PGrad, EqState, NTracersIn, Options,
+    : Tendencies(Name_, Mesh, VCoord, VAdv, PGrad, EqState, NTracersIn, Options,
                  CustomTendencyType{}, CustomTendencyType{}) {}
 
 //------------------------------------------------------------------------------

@@ -177,6 +177,10 @@ int initTimeStepperTest(const std::string &mesh) {
    auto *DefVertCoord = VertCoord::getDefault();
 
    Tracers::init();
+
+   VertAdv::init();
+   auto *DefVertAdv = VertAdv::getDefault();
+
    AuxiliaryState::init();
    Tendencies::init();
 
@@ -205,9 +209,8 @@ int initTimeStepperTest(const std::string &mesh) {
    }
 
    TimeInterval ZeroTimeStep;
-   auto *TestAuxState = AuxiliaryState::create("TestAuxState", DefMesh, DefHalo,
-                                               DefVertCoord, NTracers,
-                                               ZeroTimeStep);
+   auto *TestAuxState = AuxiliaryState::create(
+       "TestAuxState", DefMesh, DefHalo, DefVertCoord, NTracers, ZeroTimeStep);
 
    Config *OmegaConfig = Config::getOmegaConfig();
    TestAuxState->readConfigOptions(OmegaConfig);
@@ -221,7 +224,7 @@ int initTimeStepperTest(const std::string &mesh) {
 
    // Creating non-default tendencies with custom velocity tendencies
    auto *TestTendencies = Tendencies::create(
-       "TestTendencies", DefMesh, DefVertCoord, NTracers, &Options,
+       "TestTendencies", DefMesh, DefVertCoord, DefVertAdv, NTracers, &Options,
        Tendencies::CustomTendencyType{}, DecayVelocityTendency{});
    if (!TestTendencies) {
       Err++;

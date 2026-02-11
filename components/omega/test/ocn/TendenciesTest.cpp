@@ -240,6 +240,7 @@ void finalizeTendenciesTest() {
    Tracers::clear();
    AuxiliaryState::clear();
    OceanState::clear();
+   VertAdv::clear();
    VertCoord::clear();
    HorzMesh::clear();
    Field::clear();

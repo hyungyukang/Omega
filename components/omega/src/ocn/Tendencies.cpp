@@ -16,6 +16,7 @@
 #include "OceanState.h"
 #include "PGrad.h"
 #include "Pacer.h"
+#include "TimeStepper.h"
 #include "Tracers.h"
 #include "VertAdv.h"
 
@@ -25,8 +26,8 @@ Tendencies *Tendencies::DefaultTendencies = nullptr;
 std::map<std::string, std::unique_ptr<Tendencies>> Tendencies::AllTendencies;
 
 //------------------------------------------------------------------------------
-// Initialize the tendencies. Assumes that HorzMesh and VertCoord has alread
-// been initialized.
+// Initialize the tendencies. Assumes that HorzMesh, VertCoord, VertAdv, and
+// TimeStepper  has already been initialized.
 void Tendencies::init() {
    Error Err; // error code
 
@@ -35,6 +36,8 @@ void Tendencies::init() {
    Eos *DefEos             = Eos::getInstance();
    PressureGrad *DefPGrad  = PressureGrad::getDefault();
    VertAdv *DefVertAdv     = VertAdv::getDefault();
+   HorzMesh *DefHorzMesh       = HorzMesh::getDefault();
+   TimeStepper *DefTimeStepper = TimeStepper::getDefault();
 
    I4 NTracers = Tracers::getNumTracers();
 
@@ -71,10 +74,13 @@ void Tendencies::init() {
 
    } // end if UseCustomTendency
 
+   TimeInterval TimeStep = DefTimeStepper->getTimeStep();
+
    // Ceate default tendencies
    Tendencies::DefaultTendencies =
-       create("Default", DefHorzMesh, DefVertCoord, DefPGrad, DefEos, NTracers,
-              &TendConfig, CustomThickTend, CustomVelTend);
+       create("Default", DefHorzMesh, DefVertCoord, DefVertAdv, DefPGrad,
+              DefEos, NTracers, TimeStep, &TendConfig,
+              CustomThickTend, CustomVelTend);
 
    DefaultTendencies->readTendConfig(&TendConfig);
 
@@ -282,8 +288,9 @@ Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
                        VertAdv *VAdv,           ///< [in] Vertical advection
                        PressureGrad *PGrad,      ///< [in] Pressure gradient
                        Eos *EqState,             ///< [in] Equation of state
-                       int NTracersIn,           ///< [in] Number of tracers
-                       Config *Options,          ///< [in] Configuration options
+                       int NTracersIn,          ///< [in] Number of tracers
+                       TimeInterval TimeStepIn, ///< [in] Time step
+                       Config *Options,         ///< [in] Configuration options
                        CustomTendencyType InCustomThicknessTend,
                        CustomTendencyType InCustomVelocityTend)
     : Mesh(Mesh), VCoord(VCoord), VAdv(VAdv), ThicknessFluxDiv(Mesh, VCoord),
@@ -306,6 +313,7 @@ Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
    Name = Name_;
 
    NTracers = NTracersIn;
+   TimeStep = TimeStepIn;
 
    defineFields();
 
@@ -319,8 +327,9 @@ Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
                        Eos *EqState,             ///< [in] Equation of state
                        int NTracersIn,           ///< [in] Number of tracers
                        Config *Options)          ///< [in] Configuration options
-    : Tendencies(Name_, Mesh, VCoord, VAdv, PGrad, EqState, NTracersIn, Options,
-                 CustomTendencyType{}, CustomTendencyType{}) {}
+    : Tendencies(Name_, Mesh, VCoord, VAdv, PGrad, EqState, NTracersIn,
+                 TimeStepIn, Options, CustomTendencyType{},
+                 CustomTendencyType{}) {}
 
 //------------------------------------------------------------------------------
 // Compute tendencies for layer thickness equation
@@ -688,6 +697,18 @@ void Tendencies::computeTracerTendenciesOnly(
           });
       Pacer::stop("Tend:tracerHyperDiff", 2);
    }
+
+   Pacer::start("Tend:computeTracerVAdvTend", 2);
+   // compute tracer tendencies from vertical advection
+   Array2DReal ThicknessForVAdv;
+   if (VAdv->VertAdvChoice == VertAdvOption::Standard) {
+      State->getLayerThickness(ThicknessForVAdv, ThickTimeLevel);
+   } else if (VAdv->VertAdvChoice == VertAdvOption::FCT) {
+      ThicknessForVAdv = AuxState->LayerThicknessAux.ProvThickness;
+   }
+   VAdv->computeTracerVAdvTend(TracerTend, TracerArray, ThicknessForVAdv,
+                               TimeStep);
+   Pacer::stop("Tend:computeTracerVAdvTend", 2);
 
    Pacer::stop("Tend:computeTracerTendenciesOnly", 1);
 } // end tracer tendency compute

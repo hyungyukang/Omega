@@ -159,6 +159,7 @@ class Tendencies {
               PressureGrad *PGrad,     ///< [in] Pressure gradient
               Eos *EqState,            ///< [in] Equation of state
               int NTracersIn,          ///< [in] Number of tracers
+              TimeInterval TimeStep,   ///< [in] Time step
               Config *Options,         ///< [in] Configuration options
               CustomTendencyType InCustomThicknessTend,
               CustomTendencyType InCustomVelocityTend);
@@ -170,6 +171,7 @@ class Tendencies {
               PressureGrad *PGrad,     ///< [in] Pressure gradient
               Eos *EqState,            ///< [in] Equation of state
               int NTracersIn,          ///< [in] Number of tracers
+              TimeInterval TimeStep,   ///< [in] Time step
               Config *Options          ///< [in] Configuration options
    );
 
@@ -182,11 +184,12 @@ class Tendencies {
    const HorzMesh *Mesh; ///< Pointer to horizontal mesh
    VertCoord *VCoord;    ///< Pointer to vertical coordinate
    VertAdv *VAdv;           ///< Pointer to vertical advection
-   CustomTendencyType CustomThicknessTend;
-   CustomTendencyType CustomVelocityTend;
    Eos *EqState;        ///< Pointer to equation of state
    PressureGrad *PGrad; ///< Pointer to pressure gradient
    I4 NTracers;         ///< Number of tracers
+   TimeInterval TimeStep;   ///< Time step
+   CustomTendencyType CustomThicknessTend;
+   CustomTendencyType CustomVelocityTend;
 
    // Pointer to default tendencies
    static Tendencies *DefaultTendencies;

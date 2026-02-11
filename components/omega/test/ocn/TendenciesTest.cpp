@@ -172,13 +172,15 @@ int testTendencies() {
    VCoord->NVertLayers = 12;
 
    // test creation of another tendencies
+
+   TimeInterval ZeroTimeStep; // Zero-length time step placeholder
    Config *Options = Config::getOmegaConfig();
    Config TendConfig("Tendencies");
    Err1             = Options->get(TendConfig);
    int NTracersTest = 3;
 
-   Tendencies::create("TestTendencies", Mesh, VCoord, PGrad, EqState,
-                      NTracersTest, &TendConfig);
+   Tendencies::create("TestTendencies", Mesh, VCoord, VAdv, PGrad, EqState,
+                      NTracersTest, ZeroTimeStep, &TendConfig);
 
    // test retrievel of another tendencies
    if (Tendencies::get("TestTendencies")) {

@@ -222,9 +222,8 @@ int initTimeStepperTest(const std::string &mesh) {
 
    // Creating non-default tendencies with custom velocity tendencies
    auto *TestTendencies = Tendencies::create(
-       "TestTendencies", DefMesh, DefVertCoord, DefVertAdv, DefPGrad, DefEos,
-       NTracers, &Options, Tendencies::CustomTendencyType{},
-       DecayVelocityTendency{});
+       "TestTendencies", DefMesh, DefVertCoord, DefVAdv, DefPGrad, DefEos,
+       NTracers, ZeroTimeStep, &Options, Tendencies::CustomTendencyType{},
    if (!TestTendencies) {
       Err++;
       LOG_ERROR("TimeStepperTest: error creating test tendencies");

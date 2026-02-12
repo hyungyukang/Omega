@@ -52,6 +52,7 @@ userGuide/VertCoord
 userGuide/PGrad
 userGuide/Timing
 userGuide/VerticalMixingCoeff
+userGuide/VertAdv
 ```
 
 ```{toctree}
@@ -96,6 +97,7 @@ devGuide/VertCoord
 devGuide/PGrad
 devGuide/Timing
 devGuide/VerticalMixingCoeff
+devGuide/VertAdv
 ```
 
 ```{toctree}

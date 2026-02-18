@@ -528,8 +528,6 @@ void Tendencies::computeVelocityTendenciesOnly(
                                  FluxLayerThickEdge);
    Pacer::stop("Tend:computeVelocityVAdvTend", 2);
 
-   // Compute wind forcing
-   const auto &NormalStressEdge = AuxState->WindForcingAux.NormalStressEdge;
    const auto &MeanLayerThickEdge =
        AuxState->LayerThicknessAux.MeanLayerThickEdge;
 

@@ -661,6 +661,7 @@ class PresGradZOnEdge {
 class PresGradForceOnEdge {
  public:
    bool Enabled;
+   Real LocRhoSw;
 
    /// constructor declaration
    PresGradForceOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
@@ -683,19 +684,9 @@ class PresGradForceOnEdge {
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const I4 K = KStart + KVec;
 
-         // LayerThick * SpecVol * Pressure : (A)
-         const Real LayerSpecVolPresCell0 = LayerThickCell(ICell0, K) *
-                                            SpecVol(ICell0, K) *
-                                            PressureMid(ICell0, K);
-
-         const Real LayerSpecVolPresCell1 = LayerThickCell(ICell1, K) *
-                                            SpecVol(ICell1, K) *
-                                            PressureMid(ICell1, K);
-
          // -grad(A) / LayerThick
          const Real PGFTerm = -InvDcEdge *
-                              (LayerSpecVolPresCell1 - LayerSpecVolPresCell0) /
-                              LayerThickEdge(IEdge, K);
+             (PressureMid(ICell1, K) - PressureMid(ICell0, K)) / LocRhoSw;
 
          Tend(IEdge, K) += EdgeMask(IEdge, K) * PGFTerm;
       }
@@ -713,6 +704,7 @@ class PresGradForceOnEdge {
 class GeoptGradOnEdge {
  public:
    bool Enabled;
+   Real LocRhoSw;
 
    /// constructor declaration
    GeoptGradOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
@@ -720,7 +712,8 @@ class GeoptGradOnEdge {
    /// The functor takes edge index, vertical chunk index, and arrays for
    /// geopotential, and outputs tendency array
    KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
-                                   const Array2DReal &GeoptMid) const {
+                                   const Array2DReal &GeoptMid,
+                                   const Array2DReal &Density) const {
 
       const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
       const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
@@ -731,9 +724,12 @@ class GeoptGradOnEdge {
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const I4 K = KStart + KVec;
 
+         const Real DensityEdge = 0.5 * (Density(ICell0,K) + Density(ICell1,K))
+
          // -grad(Geopotential)
-         const Real GeoptGradTerm =
-             -InvDcEdge * (GeoptMid(ICell1, K) - GeoptMid(ICell0, K));
+         const Real GeoptGradTerm = -InvDcEdge * (DensityEdge / LocRhoSw) *
+             (GeoptMid(ICell1, K) - GeoptMid(ICell0, K));
+// const Real InvRhoSwGravity = 1._Real / (LocRhoSw * Gravity);
 
          Tend(IEdge, K) += EdgeMask(IEdge, K) * GeoptGradTerm;
       }

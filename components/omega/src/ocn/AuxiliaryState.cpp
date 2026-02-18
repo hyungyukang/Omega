@@ -21,7 +21,7 @@ static std::string stripDefault(const std::string &Name) {
 // Constructor. Constructs the member auxiliary variables and registers their
 // fields with IOStreams
 AuxiliaryState::AuxiliaryState(const std::string &Name, const HorzMesh *Mesh,
-                               Halo *MeshHalo, const VertCoord *VCoord,
+                               Halo *MeshHalo, VertCoord *VCoord,
                                VertAdv *VAdv, int NTracers,
                                TimeInterval TimeStep)
     : Mesh(Mesh), MeshHalo(MeshHalo), VCoord(VCoord), VAdv(VAdv),
@@ -456,7 +456,7 @@ void AuxiliaryState::computeAll(const OceanState *State,
 // Create a non-default auxiliary state
 AuxiliaryState *AuxiliaryState::create(const std::string &Name,
                                        const HorzMesh *Mesh, Halo *MeshHalo,
-                                       const VertCoord *VCoord, VertAdv *VAdv,
+                                       VertCoord *VCoord, VertAdv *VAdv,
                                        const int NTracers,
                                        TimeInterval TimeStep) {
    if (AllAuxStates.find(Name) != AllAuxStates.end()) {
@@ -478,7 +478,7 @@ AuxiliaryState *AuxiliaryState::create(const std::string &Name,
 void AuxiliaryState::init() {
    const HorzMesh *DefMesh           = HorzMesh::getDefault();
    Halo *DefHalo                     = Halo::getDefault();
-   const VertCoord *DefVCoord        = VertCoord::getDefault();
+   VertCoord *DefVCoord        = VertCoord::getDefault();
    VertAdv *DefVAdv                  = VertAdv::getDefault();
    const TimeStepper *DefTimeStepper = TimeStepper::getDefault();
 

@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
       Kokkos::fence();
 
       /// Call function and get host copies of outputs
-      DefVertCoord->computePressure(LayerThickness, SurfacePressure);
+      //DefVertCoord->computePressure(LayerThickness, SurfacePressure);
       auto PressInterfH = createHostMirrorCopy(DefVertCoord->PressureInterface);
       auto PressMidH    = createHostMirrorCopy(DefVertCoord->PressureMid);
 
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
       Kokkos::fence();
 
       /// Call functions and get host copy of output
-      DefVertCoord->computePressure(LayerThickness, SurfacePressure);
+      //DefVertCoord->computePressure(LayerThickness, SurfacePressure);
       auto PressInterfH2 =
           createHostMirrorCopy(DefVertCoord->PressureInterface);
 
@@ -357,7 +357,7 @@ int main(int argc, char *argv[]) {
       Kokkos::fence();
 
       /// Call functions and get host copy of output
-      DefVertCoord->computePressure(LayerThickness, SurfacePressure);
+      //DefVertCoord->computePressure(LayerThickness, SurfacePressure);
       DefVertCoord->computeTargetThickness();
       auto LayerThicknessTargetH =
           createHostMirrorCopy(DefVertCoord->LayerThicknessTarget);
@@ -407,7 +407,7 @@ int main(int argc, char *argv[]) {
       Kokkos::fence();
 
       /// Call functions and get host copy of output
-      DefVertCoord->computePressure(LayerThickness, SurfacePressure);
+      //DefVertCoord->computePressure(LayerThickness, SurfacePressure);
       DefVertCoord->computeTargetThickness();
       auto LayerThicknessTargetH2 =
           createHostMirrorCopy(DefVertCoord->LayerThicknessTarget);

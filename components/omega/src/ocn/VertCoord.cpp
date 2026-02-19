@@ -818,8 +818,9 @@ void VertCoord::initMovementWeights() {
 // in each column to compute pressure from the top-most active layer to the
 // bottom-most active layer.
 void VertCoord::computePressure(
-    const Array2DReal &LayerThickness, // [in] pseudo thickness
-    const Array1DReal &SurfacePressure // [in] surface pressure
+    const Array2DReal &LayerThickness,  // [in] pseudo thickness
+    const Array1DReal &SurfacePressure, // [in] surface pressure
+    const Array2DReal &SpecVol          // [in] specific volume
 ) {
 
    OMEGA_SCOPE(LocRho0, Rho0);
@@ -840,7 +841,8 @@ void VertCoord::computePressure(
           Kokkos::parallel_scan(TeamThreadRange(Member, Range),
                                 [=](int K, Real &Accum, bool IsFinal) {
                                    const I4 KLyr  = K + KMin;
-                                   Real Increment = Gravity * LocRho0 *
+                                   Real Increment = Gravity *
+                                                    (1.0/SpecVol(ICell,KLyr)) *
                                                     LayerThickness(ICell, KLyr);
                                    Accum += Increment;
 

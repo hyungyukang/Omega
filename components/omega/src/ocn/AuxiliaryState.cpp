@@ -122,7 +122,7 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
 
    // TODO: compute surface pressure
    Array1DReal SurfacePressure("SurfacePressure", Mesh->NCellsSize);
-   deepCopy(SurfacePressure, 1e5);
+   deepCopy(SurfacePressure, 0.0);
 
    // TODO: retrieve TidalPotential and SelfAttractionLoading
    Array1DReal TidalPotential("TidalPotential", Mesh->NCellsSize);
@@ -130,11 +130,10 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    deepCopy(TidalPotential, 0.0);
    deepCopy(SelfAttractionLoading, 0.0);
 
-   // compute pressure
-   VCoord->computePressure(LayerThickCell, SurfacePressure);
-
    // convert PressureMid to dbars since that's what Eos expects
    // TODO: allocating a new array here is slow
+   // TODO: Here PressureMidDbar is set as 1.0 and not used to compute linear
+   //       EOS. !!!!Only for the test purpose!!!!
    Array2DReal PressureMidDbar("PressureMidDbar", VCoord->PressureMid.layout());
    const auto &MinLayerCell = VCoord->MinLayerCell;
    const auto &MaxLayerCell = VCoord->MaxLayerCell;
@@ -149,12 +148,16 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
           parallelForInner(
               Team, KRange, INNER_LAMBDA(int KChunk) {
                  const int K               = KMin + KChunk;
-                 PressureMidDbar(ICell, K) = PressureMid(ICell, K) / 1e5;
+                 PressureMidDbar(ICell, K) = 1.0;
               });
        });
 
    // compute specific volume
    EosInstance->computeSpecVol(ConservTemp, AbsSalinity, PressureMidDbar);
+
+   // compute pressure
+   const auto &SpecVol  = EosInstance->SpecVol;
+   VCoord->computePressure(LayerThickCell, SurfacePressure, SpecVol);
 
    // compute height
    VCoord->computeZHeight(LayerThickCell, EosInstance->SpecVol);
@@ -164,7 +167,6 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
 
    // compute Brunt-Vaisala frequency (NSquared)
    const auto &PressureInterface  = VCoord->PressureInterface;
-   const auto &SpecVol  = EosInstance->SpecVol;
    EosInstance->computeBruntVaisalaFreqSq(ConservTemp, AbsSalinity, PressureInterface, SpecVol);
 
    // compute vertical mixing coefficient

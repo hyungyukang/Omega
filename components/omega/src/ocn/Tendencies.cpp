@@ -665,6 +665,7 @@ void Tendencies::computeVelocityTendenciesOnly(
       } else {
 
          const Array2DReal &GeoptMid = VCoord->GeopotentialMid;
+         const Array2DReal &SpecVol  = EosInstance->SpecVol;
          // OMEGA_SCOPE(LocGeoptMid, VCoord->GeopotentialMid);
 
          parallelForOuter(
@@ -676,7 +677,7 @@ void Tendencies::computeVelocityTendenciesOnly(
                 parallelForInner(
                     Team, KRange, INNER_LAMBDA(int KChunk) {
                        LocGeoptGrad(LocNormalVelocityTend, IEdge, KChunk,
-                                    GeoptMid);
+                                    GeoptMid, SpecVol);
                     });
              });
          Pacer::stop("Tend:geopotentialGrad", 2);

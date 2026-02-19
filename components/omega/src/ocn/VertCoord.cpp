@@ -886,9 +886,10 @@ void VertCoord::computeZHeight(
               TeamThreadRange(Member, Range),
               [=](int K, Real &Accum, bool IsFinal) {
                  const I4 KLyr = KMax - K;
-                 Real DZ       = LocRho0 * SpecVol(ICell, KLyr) *
-                           LayerThickness(ICell, KLyr);
+
+                 Real DZ = LayerThickness(ICell, KLyr);
                  Accum += DZ;
+
                  if (IsFinal) {
                     LocZInterf(ICell, KLyr) = -LocBotDepth(ICell) + Accum;
                     LocZMid(ICell, KLyr) =

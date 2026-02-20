@@ -162,17 +162,16 @@ TracerHyperDiffOnCell::TracerHyperDiffOnCell(const HorzMesh *Mesh,
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
 
 void TracerHighOrderHorzAdvOnCell::init() {
-   const HorzMesh *Mesh   = this->HorzontalMesh;
-   const auto MaxEdges2   = Mesh->MaxEdges2;
-   const auto NEdgesAll   = Mesh->NEdgesAll;
-   const auto NCellsOwned = Mesh->NCellsOwned;
-   const auto NEdgesOwned = Mesh->NEdgesOwned;
+   const HorzMesh *Mesh = this->HorzontalMesh;
+   const auto MaxEdges2 = Mesh->MaxEdges2;
+   const auto NEdgesAll = Mesh->NEdgesAll;
+   const auto NCellsAll = Mesh->NCellsAll;
    // Allocate Kokkos arrays in member data
 
    SecondDerivativeOnCell secondDerivativeOnCell(Mesh);
    Array3DReal DerivTwo("DerivTwo", MaxEdges2 + 2, 2, NEdgesAll);
    parallelFor(
-       {NCellsOwned},
+       {NCellsAll},
        KOKKOS_LAMBDA(int ICell) { secondDerivativeOnCell(DerivTwo, ICell); });
    // Compute masks and coefficients
    Kokkos::fence();
@@ -181,7 +180,7 @@ void TracerHighOrderHorzAdvOnCell::init() {
                                              AdvCoefs, AdvCoefs3rd);
    Kokkos::fence();
    parallelFor(
-       {NEdgesOwned},
+       {NEdgesAll},
        KOKKOS_LAMBDA(int IEdge) { masksAndCoefficients(IEdge); });
    Kokkos::fence();
 }

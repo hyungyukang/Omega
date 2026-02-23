@@ -18,18 +18,18 @@ SPC::SPC (const ekat::Comm& comm, const ekat::ParameterList& params)
 }
 
 // =========================================================================================
-void SPC::set_grids(const std::shared_ptr<const GridsManager> grids_manager)
+void SPC::create_requests()
 {
   using namespace ekat::units;
 
   constexpr auto nondim = Units::nondimensional();
   constexpr int ps = SCREAM_PACK_SIZE;
 
-  m_model_grid = grids_manager->get_grid("physics");
+  m_model_grid = m_grids_manager->get_grid("physics");
   const auto& grid_name = m_model_grid->name();
   
   // Define the different field layouts that will be used for this process
-  auto scalar3d_mid    = m_model_grid->get_3d_scalar_layout(true);
+  auto scalar3d_mid = m_model_grid->get_3d_scalar_layout(true);
 
   // Set of fields used strictly as input
   add_field<Required>("p_mid"      , scalar3d_mid, Pa,     grid_name, ps);

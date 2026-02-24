@@ -5,8 +5,8 @@
 #include "DataTypes.h"
 #include "Decomp.h"
 #include "Dimension.h"
-#include "Error.h"
 #include "Eos.h"
+#include "Error.h"
 #include "Field.h"
 #include "GlobalConstants.h"
 #include "Halo.h"
@@ -17,8 +17,8 @@
 #include "MachEnv.h"
 #include "OceanTestCommon.h"
 #include "OmegaKokkos.h"
-#include "Pacer.h"
 #include "PGrad.h"
+#include "Pacer.h"
 #include "TimeStepper.h"
 #include "VertCoord.h"
 #include "mpi.h"
@@ -167,17 +167,18 @@ int testTendencies() {
 
    const auto Mesh     = HorzMesh::getDefault();
    const auto VCoord   = VertCoord::getDefault();
-   const auto PGrad  = PressureGrad::getDefault();
-   const auto EqState = Eos::getInstance();
+   const auto PGrad    = PressureGrad::getDefault();
+   const auto EqState  = Eos::getInstance();
    VCoord->NVertLayers = 12;
 
    // test creation of another tendencies
    Config *Options = Config::getOmegaConfig();
    Config TendConfig("Tendencies");
-   Err1 = Options->get(TendConfig);
+   Err1             = Options->get(TendConfig);
    int NTracersTest = 3;
 
-   Tendencies::create("TestTendencies", Mesh, VCoord, PGrad, EqState, NTracersTest, &TendConfig);
+   Tendencies::create("TestTendencies", Mesh, VCoord, PGrad, EqState,
+                      NTracersTest, &TendConfig);
 
    // test retrievel of another tendencies
    if (Tendencies::get("TestTendencies")) {

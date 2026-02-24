@@ -29,8 +29,8 @@
 #include "MachEnv.h"
 #include "OceanState.h"
 #include "OmegaKokkos.h"
-#include "Pacer.h"
 #include "PGrad.h"
+#include "Pacer.h"
 #include "TendencyTerms.h"
 #include "TimeMgr.h"
 #include "Tracers.h"
@@ -187,9 +187,9 @@ int initTimeStepperTest(const std::string &mesh) {
    // Creating non-default state and auxiliary state to use only one vertical
    // layer
 
-   auto *DefMesh = HorzMesh::getDefault();
-   auto *DefHalo = Halo::getDefault();
-   auto *DefEos  = Eos::getInstance();
+   auto *DefMesh  = HorzMesh::getDefault();
+   auto *DefHalo  = Halo::getDefault();
+   auto *DefEos   = Eos::getInstance();
    auto *DefPGrad = PressureGrad::getDefault();
 
    int NTracers          = Tracers::getNumTracers();
@@ -216,8 +216,8 @@ int initTimeStepperTest(const std::string &mesh) {
 
    // Creating non-default tendencies with custom velocity tendencies
    auto *TestTendencies = Tendencies::create(
-       "TestTendencies", DefMesh, DefVertCoord, DefPGrad, DefEos, NTracers, &Options,
-       Tendencies::CustomTendencyType{}, DecayVelocityTendency{});
+       "TestTendencies", DefMesh, DefVertCoord, DefPGrad, DefEos, NTracers,
+       &Options, Tendencies::CustomTendencyType{}, DecayVelocityTendency{});
    if (!TestTendencies) {
       Err++;
       LOG_ERROR("TimeStepperTest: error creating test tendencies");

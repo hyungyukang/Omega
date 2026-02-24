@@ -33,13 +33,13 @@
 
 #include "AuxiliaryState.h"
 #include "Config.h"
+#include "Eos.h"
 #include "HorzMesh.h"
 #include "OceanState.h"
+#include "PGrad.h"
 #include "TendencyTerms.h"
 #include "TimeMgr.h"
 #include "VertCoord.h"
-#include "PGrad.h"
-#include "Eos.h"
 
 #include <functional>
 #include <memory>
@@ -154,9 +154,9 @@ class Tendencies {
    // Construct a new tendency object
    Tendencies(const std::string &Name, ///< [in] Name for tendencies
               const HorzMesh *Mesh,    ///< [in] Horizontal mesh
-              VertCoord *VCoord, ///< [in] Vertical coordinate
-              PressureGrad *PGrad,      ///< [in] Pressure gradient
-              Eos *EqState,      ///< [in] Equation of state
+              VertCoord *VCoord,       ///< [in] Vertical coordinate
+              PressureGrad *PGrad,     ///< [in] Pressure gradient
+              Eos *EqState,            ///< [in] Equation of state
               int NTracersIn,          ///< [in] Number of tracers
               Config *Options,         ///< [in] Configuration options
               CustomTendencyType InCustomThicknessTend,
@@ -164,9 +164,9 @@ class Tendencies {
 
    Tendencies(const std::string &Name, ///< [in] Name for tendencies
               const HorzMesh *Mesh,    ///< [in] Horizontal mesh
-              VertCoord *VCoord, ///< [in] Vertical coordinate
-              PressureGrad *PGrad,      ///< [in] Pressure gradient
-              Eos *EqState,      ///< [in] Equation of state
+              VertCoord *VCoord,       ///< [in] Vertical coordinate
+              PressureGrad *PGrad,     ///< [in] Pressure gradient
+              Eos *EqState,            ///< [in] Equation of state
               int NTracersIn,          ///< [in] Number of tracers
               Config *Options          ///< [in] Configuration options
    );
@@ -177,11 +177,11 @@ class Tendencies {
    Tendencies(const Tendencies &) = delete;
    Tendencies(Tendencies &&)      = delete;
 
-   const HorzMesh *Mesh;    ///< Pointer to horizontal mesh
-   VertCoord *VCoord; ///< Pointer to vertical coordinate
-   PressureGrad *PGrad; ///< Pointer to pressure gradient
-   Eos *EqState;       ///< Pointer to equation of state
-   I4 NTracers;             ///< Number of tracers
+   const HorzMesh *Mesh; ///< Pointer to horizontal mesh
+   VertCoord *VCoord;    ///< Pointer to vertical coordinate
+   PressureGrad *PGrad;  ///< Pointer to pressure gradient
+   Eos *EqState;         ///< Pointer to equation of state
+   I4 NTracers;          ///< Number of tracers
 
    // Pointer to default tendencies
    static Tendencies *DefaultTendencies;

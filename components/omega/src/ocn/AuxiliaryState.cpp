@@ -86,11 +86,9 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    }
 
    // get layer thickness
-   Array2DReal LayerThickCell;
-   State->getLayerThickness(LayerThickCell, ThickTimeLevel);
+   Array2DReal LayerThickCell = State->getLayerThickness(ThickTimeLevel);
    // get normal velocity
-   Array2DReal NormalVelEdge;
-   State->getNormalVelocity(NormalVelEdge, VelTimeLevel);
+   Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
 
    // compute tangential velocity
    OMEGA_SCOPE(LocTangentAux, TangentAux);

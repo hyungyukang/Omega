@@ -69,7 +69,6 @@ class Tendencies {
    BottomDragOnEdge BottomDrag;
    TracerDiffOnCell TracerDiffusion;
    TracerHyperDiffOnCell TracerHyperDiff;
-   TracerHorzAdvOnCell TracerHorzAdv;
    TracerHighOrderHorzAdvOnCell TracerHighOrderHorzAdv;
 
    std::string Name;

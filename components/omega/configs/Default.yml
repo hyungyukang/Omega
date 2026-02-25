@@ -27,6 +27,7 @@ Omega:
     FluxThicknessType: Center
     VerticalTracerFluxLimiterEnable: true
     VerticalTracerFluxOrder: 3
+    HorzTracerFluxOrder: 2
   WindStress:
     InterpType: Isotropic
   VertCoord:
@@ -48,8 +49,6 @@ Omega:
     BottomDragTendencyEnable: false
     BottomDragCoeff: 0.0
     TracerHorzAdvTendencyEnable: true
-    HorzTracerFluxOrder: 2
-    HorzTracerCoef3rdOrder: 0.25
     TracerDiffTendencyEnable: true
     EddyDiff2: 10.0
     TracerHyperDiffTendencyEnable: true

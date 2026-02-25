@@ -4,6 +4,7 @@
 #include "share/grid/grid_import_export.hpp"
 #include "share/util/eamxx_utils.hpp"
 #include "share/util/eamxx_timing.hpp"
+// #include "share/field/field_utils.hpp"
 
 #include <ekat_team_policy_utils.hpp>
 
@@ -15,7 +16,7 @@ namespace scream
 RefiningRemapper::
 RefiningRemapper (const grid_ptr_type& tgt_grid,
                   const std::string& map_file)
- : HorizInterpRemapperBase(tgt_grid,map_file,InterpType::Refine)
+ : HorizInterpRemapperBase(tgt_grid,map_file)
 {
   // Nothing to do here
 }
@@ -90,7 +91,7 @@ void RefiningRemapper::setup_mpi_data_structures ()
 
   using namespace ShortFieldTagsNames;
 
-  const int nranks = m_comm.size();
+  const int nranks = m_src_grid->get_comm().size();
 
   // Get cumulative col size of each field (to be used to compute offsets)
   m_fields_col_sizes_scan_sum.resize(m_num_fields+1,0);
@@ -110,9 +111,9 @@ void RefiningRemapper::setup_mpi_data_structures ()
   // ----------- Compute RECV metadata -------------- //
 
   // Figure out where ov_src cols are received from
-  const int ncols_recv = m_ov_coarse_grid->get_num_local_dofs();
+  const int ncols_recv = m_remap_data->m_overlap_grid->get_num_local_dofs();
 
-  m_imp_exp = std::make_shared<GridImportExport>(m_src_grid,m_ov_coarse_grid);
+  m_imp_exp = std::make_shared<GridImportExport>(m_src_grid,m_remap_data->m_overlap_grid);
 
   // We can now compute the offset of each pid in the recv buffer
   m_pids_recv_offsets = view_1d<int>("",nranks+1);
@@ -149,7 +150,7 @@ void RefiningRemapper::setup_mpi_data_structures ()
 
   // ----------- Create Requests ------------ //
 
-  const auto mpi_comm = m_comm.mpi_comm();
+  const auto mpi_comm = m_src_grid->get_comm().mpi_comm();
   const auto mpi_real = ekat::get_mpi_type<Real>();
   for (int pid=0; pid<nranks; ++pid) {
     // Send request
@@ -295,7 +296,7 @@ void RefiningRemapper::pack_and_send ()
       }
       default:
         EKAT_ERROR_MSG ("Unexpected field rank in RefiningRemapper::pack.\n"
-            "  - MPI rank  : " + std::to_string(m_comm.rank()) + "\n"
+            "  - MPI rank  : " + std::to_string(m_src_grid->get_comm().rank()) + "\n"
             "  - field name: " + f.name() + "\n"
             "  - field rank: " + std::to_string(fl.rank()) + "\n");
     }
@@ -450,7 +451,7 @@ void RefiningRemapper::recv_and_unpack ()
       }
       default:
         EKAT_ERROR_MSG ("Unexpected field rank in RefiningRemapper::unpack.\n"
-            "  - MPI rank  : " + std::to_string(m_comm.rank()) + "\n"
+            "  - MPI rank  : " + std::to_string(m_src_grid->get_comm().rank()) + "\n"
             "  - field name: " + f.name() + "\n"
             "  - field rank: " + std::to_string(fl.rank()) + "\n");
     }

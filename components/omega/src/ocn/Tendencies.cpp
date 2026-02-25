@@ -84,8 +84,8 @@ void Tendencies::init() {
               CustomThickTend, CustomVelTend);
 
    DefaultTendencies->readTendConfig(&TendConfig);
-   if (DefaultTendencies->TracerHighOrderHorzAdv.Enabled)
-      DefaultTendencies->TracerHighOrderHorzAdv.init();
+   if (DefaultTendencies->TracerHorzAdv.Enabled)
+      DefaultTendencies->TracerHorzAdv.init();
 } // end init
 
 //------------------------------------------------------------------------------
@@ -180,10 +180,10 @@ void Tendencies::readTendConfig(
       CHECK_ERROR_ABORT(Err, "Tendencies: DivFactor not found in TendConfig");
    }
    Err += TendConfig->get("TracerHorzAdvTendencyEnable",
-                          this->TracerHighOrderHorzAdv.Enabled);
+                          this->TracerHorzAdv.Enabled);
    CHECK_ERROR_ABORT(
        Err, "Tendencies: TracerHorzAdvTendencyEnable not found in TendConfig");
-   if (this->TracerHighOrderHorzAdv.Enabled) {
+   if (this->TracerHorzAdv.Enabled) {
       I4 Order = 0;
       Err += TendConfig->get("HorzTracerFluxOrder", Order);
       CHECK_ERROR_ABORT(
@@ -193,17 +193,17 @@ void Tendencies::readTendConfig(
                     Order);
 
       if (Order == 2) {
-         this->TracerHighOrderHorzAdv.ForceLowOrder = true;
-         this->TracerHighOrderHorzAdv.Coef3rdOrder  = 0;
+         this->TracerHorzAdv.ForceLowOrder = true;
+         this->TracerHorzAdv.Coef3rdOrder  = 0;
       }
       if (Order == 3) {
          Err += TendConfig->get("HorzTracerCoef3rdOrder",
-                                TracerHighOrderHorzAdv.Coef3rdOrder);
+                                TracerHorzAdv.Coef3rdOrder);
          CHECK_ERROR_ABORT(
              Err, "Tendencies: HorzTracerCoef3rdOrder not found in TendConfig");
       }
       if (Order == 4) {
-         this->TracerHighOrderHorzAdv.Coef3rdOrder = 0;
+         this->TracerHorzAdv.Coef3rdOrder = 0;
       }
    }
    Err += TendConfig->get("TracerDiffTendencyEnable",
@@ -316,7 +316,7 @@ Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
       SSHGrad(Mesh, VCoord), VelocityDiffusion(Mesh, VCoord),
       VelocityHyperDiff(Mesh, VCoord), WindForcing(Mesh, VCoord),
       BottomDrag(Mesh, VCoord), TracerDiffusion(Mesh, VCoord),
-      TracerHyperDiff(Mesh, VCoord), TracerHighOrderHorzAdv(Mesh, VCoord),
+      TracerHyperDiff(Mesh, VCoord), TracerHorzAdv(Mesh, VCoord),
       CustomThicknessTend(InCustomThicknessTend),
       CustomVelocityTend(InCustomVelocityTend), EqState(EqState), PGrad(PGrad) {
 
@@ -633,7 +633,7 @@ void Tendencies::computeTracerTendenciesOnly(
     TimeInstant Time                ///< [in] Time
 ) {
    OMEGA_SCOPE(LocTracerTend, TracerTend);
-   OMEGA_SCOPE(LocTracerHighOrderHorzAdv, TracerHighOrderHorzAdv);
+   OMEGA_SCOPE(LocTracerHorzAdv, TracerHorzAdv);
    OMEGA_SCOPE(LocTracerDiffusion, TracerDiffusion);
    OMEGA_SCOPE(LocTracerHyperDiff, TracerHyperDiff);
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
@@ -660,8 +660,8 @@ void Tendencies::computeTracerTendenciesOnly(
    Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
    const Array2DReal &FluxLayerThickEdge =
        AuxState->LayerThicknessAux.FluxLayerThickEdge;
-   if (LocTracerHighOrderHorzAdv.Enabled) {
-      Pacer::start("Tend:TracerHighOrderHorzAdv", 2);
+   if (LocTracerHorzAdv.Enabled) {
+      Pacer::start("Tend:tracerHorzAdv", 2);
       parallelForOuter(
           {NTracers, Mesh->NEdgesAll},
           KOKKOS_LAMBDA(int L, int IEdge, const TeamMember &Team) {
@@ -670,9 +670,8 @@ void Tendencies::computeTracerTendenciesOnly(
              const int KRange = vertRangeChunked(KMin, KMax);
              parallelForInner(
                  Team, KRange, INNER_LAMBDA(int KChunk) {
-                    LocTracerHighOrderHorzAdv(L, IEdge, KChunk, TracerArray,
-                                              FluxLayerThickEdge,
-                                              NormalVelEdge);
+                    LocTracerHorzAdv(L, IEdge, KChunk, TracerArray,
+                                     FluxLayerThickEdge, NormalVelEdge);
                  });
           });
       parallelForOuter(
@@ -683,10 +682,10 @@ void Tendencies::computeTracerTendenciesOnly(
              const int KRange = vertRangeChunked(KMin, KMax);
              parallelForInner(
                  Team, KRange, INNER_LAMBDA(int KChunk) {
-                    LocTracerHighOrderHorzAdv(LocTracerTend, L, ICell, KChunk);
+                    LocTracerHorzAdv(LocTracerTend, L, ICell, KChunk);
                  });
           });
-      Pacer::stop("Tend:TracerHighOrderHorzAdv", 2);
+      Pacer::stop("Tend:tracerHorzAdv", 2);
    }
 
    // compute tracer diffusion

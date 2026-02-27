@@ -128,8 +128,6 @@ int initAuxStateTest(const std::string &mesh) {
       LOG_ERROR("AuxStateTest: error initializing default state");
    }
 
-   VertAdv::init();
-
    return Err;
 }
 

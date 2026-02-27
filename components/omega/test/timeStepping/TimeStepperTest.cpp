@@ -168,9 +168,6 @@ int initTimeStepperTest(const std::string &mesh) {
    VertCoord::init(false, NVertLayers);
    auto *DefVertCoord = VertCoord::getDefault();
 
-   VertAdv::init();
-   auto *DefVertAdv = VertAdv::getDefault();
-
    Tracers::init();
 
    VertAdv::init();

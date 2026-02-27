@@ -126,7 +126,6 @@ int initTendenciesTest(const std::string &mesh) {
    VertCoord::init();
    VertAdv::init();
    Tracers::init();
-   VertAdv::init();
 
    // VertCoord::init2();
 
@@ -244,7 +243,6 @@ void finalizeTendenciesTest() {
    OceanState::clear();
    VertAdv::clear();
    VertCoord::clear();
-   VertAdv::clear();
    HorzMesh::clear();
    Field::clear();
    Dimension::clear();

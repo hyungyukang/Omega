@@ -180,8 +180,6 @@ TracerVertMixSetupOnCell::TracerVertMixSetupOnCell(const HorzMesh *Mesh,
       MinLayerCell(VCoord->MinLayerCell),
       MaxLayerCell(VCoord->MaxLayerCell) {}
 
-=======
->>>>>>> James_HOadv/overfelt/HigherOrderTendency_Cleanup
 } // end namespace OMEGA
 
 //===----------------------------------------------------------------------===//

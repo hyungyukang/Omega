@@ -867,7 +867,6 @@ int initAuxVarsTest(const std::string &mesh) {
    // initialize vertical coordinate, do not read stream and use local
    // NVertLayers and NVertLayersP1 values
    VertCoord::init(false, NVertLayers);
-   VertCoord::init(false, NVertLayersP1);
 
    return Err;
 }

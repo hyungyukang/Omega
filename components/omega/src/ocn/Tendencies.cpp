@@ -180,31 +180,31 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
       CHECK_ERROR_ABORT(Err, "Tendencies: DivFactor not found in TendConfig");
    }
 
-   Err += TendConfig->get("ProjVelDiffTendencyEnable",
-                          this->ProjVelDiffusion.Enabled);
+   Err += TendConfig.get("ProjVelDiffTendencyEnable",
+                         this->ProjVelDiffusion.Enabled);
    CHECK_ERROR_ABORT(
        Err, "Tendencies: ProjVelDiffTendencyEnable not found in TendConfig");
 
-   Err += TendConfig->get("ProjVelHyperDiffTendencyEnable",
-                          this->ProjVelHyperDiff.Enabled);
+   Err += TendConfig.get("ProjVelHyperDiffTendencyEnable",
+                         this->ProjVelHyperDiff.Enabled);
    CHECK_ERROR_ABORT(
        Err, "Tendencies: ProjVelHyperDiffTendencyEnable not found in TendConfig");
 
-   Err += TendConfig->get("VelVertMixTendencyEnable",
-                          this->VelVertMixSetup.Enabled);
+   Err += TendConfig.get("VelVertMixTendencyEnable",
+                         this->VelVertMixSetup.Enabled);
    CHECK_ERROR_ABORT(
        Err, "Tendencies: VelVertMixTendencyEnable not found in TendConfig");
 
-   Err += TendConfig->get("PresForceTendencyEnable", this->PresGradZ.Enabled);
+   Err += TendConfig.get("PresForceTendencyEnable", this->PresGradZ.Enabled);
    CHECK_ERROR_ABORT(
        Err, "Tendencies: PresForceTendencyEnable not found in TendConfig");
 
-   Err += TendConfig->get("PresGradForceTendencyEnable",
-                          this->PresGradForce.Enabled);
+   Err += TendConfig.get("PresGradForceTendencyEnable",
+                         this->PresGradForce.Enabled);
    CHECK_ERROR_ABORT(
        Err, "Tendencies: PresGradForceTendencyEnable not found in TendConfig");
 
-   Err += TendConfig->get("GeoptGradTendencyEnable", this->GeoptGrad.Enabled);
+   Err += TendConfig.get("GeoptGradTendencyEnable", this->GeoptGrad.Enabled);
    CHECK_ERROR_ABORT(
        Err, "Tendencies: GeoptGradTendencyEnable not found in TendConfig");
 
@@ -272,8 +272,8 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
       CHECK_ERROR_ABORT(Err, "Tendencies: EddyDiff4 not found in TendConfig");
    }
 
-   Err += TendConfig->get("TracerVertMixTendencyEnable",
-                          this->TracerVertMixSetup.Enabled);
+   Err += TendConfig.get("TracerVertMixTendencyEnable",
+                         this->TracerVertMixSetup.Enabled);
    CHECK_ERROR_ABORT(
        Err, "Tendencies: TracerVertMixTendencyEnable not found in TendConfig");
 
@@ -390,9 +390,6 @@ void Tendencies::computeThicknessTendenciesOnly(
                           ThickTimeLevel, VelTimeLevel, Time);
       Pacer::stop("Tend:customThicknessTend", 2);
    }
-
-   // Compute thickness vertical advection tendency
-   VAdv->computeThicknessVAdvTend(LocLayerThicknessTend);
 
    Pacer::stop("Tend:computeThicknessTendenciesOnly", 1);
 
@@ -677,10 +674,6 @@ void Tendencies::computeVelocityTendenciesOnly(
          Pacer::stop("Tend:geopotentialGrad", 2);
       }
    }
-
-   // Compute velocity vertical advection tendency
-   VAdv->computeVelocityVAdvTend(LocNormalVelocityTend,LocNormalVelocityTend,
-                                 FluxLayerThickEdge);
 
    // Compute wind forcing
    const auto &NormalStressEdge = AuxState->WindForcingAux.NormalStressEdge;

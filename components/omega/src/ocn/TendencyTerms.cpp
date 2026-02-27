@@ -113,13 +113,23 @@ BottomDragOnEdge::BottomDragOnEdge(const HorzMesh *Mesh,
 
 TracerHorzAdvOnCell::TracerHorzAdvOnCell(const HorzMesh *Mesh,
                                          const VertCoord *VCoord)
-    : NEdgesOnCell(Mesh->NEdgesOnCell), EdgesOnCell(Mesh->EdgesOnCell),
+    : HorzontalMesh(Mesh),
+      NAdvCellsForEdge("NumberOfCellsContribToAdvectionAtEdge",
+                       Mesh->NEdgesAll),
+      AdvCellsForEdge("IndexOfCellsContributingToAdvection", Mesh->NEdgesAll,
+                      Mesh->MaxEdges2 + 2),
+      AdvMaskHighOrder("MaskForHighOrderAdvectionTerms", Mesh->NEdgesAll),
+      AdvCoefs("CommonAdvectionCoefficients", Mesh->MaxEdges2 + 2,
+               Mesh->NEdgesAll),
+      AdvCoefs3rd("CommonAdvectionCoeffsForHighOrder", Mesh->MaxEdges2 + 2,
+                  Mesh->NEdgesAll),
+      HighOrderFlxHorz("HigherOrderHorizontalFlux", Tracers::getNumTracers(),
+                       Mesh->NEdgesAll, VCoord->NVertLayers),
+      NEdgesOnCell(Mesh->NEdgesOnCell), EdgesOnCell(Mesh->EdgesOnCell),
       CellsOnEdge(Mesh->CellsOnEdge), EdgeSignOnCell(Mesh->EdgeSignOnCell),
-      DvEdge(Mesh->DvEdge), AreaCell(Mesh->AreaCell),
-      EdgeMask(VCoord->EdgeMask), MinLayerCell(VCoord->MinLayerCell),
-      MaxLayerCell(VCoord->MaxLayerCell),
-      MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
-      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
+      DvEdge(Mesh->DvEdge), AreaCell(Mesh->AreaCell) {
+   deepCopy(HighOrderFlxHorz, 0);
+}
 
 TracerHighOrderHorzAdvOnCell::TracerHighOrderHorzAdvOnCell(
     const HorzMesh *Mesh, const VertCoord *VCoord)
@@ -161,7 +171,7 @@ TracerHyperDiffOnCell::TracerHyperDiffOnCell(const HorzMesh *Mesh,
       MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
 
-void TracerHighOrderHorzAdvOnCell::init() {
+void TracerHorzAdvOnCell::init() {
    const HorzMesh *Mesh = this->HorzontalMesh;
    const auto MaxEdges2 = Mesh->MaxEdges2;
    const auto NEdgesAll = Mesh->NEdgesAll;
@@ -190,6 +200,8 @@ TracerVertMixSetupOnCell::TracerVertMixSetupOnCell(const HorzMesh *Mesh,
       MinLayerCell(VCoord->MinLayerCell),
       MaxLayerCell(VCoord->MaxLayerCell) {}
 
+=======
+>>>>>>> James_HOadv/overfelt/HigherOrderTendency_Cleanup
 } // end namespace OMEGA
 
 //===----------------------------------------------------------------------===//

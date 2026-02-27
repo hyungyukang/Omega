@@ -25,7 +25,6 @@ Omega:
   Advection:
     Coef3rdOrder: 0.25
     FluxThicknessType: Center
-    FluxTracerType: Center
     VerticalTracerFluxLimiterEnable: true
     VerticalTracerFluxOrder: 3
     HorzTracerFluxOrder: 2
@@ -54,7 +53,6 @@ Omega:
     BottomDragTendencyEnable: false
     BottomDragCoeff: 0.0
     TracerHorzAdvTendencyEnable: true
-    TracerHorzAdvTendencyOrder: 1
     TracerDiffTendencyEnable: true
     EddyDiff2: 10.0
     TracerHyperDiffTendencyEnable: true

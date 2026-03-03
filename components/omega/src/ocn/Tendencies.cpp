@@ -98,8 +98,8 @@ Tendencies::~Tendencies() {
 //------------------------------------------------------------------------------
 // Removes all tendencies instances before exit
 void Tendencies::clear() {
-    AllTendencies.clear();
-    DefaultTendencies = nullptr; // prevent dangling pointer
+   AllTendencies.clear();
+   DefaultTendencies = nullptr; // prevent dangling pointer
 } // end clear
 
 //------------------------------------------------------------------------------

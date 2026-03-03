@@ -40,9 +40,12 @@ constexpr Real Gravity =
 constexpr Real CDay = 86400.0;             // Seconds in a calendar day ~ sec
 constexpr Real SDay = 86164.0;             // Seconds in a sidereal day ~ sec
 constexpr Real Omega =
-    2.0 * Pi / SDay; // Angular velocity of the Earth ~ rad/sec
-constexpr Real REarth = pcd::mean_radius; // Mean radius of the Earth ~ m (from
-                                          // Physical Constants Dictionary)
+    2.0 * Pi / SDay;              // Angular velocity of the Earth ~ rad/sec
+constexpr Real REarth = 6371220.; // Mean radius of the Earth ~ m (from
+                                  // Physical Constants Dictionary)
+//    2.0 * Pi / SDay; // Angular velocity of the Earth ~ rad/sec
+//constexpr Real REarth = pcd::mean_radius; // Mean radius of the Earth ~ m (from
+//                                          // Physical Constants Dictionary)
 
 /// Physical constants
 constexpr Real TkTrip =

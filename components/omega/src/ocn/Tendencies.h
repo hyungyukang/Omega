@@ -179,8 +179,10 @@ class Tendencies {
 
    const HorzMesh *Mesh; ///< Pointer to horizontal mesh
    VertCoord *VCoord;    ///< Pointer to vertical coordinate
-   PressureGrad *PGrad;  ///< Pointer to pressure gradient
+   CustomTendencyType CustomThicknessTend;
+   CustomTendencyType CustomVelocityTend;
    Eos *EqState;         ///< Pointer to equation of state
+   PressureGrad *PGrad;  ///< Pointer to pressure gradient
    I4 NTracers;          ///< Number of tracers
 
    // Pointer to default tendencies
@@ -189,8 +191,6 @@ class Tendencies {
    // Map of all tendency objects
    static std::map<std::string, std::unique_ptr<Tendencies>> AllTendencies;
 
-   CustomTendencyType CustomThicknessTend;
-   CustomTendencyType CustomVelocityTend;
 
 }; // end class Tendencies
 

@@ -181,16 +181,15 @@ class Tendencies {
    VertCoord *VCoord;    ///< Pointer to vertical coordinate
    CustomTendencyType CustomThicknessTend;
    CustomTendencyType CustomVelocityTend;
-   Eos *EqState;         ///< Pointer to equation of state
-   PressureGrad *PGrad;  ///< Pointer to pressure gradient
-   I4 NTracers;          ///< Number of tracers
+   Eos *EqState;        ///< Pointer to equation of state
+   PressureGrad *PGrad; ///< Pointer to pressure gradient
+   I4 NTracers;         ///< Number of tracers
 
    // Pointer to default tendencies
    static Tendencies *DefaultTendencies;
 
    // Map of all tendency objects
    static std::map<std::string, std::unique_ptr<Tendencies>> AllTendencies;
-
 
 }; // end class Tendencies
 

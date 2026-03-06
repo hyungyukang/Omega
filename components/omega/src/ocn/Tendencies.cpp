@@ -538,7 +538,7 @@ void Tendencies::computeVelocityTendenciesOnly(
 
    Pacer::start("Tend:computeVelocityVAdvTend", 2);
    // Compute velocity tendency from vertical advection
-   VAdv->computeVelocityVAdvTend(NormalVelocityTend, NormalVelEdge,
+   VAdv->computeVelocityVAdvTend(NormalVelocityTend, NormVelEdge,
                                  FluxLayerThickEdge);
    Pacer::stop("Tend:computeVelocityVAdvTend", 2);
 
@@ -825,8 +825,7 @@ void Tendencies::computeTracerTendenciesOnly(
    // compute tracer tendencies from vertical advection
    Array2DReal ThicknessForVAdv;
    if (VAdv->VertAdvChoice == VertAdvOption::Standard) {
-      ThicknessForVAdv =
-          State->getLayerThickness(ThickTimeLevel);
+      ThicknessForVAdv = State->getLayerThickness(ThickTimeLevel);
    } else if (VAdv->VertAdvChoice == VertAdvOption::FCT) {
       ThicknessForVAdv = AuxState->LayerThicknessAux.ProvThickness;
    }

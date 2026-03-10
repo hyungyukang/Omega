@@ -93,11 +93,7 @@ class AuxiliaryState {
 
  private:
    AuxiliaryState(const std::string &Name, const HorzMesh *Mesh, Halo *MeshHalo,
-<<<<<<< HEAD
                   VertCoord *VCoord, VertAdv *VAdv, int NTracers,
-=======
-                  const VertCoord *VCoord, VertAdv *VAdv, int NTracers,
->>>>>>> a09a2b89a8 (Fix typos in comments and docs)
                   TimeInterval TimeStep);
 
    AuxiliaryState(const AuxiliaryState &) = delete;

@@ -224,6 +224,7 @@ int initTimeStepperTest(const std::string &mesh) {
    auto *TestTendencies = Tendencies::create(
        "TestTendencies", DefMesh, DefVertCoord, DefVAdv, DefPGrad, DefEos,
        NTracers, ZeroTimeStep, &Options, Tendencies::CustomTendencyType{},
+       DecayVelocityTendency{});
    if (!TestTendencies) {
       Err++;
       LOG_ERROR("TimeStepperTest: error creating test tendencies");

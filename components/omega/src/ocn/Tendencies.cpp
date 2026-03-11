@@ -37,7 +37,6 @@ void Tendencies::init() {
    Eos *DefEos             = Eos::getInstance();
    PressureGrad *DefPGrad  = PressureGrad::getDefault();
    VertAdv *DefVertAdv     = VertAdv::getDefault();
-   HorzMesh *DefHorzMesh       = HorzMesh::getDefault();
    TimeStepper *DefTimeStepper = TimeStepper::getDefault();
 
    I4 NTracers = Tracers::getNumTracers();
@@ -247,7 +246,7 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
       CHECK_ERROR_ABORT(Err, "Tendencies: EddyDiff4 not found in TendConfig");
    }
 
-   Err += TendConfig->get("PressureGradTendencyEnable", this->PGrad->Enabled);
+   Err += TendConfig.get("PressureGradTendencyEnable", this->PGrad->Enabled);
    CHECK_ERROR_ABORT(
        Err, "Tendencies: PressureGradTendencyEnable not found in TendConfig");
 }
@@ -310,12 +309,12 @@ void Tendencies::defineFields() {
 Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
                        const HorzMesh *Mesh,     ///< [in] Horizontal mesh
                        VertCoord *VCoord,        ///< [in] Vertical coordinate
-                       VertAdv *VAdv,           ///< [in] Vertical advection
+                       VertAdv *VAdv,            ///< [in] Vertical advection
                        PressureGrad *PGrad,      ///< [in] Pressure gradient
                        Eos *EqState,             ///< [in] Equation of state
-                       int NTracersIn,          ///< [in] Number of tracers
-                       TimeInterval TimeStepIn, ///< [in] Time step
-                       Config *Options,         ///< [in] Configuration options
+                       int NTracersIn,           ///< [in] Number of tracers
+                       TimeInterval TimeStepIn,  ///< [in] Time step
+                       Config *Options,          ///< [in] Configuration options
                        CustomTendencyType InCustomThicknessTend,
                        CustomTendencyType InCustomVelocityTend)
     : Mesh(Mesh), VCoord(VCoord), VAdv(VAdv), ThicknessFluxDiv(Mesh, VCoord),
@@ -347,10 +346,11 @@ Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
 Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
                        const HorzMesh *Mesh,     ///< [in] Horizontal mesh
                        VertCoord *VCoord,        ///< [in] Vertical coordinate
-                       VertAdv *VAdv,           ///< [in] Vertical advection
+                       VertAdv *VAdv,            ///< [in] Vertical advection
                        PressureGrad *PGrad,      ///< [in] Pressure gradient
                        Eos *EqState,             ///< [in] Equation of state
                        int NTracersIn,           ///< [in] Number of tracers
+                       TimeInterval TimeStepIn,  ///< [in] Time step
                        Config *Options)          ///< [in] Configuration options
     : Tendencies(Name_, Mesh, VCoord, VAdv, PGrad, EqState, NTracersIn,
                  TimeStepIn, Options, CustomTendencyType{},

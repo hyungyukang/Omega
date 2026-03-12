@@ -62,6 +62,9 @@ void ForwardBackwardStepper::doStep(
    // u^{n+1} = u^{n} + R_u^{n+1}
    updateVelocityByTend(State, NextLevel, State, CurLevel, TimeStep);
 
+   prescribeThickness(State, NextLevel, State, CurLevel);
+   prescribeVelocity(State, NextLevel, State, CurLevel);
+
    // Update time levels (New -> Old) of prognostic variables with halo
    // exchanges
    const MPI_Comm Comm = MeshHalo->getComm();

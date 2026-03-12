@@ -375,15 +375,15 @@ class VelVertMixSetupOnEdge {
             const Real LayerThickEdgeTop =
                 0.5 * (LayerThickEdge(IEdge, K - 1) + LayerThickEdge(IEdge, K));
             const Real SpecVolEdgeTop =
-                0.5 * (0.5 * (SpecVol(ICell0, K - 1) + SpecVol(ICell1, K - 1)) +
-                       0.5 * (SpecVol(ICell0, K) + SpecVol(ICell1, K)));
+                0.25 * ((SpecVol(ICell0, K - 1) + SpecVol(ICell1, K - 1)) +
+                       (SpecVol(ICell0, K) + SpecVol(ICell1, K)));
             const Real ViscAlphaEdgeTop =
                 0.5 * (VertVisc(ICell0, K) + VertVisc(ICell1, K)) /
                 (LocRhoSw * SpecVolEdgeTop);
-            const Real LayerThickEdgeTopDT = LayerThickEdgeTop / DT;
 
             GWorkEdge(IEdge, K - 1) =
-                ViscAlphaEdgeTop / (LayerThickEdgeTopDT * LayerThickEdgeTop);
+                DT *  ViscAlphaEdgeTop /
+                (LayerThickEdgeTop * LayerThickEdge(IEdge, K));
 
             HWorkEdge(IEdge, K) = 1.0_Real;
 
@@ -399,16 +399,15 @@ class VelVertMixSetupOnEdge {
             const Real LayerThickEdgeTop =
                 0.5 * (LayerThickEdge(IEdge, K - 1) + LayerThickEdge(IEdge, K));
             const Real SpecVolEdgeTop =
-                0.5 * (0.5 * (SpecVol(ICell0, K - 1) + SpecVol(ICell1, K - 1)) +
-                       0.5 * (SpecVol(ICell0, K) + SpecVol(ICell1, K)));
+                0.25 * ((SpecVol(ICell0, K - 1) + SpecVol(ICell1, K - 1)) +
+                       (SpecVol(ICell0, K) + SpecVol(ICell1, K)));
             const Real ViscAlphaEdgeTop =
                 0.5 * (VertVisc(ICell0, K) + VertVisc(ICell1, K)) /
                 (LocRhoSw * SpecVolEdgeTop);
 
-            const Real LayerThickEdgeTopDT = LayerThickEdgeTop / DT;
-
             GWorkEdge(IEdge, K - 1) =
-                ViscAlphaEdgeTop / (LayerThickEdgeTopDT * LayerThickEdgeTop);
+                DT * ViscAlphaEdgeTop /
+                (LayerThickEdgeTop * LayerThickEdge(IEdge, K));
 
             HWorkEdge(IEdge, K) = 1.0_Real;
 

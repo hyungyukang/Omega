@@ -329,6 +329,102 @@ class WindForcingOnEdge {
    Array1DI4 MinLayerEdgeBot;
 };
 
+/// Velocity vertical mixing
+class VelVertMixSetupOnEdge {
+ public:
+   bool Enabled;
+   Real LocRhoSw;
+
+   /// constructor declaration
+   VelVertMixSetupOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
+
+   /// The functor takes edge index, vertical chunk index, and arrays for
+   /// layer specific volume, layer thickness on edge,
+   /// interface pressure, and outputs tendency array
+   KOKKOS_FUNCTION void
+   operator()(I4 IEdge, I4 KChunk, Real DT, const Array2DReal &SpecVol,
+              const Array2DReal &LayerThickEdge, const Array2DReal &VertVisc,
+              const Array2DReal &NormalVelEdge, const Array2DReal &GWorkEdge,
+              const Array2DReal &HWorkEdge,
+              const Array2DReal &XWorkEdge) const {
+
+      const I4 NVertLayers1 = NVertLayers - 1;
+      const I4 KStart       = chunkStart(KChunk, 0);
+      const I4 KLen         = chunkLength(KChunk, KStart, NVertLayers1);
+
+      const I4 ICell0 = CellsOnEdge(IEdge, 0);
+      const I4 ICell1 = CellsOnEdge(IEdge, 1);
+
+      const I4 KMin = MinLayerEdgeBot(IEdge);
+      const I4 KMax = MaxLayerEdgeTop(IEdge);
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K = KStart + KVec;
+
+         if (K < KMin) {
+            // For K <= KMin, set unit diagonal
+            GWorkEdge(IEdge, K) = 0.0_Real;
+            HWorkEdge(IEdge, K) = 1.0_Real;
+            XWorkEdge(IEdge, K) = 1.0_Real;
+         } else if (K == KMin) {
+            // For K <= KMin, set unit diagonal
+            GWorkEdge(IEdge, K) = 0.0_Real;
+            HWorkEdge(IEdge, K) = 1.0_Real;
+            XWorkEdge(IEdge, K) = NormalVelEdge(IEdge, K);
+         } else if (K == KMax) {
+            const Real LayerThickEdgeTop =
+                0.5 * (LayerThickEdge(IEdge, K - 1) + LayerThickEdge(IEdge, K));
+            const Real SpecVolEdgeTop =
+                0.5 * (0.5 * (SpecVol(ICell0, K - 1) + SpecVol(ICell1, K - 1)) +
+                       0.5 * (SpecVol(ICell0, K) + SpecVol(ICell1, K)));
+            const Real ViscAlphaEdgeTop =
+                0.5 * (VertVisc(ICell0, K) + VertVisc(ICell1, K)) /
+                (LocRhoSw * SpecVolEdgeTop);
+            const Real LayerThickEdgeTopDT = LayerThickEdgeTop / DT;
+
+            GWorkEdge(IEdge, K - 1) =
+                ViscAlphaEdgeTop / (LayerThickEdgeTopDT * LayerThickEdgeTop);
+
+            HWorkEdge(IEdge, K) = 1.0_Real;
+
+            XWorkEdge(IEdge, K) = NormalVelEdge(IEdge, K);
+
+         } else if (K > KMax) {
+            // For K >= KMax, set unit diagonal
+            GWorkEdge(IEdge, K) = 0.0_Real;
+            HWorkEdge(IEdge, K) = 1.0_Real;
+            XWorkEdge(IEdge, K) = 1.0_Real;
+         } else {
+
+            const Real LayerThickEdgeTop =
+                0.5 * (LayerThickEdge(IEdge, K - 1) + LayerThickEdge(IEdge, K));
+            const Real SpecVolEdgeTop =
+                0.5 * (0.5 * (SpecVol(ICell0, K - 1) + SpecVol(ICell1, K - 1)) +
+                       0.5 * (SpecVol(ICell0, K) + SpecVol(ICell1, K)));
+            const Real ViscAlphaEdgeTop =
+                0.5 * (VertVisc(ICell0, K) + VertVisc(ICell1, K)) /
+                (LocRhoSw * SpecVolEdgeTop);
+
+            const Real LayerThickEdgeTopDT = LayerThickEdgeTop / DT;
+
+            GWorkEdge(IEdge, K - 1) =
+                ViscAlphaEdgeTop / (LayerThickEdgeTopDT * LayerThickEdgeTop);
+
+            HWorkEdge(IEdge, K) = 1.0_Real;
+
+            XWorkEdge(IEdge, K) = NormalVelEdge(IEdge, K);
+         }
+      }
+   }
+
+ private:
+   I4 NVertLayers;
+   Array2DI4 CellsOnEdge;
+   Array2DReal EdgeMask;
+   Array1DI4 MinLayerEdgeBot;
+   Array1DI4 MaxLayerEdgeTop;
+};
+
 /// Bottom drag
 class BottomDragOnEdge {
  public:
@@ -569,6 +665,87 @@ class TracerHyperDiffOnCell {
    Array1DI4 MaxLayerCell;
    Array1DI4 MinLayerEdgeBot;
    Array1DI4 MaxLayerEdgeTop;
+};
+
+// Tracer vertical mixing term
+class TracerVertMixSetupOnCell {
+ public:
+   bool Enabled;
+   Real LocRhoSw;
+
+   TracerVertMixSetupOnCell(const HorzMesh *Mesh, const VertCoord *VCoord);
+
+   KOKKOS_FUNCTION void
+   operator()(I4 L, I4 ICell, I4 KChunk, R8 DT, const Array2DReal &SpecVol,
+              const Array2DReal &LayerThickCell, const Array2DReal &VertDiff,
+              const Array3DReal &TracersOnCell, const Array2DReal &GWorkCell,
+              const Array2DReal &HWorkCell,
+              const Array2DReal &XWorkCell) const {
+
+      const I4 NVertLayers1 = NVertLayers - 1;
+      const I4 KStart       = chunkStart(KChunk, 0);
+      const I4 KLen         = chunkLength(KChunk, KStart, NVertLayers1);
+
+      const I4 KMin = MinLayerCell(ICell);
+      const I4 KMax = MaxLayerCell(ICell);
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K = KStart + KVec;
+
+         if (K < KMin) {
+            // For K < KMin, set unit diagonal
+            GWorkCell(ICell, K) = 0.0_Real;
+            HWorkCell(ICell, K) = 1.0_Real;
+            XWorkCell(ICell, K) = 1.0_Real;
+         } else if (K == KMin) {
+            GWorkCell(ICell, K) = 0.0_Real;
+            HWorkCell(ICell, K) = 1.0_Real;
+            XWorkCell(ICell, K) = TracersOnCell(L, ICell, K);
+         } else if (K == KMax) {
+            const Real LayerThickCellTop =
+                0.5 * (LayerThickCell(ICell, K - 1) + LayerThickCell(ICell, K));
+            const Real SpecVolCellTop =
+                0.5 * (SpecVol(ICell, K - 1) + SpecVol(ICell, K));
+            const Real DiffAlphaCellTop =
+                VertDiff(ICell, K) / (LocRhoSw * SpecVolCellTop);
+
+            GWorkCell(ICell, K-1) =
+                DT * DiffAlphaCellTop /
+                (LayerThickCellTop * LayerThickCell(ICell,K));
+
+            HWorkCell(ICell, K) = 1.0_Real;
+
+            XWorkCell(ICell, K) = TracersOnCell(L, ICell, K);
+
+         } else if (K > KMax) {
+            // For K > KMax, set unit diagonal
+            GWorkCell(ICell, K) = 0.0_Real;
+            HWorkCell(ICell, K) = 1.0_Real;
+            XWorkCell(ICell, K) = 1.0_Real;
+         } else {
+
+            const Real LayerThickCellTop =
+                0.5 * (LayerThickCell(ICell, K-1 ) + LayerThickCell(ICell, K));
+            const Real SpecVolCellTop =
+                0.5 * (SpecVol(ICell, K-1 ) + SpecVol(ICell, K));
+            const Real DiffAlphaCellTop =
+                VertDiff(ICell, K) / (LocRhoSw * SpecVolCellTop);
+
+            GWorkCell(ICell, K-1) =
+                DT * DiffAlphaCellTop /
+                (LayerThickCellTop * LayerThickCell(ICell,K));
+
+            HWorkCell(ICell, K) = 1.0_Real;
+
+            XWorkCell(ICell, K) = TracersOnCell(L, ICell, K);
+         }
+      }
+   }
+
+ private:
+   I4 NVertLayers;
+   Array1DI4 MinLayerCell;
+   Array1DI4 MaxLayerCell;
 };
 
 } // namespace OMEGA

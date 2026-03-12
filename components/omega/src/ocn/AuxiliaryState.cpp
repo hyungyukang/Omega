@@ -1,9 +1,11 @@
 #include "AuxiliaryState.h"
 #include "Config.h"
+#include "Eos.h"
 #include "Field.h"
 #include "Logging.h"
 #include "Pacer.h"
 #include "TimeStepper.h"
+#include "VertMix.h"
 
 namespace OMEGA {
 
@@ -19,7 +21,7 @@ static std::string stripDefault(const std::string &Name) {
 // Constructor. Constructs the member auxiliary variables and registers their
 // fields with IOStreams
 AuxiliaryState::AuxiliaryState(const std::string &Name, const HorzMesh *Mesh,
-                               Halo *MeshHalo, const VertCoord *VCoord,
+                               Halo *MeshHalo, VertCoord *VCoord,
                                VertAdv *VAdv, int NTracers,
                                TimeInterval TimeStep)
     : Mesh(Mesh), MeshHalo(MeshHalo), VCoord(VCoord), VAdv(VAdv),
@@ -28,6 +30,7 @@ AuxiliaryState::AuxiliaryState(const std::string &Name, const HorzMesh *Mesh,
       VorticityAux(stripDefault(Name), Mesh, VCoord),
       VelocityDel2Aux(stripDefault(Name), Mesh, VCoord),
       WindForcingAux(stripDefault(Name), Mesh),
+      TangentAux(stripDefault(Name), Mesh, VCoord),
       TracerAux(stripDefault(Name), Mesh, VCoord, NTracers) {
 
    GroupName = "AuxiliaryState";
@@ -42,6 +45,7 @@ AuxiliaryState::AuxiliaryState(const std::string &Name, const HorzMesh *Mesh,
    LayerThicknessAux.registerFields(GroupName, AuxMeshName);
    VorticityAux.registerFields(GroupName, AuxMeshName);
    VelocityDel2Aux.registerFields(GroupName, AuxMeshName);
+   TangentAux.registerFields(GroupName, AuxMeshName);
    WindForcingAux.registerFields(GroupName, AuxMeshName);
    TracerAux.registerFields(GroupName, AuxMeshName);
 }
@@ -53,10 +57,121 @@ AuxiliaryState::~AuxiliaryState() {
    LayerThicknessAux.unregisterFields();
    VorticityAux.unregisterFields();
    VelocityDel2Aux.unregisterFields();
+   TangentAux.unregisterFields();
    WindForcingAux.unregisterFields();
    TracerAux.unregisterFields();
 
    FieldGroup::destroy(GroupName);
+}
+
+// Compute the auxiliary variables needed for vertical dynamics
+void AuxiliaryState::computeVertAux(const OceanState *State,
+                                    const Array3DReal &TracerArray,
+                                    int ThickTimeLevel, int VelTimeLevel) const {
+
+   Pacer::start("AuxState:computeVertAux", 1);
+
+   Eos *EosInstance = Eos::getInstance();
+
+   if (!EosInstance) {
+      LOG_WARN("Eos has not been initialized. Skipping calculation of vertical "
+               "auxiliary variables");
+      return;
+   }
+
+   VertMix *VertMixInstance = VertMix::getInstance();
+
+   if (!VertMixInstance) {
+      LOG_WARN("VertMix has not been initialized. Skipping calculation of vertical "
+               "auxiliary variables");
+      return;
+   }
+
+   // get layer thickness
+   Array2DReal LayerThickCell = State->getLayerThickness(ThickTimeLevel);
+   // get normal velocity
+   Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
+
+   // compute tangential velocity
+   OMEGA_SCOPE(LocTangentAux, TangentAux);
+   OMEGA_SCOPE(MinLayerEdgeTop, VCoord->MinLayerEdgeTop);
+   OMEGA_SCOPE(MaxLayerEdgeBot, VCoord->MaxLayerEdgeBot);
+   parallelForOuter(
+       "edgeAuxState1", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          const int KMin   = MinLayerEdgeTop(IEdge);
+          const int KMax   = MaxLayerEdgeBot(IEdge);
+          const int KRange = vertRangeChunked(KMin, KMax);
+
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 LocTangentAux.computeVarsOnEdge(IEdge, KChunk, NormalVelEdge);
+              });
+       });
+
+   // get temperature and salinity
+   I4 ConservTempIdx;
+   I4 AbsSalinityIdx;
+   Tracers::getIndex(ConservTempIdx, "Temperature");
+   Tracers::getIndex(AbsSalinityIdx, "Salinity");
+
+   const auto ConservTemp =
+       Kokkos::subview(TracerArray, ConservTempIdx, Kokkos::ALL, Kokkos::ALL);
+   const auto AbsSalinity =
+       Kokkos::subview(TracerArray, AbsSalinityIdx, Kokkos::ALL, Kokkos::ALL);
+
+   // TODO: compute surface pressure
+   Array1DReal SurfacePressure("SurfacePressure", Mesh->NCellsSize);
+   deepCopy(SurfacePressure, 0.0);
+
+   // TODO: retrieve TidalPotential and SelfAttractionLoading
+   Array1DReal TidalPotential("TidalPotential", Mesh->NCellsSize);
+   Array1DReal SelfAttractionLoading("SelfAttractionLoading", Mesh->NCellsSize);
+   deepCopy(TidalPotential, 0.0);
+   deepCopy(SelfAttractionLoading, 0.0);
+
+   // compute pressure
+   VCoord->computePressure(LayerThickCell, SurfacePressure);
+
+   // convert PressureMid to dbars since that's what Eos expects
+   // TODO: allocating a new array here is slow
+   Array2DReal PressureMidDbar("PressureMidDbar", VCoord->PressureMid.layout());
+   const auto &MinLayerCell = VCoord->MinLayerCell;
+   const auto &MaxLayerCell = VCoord->MaxLayerCell;
+   const auto &PressureMid  = VCoord->PressureMid;
+
+   parallelForOuter(
+       "convertPresDbar", {Mesh->NCellsAll},
+       KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
+          const int KMin   = MinLayerCell(ICell);
+          const int KMax   = MaxLayerCell(ICell);
+          const int KRange = vertRange(KMin, KMax);
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 const int K               = KMin + KChunk;
+                 PressureMidDbar(ICell, K) = PressureMid(ICell, K) / 1e5;
+              });
+       });
+
+   // compute specific volume
+   EosInstance->computeSpecVol(ConservTemp, AbsSalinity, PressureMidDbar);
+
+   // compute height
+   VCoord->computeZHeight(LayerThickCell, EosInstance->SpecVol);
+
+   // compute geopotential
+   VCoord->computeGeopotential(TidalPotential, SelfAttractionLoading);
+
+   // compute Brunt-Vaisala frequency (NSquared)
+   const auto &PressureInterface  = VCoord->PressureInterface;
+   const auto &SpecVol  = EosInstance->SpecVol;
+   EosInstance->computeBruntVaisalaFreqSq(ConservTemp, AbsSalinity, PressureInterface, SpecVol);
+
+   // compute vertical mixing coefficient
+   const auto &TangentVelEdge = TangentAux.TangentialVelocity;
+   VertMixInstance->computeVertMix(NormalVelEdge, TangentVelEdge, EosInstance->BruntVaisalaFreqSq);
+
+   Pacer::stop("AuxState:computeVertAux", 1);
 }
 
 // Compute the auxiliary variables needed for momentum equation
@@ -237,6 +352,7 @@ void AuxiliaryState::computeAll(const OceanState *State,
 
    Pacer::start("AuxState:computeAll", 1);
 
+   computeVertAux(State, TracerArray, ThickTimeLevel, VelTimeLevel);
    computeMomAux(State, ThickTimeLevel, VelTimeLevel);
 
    Pacer::start("AuxState:cellAuxState3", 2);
@@ -286,7 +402,7 @@ void AuxiliaryState::computeAll(const OceanState *State,
 // Create a non-default auxiliary state
 AuxiliaryState *AuxiliaryState::create(const std::string &Name,
                                        const HorzMesh *Mesh, Halo *MeshHalo,
-                                       const VertCoord *VCoord, VertAdv *VAdv,
+                                       VertCoord *VCoord, VertAdv *VAdv,
                                        const int NTracers,
                                        TimeInterval TimeStep) {
    if (AllAuxStates.find(Name) != AllAuxStates.end()) {
@@ -308,7 +424,7 @@ AuxiliaryState *AuxiliaryState::create(const std::string &Name,
 void AuxiliaryState::init() {
    const HorzMesh *DefMesh           = HorzMesh::getDefault();
    Halo *DefHalo                     = Halo::getDefault();
-   const VertCoord *DefVCoord        = VertCoord::getDefault();
+   VertCoord *DefVCoord        = VertCoord::getDefault();
    VertAdv *DefVAdv                  = VertAdv::getDefault();
    const TimeStepper *DefTimeStepper = TimeStepper::getDefault();
 

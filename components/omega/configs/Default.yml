@@ -59,6 +59,8 @@ Omega:
     ThicknessVertAdvTendencyEnable: true
     VelocityVertAdvTendencyEnable: true
     TracerVertAdvTendencyEnable: true
+    VelVertMixTendencyEnable: true
+    TracerVertMixTendencyEnable: true
   Tracers:
     Base: [Temperature, Salinity]
     Debug: [Debug1, Debug2, Debug3]

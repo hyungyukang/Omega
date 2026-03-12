@@ -41,8 +41,8 @@ void ForwardBackwardStepper::doStep(
       LOG_CRITICAL("Invalid AuxState");
 
    // R_h^{n} = RHS_h(u^{n}, h^{n}, t^{n})
-   Tend->computeThicknessTendencies(State, AuxState, CurLevel, CurLevel,
-                                    SimTime);
+   Tend->computeThicknessTendencies(State, AuxState, CurTracerArray,
+                                    CurLevel, CurLevel, SimTime);
 
    // h^{n+1} = h^{n} + R_h^{n}
    updateThicknessByTend(State, NextLevel, State, CurLevel, TimeStep);
@@ -61,6 +61,14 @@ void ForwardBackwardStepper::doStep(
 
    // u^{n+1} = u^{n} + R_u^{n+1}
    updateVelocityByTend(State, NextLevel, State, CurLevel, TimeStep);
+
+   // Apply vertical mixing to velocity
+   Tend->applyVelVertMixImplicit(State, AuxState, NextLevel, NextLevel,
+                                 SimTime);
+
+   // Apply vertical mixing to tracers
+   Tend->applyTracerVertMixImplicit(State, AuxState, NextTracerArray, NextLevel,
+                                    NextLevel, SimTime);
 
    // Update time levels (New -> Old) of prognostic variables with halo
    // exchanges

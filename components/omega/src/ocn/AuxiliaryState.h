@@ -15,6 +15,7 @@
 #include "auxiliaryVars/TracerAuxVars.h"
 #include "auxiliaryVars/VelocityDel2AuxVars.h"
 #include "auxiliaryVars/VorticityAuxVars.h"
+#include "auxiliaryVars/TangentAuxVars.h"
 #include "auxiliaryVars/WindForcingAuxVars.h"
 
 #include <memory>
@@ -42,6 +43,7 @@ class AuxiliaryState {
    VorticityAuxVars VorticityAux;
    VelocityDel2AuxVars VelocityDel2Aux;
    WindForcingAuxVars WindForcingAux;
+   TangentAuxVars TangentAux;
 
    ~AuxiliaryState();
 
@@ -52,7 +54,7 @@ class AuxiliaryState {
 
    // Create a non-default auxiliary state
    static AuxiliaryState *create(const std::string &Name, const HorzMesh *Mesh,
-                                 Halo *MeshHalo, const VertCoord *VCoord,
+                                 Halo *MeshHalo, VertCoord *VCoord,
                                  VertAdv *VAdv, int NTracers,
                                  TimeInterval TimeStep);
 
@@ -74,6 +76,10 @@ class AuxiliaryState {
    /// Exchange halo
    I4 exchangeHalo();
 
+   // Compute all auxiliary variables needed for vertical dynamics
+   void computeVertAux(const OceanState *State, const Array3DReal &TracerArray,
+                       int ThickTimeLevel, int VelTimeLevel) const;
+
    // Compute all auxiliary variables needed for momentum equation
    void computeMomAux(const OceanState *State, int ThickTimeLevel,
                       int VelTimeLevel) const;
@@ -87,7 +93,7 @@ class AuxiliaryState {
 
  private:
    AuxiliaryState(const std::string &Name, const HorzMesh *Mesh, Halo *MeshHalo,
-                  const VertCoord *VCoord, VertAdv *VAdv, int NTracers,
+                  VertCoord *VCoord, VertAdv *VAdv, int NTracers,
                   TimeInterval TimeStep);
 
    AuxiliaryState(const AuxiliaryState &) = delete;
@@ -95,7 +101,7 @@ class AuxiliaryState {
 
    const HorzMesh *Mesh;
    Halo *MeshHalo;
-   const VertCoord *VCoord;
+   VertCoord *VCoord;
    VertAdv *VAdv;
    TimeInterval TimeStep;
 

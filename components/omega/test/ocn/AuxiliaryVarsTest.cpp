@@ -15,6 +15,7 @@
 #include "VertCoord.h"
 #include "auxiliaryVars/KineticAuxVars.h"
 #include "auxiliaryVars/LayerThicknessAuxVars.h"
+#include "auxiliaryVars/TangentAuxVars.h"
 #include "auxiliaryVars/TracerAuxVars.h"
 #include "auxiliaryVars/VelocityDel2AuxVars.h"
 #include "auxiliaryVars/VorticityAuxVars.h"
@@ -67,6 +68,9 @@ struct TestSetupPlane {
 
    ErrorMeasures ExpectedNormalStressErrors = {0.0033910709836867704,
                                                0.0039954090464502795};
+
+   ErrorMeasures ExpectedTangentVelEdgeErrors = {0.00450897496974901352,
+                                                 0.00417367308684470691};
 
    KOKKOS_FUNCTION Real layerThickness(Real X, Real Y) const {
       return 2 + std::cos(TwoPi * X / Lx) * std::cos(TwoPi * Y / Ly);
@@ -195,6 +199,9 @@ struct TestSetupSphere {
 
    ErrorMeasures ExpectedNormalStressErrors = {0.0038588958862868362,
                                                0.003813760171030077};
+
+   ErrorMeasures ExpectedTangentVelEdgeErrors = {0.0206375134079833517,
+                                                 0.00692590524910695858};
 
    KOKKOS_FUNCTION Real layerThickness(Real Lon, Real Lat) const {
       return (2 + std::cos(Lon) * std::pow(std::cos(Lat), 4));
@@ -720,6 +727,51 @@ int testVelocityDel2AuxVars(Real RTol) {
    return Err;
 }
 
+int testTangentAuxVars(const Array2DReal &NormalVelEdge, Real RTol) {
+   TestSetup Setup;
+   int Err = 0;
+
+   const auto Decomp = Decomp::getDefault();
+   const auto Mesh   = HorzMesh::getDefault();
+   const auto VCoord = VertCoord::getDefault();
+   TangentAuxVars TangentAux("", Mesh, VCoord);
+
+   // Compute exact results for edge variables
+   Array2DReal ExactTangentVelEdge("ExactReconEdge", Mesh->NEdgesOwned,
+                                   NVertLayers);
+
+   Err += setVectorEdge(
+       KOKKOS_LAMBDA(Real(&VecField)[2], Real X, Real Y) {
+          VecField[0] = Setup.velocityX(X, Y);
+          VecField[1] = Setup.velocityY(X, Y);
+       },
+       ExactTangentVelEdge, EdgeComponent::Tangential, Geom, Mesh,
+       ExchangeHalos::No);
+
+   // Compute numerical results for vertex variables
+   parallelFor(
+       {Decomp->NEdgesHaloH(0), NVertLayers},
+       KOKKOS_LAMBDA(int IEdge, int KLayer) {
+          TangentAux.computeVarsOnEdge(IEdge, KLayer, NormalVelEdge);
+       });
+
+   const auto &NumTangentVelEdge = TangentAux.TangentialVelocity;
+
+   // Compute error measures and check errors for vertex variables
+
+   ErrorMeasures TangentVelEdgeErrors;
+   Err += computeErrors(TangentVelEdgeErrors, NumTangentVelEdge,
+                        ExactTangentVelEdge, Mesh, OnEdge);
+   Err += checkErrors("AuxVarsTest", "TangentVelEdge", TangentVelEdgeErrors,
+                      Setup.ExpectedTangentVelEdgeErrors, RTol);
+
+   if (Err == 0) {
+      LOG_INFO("AuxVarsTest: TangentAuxVars PASS");
+   }
+
+   return Err;
+}
+
 int testTracerAuxVars(const Array2DReal &LayerThickCell,
                       const Array2DReal &NormalVelEdge, Real RTol) {
 
@@ -846,6 +898,8 @@ int auxVarsTest(const std::string &mesh = DefaultMeshFile) {
    Err += testTracerAuxVars(LayerThickCell, NormalVelEdge, RTol);
 
    Err += testWindForcingAuxVars(RTol);
+
+   Err += testTangentAuxVars(NormalVelEdge, RTol);
 
    if (Err == 0) {
       LOG_INFO("AuxVarsTest: Successful completion");

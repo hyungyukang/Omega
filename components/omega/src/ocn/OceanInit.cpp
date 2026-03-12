@@ -30,6 +30,7 @@
 #include "Tracers.h"
 #include "VertAdv.h"
 #include "VertCoord.h"
+#include "VertMix.h"
 
 #include "mpi.h"
 
@@ -139,6 +140,7 @@ int initOmegaModules(MPI_Comm Comm) {
    PressureGrad::init();
    Eos::init();
    Tendencies::init();
+   VertMix::init();
    TimeStepper::init2();
 
    Err = OceanState::init();

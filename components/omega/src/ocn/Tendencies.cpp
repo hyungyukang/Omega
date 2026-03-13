@@ -936,6 +936,8 @@ void Tendencies::applyVelVertMixImplicit(
          parallelForOuter(
              {Mesh->NEdgesAll},
              KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+                const int KMin   = MinLayerEdgeBot(IEdge);
+                const int KMax   = MaxLayerEdgeTop(IEdge);
                 const int KRange = vertRangeChunked(KMin, KMax);
                 parallelForInner(
                     Team, KRange, INNER_LAMBDA(int KChunk) {

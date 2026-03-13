@@ -932,8 +932,6 @@ void Tendencies::applyVelVertMixImplicit(
              AuxState->LayerThicknessAux.MeanLayerThickEdge;
 
          const I4 NVertLayers = VCoord->NVertLayers;
-         const I4 KMin        = 0;
-         const I4 KMax        = NVertLayers - 1;
 
          parallelForOuter(
              {Mesh->NEdgesAll},
@@ -1006,54 +1004,82 @@ void Tendencies::applyTracerVertMixImplicit(
          R8 DT;
          TimeStep.get(DT, TimeUnits::Seconds);
 
-         auto &GWorkCell = VertMixInstance->GWorkCell;
-         auto &HWorkCell = VertMixInstance->HWorkCell;
-         auto &XWorkCell = VertMixInstance->XWorkCell;
-
          const auto &SpecVol  = EosInstance->SpecVol;
          const auto &VertDiff = VertMixInstance->VertDiff;
-         const Array2DReal &LayerThickCell =
-             State->LayerThickness[ThickTimeLevel];
-
-         // Setup G, H, X vectors
 
          const I4 NVertLayers = VCoord->NVertLayers;
-         const I4 KMin        = 0;
-         const I4 KMax        = NVertLayers - 1;
+         TeamPolicy Policy =
+             TriDiagDiffSolver::makeTeamPolicy(Mesh->NCellsAll, NVertLayers);
 
          for (int LT = 0; LT < NTracers; ++LT) {
             const I4 L = LT;
 
-            // Provisional update for tracer and divide by LayerThick
+            Kokkos::parallel_for(
+                Policy, KOKKOS_LAMBDA(const TeamMember &Team) {
+                   const int IStart = Team.league_rank() * VecLength;
 
-            parallelForOuter(
-                {Mesh->NCellsAll},
-                KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
-                   const int KRange = vertRange(KMin, KMax);
-                   parallelForInner(
-                       Team, KRange, INNER_LAMBDA(int KChunk) {
-                          LocTracerVertMixSetup(L, ICell, KChunk, DT, SpecVol,
-                                                LayerThickCell, VertDiff,
-                                                TracerArray, GWorkCell,
-                                                HWorkCell, XWorkCell);
+                   TriDiagDiffScratch Scratch(Team, NVertLayers);
+
+                   Kokkos::parallel_for(
+                       TeamThreadRange(Team, NVertLayers), [=](int K) {
+                          for (int IVec = 0; IVec < VecLength; ++IVec) {
+                             const int ICell = IStart + IVec;
+
+                             if (ICell >= Mesh->NCellsAll) {
+                                Scratch.G(K, IVec) = 0._Real;
+                                Scratch.H(K, IVec) = 1._Real;
+                                Scratch.X(K, IVec) = 0._Real;
+                                continue;
+                             }
+
+                             const int KMinCell = MinLayerCell(ICell);
+                             const int KMaxCell = MaxLayerCell(ICell);
+
+                             Scratch.G(K, IVec) = 0._Real;
+                             Scratch.H(K, IVec) = 1._Real;
+
+                             if (K < KMinCell || K > KMaxCell) {
+                                Scratch.X(K, IVec) = 1._Real;
+                             } else {
+                                if (K < KMaxCell) {
+                                   const Real LayerThickCellTop =
+                                       0.5_Real *
+                                       (LayerThickCell(ICell, K) +
+                                        LayerThickCell(ICell, K + 1));
+                                   const Real SpecVolCellTop =
+                                       0.5_Real *
+                                       (SpecVol(ICell, K) +
+                                        SpecVol(ICell, K + 1));
+                                   const Real DiffAlphaCellTop =
+                                       VertDiff(ICell, K + 1) /
+                                       (LocTracerVertMixSetup.LocRhoSw *
+                                        SpecVolCellTop);
+
+                                   Scratch.G(K, IVec) =
+                                       DT * DiffAlphaCellTop /
+                                       (LayerThickCellTop *
+                                        LayerThickCell(ICell, K + 1));
+                                }
+
+                                Scratch.X(K, IVec) = TracerArray(L, ICell, K);
+                             }
+                          }
                        });
-                });
 
-            // Solve the system AY = X
-            // The solution Y is stored in X
-            TriDiagDiffSolver::solve(GWorkCell, HWorkCell, XWorkCell);
+                   Team.team_barrier();
+                   TriDiagDiffSolver::solve(Team, Scratch);
+                   Team.team_barrier();
 
-            parallelForOuter(
-                {Mesh->NCellsAll},
-                KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
-                   const int KMin   = MinLayerCell(ICell);
-                   const int KMax   = MaxLayerCell(ICell);
-                   const int KRange = vertRangeChunked(KMin, KMax);
-                   parallelForInner(
-                       Team, KRange, INNER_LAMBDA(int KChunk) {
-                          const int K = KMin + KChunk;
-
-                          TracerArray(L, ICell, K) = XWorkCell(ICell, K);
+                   Kokkos::parallel_for(
+                       TeamThreadRange(Team, NVertLayers), [=](int K) {
+                          for (int IVec = 0; IVec < VecLength; ++IVec) {
+                             const int ICell = IStart + IVec;
+                             if (ICell < Mesh->NCellsAll &&
+                                 K >= MinLayerCell(ICell) &&
+                                 K <= MaxLayerCell(ICell)) {
+                                TracerArray(L, ICell, K) = Scratch.X(K, IVec);
+                             }
+                          }
                        });
                 });
 

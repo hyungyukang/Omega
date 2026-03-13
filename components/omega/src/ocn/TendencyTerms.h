@@ -352,8 +352,8 @@ class VelVertMixSetupOnEdge {
       const I4 KStart       = chunkStart(KChunk, 0);
       const I4 KLen         = chunkLength(KChunk, KStart, NVertLayers1);
 
-      const I4 ICell0 = CellsOnEdge(IEdge, 0);
-      const I4 ICell1 = CellsOnEdge(IEdge, 1);
+      const I4 JCell0 = CellsOnEdge(IEdge, 0);
+      const I4 JCell1 = CellsOnEdge(IEdge, 1);
 
       const I4 KMin = MinLayerEdgeBot(IEdge);
       const I4 KMax = MaxLayerEdgeTop(IEdge);
@@ -361,56 +361,26 @@ class VelVertMixSetupOnEdge {
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const I4 K = KStart + KVec;
 
-         if (K < KMin) {
-            // For K <= KMin, set unit diagonal
-            GWorkEdge(IEdge, K) = 0.0_Real;
-            HWorkEdge(IEdge, K) = 1.0_Real;
-            XWorkEdge(IEdge, K) = 1.0_Real;
-         } else if (K == KMin) {
-            // For K <= KMin, set unit diagonal
-            GWorkEdge(IEdge, K) = 0.0_Real;
-            HWorkEdge(IEdge, K) = 1.0_Real;
-            XWorkEdge(IEdge, K) = NormalVelEdge(IEdge, K);
-         } else if (K == KMax) {
-            const Real LayerThickEdgeTop =
-                0.5 * (LayerThickEdge(IEdge, K - 1) + LayerThickEdge(IEdge, K));
-            const Real SpecVolEdgeTop =
-                0.25 * ((SpecVol(ICell0, K - 1) + SpecVol(ICell1, K - 1)) +
-                       (SpecVol(ICell0, K) + SpecVol(ICell1, K)));
-            const Real ViscAlphaEdgeTop =
-                0.5 * (VertVisc(ICell0, K) + VertVisc(ICell1, K)) /
-                (LocRhoSw * SpecVolEdgeTop);
+         GWorkEdge(IEdge, K) = 0.0_Real;
+         HWorkEdge(IEdge, K) = 1.0_Real;
 
-            GWorkEdge(IEdge, K - 1) =
-                DT *  ViscAlphaEdgeTop /
-                (LayerThickEdgeTop * LayerThickEdge(IEdge, K));
-
-            HWorkEdge(IEdge, K) = 1.0_Real;
-
-            XWorkEdge(IEdge, K) = NormalVelEdge(IEdge, K);
-
-         } else if (K > KMax) {
-            // For K >= KMax, set unit diagonal
-            GWorkEdge(IEdge, K) = 0.0_Real;
-            HWorkEdge(IEdge, K) = 1.0_Real;
+         if (K < KMin || K > KMax) {
             XWorkEdge(IEdge, K) = 1.0_Real;
          } else {
+            if (K > KMin) {
+               const Real LayerThickEdgeTop =
+                   0.5 * (LayerThickEdge(IEdge, K - 1) + LayerThickEdge(IEdge, K));
+               const Real SpecVolEdgeTop =
+                   0.25 * ((SpecVol(JCell0, K - 1) + SpecVol(JCell1, K - 1)) +
+                          (SpecVol(JCell0, K) + SpecVol(JCell1, K)));
+               const Real ViscAlphaEdgeTop =
+                   0.5 * (VertVisc(JCell0, K) + VertVisc(JCell1, K)) /
+                   (LocRhoSw * SpecVolEdgeTop);
 
-            const Real LayerThickEdgeTop =
-                0.5 * (LayerThickEdge(IEdge, K - 1) + LayerThickEdge(IEdge, K));
-            const Real SpecVolEdgeTop =
-                0.25 * ((SpecVol(ICell0, K - 1) + SpecVol(ICell1, K - 1)) +
-                       (SpecVol(ICell0, K) + SpecVol(ICell1, K)));
-            const Real ViscAlphaEdgeTop =
-                0.5 * (VertVisc(ICell0, K) + VertVisc(ICell1, K)) /
-                (LocRhoSw * SpecVolEdgeTop);
-
-            GWorkEdge(IEdge, K - 1) =
-                DT * ViscAlphaEdgeTop /
-                (LayerThickEdgeTop * LayerThickEdge(IEdge, K));
-
-            HWorkEdge(IEdge, K) = 1.0_Real;
-
+               GWorkEdge(IEdge, K-1) =
+                   DT * ViscAlphaEdgeTop /
+                   (LayerThickEdgeTop * LayerThickEdge(IEdge, K));
+            }
             XWorkEdge(IEdge, K) = NormalVelEdge(IEdge, K);
          }
       }
@@ -691,51 +661,24 @@ class TracerVertMixSetupOnCell {
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const I4 K = KStart + KVec;
 
-         if (K < KMin) {
-            // For K < KMin, set unit diagonal
-            GWorkCell(ICell, K) = 0.0_Real;
-            HWorkCell(ICell, K) = 1.0_Real;
-            XWorkCell(ICell, K) = 1.0_Real;
-         } else if (K == KMin) {
-            GWorkCell(ICell, K) = 0.0_Real;
-            HWorkCell(ICell, K) = 1.0_Real;
-            XWorkCell(ICell, K) = TracersOnCell(L, ICell, K);
-         } else if (K == KMax) {
-            const Real LayerThickCellTop =
-                0.5 * (LayerThickCell(ICell, K - 1) + LayerThickCell(ICell, K));
-            const Real SpecVolCellTop =
-                0.5 * (SpecVol(ICell, K - 1) + SpecVol(ICell, K));
-            const Real DiffAlphaCellTop =
-                VertDiff(ICell, K) / (LocRhoSw * SpecVolCellTop);
+         GWorkCell(ICell, K) = 0.0_Real;
+         HWorkCell(ICell, K) = 1.0_Real;
 
-            GWorkCell(ICell, K-1) =
-                DT * DiffAlphaCellTop /
-                (LayerThickCellTop * LayerThickCell(ICell,K));
-
-            HWorkCell(ICell, K) = 1.0_Real;
-
-            XWorkCell(ICell, K) = TracersOnCell(L, ICell, K);
-
-         } else if (K > KMax) {
-            // For K > KMax, set unit diagonal
-            GWorkCell(ICell, K) = 0.0_Real;
-            HWorkCell(ICell, K) = 1.0_Real;
+         if (K < KMin || K > KMax) {
             XWorkCell(ICell, K) = 1.0_Real;
          } else {
+            if (K > KMin) {
+               const Real LayerThickCellTop =
+                   0.5 * (LayerThickCell(ICell, K-1) + LayerThickCell(ICell, K));
+               const Real SpecVolCellTop =
+                   0.5 * (SpecVol(ICell, K-1) + SpecVol(ICell, K));
+               const Real DiffAlphaCellTop =
+                   VertDiff(ICell, K) / (LocRhoSw * SpecVolCellTop);
 
-            const Real LayerThickCellTop =
-                0.5 * (LayerThickCell(ICell, K-1 ) + LayerThickCell(ICell, K));
-            const Real SpecVolCellTop =
-                0.5 * (SpecVol(ICell, K-1 ) + SpecVol(ICell, K));
-            const Real DiffAlphaCellTop =
-                VertDiff(ICell, K) / (LocRhoSw * SpecVolCellTop);
-
-            GWorkCell(ICell, K-1) =
-                DT * DiffAlphaCellTop /
-                (LayerThickCellTop * LayerThickCell(ICell,K));
-
-            HWorkCell(ICell, K) = 1.0_Real;
-
+               GWorkCell(ICell, K-1) =
+                   DT * DiffAlphaCellTop /
+                   (LayerThickCellTop * LayerThickCell(ICell, K));
+            }
             XWorkCell(ICell, K) = TracersOnCell(L, ICell, K);
          }
       }

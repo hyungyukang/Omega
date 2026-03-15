@@ -895,11 +895,11 @@ void Tendencies::applyVelVertMixImplicit(
 ) {
 
    OMEGA_SCOPE(LocVelVertMixSetup, VelVertMixSetup);
+   OMEGA_SCOPE(CellsOnEdge, Mesh->CellsOnEdge);
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
 
-   const Array2DReal &NormalVelEdge  = State->NormalVelocity[VelTimeLevel];
-   const Array2DReal &LayerThickCell = State->LayerThickness[ThickTimeLevel];
+   const Array2DReal &NormalVelEdge = State->NormalVelocity[VelTimeLevel];
 
    // Compute velocity vertical mixing
    if (LocVelVertMixSetup.Enabled) {
@@ -922,46 +922,86 @@ void Tendencies::applyVelVertMixImplicit(
          R8 DT;
          TimeStep.get(DT, TimeUnits::Seconds);
 
-         auto &GWorkEdge = VertMixInstance->GWorkEdge;
-         auto &HWorkEdge = VertMixInstance->HWorkEdge;
-         auto &XWorkEdge = VertMixInstance->XWorkEdge;
-
          const auto &SpecVol  = EosInstance->SpecVol;
          const auto &VertVisc = VertMixInstance->VertVisc;
          const auto &LayerThickEdge =
              AuxState->LayerThicknessAux.MeanLayerThickEdge;
 
          const I4 NVertLayers = VCoord->NVertLayers;
+         TeamPolicy Policy =
+             TriDiagDiffSolver::makeTeamPolicy(Mesh->NEdgesAll, NVertLayers);
 
-         parallelForOuter(
-             {Mesh->NEdgesAll},
-             KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
-                const int KMin   = MinLayerEdgeBot(IEdge);
-                const int KMax   = MaxLayerEdgeTop(IEdge);
-                const int KRange = vertRangeChunked(KMin, KMax);
-                parallelForInner(
-                    Team, KRange, INNER_LAMBDA(int KChunk) {
-                       LocVelVertMixSetup(
-                           IEdge, KChunk, DT, SpecVol, LayerThickEdge, VertVisc,
-                           NormalVelEdge, GWorkEdge, HWorkEdge, XWorkEdge);
+         Kokkos::parallel_for(
+             Policy, KOKKOS_LAMBDA(const TeamMember &Team) {
+                const int IStart = Team.league_rank() * VecLength;
+
+                TriDiagDiffScratch Scratch(Team, NVertLayers);
+
+                Kokkos::parallel_for(
+                    TeamThreadRange(Team, NVertLayers), [=](int K) {
+                       for (int IVec = 0; IVec < VecLength; ++IVec) {
+                          const int IEdge = IStart + IVec;
+
+                          if (IEdge >= Mesh->NEdgesAll) {
+                             Scratch.G(K, IVec) = 0._Real;
+                             Scratch.H(K, IVec) = 1._Real;
+                             Scratch.X(K, IVec) = 0._Real;
+                             continue;
+                          }
+
+                          const int JCell0   = CellsOnEdge(IEdge, 0);
+                          const int JCell1   = CellsOnEdge(IEdge, 1);
+                          const int KMinEdge = MinLayerEdgeBot(IEdge);
+                          const int KMaxEdge = MaxLayerEdgeTop(IEdge);
+
+                          Scratch.G(K, IVec) = 0._Real;
+                          Scratch.H(K, IVec) = 1._Real;
+
+                          if (K < KMinEdge || K > KMaxEdge) {
+                             Scratch.X(K, IVec) = 1._Real;
+                          } else {
+                             if (K < KMaxEdge) {
+                                const Real LayerThickEdgeTop =
+                                    0.5_Real *
+                                    (LayerThickEdge(IEdge, K) +
+                                     LayerThickEdge(IEdge, K + 1));
+                                const Real SpecVolEdgeTop =
+                                    0.25_Real *
+                                    ((SpecVol(JCell0, K) + SpecVol(JCell1, K)) +
+                                     (SpecVol(JCell0, K + 1) +
+                                      SpecVol(JCell1, K + 1)));
+                                const Real ViscAlphaEdgeTop =
+                                    0.5_Real *
+                                    (VertVisc(JCell0, K + 1) +
+                                     VertVisc(JCell1, K + 1)) /
+                                    (LocVelVertMixSetup.LocRhoSw *
+                                     SpecVolEdgeTop);
+
+                                Scratch.G(K, IVec) =
+                                    DT * ViscAlphaEdgeTop /
+                                    (LayerThickEdgeTop *
+                                     LayerThickEdge(IEdge, K + 1));
+                             }
+
+                             Scratch.X(K, IVec) = NormalVelEdge(IEdge, K);
+                          }
+                       }
                     });
-             });
 
-         // Solve the system AY = X
-         // The solution Y is stored in X
-         TriDiagDiffSolver::solve(GWorkEdge, HWorkEdge, XWorkEdge);
+                Team.team_barrier();
+                TriDiagDiffSolver::solve(Team, Scratch);
+                Team.team_barrier();
 
-         //
-         parallelForOuter(
-             {Mesh->NEdgesAll},
-             KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
-                const int KMin   = MinLayerEdgeBot(IEdge);
-                const int KMax   = MaxLayerEdgeTop(IEdge);
-                const int KRange = vertRangeChunked(KMin, KMax);
-                parallelForInner(
-                    Team, KRange, INNER_LAMBDA(int KChunk) {
-                       const int K             = KMin + KChunk;
-                       NormalVelEdge(IEdge, K) = XWorkEdge(IEdge, K);
+                Kokkos::parallel_for(
+                    TeamThreadRange(Team, NVertLayers), [=](int K) {
+                       for (int IVec = 0; IVec < VecLength; ++IVec) {
+                          const int IEdge = IStart + IVec;
+                          if (IEdge < Mesh->NEdgesAll &&
+                              K >= MinLayerEdgeBot(IEdge) &&
+                              K <= MaxLayerEdgeTop(IEdge)) {
+                             NormalVelEdge(IEdge, K) = Scratch.X(K, IVec);
+                          }
+                       }
                     });
              });
       }

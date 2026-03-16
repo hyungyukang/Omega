@@ -895,7 +895,6 @@ void Tendencies::applyVelVertMixImplicit(
 ) {
 
    OMEGA_SCOPE(LocVelVertMixSetup, VelVertMixSetup);
-   OMEGA_SCOPE(CellsOnEdge, Mesh->CellsOnEdge);
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
 
@@ -949,42 +948,13 @@ void Tendencies::applyVelVertMixImplicit(
                              continue;
                           }
 
-                          const int JCell0   = CellsOnEdge(IEdge, 0);
-                          const int JCell1   = CellsOnEdge(IEdge, 1);
-                          const int KMinEdge = MinLayerEdgeBot(IEdge);
-                          const int KMaxEdge = MaxLayerEdgeTop(IEdge);
-
-                          Scratch.G(K, IVec) = 0._Real;
-                          Scratch.H(K, IVec) = 1._Real;
-
-                          if (K < KMinEdge || K > KMaxEdge) {
-                             Scratch.X(K, IVec) = 1._Real;
-                          } else {
-                             if (K < KMaxEdge) {
-                                const Real LayerThickEdgeTop =
-                                    0.5_Real *
-                                    (LayerThickEdge(IEdge, K) +
-                                     LayerThickEdge(IEdge, K + 1));
-                                const Real SpecVolEdgeTop =
-                                    0.25_Real *
-                                    ((SpecVol(JCell0, K) + SpecVol(JCell1, K)) +
-                                     (SpecVol(JCell0, K + 1) +
-                                      SpecVol(JCell1, K + 1)));
-                                const Real ViscAlphaEdgeTop =
-                                    0.5_Real *
-                                    (VertVisc(JCell0, K + 1) +
-                                     VertVisc(JCell1, K + 1)) /
-                                    (LocVelVertMixSetup.LocRhoSw *
-                                     SpecVolEdgeTop);
-
-                                Scratch.G(K, IVec) =
-                                    DT * ViscAlphaEdgeTop /
-                                    (LayerThickEdgeTop *
-                                     LayerThickEdge(IEdge, K + 1));
-                             }
-
-                             Scratch.X(K, IVec) = NormalVelEdge(IEdge, K);
-                          }
+                          Real G, H, X;
+                          LocVelVertMixSetup.computeRow(
+                              IEdge, K, DT, SpecVol, LayerThickEdge, VertVisc,
+                              NormalVelEdge, G, H, X);
+                          Scratch.G(K, IVec) = G;
+                          Scratch.H(K, IVec) = H;
+                          Scratch.X(K, IVec) = X;
                        }
                     });
 
@@ -1023,7 +993,6 @@ void Tendencies::applyTracerVertMixImplicit(
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
 
-   const Array2DReal &NormalVelEdge  = State->NormalVelocity[VelTimeLevel];
    const Array2DReal &LayerThickCell = State->LayerThickness[ThickTimeLevel];
 
    if (LocTracerVertMixSetup.Enabled) {
@@ -1074,37 +1043,13 @@ void Tendencies::applyTracerVertMixImplicit(
                                 continue;
                              }
 
-                             const int KMinCell = MinLayerCell(ICell);
-                             const int KMaxCell = MaxLayerCell(ICell);
-
-                             Scratch.G(K, IVec) = 0._Real;
-                             Scratch.H(K, IVec) = 1._Real;
-
-                             if (K < KMinCell || K > KMaxCell) {
-                                Scratch.X(K, IVec) = 1._Real;
-                             } else {
-                                if (K < KMaxCell) {
-                                   const Real LayerThickCellTop =
-                                       0.5_Real *
-                                       (LayerThickCell(ICell, K) +
-                                        LayerThickCell(ICell, K + 1));
-                                   const Real SpecVolCellTop =
-                                       0.5_Real *
-                                       (SpecVol(ICell, K) +
-                                        SpecVol(ICell, K + 1));
-                                   const Real DiffAlphaCellTop =
-                                       VertDiff(ICell, K + 1) /
-                                       (LocTracerVertMixSetup.LocRhoSw *
-                                        SpecVolCellTop);
-
-                                   Scratch.G(K, IVec) =
-                                       DT * DiffAlphaCellTop /
-                                       (LayerThickCellTop *
-                                        LayerThickCell(ICell, K + 1));
-                                }
-
-                                Scratch.X(K, IVec) = TracerArray(L, ICell, K);
-                             }
+                             Real G, H, X;
+                             LocTracerVertMixSetup.computeRow(
+                                 L, ICell, K, DT, SpecVol, LayerThickCell,
+                                 VertDiff, TracerArray, G, H, X);
+                             Scratch.G(K, IVec) = G;
+                             Scratch.H(K, IVec) = H;
+                             Scratch.X(K, IVec) = X;
                           }
                        });
 

@@ -28,7 +28,7 @@ void ElementsGeometry::init(const int num_elems, const bool consthv, const bool 
   assert(scale_factor > 0);
   m_scale_factor = scale_factor;
   m_laplacian_rigid_factor = laplacian_rigid_factor < 0 ? 1/scale_factor : laplacian_rigid_factor;
-  
+
   // Coriolis force
   m_fcor = ExecViewManaged<Real * [NP][NP]>("FCOR", m_num_elems);
 
@@ -43,11 +43,11 @@ void ElementsGeometry::init(const int num_elems, const bool consthv, const bool 
   if(!consthv){
     m_tensorvisc   = ExecViewManaged<Real * [2][2][NP][NP]>("TENSORVISC",   m_num_elems);
   }
-  m_vec_sph2cart = ExecViewManaged<Real * [2][3][NP][NP]>("VEC_SPH2CART", m_num_elems);
+  m_vec_sph2cart = ExecViewManaged<Real * [3][3][NP][NP]>("VEC_SPH2CART", m_num_elems);
 
   m_phis     = ExecViewManaged<Real *    [NP][NP]>("PHIS",          m_num_elems);
 
-  //matrix D and its derivatives 
+  //matrix D and its derivatives
   m_d    = ExecViewManaged<Real * [2][2][NP][NP]>("matrix D",                   m_num_elems);
   m_dinv = ExecViewManaged<Real * [2][2][NP][NP]>("DInv - inverse of matrix D", m_num_elems);
 
@@ -84,11 +84,11 @@ set_elem_data (const int ie,
 
   using ScalarView   = ExecViewUnmanaged<Real [NP][NP]>;
   using TensorView   = ExecViewUnmanaged<Real [2][2][NP][NP]>;
-  using Tensor23View = ExecViewUnmanaged<Real [2][3][NP][NP]>;
+  using Tensor33View = ExecViewUnmanaged<Real [3][3][NP][NP]>;
 
   using ScalarViewF90   = HostViewUnmanaged<const Real [NP][NP]>;
   using TensorViewF90   = HostViewUnmanaged<const Real [2][2][NP][NP]>;
-  using Tensor23ViewF90 = HostViewUnmanaged<const Real [2][3][NP][NP]>;
+  using Tensor33ViewF90 = HostViewUnmanaged<const Real [3][3][NP][NP]>;
 
   ScalarView::host_mirror_type h_fcor      = Kokkos::create_mirror_view(Homme::subview(m_fcor,ie));
   ScalarView::host_mirror_type h_metdet    = Kokkos::create_mirror_view(Homme::subview(m_metdet,ie));
@@ -98,7 +98,11 @@ set_elem_data (const int ie,
   TensorView::host_mirror_type h_d         = Kokkos::create_mirror_view(Homme::subview(m_d,ie));
   TensorView::host_mirror_type h_dinv      = Kokkos::create_mirror_view(Homme::subview(m_dinv,ie));
 
-  Tensor23View::host_mirror_type h_vec_sph2cart;
+  TensorView::host_mirror_type h_tensorvisc;
+  Tensor33View::host_mirror_type h_vec_sph2cart;
+  if( !consthv ){
+    h_tensorvisc   = Kokkos::create_mirror_view(Homme::subview(m_tensorvisc,ie));
+  }
   h_vec_sph2cart = Kokkos::create_mirror_view(Homme::subview(m_vec_sph2cart,ie));
 
   ScalarViewF90 h_fcor_f90         (fcor);
@@ -108,8 +112,9 @@ set_elem_data (const int ie,
   TensorViewF90 h_metinv_f90       (metinv);
   TensorViewF90 h_d_f90            (D);
   TensorViewF90 h_dinv_f90         (Dinv);
-  Tensor23ViewF90 h_vec_sph2cart_f90 (vec_sph2cart);
-  
+  TensorViewF90 h_tensorvisc_f90   (tensorvisc);
+  Tensor33ViewF90 h_vec_sph2cart_f90 (vec_sph2cart);
+
   // 2d scalars
   for (int igp = 0; igp < NP; ++igp) {
     for (int jgp = 0; jgp < NP; ++jgp) {
@@ -132,8 +137,19 @@ set_elem_data (const int ie,
       }
     }
   }
-  
-  for (int idim = 0; idim < 2; ++idim) {
+
+  if(!consthv) {
+    for (int idim = 0; idim < 2; ++idim) {
+      for (int jdim = 0; jdim < 2; ++jdim) {
+        for (int igp = 0; igp < NP; ++igp) {
+          for (int jgp = 0; jgp < NP; ++jgp) {
+            h_tensorvisc   (idim,jdim,igp,jgp) = h_tensorvisc_f90   (idim,jdim,igp,jgp);
+          }
+        }
+      }
+    }
+  }//end if consthv
+  for (int idim = 0; idim < 3; ++idim) {
     for (int jdim = 0; jdim < 3; ++jdim) {
       for (int igp = 0; igp < NP; ++igp) {
         for (int jgp = 0; jgp < NP; ++jgp) {

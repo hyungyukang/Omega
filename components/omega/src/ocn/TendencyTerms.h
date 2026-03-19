@@ -371,7 +371,7 @@ class VelVertMixSetupOnEdge {
                 (LocRhoSw * SpecVolEdgeTop);
 
             G = DT * ViscAlphaEdgeTop /
-                (LayerThickEdgeTop * LayerThickEdge(IEdge, K + 1));
+                (LayerThickEdgeTop * LayerThickEdge(IEdge, K));
          }
          X = NormalVelEdge(IEdge, K);
       }
@@ -660,7 +660,7 @@ class TracerVertMixSetupOnCell {
                 VertDiff(ICell, K + 1) / (LocRhoSw * SpecVolCellTop);
 
             G = DT * DiffAlphaCellTop /
-                (LayerThickCellTop * LayerThickCell(ICell, K + 1));
+                (LayerThickCellTop * LayerThickCell(ICell, K));
          }
          X = TracersOnCell(L, ICell, K);
       }

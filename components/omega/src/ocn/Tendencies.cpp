@@ -888,8 +888,7 @@ void Tendencies::applyVelVertMixImplicit(
     OceanState *State,              ///< [in] State variables
     const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
     int ThickTimeLevel,             ///< [in] Time level
-    int VelTimeLevel,               ///< [in] Time level
-    TimeInstant Time                ///< [in] Time
+    int VelTimeLevel                ///< [in] Time level
 ) {
 
    OMEGA_SCOPE(LocVelVertMixSetup, VelVertMixSetup);
@@ -983,8 +982,7 @@ void Tendencies::applyTracerVertMixImplicit(
     const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
     Array3DReal &TracerArray,       ///< [in] Tracer array
     int ThickTimeLevel,             ///< [in] Time level
-    int VelTimeLevel,               ///< [in] Time level
-    TimeInstant Time                ///< [in] Time
+    int VelTimeLevel                ///< [in] Time level
 ) {
 
    OMEGA_SCOPE(LocTracerVertMixSetup, TracerVertMixSetup);

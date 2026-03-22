@@ -109,12 +109,11 @@ class Tendencies {
                                     TimeInstant Time);
    void applyVelVertMixImplicit(OceanState *State,
                                 const AuxiliaryState *AuxState,
-                                int ThickTimeLevel, int VelTimeLevel,
-                                TimeInstant Time);
+                                int ThickTimeLevel, int VelTimeLevel);
    void applyTracerVertMixImplicit(OceanState *State,
                                    const AuxiliaryState *AuxState,
                                    Array3DReal &TracerArray, int ThickTimeLevel,
-                                   int VelTimeLevel, TimeInstant Time);
+                                   int VelTimeLevel);
 
    // Create a non-default group of tendencies
    template <class... ArgTypes>

@@ -56,14 +56,6 @@ void RungeKutta2Stepper::doStep(OceanState *State,   // model state
    updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel, State,
                        CurLevel, TimeStep);
 
-   // Apply vertical mixing to velocity
-   Tend->applyVelVertMixImplicit(State, AuxState, NextLevel, NextLevel,
-                                 SimTime);
-
-   // Apply vertical mixing to tracers
-   Tend->applyTracerVertMixImplicit(State, AuxState, NextTracerArray, NextLevel,
-                                    NextLevel, SimTime);
-
    // Update time levels (New -> Old) of prognostic variables with halo
    // exchanges
    const MPI_Comm Comm = MeshHalo->getComm();
@@ -72,6 +64,17 @@ void RungeKutta2Stepper::doStep(OceanState *State,   // model state
    State->updateTimeLevels();
    Tracers::updateTimeLevels();
    Pacer::stop("RK2:haloExch", 3);
+
+   // Tracer array at the current time index from State
+   Array3DReal TracerArray = Tracers::getAll(State->CurTimeIndex);
+
+   // Apply vertical mixing to velocity
+   Tend->applyVelVertMixImplicit(State, AuxState, State->CurTimeIndex,
+                                 State->CurTimeIndex);
+
+   // Apply vertical mixing to tracers
+   Tend->applyTracerVertMixImplicit(State, AuxState, TracerArray,
+                                    State->CurTimeIndex, State->CurTimeIndex);
 
    // Advance the clock and update the simulation time
    StepClock->advance();

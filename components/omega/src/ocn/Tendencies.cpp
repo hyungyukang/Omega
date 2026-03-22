@@ -34,11 +34,11 @@ std::map<std::string, std::unique_ptr<Tendencies>> Tendencies::AllTendencies;
 void Tendencies::init() {
    Error Err; // error code
 
-   HorzMesh *DefHorzMesh   = HorzMesh::getDefault();
-   VertCoord *DefVertCoord = VertCoord::getDefault();
-   Eos *DefEos             = Eos::getInstance();
-   PressureGrad *DefPGrad  = PressureGrad::getDefault();
-   VertAdv *DefVertAdv     = VertAdv::getDefault();
+   HorzMesh *DefHorzMesh       = HorzMesh::getDefault();
+   VertCoord *DefVertCoord     = VertCoord::getDefault();
+   Eos *DefEos                 = Eos::getInstance();
+   PressureGrad *DefPGrad      = PressureGrad::getDefault();
+   VertAdv *DefVertAdv         = VertAdv::getDefault();
    TimeStepper *DefTimeStepper = TimeStepper::getDefault();
 
    I4 NTracers = Tracers::getNumTracers();
@@ -79,10 +79,9 @@ void Tendencies::init() {
    TimeInterval TimeStep = DefTimeStepper->getTimeStep();
 
    // Ceate default tendencies
-   Tendencies::DefaultTendencies =
-       create("Default", DefHorzMesh, DefVertCoord, DefVertAdv, DefPGrad,
-              DefEos, NTracers, TimeStep, &TendConfig,
-              CustomThickTend, CustomVelTend);
+   Tendencies::DefaultTendencies = create(
+       "Default", DefHorzMesh, DefVertCoord, DefVertAdv, DefPGrad, DefEos,
+       NTracers, TimeStep, &TendConfig, CustomThickTend, CustomVelTend);
 
    DefaultTendencies->readConfig(OmegaConfig);
 
@@ -262,7 +261,6 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
    Err += TendConfig.get("PressureGradTendencyEnable", this->PGrad->Enabled);
    CHECK_ERROR_ABORT(
        Err, "Tendencies: PressureGradTendencyEnable not found in TendConfig");
-
 }
 
 //------------------------------------------------------------------------------
@@ -949,9 +947,9 @@ void Tendencies::applyVelVertMixImplicit(
                           }
 
                           Real G, H, X;
-                          LocVelVertMixSetup.computeRow(
-                              IEdge, K, DT, SpecVol, LayerThickEdge, VertVisc,
-                              NormalVelEdge, G, H, X);
+                          LocVelVertMixSetup(IEdge, K, DT, SpecVol,
+                                             LayerThickEdge, VertVisc,
+                                             NormalVelEdge, G, H, X);
                           Scratch.G(K, IVec) = G;
                           Scratch.H(K, IVec) = H;
                           Scratch.X(K, IVec) = X;
@@ -1044,9 +1042,9 @@ void Tendencies::applyTracerVertMixImplicit(
                              }
 
                              Real G, H, X;
-                             LocTracerVertMixSetup.computeRow(
-                                 L, ICell, K, DT, SpecVol, LayerThickCell,
-                                 VertDiff, TracerArray, G, H, X);
+                             LocTracerVertMixSetup(L, ICell, K, DT, SpecVol,
+                                                   LayerThickCell, VertDiff,
+                                                   TracerArray, G, H, X);
                              Scratch.G(K, IVec) = G;
                              Scratch.H(K, IVec) = H;
                              Scratch.X(K, IVec) = X;

@@ -120,25 +120,15 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    const auto AbsSalinity =
        Kokkos::subview(TracerArray, AbsSalinityIdx, Kokkos::ALL, Kokkos::ALL);
 
-   // TODO: compute surface pressure
-   Array1DReal SurfacePressure("SurfacePressure", Mesh->NCellsSize);
-   deepCopy(SurfacePressure, 0.0);
-
-   // TODO: retrieve TidalPotential and SelfAttractionLoading
-   Array1DReal TidalPotential("TidalPotential", Mesh->NCellsSize);
-   Array1DReal SelfAttractionLoading("SelfAttractionLoading", Mesh->NCellsSize);
-   deepCopy(TidalPotential, 0.0);
-   deepCopy(SelfAttractionLoading, 0.0);
-
    // compute pressure
+   const auto &SurfacePressure = VCoord->SurfacePressure;
    VCoord->computePressure(LayerThickCell, SurfacePressure);
 
    // convert PressureMid to dbars since that's what Eos expects
-   // TODO: allocating a new array here is slow
-   Array2DReal PressureMidDbar("PressureMidDbar", VCoord->PressureMid.layout());
-   const auto &MinLayerCell = VCoord->MinLayerCell;
-   const auto &MaxLayerCell = VCoord->MaxLayerCell;
-   const auto &PressureMid  = VCoord->PressureMid;
+   const auto &MinLayerCell    = VCoord->MinLayerCell;
+   const auto &MaxLayerCell    = VCoord->MaxLayerCell;
+   const auto &PressureMid     = VCoord->PressureMid;
+   const auto &PressureMidDbar = VCoord->PressureMidDbar;
 
    parallelForOuter(
        "convertPresDbar", {Mesh->NCellsAll},
@@ -160,6 +150,8 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    VCoord->computeZHeight(LayerThickCell, EosInstance->SpecVol);
 
    // compute geopotential
+   const auto &TidalPotential = VCoord->TidalPotential;
+   const auto &SelfAttractionLoading = VCoord->SelfAttractionLoading;
    VCoord->computeGeopotential(TidalPotential, SelfAttractionLoading);
 
    // compute Brunt-Vaisala frequency (NSquared)

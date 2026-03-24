@@ -115,6 +115,18 @@ class VertCoord {
    HostArray2DReal GeopotentialMidH;
    HostArray2DReal LayerThicknessTargetH;
 
+   // Variables required
+   // TODO: Temporarily defined here
+   Array1DReal SurfacePressure;
+   Array2DReal PressureMidDbar;
+   Array1DReal TidalPotential;
+   Array1DReal SelfAttractionLoading;
+
+   HostArray1DReal SurfacePressureH;
+   HostArray2DReal PressureMidDbarH;
+   HostArray1DReal TidalPotentialH;
+   HostArray1DReal SelfAttractionLoadingH;
+
    // Vertical loop bounds
    Array1DI4 MinLayerCell;
    Array1DI4 MaxLayerCell;

@@ -756,6 +756,7 @@ void Tendencies::computeTracerTendenciesOnly(
 void Tendencies::computeThicknessTendencies(
     const OceanState *State,        ///< [in] State variables
     const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
+    const Array3DReal &TracerArray, ///< [in] Tracer array
     int ThickTimeLevel,             ///< [in] Time level
     int VelTimeLevel,               ///< [in] Time level
     TimeInstant Time                ///< [in] Time
@@ -787,6 +788,7 @@ void Tendencies::computeThicknessTendencies(
        });
    Pacer::stop("Tend:computeLayerThickAux", 2);
 
+   AuxState->computeVertAux(State, TracerArray, ThickTimeLevel, VelTimeLevel);
    computeThicknessTendenciesOnly(State, AuxState, ThickTimeLevel, VelTimeLevel,
                                   Time);
 

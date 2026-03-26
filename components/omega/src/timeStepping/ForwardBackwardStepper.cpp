@@ -41,7 +41,7 @@ void ForwardBackwardStepper::doStep(
       LOG_CRITICAL("Invalid AuxState");
 
    // R_h^{n} = RHS_h(u^{n}, h^{n}, t^{n})
-   Tend->computeThicknessTendencies(State, AuxState, CurLevel, CurLevel,
+   Tend->computeThicknessTendencies(State, AuxState, CurTracerArray, CurLevel, CurLevel,
                                     SimTime);
 
    // h^{n+1} = h^{n} + R_h^{n}

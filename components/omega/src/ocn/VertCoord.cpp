@@ -171,6 +171,12 @@ VertCoord::VertCoord(const std::string &Name_, //< [in] Name for new VertCoord
    RefLayerThickness =
        Array2DReal("RefLayerThickness", NCellsSize, NVertLayers);
 
+     // TODO: Temporary
+   PressureMidDbar = Array2DReal("PressureMidDbar", NCellsSize, NVertLayers);
+   SurfacePressure = Array1DReal("SurfacePressure", NCellsSize);
+   TidalPotential = Array1DReal("TidalPotential", NCellsSize);
+   SelfAttractionLoading = Array1DReal("SelfAttractionLoading", NCellsSize);
+
    // Make host copies for device arrays not being read from file
    PressureInterfaceH    = createHostMirrorCopy(PressureInterface);
    PressureMidH          = createHostMirrorCopy(PressureMid);
@@ -179,6 +185,12 @@ VertCoord::VertCoord(const std::string &Name_, //< [in] Name for new VertCoord
    GeopotentialMidH      = createHostMirrorCopy(GeopotentialMid);
    LayerThicknessTargetH = createHostMirrorCopy(LayerThicknessTarget);
    RefLayerThicknessH    = createHostMirrorCopy(RefLayerThickness);
+
+     // TODO: Temporary
+   deepCopy(PressureMidDbar,0);
+   deepCopy(SurfacePressure,0);
+   deepCopy(TidalPotential,0);
+   deepCopy(SelfAttractionLoading,0);
 
    // Define field metadata
    defineFields();

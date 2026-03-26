@@ -15,6 +15,7 @@
 #include "auxiliaryVars/TracerAuxVars.h"
 #include "auxiliaryVars/VelocityDel2AuxVars.h"
 #include "auxiliaryVars/VorticityAuxVars.h"
+#include "auxiliaryVars/TangentAuxVars.h"
 #include "auxiliaryVars/WindForcingAuxVars.h"
 
 #include <memory>
@@ -42,6 +43,7 @@ class AuxiliaryState {
    VorticityAuxVars VorticityAux;
    VelocityDel2AuxVars VelocityDel2Aux;
    WindForcingAuxVars WindForcingAux;
+   TangentAuxVars TangentAux;
 
    ~AuxiliaryState();
 

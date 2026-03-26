@@ -30,6 +30,7 @@ AuxiliaryState::AuxiliaryState(const std::string &Name, const HorzMesh *Mesh,
       VorticityAux(stripDefault(Name), Mesh, VCoord),
       VelocityDel2Aux(stripDefault(Name), Mesh, VCoord),
       WindForcingAux(stripDefault(Name), Mesh),
+      TangentAux(stripDefault(Name), Mesh, VCoord),
       TracerAux(stripDefault(Name), Mesh, VCoord, NTracers) {
 
    GroupName = "AuxiliaryState";
@@ -44,6 +45,7 @@ AuxiliaryState::AuxiliaryState(const std::string &Name, const HorzMesh *Mesh,
    LayerThicknessAux.registerFields(GroupName, AuxMeshName);
    VorticityAux.registerFields(GroupName, AuxMeshName);
    VelocityDel2Aux.registerFields(GroupName, AuxMeshName);
+   TangentAux.registerFields(GroupName, AuxMeshName);
    WindForcingAux.registerFields(GroupName, AuxMeshName);
    TracerAux.registerFields(GroupName, AuxMeshName);
 }
@@ -55,6 +57,7 @@ AuxiliaryState::~AuxiliaryState() {
    LayerThicknessAux.unregisterFields();
    VorticityAux.unregisterFields();
    VelocityDel2Aux.unregisterFields();
+   TangentAux.unregisterFields();
    WindForcingAux.unregisterFields();
    TracerAux.unregisterFields();
 
@@ -89,22 +92,22 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    // get normal velocity
    Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
 
-//   // compute tangential velocity
-//   OMEGA_SCOPE(LocTangentAux, TangentAux);
-//   OMEGA_SCOPE(MinLayerEdgeTop, VCoord->MinLayerEdgeTop);
-//   OMEGA_SCOPE(MaxLayerEdgeBot, VCoord->MaxLayerEdgeBot);
-//   parallelForOuter(
-//       "edgeAuxState1", {Mesh->NEdgesAll},
-//       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
-//          const int KMin   = MinLayerEdgeTop(IEdge);
-//          const int KMax   = MaxLayerEdgeBot(IEdge);
-//          const int KRange = vertRangeChunked(KMin, KMax);
-//
-//          parallelForInner(
-//              Team, KRange, INNER_LAMBDA(int KChunk) {
-//                 LocTangentAux.computeVarsOnEdge(IEdge, KChunk, NormalVelEdge);
-//              });
-//       });
+   // compute tangential velocity
+   OMEGA_SCOPE(LocTangentAux, TangentAux);
+   OMEGA_SCOPE(MinLayerEdgeTop, VCoord->MinLayerEdgeTop);
+   OMEGA_SCOPE(MaxLayerEdgeBot, VCoord->MaxLayerEdgeBot);
+   parallelForOuter(
+       "edgeAuxState1", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          const int KMin   = MinLayerEdgeTop(IEdge);
+          const int KMax   = MaxLayerEdgeBot(IEdge);
+          const int KRange = vertRangeChunked(KMin, KMax);
+
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 LocTangentAux.computeVarsOnEdge(IEdge, KChunk, NormalVelEdge);
+              });
+       });
 
    // get temperature and salinity
    I4 ConservTempIdx;
@@ -152,13 +155,13 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    VCoord->computeGeopotential(TidalPotential, SelfAttractionLoading);
 
    // compute Brunt-Vaisala frequency (NSquared)
-//   const auto &PressureInterface  = VCoord->PressureInterface;
-//   const auto &SpecVol  = EosInstance->SpecVol;
-//   EosInstance->computeBruntVaisalaFreqSq(ConservTemp, AbsSalinity, PressureInterface, SpecVol);
+   const auto &PressureInterface  = VCoord->PressureInterface;
+   const auto &SpecVol  = EosInstance->SpecVol;
+   EosInstance->computeBruntVaisalaFreqSq(ConservTemp, AbsSalinity, PressureInterface, SpecVol);
 
-   // compute vertical mixing coefficient
-//   const auto &TangentVelEdge = TangentAux.TangentialVelocity;
-//   VertMixInstance->computeVertMix(NormalVelEdge, TangentVelEdge, EosInstance->BruntVaisalaFreqSq);
+ // compute vertical mixing coefficient
+   const auto &TangentVelEdge = TangentAux.TangentialVelocity;
+   VertMixInstance->computeVertMix(NormalVelEdge, TangentVelEdge, EosInstance->BruntVaisalaFreqSq);
 
    Pacer::stop("AuxState:computeVertAux", 1);
 }

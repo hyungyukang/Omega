@@ -111,6 +111,19 @@ TracerHyperDiffOnCell::TracerHyperDiffOnCell(const HorzMesh *Mesh,
       MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
 
+VelVertMixSetupOnEdge::VelVertMixSetupOnEdge(const HorzMesh *Mesh,
+                                             const VertCoord *VCoord)
+    : LocRhoSw(RhoSw), CellsOnEdge(Mesh->CellsOnEdge),
+      NVertLayers(VCoord->NVertLayers), EdgeMask(VCoord->EdgeMask),
+      MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
+      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
+
+TracerVertMixSetupOnCell::TracerVertMixSetupOnCell(const HorzMesh *Mesh,
+                                                   const VertCoord *VCoord)
+    : LocRhoSw(RhoSw), NVertLayers(VCoord->NVertLayers),
+      MinLayerCell(VCoord->MinLayerCell),
+      MaxLayerCell(VCoord->MaxLayerCell) {}
+
 void TracerHorzAdvOnCell::init() {
    const HorzMesh *Mesh = this->HorzontalMesh;
    const auto MaxEdges2 = Mesh->MaxEdges2;

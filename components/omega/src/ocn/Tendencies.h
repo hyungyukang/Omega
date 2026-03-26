@@ -71,6 +71,8 @@ class Tendencies {
    TracerHorzAdvOnCell TracerHorzAdv;
    TracerDiffOnCell TracerDiffusion;
    TracerHyperDiffOnCell TracerHyperDiff;
+   VelVertMixSetupOnEdge VelVertMixSetup;
+   TracerVertMixSetupOnCell TracerVertMixSetup;
 
    std::string Name;
 
@@ -106,6 +108,13 @@ class Tendencies {
                                     const Array3DReal &TracerArray,
                                     int ThickTimeLevel, int VelTimeLevel,
                                     TimeInstant Time);
+   void applyVelVertMixImplicit(OceanState *State,
+                                const AuxiliaryState *AuxState,
+                                int ThickTimeLevel, int VelTimeLevel);
+   void applyTracerVertMixImplicit(OceanState *State,
+                                   const AuxiliaryState *AuxState,
+                                   Array3DReal &TracerArray, int ThickTimeLevel,
+                                   int VelTimeLevel);
 
    // Create a non-default group of tendencies
    template <class... ArgTypes>

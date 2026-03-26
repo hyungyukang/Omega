@@ -123,6 +123,14 @@ void RungeKutta4Stepper::doStep(OceanState *State,   // model state
    Tracers::updateTimeLevels();
    Pacer::stop("RK4:haloExch", 3);
 
+   // Apply vertical mixing to velocity
+   Tend->applyVelVertMixImplicit(State, AuxState, State->CurTimeIndex,
+                                 State->CurTimeIndex);
+
+   // Apply vertical mixing to tracers
+   Tend->applyTracerVertMixImplicit(State, AuxState, NextTracerArray,
+                                    State->CurTimeIndex, State->CurTimeIndex);
+
    // Advance the clock and update the simulation time
    StepClock->advance();
    SimTime = StepClock->getCurrentTime();

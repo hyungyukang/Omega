@@ -571,5 +571,125 @@ class TracerHyperDiffOnCell {
    Array1DI4 MaxLayerEdgeTop;
 };
 
+/// Velocity vertical mixing
+class VelVertMixSetupOnEdge {
+ public:
+   bool Enabled;
+   Real LocRhoSw;
+
+   /// constructor declaration
+   VelVertMixSetupOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
+
+   /// The functor takes edge index, vertical chunk index, and arrays for
+   /// layer specific volume, layer thickness on edge,
+   /// interface pressure, and outputs tendency array
+   KOKKOS_FUNCTION void operator()(I4 IEdge, I4 K, Real DT,
+                                   const Array2DReal &SpecVol,
+                                   const Array2DReal &LayerThickEdge,
+                                   const Array2DReal &VertVisc,
+                                   const Array2DReal &NormalVelEdge, Real &G,
+                                   Real &H, Real &X) const {
+
+      const I4 JCell0 = CellsOnEdge(IEdge, 0);
+      const I4 JCell1 = CellsOnEdge(IEdge, 1);
+
+      const I4 KMin = MinLayerEdgeBot(IEdge);
+      const I4 KMax = MaxLayerEdgeTop(IEdge);
+
+      G = 0.0_Real;
+      H = 1.0_Real;
+
+      if (K < KMin || K > KMax) {
+         X = 0.0_Real;
+      } else {
+         if (K < KMax) {
+            const Real LayerThickEdgeK   = LayerThickEdge(IEdge, K);
+            const Real LayerThickEdgeKp1 = LayerThickEdge(IEdge, K + 1);
+
+            const Real LayerThickEdgeTop =
+                0.5_Real * (LayerThickEdgeK + LayerThickEdgeKp1);
+
+            // Interpolation from cell center to top using
+            // the two-point linear interpolation
+            const Real SpecVolEdgeTop =
+                (0.5_Real * (SpecVol(JCell0, K) + SpecVol(JCell1, K)) *
+                     LayerThickEdgeKp1 +
+                 0.5_Real * (SpecVol(JCell0, K + 1) + SpecVol(JCell1, K + 1)) *
+                     LayerThickEdgeK) /
+                (LayerThickEdgeK + LayerThickEdgeKp1);
+
+            const Real ViscAlphaEdgeTop =
+                0.5_Real * (VertVisc(JCell0, K + 1) + VertVisc(JCell1, K + 1)) /
+                (LocRhoSw * SpecVolEdgeTop);
+
+            G = DT * ViscAlphaEdgeTop /
+                (LayerThickEdgeTop * LayerThickEdge(IEdge, K));
+         }
+         X = NormalVelEdge(IEdge, K);
+      }
+   }
+
+ private:
+   I4 NVertLayers;
+   Array2DI4 CellsOnEdge;
+   Array2DReal EdgeMask;
+   Array1DI4 MinLayerEdgeBot;
+   Array1DI4 MaxLayerEdgeTop;
+};
+
+// Tracer vertical mixing term
+class TracerVertMixSetupOnCell {
+ public:
+   bool Enabled;
+   Real LocRhoSw;
+
+   TracerVertMixSetupOnCell(const HorzMesh *Mesh, const VertCoord *VCoord);
+
+   KOKKOS_FUNCTION void operator()(I4 L, I4 ICell, I4 K, Real DT,
+                                   const Array2DReal &SpecVol,
+                                   const Array2DReal &LayerThickCell,
+                                   const Array2DReal &VertDiff,
+                                   const Array3DReal &TracersOnCell, Real &G,
+                                   Real &H, Real &X) const {
+
+      const I4 KMin = MinLayerCell(ICell);
+      const I4 KMax = MaxLayerCell(ICell);
+
+      G = 0.0_Real;
+      H = 1.0_Real;
+
+      if (K < KMin || K > KMax) {
+         X = 0.0_Real;
+      } else {
+         if (K < KMax) {
+            const Real LayerThickCellK   = LayerThickCell(ICell, K);
+            const Real LayerThickCellKp1 = LayerThickCell(ICell, K + 1);
+
+            const Real LayerThickCellTop =
+                0.5_Real * (LayerThickCellK + LayerThickCellKp1);
+
+            // Interpolation from cell center to top using
+            // the two-point linear interpolation
+            const Real SpecVolCellTop =
+                (SpecVol(ICell, K) * LayerThickCellKp1 +
+                 SpecVol(ICell, K + 1) * LayerThickCellK) /
+                (LayerThickCellK + LayerThickCellKp1);
+
+            const Real DiffAlphaCellTop =
+                VertDiff(ICell, K + 1) / (LocRhoSw * SpecVolCellTop);
+
+            G = DT * DiffAlphaCellTop /
+                (LayerThickCellTop * LayerThickCell(ICell, K));
+         }
+         X = TracersOnCell(L, ICell, K);
+      }
+   }
+
+ private:
+   I4 NVertLayers;
+   Array1DI4 MinLayerCell;
+   Array1DI4 MaxLayerCell;
+};
+
 } // namespace OMEGA
 #endif

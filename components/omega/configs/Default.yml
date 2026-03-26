@@ -60,6 +60,8 @@ Omega:
     VelocityVertAdvTendencyEnable: true
     TracerVertAdvTendencyEnable: true
     PressureGradTendencyEnable: true
+    VelVertMixTendencyEnable: true
+    TracerVertMixTendencyEnable: true
   Tracers:
     Base: [Temperature, Salinity]
     Debug: [Debug1, Debug2, Debug3]

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tendency Terms &mdash; Omega develop documentation</title>
+  <title>Vertical Advection &mdash; Omega develop documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
@@ -19,8 +19,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Tendencies" href="Tendencies.html" />
-    <link rel="prev" title="Auxiliary State" href="AuxiliaryState.html" />
+    <link rel="next" title="Omega V0: Shallow Water" href="../design/OmegaV0ShallowWater.html" />
+    <link rel="prev" title="Vertical Mixing Coefficients" href="VerticalMixingCoeff.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -108,7 +108,7 @@
 <li class="toctree-l1"><a class="reference internal" href="HorzOperators.html">Horizontal Operators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="AuxiliaryVariables.html">Auxiliary Variables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="AuxiliaryState.html">Auxiliary State</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Tendency Terms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TendencyTerms.html">Tendency Terms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Tendencies.html">Tendencies</a></li>
 <li class="toctree-l1"><a class="reference internal" href="OceanState.html">Ocean State</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">Time Manager (TimeMgr)</a></li>
@@ -124,7 +124,12 @@
 <li class="toctree-l1"><a class="reference internal" href="Timing.html#basic-timer-use">Basic timer use</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Timing.html#advanced-timing-functions">Advanced timing functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
-<li class="toctree-l1"><a class="reference internal" href="VertAdv.html">Vertical Advection</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Vertical Advection</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#initialization">Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#variables">Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#methods">Methods</a></li>
+</ul>
+</li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
 <ul>
@@ -176,9 +181,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Tendency Terms</li>
+      <li class="breadcrumb-item active">Vertical Advection</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/devGuide/TendencyTerms.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/devGuide/VertAdv.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -186,55 +191,127 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="tendency-terms">
-<span id="omega-dev-tend-terms"></span><h1>Tendency Terms<a class="headerlink" href="#tendency-terms" title="Permalink to this heading"></a></h1>
-<p>The tendency terms are each implemented as a separate functor. They contain
-private member variables to store any constant data needed for computation.
-This data is initialized during construction and comes from either an instance
-of the <code class="docutils literal notranslate"><span class="pre">HorzMesh</span></code> class or a <code class="docutils literal notranslate"><span class="pre">Config</span></code> object, which are passed as arguments to
-the constructor:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="k">auto</span><span class="w"> </span><span class="n">Mesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">HorzMesh</span><span class="o">::</span><span class="n">getDefault</span><span class="p">();</span>
-<span class="w">   </span><span class="k">auto</span><span class="w"> </span><span class="n">Options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">Config</span><span class="o">::</span><span class="n">getOmegaConfig</span><span class="p">();</span>
-<span class="w">   </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">ThicknessFluxDivOnCell</span><span class="w"> </span><span class="nf">ThickFluxDivOnC</span><span class="p">(</span><span class="n">Mesh</span><span class="p">,</span><span class="w"> </span><span class="n">Options</span><span class="p">));</span>
+  <section id="vertical-advection">
+<span id="omega-dev-vert-adv"></span><h1>Vertical Advection<a class="headerlink" href="#vertical-advection" title="Permalink to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">VertAdv</span></code> class contains methods and arrays for calculating vertical
+velocities and the tendencies of thickness, horizontal velocity, and tracers due
+to vertical advection.</p>
+<section id="initialization">
+<h2>Initialization<a class="headerlink" href="#initialization" title="Permalink to this heading"></a></h2>
+<p>The default <code class="docutils literal notranslate"><span class="pre">VertAdv</span></code> instance is created by calling <code class="docutils literal notranslate"><span class="pre">VertAdv::init()</span></code> method.
+The default <code class="docutils literal notranslate"><span class="pre">HorzMesh</span></code>, <code class="docutils literal notranslate"><span class="pre">VertCoord</span></code>, and <code class="docutils literal notranslate"><span class="pre">Tracers</span></code> objects must be initialized
+first. The default instance is retrieved by:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">VertAdv</span> <span class="o">*</span><span class="n">DefVertAdv</span> <span class="o">=</span> <span class="n">VertAdv</span><span class="p">::</span><span class="n">getDefault</span><span class="p">();</span>
 </pre></div>
 </div>
-<p>Each functor is called like a function to compute tendency values for a range
-of vertical layers at a given mesh element. So, the functors all take as
-input the mesh element index and the index for the vertical chunk, along with
-arrays computed by <a class="reference internal" href="AuxiliaryVariables.html#omega-dev-aux-vars"><span class="std std-ref">Auxillary Variables</span></a> classes. In each
-case, the first argument is a tendency array that gets updated by the
-contributon to the tendency for the given term. The functors are designed to be
-used inside a Kokkos parallel loop:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="n">OMEGA</span><span class="o">::</span><span class="n">parallelFor</span><span class="p">(</span>
-<span class="w">       </span><span class="p">{</span><span class="n">mesh</span><span class="o">-&gt;</span><span class="n">NCellsOwned</span><span class="p">,</span><span class="w"> </span><span class="n">NVertLayers</span><span class="p">},</span><span class="w"> </span><span class="n">KOKKOS_LAMBDA</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">ICell</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">KChunk</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">          </span><span class="n">ThickFluxDixOnC</span><span class="p">(</span><span class="n">ThicknessTend</span><span class="p">,</span><span class="w"> </span><span class="n">ICell</span><span class="p">,</span><span class="w"> </span><span class="n">KChunk</span><span class="p">,</span><span class="w"> </span><span class="n">ThickFluxEdge</span><span class="p">);</span>
-<span class="w">       </span><span class="p">});</span>
+<p>Additional instances can be created with the <code class="docutils literal notranslate"><span class="pre">create</span></code> method, which calls the
+constructor and places the new instance in a map identified with the label
+<code class="docutils literal notranslate"><span class="pre">Name</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">VertAdv</span> <span class="o">*</span><span class="n">VertAdv</span><span class="p">::</span><span class="n">create</span><span class="p">(</span><span class="n">const</span> <span class="n">std</span><span class="p">::</span><span class="n">string</span> <span class="o">&amp;</span><span class="n">Name</span><span class="p">,</span> <span class="o">///&lt;</span> <span class="p">[</span><span class="ow">in</span><span class="p">]</span> <span class="n">name</span> <span class="k">for</span> <span class="n">new</span> <span class="n">VertAdv</span>
+                         <span class="n">const</span> <span class="n">HorzMesh</span> <span class="o">*</span><span class="n">Mesh</span><span class="p">,</span>    <span class="o">///&lt;</span> <span class="p">[</span><span class="ow">in</span><span class="p">]</span> <span class="n">associated</span> <span class="n">HorzMesh</span>
+                         <span class="n">const</span> <span class="n">VertCoord</span> <span class="o">*</span><span class="n">VCoord</span><span class="p">,</span> <span class="o">///&lt;</span> <span class="p">[</span><span class="ow">in</span><span class="p">]</span> <span class="n">associated</span> <span class="n">VertCoord</span>
+                         <span class="n">Config</span> <span class="o">*</span><span class="n">Options</span>          <span class="o">///&lt;</span> <span class="p">[</span><span class="ow">in</span><span class="p">]</span> <span class="n">configuration</span> <span class="n">options</span>
+<span class="p">)</span>
 </pre></div>
 </div>
-<p>The following tendency terms for the shallow water equations are currently
-implemented:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">ThicknessFluxDivOnCell</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PotentialVortHAdvOnEdge</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">KEGradOnEdge</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">SSHGradOnEdge</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">VelocityDiffusionOnEdge</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">VelocityHyperDiffOnEdge</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">WindForcingOnEdge</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">BottomDragOnEdge</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">TracerHorzAdvOnCell</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">TracerHighOrderHorzAdvOnCell</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">TracerDiffOnCell</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">TracerHyperDiffOnCell</span></code></p></li>
-</ul>
+<p>This instance is retrieved with the get method:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">VertAdv</span> <span class="o">*</span><span class="n">NewVertAdv</span> <span class="o">=</span> <span class="n">VertAdv</span><span class="p">::</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The constructor reads configuration options, stores some info from the
+<code class="docutils literal notranslate"><span class="pre">HorzMesh</span></code>, <code class="docutils literal notranslate"><span class="pre">VertCoord</span></code>, and <code class="docutils literal notranslate"><span class="pre">Tracers</span></code> objects, allocates needed arrays,
+and defines <code class="docutils literal notranslate"><span class="pre">Field</span></code> metadata.</p>
+</section>
+<section id="variables">
+<h2>Variables<a class="headerlink" href="#variables" title="Permalink to this heading"></a></h2>
+<p>The following arrays are stored as members of the <code class="docutils literal notranslate"><span class="pre">VertAdv</span></code> class.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable Name</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Dimensions</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>VerticalVelocity</p></td>
+<td><p>Real</p></td>
+<td><p>NCellsSize, NVertLayersP1</p></td>
+</tr>
+<tr class="row-odd"><td><p>TotalVerticalVelocity</p></td>
+<td><p>Real</p></td>
+<td><p>NCellsSize, NVertLayersP1</p></td>
+</tr>
+<tr class="row-even"><td><p>VertFlux</p></td>
+<td><p>Real</p></td>
+<td><p>NTracers, NCellsSize, NVertLayersP1</p></td>
+</tr>
+<tr class="row-odd"><td><p>LowOrderVertFlux</p></td>
+<td><p>Real</p></td>
+<td><p>NTracers, NCellsSize, NVertLayersP1</p></td>
+</tr>
+</tbody>
+</table>
+<p>The <code class="docutils literal notranslate"><span class="pre">VerticalVelocity</span></code> represents the raw vertical pseudovelocity through the
+top interfaces of cell layers, computed from the divergence of the horizontal
+velocity. The <code class="docutils literal notranslate"><span class="pre">TotalVerticalVelocity</span></code> is the transport velocity and includes
+corrections applied to the <code class="docutils literal notranslate"><span class="pre">VerticalVelocity</span></code>. The <code class="docutils literal notranslate"><span class="pre">VertFlux</span></code> and
+<code class="docutils literal notranslate"><span class="pre">LowOrderVertFlux</span></code> store tracer fluxes at layer interfaces. The specific
+numerical algorithms to compute these fluxes are chosen by the user through
+configuration options.</p>
+</section>
+<section id="methods">
+<h2>Methods<a class="headerlink" href="#methods" title="Permalink to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">VerticalVelocity</span></code> and <code class="docutils literal notranslate"><span class="pre">TotalVerticalVelocity</span></code> arrays are computed by
+calling the <code class="docutils literal notranslate"><span class="pre">computeVerticalVelocity</span></code> method:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">VertAdv</span><span class="p">::</span><span class="n">computeVerticalVelocity</span><span class="p">(</span><span class="n">NormalVelocity</span><span class="p">,</span> <span class="n">FluxLayerThickEdge</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>This method takes as input the <code class="docutils literal notranslate"><span class="pre">NormalVelocity</span></code> field from the <code class="docutils literal notranslate"><span class="pre">OceanState</span></code>
+object, and the <code class="docutils literal notranslate"><span class="pre">FluxLayerThickEdge</span></code> field from the <code class="docutils literal notranslate"><span class="pre">AuxiliaryState</span></code>. At
+present, <code class="docutils literal notranslate"><span class="pre">TotalVerticalVelocity</span></code> is equivalent to <code class="docutils literal notranslate"><span class="pre">VerticalVelocity</span></code>;
+additional corrections will be added in subsequent updates. The
+<code class="docutils literal notranslate"><span class="pre">TotalVerticalVelocity</span></code> array is used by each of the tendency methods,
+therefore <code class="docutils literal notranslate"><span class="pre">computeVerticalVelocity</span></code> must be called before any tendency
+computations.</p>
+<p>There are three methods for computing vertical advection tendencies of
+thickness, horizontal velocity and tracers that are called from the time
+stepper: <code class="docutils literal notranslate"><span class="pre">computeThicknessVAdvTend</span></code>, <code class="docutils literal notranslate"><span class="pre">computeVelocityVAdvTend</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">computeTracerVAdvTend</span></code>. Each method updates the corresponding tendency array
+in place (inout).</p>
+<p>Only the thickness tendency array is passed to the <code class="docutils literal notranslate"><span class="pre">computeThicknessVAdvTend</span></code>
+method:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">VertAdv</span><span class="p">::</span><span class="n">computeThicknessVAdvTend</span><span class="p">(</span><span class="n">ThickTend</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">computeVelocityVAdvTend</span></code> method requires the <code class="docutils literal notranslate"><span class="pre">NormalVelocity</span></code> and
+<code class="docutils literal notranslate"><span class="pre">FluxLayerThickEdge</span></code> fields, in addition to the velocity tendency array:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">VertAdv</span><span class="p">::</span><span class="n">computeVelocityVAdvTend</span><span class="p">(</span><span class="n">VelTend</span><span class="p">,</span> <span class="n">NormalVelocity</span><span class="p">,</span> <span class="n">FluxLayerThickEdge</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The tracer vertical advection tendency depends on the configured settings.
+The <code class="docutils literal notranslate"><span class="pre">computeTracerVAdvTend</span></code> method takes as arguments the full 3D array of
+tracers, a thickness array (selected based on the configured advection
+algorithm) and a <code class="docutils literal notranslate"><span class="pre">TimeInterval</span></code> representing the time step, along with the
+tracer tendency array:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">VertAdv</span><span class="p">::</span><span class="n">computeTracerVAdvTend</span><span class="p">(</span><span class="n">TracerTend</span><span class="p">,</span> <span class="n">TracerArray</span><span class="p">,</span> <span class="n">Thickness</span><span class="p">,</span> <span class="n">TimeStep</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>For the standard advection algorithm, <code class="docutils literal notranslate"><span class="pre">LayerThickness</span></code> from the <code class="docutils literal notranslate"><span class="pre">OceanState</span></code> is
+passed as the thickness argument; for the FCT algorithm, the <code class="docutils literal notranslate"><span class="pre">ProvThickness</span></code>
+from the <code class="docutils literal notranslate"><span class="pre">AuxiliaryState</span></code> is used instead.</p>
+<p>This method first calls <code class="docutils literal notranslate"><span class="pre">computeVerticalFluxes</span></code> to compute the tracer fluxes at
+layer interfaces, using the order of accuracy specified in the configuration
+file. It then dispatches to the selected advection algorithm (standard or FCT)
+to compute the tracer tendencies.</p>
+</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="AuxiliaryState.html" class="btn btn-neutral float-left" title="Auxiliary State" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="Tendencies.html" class="btn btn-neutral float-right" title="Tendencies" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="VerticalMixingCoeff.html" class="btn btn-neutral float-left" title="Vertical Mixing Coefficients" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../design/OmegaV0ShallowWater.html" class="btn btn-neutral float-right" title="Omega V0: Shallow Water" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

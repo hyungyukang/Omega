@@ -445,6 +445,7 @@ void Tendencies::computeThicknessTendenciesOnly(
 void Tendencies::computeVelocityTendenciesOnly(
     const OceanState *State,        ///< [in] State variables
     const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
+    const Array3DReal &TracerArray, ///< [in] Tracer array
     int ThickTimeLevel,             ///< [in] Time level
     int VelTimeLevel,               ///< [in] Time level
     int TracerTimeLevel,            ///< [in] Time level
@@ -631,8 +632,10 @@ void Tendencies::computeVelocityTendenciesOnly(
 
       const auto &PressureMid       = VCoord->PressureMid;
       const auto &PressureInterface = VCoord->PressureInterface;
-      Array2DReal Temp     = Tracers::getByName(TracerTimeLevel, "Temperature");
-      Array2DReal Salinity = Tracers::getByName(TracerTimeLevel, "Salinity");
+      Array2DReal Temp = Kokkos::subview(TracerArray, Tracers::IndxTemp,
+                                         Kokkos::ALL, Kokkos::ALL);
+      Array2DReal Salinity = Kokkos::subview(TracerArray, Tracers::IndxSalt,
+                                             Kokkos::ALL, Kokkos::ALL);
       EqState->computeSpecVol(Temp, Salinity, PressureMid);
 
       // Temporary: ensure vertical geometric/geopotential fields are updated
@@ -816,6 +819,7 @@ void Tendencies::computeThicknessTendencies(
 void Tendencies::computeVelocityTendencies(
     const OceanState *State,        ///< [in] State variables
     const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
+    const Array3DReal &TracerArray, ///< [in] Tracer array
     int ThickTimeLevel,             ///< [in] Time level
     int VelTimeLevel,               ///< [in] Time level
     int TracerTimeLevel,            ///< [in] Time level
@@ -824,7 +828,8 @@ void Tendencies::computeVelocityTendencies(
    Pacer::start("Tend:computeVelocityTendencies", 1);
 
    AuxState->computeMomAux(State, ThickTimeLevel, VelTimeLevel);
-   computeVelocityTendenciesOnly(State, AuxState, ThickTimeLevel, VelTimeLevel,
+   computeVelocityTendenciesOnly(State, AuxState, TracerArray,
+                                 ThickTimeLevel, VelTimeLevel,
                                  TracerTimeLevel, Time);
 
    Pacer::stop("Tend:computeVelocityTendencies", 1);
@@ -887,8 +892,8 @@ void Tendencies::computeAllTendencies(
 
    computeThicknessTendenciesOnly(State, AuxState, ThickTimeLevel, VelTimeLevel,
                                   Time);
-   computeVelocityTendenciesOnly(State, AuxState, ThickTimeLevel, VelTimeLevel,
-                                 TracerTimeLevel, Time);
+   computeVelocityTendenciesOnly(State, AuxState, TracerArray, ThickTimeLevel,
+                                 VelTimeLevel, TracerTimeLevel, Time);
    computeTracerTendenciesOnly(State, AuxState, TracerArray, ThickTimeLevel,
                                VelTimeLevel, Time);
 }

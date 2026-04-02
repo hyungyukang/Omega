@@ -896,6 +896,7 @@ void Tendencies::applyVelVertMixImplicit(
    OMEGA_SCOPE(LocVelVertMixSetup, VelVertMixSetup);
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+   OMEGA_SCOPE(NEdgesAll, Mesh->NEdgesAll);
 
    const Array2DReal &NormalVelEdge = State->NormalVelocity[VelTimeLevel];
 
@@ -927,7 +928,7 @@ void Tendencies::applyVelVertMixImplicit(
 
          const I4 NVertLayers = VCoord->NVertLayers;
          TeamPolicy Policy =
-             TriDiagDiffSolver::makeTeamPolicy(Mesh->NEdgesAll, NVertLayers);
+             TriDiagDiffSolver::makeTeamPolicy(NEdgesAll, NVertLayers);
 
          Kokkos::parallel_for(
              Policy, KOKKOS_LAMBDA(const TeamMember &Team) {
@@ -940,7 +941,7 @@ void Tendencies::applyVelVertMixImplicit(
                        for (int IVec = 0; IVec < VecLength; ++IVec) {
                           const int IEdge = IStart + IVec;
 
-                          if (IEdge >= Mesh->NEdgesAll) {
+                          if (IEdge >= NEdgesAll) {
                              Scratch.G(K, IVec) = 0._Real;
                              Scratch.H(K, IVec) = 1._Real;
                              Scratch.X(K, IVec) = 0._Real;
@@ -965,7 +966,7 @@ void Tendencies::applyVelVertMixImplicit(
                     TeamThreadRange(Team, NVertLayers), [=](int K) {
                        for (int IVec = 0; IVec < VecLength; ++IVec) {
                           const int IEdge = IStart + IVec;
-                          if (IEdge < Mesh->NEdgesAll &&
+                          if (IEdge < NEdgesAll &&
                               K >= MinLayerEdgeBot(IEdge) &&
                               K <= MaxLayerEdgeTop(IEdge)) {
                              NormalVelEdge(IEdge, K) = Scratch.X(K, IVec);
@@ -990,6 +991,7 @@ void Tendencies::applyTracerVertMixImplicit(
    OMEGA_SCOPE(LocTracerVertMixSetup, TracerVertMixSetup);
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
+   OMEGA_SCOPE(NCellsAll, Mesh->NCellsAll);
 
    const Array2DReal &LayerThickCell = State->LayerThickness[ThickTimeLevel];
 
@@ -1018,7 +1020,7 @@ void Tendencies::applyTracerVertMixImplicit(
 
          const I4 NVertLayers = VCoord->NVertLayers;
          TeamPolicy Policy =
-             TriDiagDiffSolver::makeTeamPolicy(Mesh->NCellsAll, NVertLayers);
+             TriDiagDiffSolver::makeTeamPolicy(NCellsAll, NVertLayers);
 
          for (int LT = 0; LT < NTracers; ++LT) {
             const I4 L = LT;
@@ -1034,7 +1036,7 @@ void Tendencies::applyTracerVertMixImplicit(
                           for (int IVec = 0; IVec < VecLength; ++IVec) {
                              const int ICell = IStart + IVec;
 
-                             if (ICell >= Mesh->NCellsAll) {
+                             if (ICell >= NCellsAll) {
                                 Scratch.G(K, IVec) = 0._Real;
                                 Scratch.H(K, IVec) = 1._Real;
                                 Scratch.X(K, IVec) = 0._Real;
@@ -1059,7 +1061,7 @@ void Tendencies::applyTracerVertMixImplicit(
                        TeamThreadRange(Team, NVertLayers), [=](int K) {
                           for (int IVec = 0; IVec < VecLength; ++IVec) {
                              const int ICell = IStart + IVec;
-                             if (ICell < Mesh->NCellsAll &&
+                             if (ICell < NCellsAll &&
                                  K >= MinLayerCell(ICell) &&
                                  K <= MaxLayerCell(ICell)) {
                                 TracerArray(L, ICell, K) = Scratch.X(K, IVec);

@@ -25,6 +25,7 @@ enum class PressureGradType { Centered, HighOrder1, HighOrder2 };
 class PressureGradCentered {
  public:
    bool Enabled;
+   Real LocRhoSw;
 
    // constructor declaration
    PressureGradCentered(const HorzMesh *Mesh,   ///< [in] Horizontal mesh
@@ -53,22 +54,28 @@ class PressureGradCentered {
           (SelfAttractionLoading(ICell1) - SelfAttractionLoading(ICell0)) *
               InvDcEdge;
 
+      Real InvRho0 = 1.0_Real / LocRhoSw;
+
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const I4 K = KStart + KVec;
 
          // pres_and_zmid
 
-         Real AlphaGradP =
-             0.5_Real * (SpecVol(ICell0,K) + SpecVol(ICell1,K)) *
+         Real SpelVolEdge =
+             0.5_Real * (SpecVol(ICell0,K) + SpecVol(ICell1,K));
+
+         Real InvRho0GradP =  InvRho0 *
              (PressureMid(ICell1,K)-PressureMid(ICell0,K)) * InvDcEdge;
 
-         Real GradGeopt = Gravity *
+         Real GradGeopt = (Gravity * InvRho0 / SpelVolEdge) *
              (ZMid(ICell1,K)-ZMid(ICell0,K)) * InvDcEdge;
 
          Tend(IEdge,K) -=
-             EdgeMask(IEdge,K) * (AlphaGradP + GradGeopt + GradGeoPot);
+             EdgeMask(IEdge,K) * (InvRho0GradP + GradGeopt + GradGeoPot);
 
-           // Centered Montgomery Pot
+         std::cout<<LocRhoSw<<std::endl;
+
+         // Centered Montgomery Pot
 
 //         Real MontPotCell0K =
 //             PressureInterface(ICell0, K) * SpecVol(ICell0, K) +
@@ -174,7 +181,7 @@ class PressureGrad {
    void computePressureGrad(Array2DReal &Tend, const Array2DReal &PressureMid,
                             const Array2DReal &PressureInterface,
                             const Array2DReal &SpecVol,
-                            const Array2DReal &ZInterface,
+                            const Array2DReal &ZMid,
                             const Array2DReal &LayerThick) const;
 
  private:

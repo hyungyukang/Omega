@@ -108,9 +108,12 @@ PressureGrad::PressureGrad(
    }
 
    // Temporary: initialization of tidal potential and SAL
-   //TidalPotential = Array1DReal("TidalPotential", Mesh->NCellsSize);
-   //SelfAttractionLoading =
-   //    Array1DReal("SelfAttractionLoading", Mesh->NCellsSize);
+   TidalPotential = Array1DReal("TidalPotential", Mesh->NCellsSize);
+   SelfAttractionLoading =
+       Array1DReal("SelfAttractionLoading", Mesh->NCellsSize);
+
+   deepCopy(TidalPotential,0.0_Real);
+   deepCopy(SelfAttractionLoading,0.0_Real);
 
 } // end constructor
 
@@ -220,7 +223,7 @@ PressureGradCentered::PressureGradCentered(
     const HorzMesh *Mesh,   ///< [in] Horizontal mesh
     const VertCoord *VCoord ///< [in] Vertical coordinate
     )
-    : CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
+    : LocRhoSw(RhoSw), CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
       EdgeMask(VCoord->EdgeMask), MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
 

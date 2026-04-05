@@ -623,29 +623,32 @@ void Tendencies::computeVelocityTendenciesOnly(
    if (PGrad->Enabled) {
 
       // Temporary handling of surface pressure
-      Array1DReal SurfacePressure("SurfacePressure", Mesh->NCellsSize);
-      deepCopy(SurfacePressure, 0.0_Real);
+      //Array1DReal SurfacePressure("SurfacePressure", Mesh->NCellsSize);
+      //deepCopy(SurfacePressure, 0.0_Real);
 
       Pacer::start("Tend:pressureGradTerm", 2);
       Array2DReal LayerThick = State->getLayerThickness(ThickTimeLevel);
-      VCoord->computePressure(LayerThick, SurfacePressure);
+      //VCoord->computePressure(LayerThick, SurfacePressure);
 
       const auto &PressureMid       = VCoord->PressureMid;
       const auto &PressureInterface = VCoord->PressureInterface;
-      Array2DReal Temp     = Kokkos::subview(TracerArray, Tracers::IndxTemp,
-                                             Kokkos::ALL, Kokkos::ALL);
-      Array2DReal Salinity = Kokkos::subview(TracerArray, Tracers::IndxSalt,
-                                             Kokkos::ALL, Kokkos::ALL);
-      EqState->computeSpecVol(Temp, Salinity, PressureMid);
+
+      //Array2DReal Temp     = Kokkos::subview(TracerArray, Tracers::IndxTemp,
+      //                                       Kokkos::ALL, Kokkos::ALL);
+      //Array2DReal Salinity = Kokkos::subview(TracerArray, Tracers::IndxSalt,
+      //                                       Kokkos::ALL, Kokkos::ALL);
+      //EqState->computeSpecVol(Temp, Salinity, PressureMid);
 
       // Temporary: ensure vertical geometric/geopotential fields are updated
       // for pressure-gradient tendency calculations.
       const auto &SpecVol = EqState->SpecVol;
-      VCoord->computeZHeight(LayerThick, SpecVol);
+
+      //VCoord->computeZHeight(LayerThick, SpecVol);
 
       const auto &ZInterface = VCoord->ZInterface;
+      const auto &ZMid = VCoord->ZMid;
       PGrad->computePressureGrad(LocNormalVelocityTend, PressureMid,
-                                 PressureInterface, SpecVol, ZInterface,
+                                 PressureInterface, SpecVol, ZMid,
                                  LayerThick);
       Pacer::stop("Tend:pressureGradTerm", 2);
    }

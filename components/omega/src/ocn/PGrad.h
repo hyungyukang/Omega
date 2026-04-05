@@ -36,7 +36,7 @@ class PressureGradCentered {
    KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
                                    const Array2DReal &PressureMid,
                                    const Array2DReal &PressureInterface,
-                                   const Array2DReal &ZInterface,
+                                   const Array2DReal &ZMid,
                                    const Array1DReal &TidalPotential,
                                    const Array1DReal &SelfAttractionLoading,
                                    const Array2DReal &SpecVol) const {
@@ -55,28 +55,43 @@ class PressureGradCentered {
 
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const I4 K = KStart + KVec;
-         Real MontPotCell0K =
-             PressureInterface(ICell0, K) * SpecVol(ICell0, K) +
-             Gravity * ZInterface(ICell0, K);
-         Real MontPotCell1K =
-             PressureInterface(ICell1, K) * SpecVol(ICell1, K) +
-             Gravity * ZInterface(ICell1, K);
-         Real GradMontPotK = (MontPotCell1K - MontPotCell0K) * InvDcEdge;
 
-         Real MontPotCell0Kp1 =
-             PressureInterface(ICell0, K + 1) * SpecVol(ICell0, K) +
-             Gravity * ZInterface(ICell0, K + 1);
-         Real MontPotCell1Kp1 =
-             PressureInterface(ICell1, K + 1) * SpecVol(ICell1, K) +
-             Gravity * ZInterface(ICell1, K + 1);
-         Real GradMontPotKp1 = (MontPotCell1Kp1 - MontPotCell0Kp1) * InvDcEdge;
-         Real GradMontPot    = 0.5_Real * (GradMontPotK + GradMontPotKp1);
+         // pres_and_zmid
 
-         Real PGradAlpha =
-             0.5_Real * (PressureMid(ICell1, K) + PressureMid(ICell0, K)) *
-             (SpecVol(ICell1, K) - SpecVol(ICell0, K)) * InvDcEdge;
-         Tend(IEdge, K) +=
-             EdgeMask(IEdge, K) * (-GradMontPot + PGradAlpha - GradGeoPot);
+         Real AlphaGradP =
+             0.5_Real * (SpecVol(ICell0,K) + SpecVol(ICell1,K)) *
+             (PressureMid(ICell1,K)-PressureMid(ICell0,K)) * InvDcEdge;
+
+         Real GradGeopt = Gravity *
+             (ZMid(ICell1,K)-ZMid(ICell0,K)) * InvDcEdge;
+
+         Tend(IEdge,K) -=
+             EdgeMask(IEdge,K) * (AlphaGradP + GradGeopt + GradGeoPot);
+
+           // Centered Montgomery Pot
+
+//         Real MontPotCell0K =
+//             PressureInterface(ICell0, K) * SpecVol(ICell0, K) +
+//             Gravity * ZInterface(ICell0, K);
+//         Real MontPotCell1K =
+//             PressureInterface(ICell1, K) * SpecVol(ICell1, K) +
+//             Gravity * ZInterface(ICell1, K);
+//         Real GradMontPotK = (MontPotCell1K - MontPotCell0K) * InvDcEdge;
+//
+//         Real MontPotCell0Kp1 =
+//             PressureInterface(ICell0, K + 1) * SpecVol(ICell0, K) +
+//             Gravity * ZInterface(ICell0, K + 1);
+//         Real MontPotCell1Kp1 =
+//             PressureInterface(ICell1, K + 1) * SpecVol(ICell1, K) +
+//             Gravity * ZInterface(ICell1, K + 1);
+//         Real GradMontPotKp1 = (MontPotCell1Kp1 - MontPotCell0Kp1) * InvDcEdge;
+//         Real GradMontPot    = 0.5_Real * (GradMontPotK + GradMontPotKp1);
+//
+//         Real PGradAlpha =
+//             0.5_Real * (PressureMid(ICell1, K) + PressureMid(ICell0, K)) *
+//             (SpecVol(ICell1, K) - SpecVol(ICell0, K)) * InvDcEdge;
+//         Tend(IEdge, K) +=
+//             EdgeMask(IEdge, K) * (-GradMontPot + PGradAlpha - GradGeoPot);
       }
    }
 

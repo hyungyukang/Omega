@@ -159,7 +159,7 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    const auto &SpecVol  = EosInstance->SpecVol;
    EosInstance->computeBruntVaisalaFreqSq(ConservTemp, AbsSalinity, PressureInterface, SpecVol);
 
- // compute vertical mixing coefficient
+   // compute vertical mixing coefficient
    const auto &TangentVelEdge = TangentAux.TangentialVelocity;
    VertMixInstance->computeVertMix(NormalVelEdge, TangentVelEdge, EosInstance->BruntVaisalaFreqSq);
 
@@ -194,6 +194,8 @@ void AuxiliaryState::computeMomAux(const OceanState *State, int ThickTimeLevel,
 
    Pacer::start("AuxState:computeMomAux", 1);
 
+   const auto &PressureInterface  = VCoord->PressureInterface;
+
    Pacer::start("AuxState:vertexAuxState1", 2);
    parallelForOuter(
        "vertexAuxState1", {Mesh->NVerticesAll},
@@ -205,7 +207,8 @@ void AuxiliaryState::computeMomAux(const OceanState *State, int ThickTimeLevel,
           parallelForInner(
               Team, KRange, INNER_LAMBDA(int KChunk) {
                  LocVorticityAux.computeVarsOnVertex(
-                     IVertex, KChunk, LayerThickCell, NormalVelEdge);
+                     IVertex, KChunk, LayerThickCell, NormalVelEdge,
+                     PressureInterface);
               });
        });
    Pacer::stop("AuxState:vertexAuxState1", 2);
@@ -220,13 +223,16 @@ void AuxiliaryState::computeMomAux(const OceanState *State, int ThickTimeLevel,
 
           parallelForInner(
               Team, KRange, INNER_LAMBDA(int KChunk) {
-                 LocKineticAux.computeVarsOnCell(ICell, KChunk, NormalVelEdge);
+                 LocKineticAux.computeVarsOnCell(ICell, KChunk, NormalVelEdge,
+                    LayerThickCell, PressureInterface);
               });
        });
    Pacer::stop("AuxState:cellAuxState1", 2);
 
    const auto &VelocityDivCell = KineticAux.VelocityDivCell;
    const auto &RelVortVertex   = VorticityAux.RelVortVertex;
+   const auto &ProjVelDivCell    = KineticAux.ProjVelDivCell;
+   const auto &ProjRelVortVertex = VorticityAux.ProjRelVortVertex;
 
    Pacer::start("AuxState:edgeAuxState1", 2);
    parallelFor(
@@ -248,7 +254,8 @@ void AuxiliaryState::computeMomAux(const OceanState *State, int ThickTimeLevel,
                  LocLayerThicknessAux.computeVarsOnEdge(
                      IEdge, KChunk, LayerThickCell, NormalVelEdge);
                  LocVelocityDel2Aux.computeVarsOnEdge(
-                     IEdge, KChunk, VelocityDivCell, RelVortVertex);
+                     IEdge, KChunk, VelocityDivCell, RelVortVertex,
+                     ProjVelDivCell, ProjRelVortVertex);
               });
        });
 

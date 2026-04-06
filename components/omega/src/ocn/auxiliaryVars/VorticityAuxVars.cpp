@@ -1,6 +1,7 @@
 #include "VorticityAuxVars.h"
 #include "DataTypes.h"
 #include "Field.h"
+#include "GlobalConstants.h"
 
 #include <limits>
 
@@ -11,6 +12,8 @@ VorticityAuxVars::VorticityAuxVars(const std::string &AuxStateSuffix,
                                    const VertCoord *VCoord)
     : RelVortVertex("RelVortVertex" + AuxStateSuffix, Mesh->NVerticesSize,
                     VCoord->NVertLayers),
+      ProjRelVortVertex("ProjRelVortVertex" + AuxStateSuffix,
+                        Mesh->NVerticesSize, VCoord->NVertLayersP1),
       NormRelVortVertex("NormRelVortVertex" + AuxStateSuffix,
                         Mesh->NVerticesSize, VCoord->NVertLayers),
       NormPlanetVortVertex("NormPlanetVortVertex" + AuxStateSuffix,
@@ -19,12 +22,13 @@ VorticityAuxVars::VorticityAuxVars(const std::string &AuxStateSuffix,
                       VCoord->NVertLayers),
       NormPlanetVortEdge("NormPlanetVortEdge" + AuxStateSuffix,
                          Mesh->NEdgesSize, VCoord->NVertLayers),
+      LocRhoSw(RhoSw),
       VertexDegree(Mesh->VertexDegree), CellsOnVertex(Mesh->CellsOnVertex),
       EdgesOnVertex(Mesh->EdgesOnVertex),
       EdgeSignOnVertex(Mesh->EdgeSignOnVertex), DcEdge(Mesh->DcEdge),
       KiteAreasOnVertex(Mesh->KiteAreasOnVertex),
       AreaTriangle(Mesh->AreaTriangle), FVertex(Mesh->FVertex),
-      VerticesOnEdge(Mesh->VerticesOnEdge),
+      VerticesOnEdge(Mesh->VerticesOnEdge),CellsOnEdge(Mesh->CellsOnEdge),
       MinLayerVertexTop(VCoord->MinLayerVertexTop),
       MaxLayerVertexBot(VCoord->MaxLayerVertexBot),
       MinLayerCell(VCoord->MinLayerCell), MaxLayerCell(VCoord->MaxLayerCell),
@@ -59,6 +63,20 @@ void VorticityAuxVars::registerFields(const std::string &AuxGroupName,
        FillValue, // scalar for undefined entries
        NDims,     // number of dimensions
        DimNames   // dimension names
+   );
+
+   // Relative vorticity of projected velocity on vertices
+   auto ProjRelVortVertexField = Field::create(
+       ProjRelVortVertex.label(),                 // field name
+       "curl of projected horizontal velocity, "
+       "defined at vertices",                     // long name/describe
+       "s^-1",                                    // units
+       "",                               // CF standard Name
+       std::numeric_limits<Real>::min(), // min valid value
+       std::numeric_limits<Real>::max(), // max valid value
+       FillValue,                        // scalar used for undefined entries
+       NDims,                            // number of dimensions
+       DimNames                          // dimension names
    );
 
    // Normalized relative vorticity on vertices
@@ -123,6 +141,7 @@ void VorticityAuxVars::registerFields(const std::string &AuxGroupName,
    FieldGroup::addFieldToGroup(NormPlanetVortVertex.label(), AuxGroupName);
    FieldGroup::addFieldToGroup(NormRelVortEdge.label(), AuxGroupName);
    FieldGroup::addFieldToGroup(NormPlanetVortEdge.label(), AuxGroupName);
+   FieldGroup::addFieldToGroup(ProjRelVortVertex.label(), AuxGroupName);
 
    // Attach data to fields
    RelVortVertexField->attachData<Array2DReal>(RelVortVertex);
@@ -130,6 +149,7 @@ void VorticityAuxVars::registerFields(const std::string &AuxGroupName,
    NormPlanetVortVertexField->attachData<Array2DReal>(NormPlanetVortVertex);
    NormRelVortEdgeField->attachData<Array2DReal>(NormRelVortEdge);
    NormPlanetVortEdgeField->attachData<Array2DReal>(NormPlanetVortEdge);
+   ProjRelVortVertexField->attachData<Array2DReal>(ProjRelVortVertex);
 }
 
 void VorticityAuxVars::unregisterFields() const {
@@ -138,6 +158,7 @@ void VorticityAuxVars::unregisterFields() const {
    Field::destroy(NormPlanetVortVertex.label());
    Field::destroy(NormRelVortEdge.label());
    Field::destroy(NormPlanetVortEdge.label());
+   Field::destroy(ProjRelVortVertex.label());
 }
 
 } // namespace OMEGA

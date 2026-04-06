@@ -1,4 +1,5 @@
 #include "KineticAuxVars.h"
+#include "GlobalConstants.h"
 #include "DataTypes.h"
 #include "Field.h"
 
@@ -12,9 +13,13 @@ KineticAuxVars::KineticAuxVars(const std::string &AuxStateSuffix,
                         VCoord->NVertLayers),
       VelocityDivCell("VelocityDivCell" + AuxStateSuffix, Mesh->NCellsSize,
                       VCoord->NVertLayers),
+      ProjVelDivCell("ProjVelDivCell" + AuxStateSuffix, Mesh->NCellsSize,
+                      VCoord->NVertLayersP1),
+      LocRhoSw(RhoSw),
       NEdgesOnCell(Mesh->NEdgesOnCell), EdgesOnCell(Mesh->EdgesOnCell),
       EdgeSignOnCell(Mesh->EdgeSignOnCell), DcEdge(Mesh->DcEdge),
       DvEdge(Mesh->DvEdge), AreaCell(Mesh->AreaCell),
+      CellsOnEdge(Mesh->CellsOnEdge),
       MinLayerCell(VCoord->MinLayerCell), MaxLayerCell(VCoord->MaxLayerCell) {}
 
 void KineticAuxVars::registerFields(
@@ -61,18 +66,36 @@ void KineticAuxVars::registerFields(
        DimNames                             // dimension names
    );
 
+   // Projected velocity divergence on cells
+   DimNames[0]                 = "NCells" + DimSuffix;
+   DimNames[1]                 = "NVertLayersP1";
+   auto ProjVelDivCellField = Field::create(
+       ProjVelDivCell.label(),                        // field name
+       "divergence of projected horizontal velocity", // long Name or description
+       "s^-1",                                        // units
+       "",                                            // CF standard Name
+       std::numeric_limits<Real>::min(),              // min valid value
+       std::numeric_limits<Real>::max(),              // max valid value
+       FillValue,                                     // scalar used for undefined entries
+       NDims,                                         // number of dimensions
+       DimNames                                       // dimension names
+   );
+
    // Add fields to FieldGroup
    FieldGroup::addFieldToGroup(KineticEnergyCell.label(), AuxGroupName);
    FieldGroup::addFieldToGroup(VelocityDivCell.label(), AuxGroupName);
+   FieldGroup::addFieldToGroup(ProjVelDivCell.label(), AuxGroupName);
 
    // Attach data
    KineticEnergyCellField->attachData<Array2DReal>(KineticEnergyCell);
    VelocityDivCellField->attachData<Array2DReal>(VelocityDivCell);
+   ProjVelDivCellField->attachData<Array2DReal>(ProjVelDivCell);
 }
 
 void KineticAuxVars::unregisterFields() const {
    Field::destroy(KineticEnergyCell.label());
    Field::destroy(VelocityDivCell.label());
+   Field::destroy(ProjVelDivCell.label());
 }
 
 } // namespace OMEGA

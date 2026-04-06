@@ -15,13 +15,18 @@ class VelocityDel2AuxVars {
    Array2DReal Del2Edge;
    Array2DReal Del2DivCell;
    Array2DReal Del2RelVortVertex;
+   Array2DReal Del2ProjEdge;
+   Array2DReal Del2ProjDivCell;
+   Array2DReal Del2ProjRelVortVertex;
 
    VelocityDel2AuxVars(const std::string &AuxStateSuffix, const HorzMesh *Mesh,
                        const VertCoord *VCoord);
 
    KOKKOS_FUNCTION void
    computeVarsOnEdge(int IEdge, int KChunk, const Array2DReal &VelocityDivCell,
-                     const Array2DReal &RelVortVertex) const {
+                     const Array2DReal &RelVortVertex,
+                     const Array2DReal &ProjVelocityDivCell,
+                     const Array2DReal &ProjRelVortVertex) const {
       const int KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
       const int KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
 
@@ -43,6 +48,22 @@ class VelocityDel2AuxVars {
              -(RelVortVertex(JVertex1, K) - RelVortVertex(JVertex0, K)) *
              InvDvEdge;
          Del2Edge(IEdge, K) = EdgeMask(IEdge, K) * GradDiv + CurlVort;
+
+         if ( K > MinLayerEdgeBot(IEdge) ) {
+            const Real ProjGradDiv =
+                (ProjVelocityDivCell(JCell1, K) -
+                 ProjVelocityDivCell(JCell0, K)) *
+                InvDcEdge;
+            const Real ProjCurlVort =
+                -(ProjRelVortVertex(JVertex1, K) -
+                  ProjRelVortVertex(JVertex0, K)) *
+                InvDvEdge;
+            Del2ProjEdge(IEdge, K) = EdgeMask(IEdge, K) * ProjGradDiv +
+                ProjCurlVort;
+         } else {
+            Del2ProjEdge(IEdge, K) = 0._Real;
+         }
+
       }
    }
 
@@ -53,6 +74,7 @@ class VelocityDel2AuxVars {
       const int KEndCell = KStartCell + KLenCell - 1;
 
       Real Del2DivCellTmp[VecLength] = {0};
+      Real Del2ProjDivCellTmp[VecLength] = {0};
 
       for (int J = 0; J < NEdgesOnCell(ICell); ++J) {
          const int JEdge     = EdgesOnCell(ICell, J);
@@ -66,11 +88,20 @@ class VelocityDel2AuxVars {
             Del2DivCellTmp[KVec] -= DvEdge(JEdge) * InvAreaCell *
                                     EdgeSignOnCell(ICell, J) *
                                     Del2Edge(JEdge, K);
+            Del2ProjDivCellTmp[KVec] -= DvEdge(JEdge) * InvAreaCell *
+                                        EdgeSignOnCell(ICell, J) *
+                                        Del2ProjEdge(JEdge, K);
          }
       }
       for (int KVec = 0; KVec < KLenCell; ++KVec) {
          const int K           = KStartCell + KVec;
          Del2DivCell(ICell, K) = Del2DivCellTmp[KVec];
+
+         if ( K > MinLayerCell(ICell) ) {
+            Del2ProjDivCell(ICell, K) = Del2ProjDivCellTmp[KVec];
+         } else {
+            Del2ProjDivCell(ICell, K) = 0._Real;
+         }
       }
    }
 
@@ -81,6 +112,7 @@ class VelocityDel2AuxVars {
       const Real InvAreaTriangle = 1._Real / AreaTriangle(IVertex);
 
       Real Del2RelVortVertexTmp[VecLength] = {0};
+      Real Del2ProjRelVortVertexTmp[VecLength] = {0};
 
       for (int J = 0; J < VertexDegree; ++J) {
          const int JEdge = EdgesOnVertex(IVertex, J);
@@ -89,12 +121,23 @@ class VelocityDel2AuxVars {
             Del2RelVortVertexTmp[KVec] += InvAreaTriangle * DcEdge(JEdge) *
                                           EdgeSignOnVertex(IVertex, J) *
                                           Del2Edge(JEdge, K);
+
+            Del2ProjRelVortVertexTmp[KVec] +=
+               InvAreaTriangle * DcEdge(JEdge) *
+               EdgeSignOnVertex(IVertex, J) *
+               Del2Edge(JEdge, K);
          }
       }
 
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const int K                   = KStart + KVec;
          Del2RelVortVertex(IVertex, K) = Del2RelVortVertexTmp[KVec];
+
+         if ( K > MinLayerVertexBot(IVertex) ) {
+            Del2ProjRelVortVertex(IVertex, K) = Del2ProjRelVortVertexTmp[KVec];
+         } else {
+            Del2ProjRelVortVertex(IVertex, K) = 0._Real;
+         }
       }
    }
 

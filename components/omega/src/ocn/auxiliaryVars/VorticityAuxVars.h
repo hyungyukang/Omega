@@ -2,6 +2,7 @@
 #define OMEGA_AUX_VORTICITY_H
 
 #include "DataTypes.h"
+#include "GlobalConstants.h"
 #include "HorzMesh.h"
 #include "OmegaKokkos.h"
 #include "VertCoord.h"
@@ -12,7 +13,10 @@ namespace OMEGA {
 
 class VorticityAuxVars {
  public:
+   Real LocRhoSw;
+
    Array2DReal RelVortVertex;
+   Array2DReal ProjRelVortVertex;
    Array2DReal NormRelVortVertex;
    Array2DReal NormPlanetVortVertex;
 
@@ -25,7 +29,8 @@ class VorticityAuxVars {
    KOKKOS_FUNCTION void
    computeVarsOnVertex(int IVertex, int KChunk,
                        const Array2DReal &LayerThickCell,
-                       const Array2DReal &NormalVelEdge) const {
+                       const Array2DReal &NormalVelEdge,
+                       const Array2DReal &PressureInterface) const {
 
       const int KStartVertex = chunkStart(KChunk, MinLayerVertexTop(IVertex));
       const int KLenVertex =
@@ -36,6 +41,7 @@ class VorticityAuxVars {
 
       Real LayerThickVertex[VecLength] = {0};
       Real RelVortVertexTmp[VecLength] = {0};
+      Real ProjRelVortVertexTmp[VecLength] = {0};
 
       for (int J = 0; J < VertexDegree; ++J) {
          const int JCell = CellsOnVertex(IVertex, J);
@@ -55,11 +61,32 @@ class VorticityAuxVars {
              Kokkos::max(KStartVertex, MinLayerEdgeTop(JEdge));
          const int KEndEdge = Kokkos::min(KEndVertex, MaxLayerEdgeBot(JEdge));
 
+         const I4 JCell0 = CellsOnEdge(JEdge, 0);
+         const I4 JCell1 = CellsOnEdge(JEdge, 1);
+
          for (int K = KStartEdge; K <= KEndEdge; ++K) {
             const int KVec = K - KStartVertex;
             RelVortVertexTmp[KVec] += InvAreaTriangle * DcEdge(JEdge) *
                                       EdgeSignOnVertex(IVertex, J) *
                                       NormalVelEdge(JEdge, K);
+
+            const Real GradZTildeEdgeTop = (PressureInterface(JCell1,K) -
+                                           PressureInterface(JCell0,K) ) /
+                                          (Gravity * LocRhoSw * DcEdge(JEdge));
+            const Real LayerThickEdgeKM1
+                = 0.5 * (LayerThickCell(JCell0,K-1) +
+                         LayerThickCell(JCell1,K-1));
+            const Real LayerThickEdge
+                = 0.5 * (LayerThickCell(JCell0,K) +
+                         LayerThickCell(JCell1,K));
+            const Real NormalVelEdgeTop
+                = 0.5 * (NormalVelEdge(JEdge,K-1) * LayerThickEdgeKM1 +
+                         NormalVelEdge(JEdge,K) * LayerThickEdge) /
+                  (0.5 * (LayerThickEdgeKM1 + LayerThickEdge));
+            ProjRelVortVertexTmp[KVec] += InvAreaTriangle * DcEdge(JEdge) *
+                                      EdgeSignOnVertex(IVertex, J) *
+                                      NormalVelEdgeTop *
+                                      GradZTildeEdgeTop;
          }
       }
 
@@ -72,6 +99,12 @@ class VorticityAuxVars {
              RelVortVertexTmp[KVec] * InvLayerThickVertex;
          NormPlanetVortVertex(IVertex, K) =
              FVertex(IVertex) * InvLayerThickVertex;
+
+        if (K == MinLayerVertexTop(IVertex)) {
+            ProjRelVortVertex(IVertex, K) = 0._Real;
+        } else {
+            ProjRelVortVertex(IVertex, K) = ProjRelVortVertexTmp[KVec];
+        }
       }
    }
 
@@ -107,6 +140,7 @@ class VorticityAuxVars {
    Array1DReal AreaTriangle;
    Array2DI4 VerticesOnEdge;
    Array1DReal FVertex;
+   Array2DI4 CellsOnEdge;
 
    Array1DI4 MinLayerVertexTop;
    Array1DI4 MaxLayerVertexBot;

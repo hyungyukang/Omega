@@ -263,6 +263,16 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
                          this->TracerVertMixSetup.Enabled);
    CHECK_ERROR_ABORT(
        Err, "Tendencies: TracerVertMixTendencyEnable not found in TendConfig");
+
+   Err += TendConfig.get("ProjVelDiffTendencyEnable",
+                          this->ProjVelDiffusion.Enabled);
+   CHECK_ERROR_ABORT(
+       Err, "Tendencies: ProjVelDiffTendencyEnable not found in TendConfig");
+
+   Err += TendConfig.get("ProjVelHyperDiffTendencyEnable",
+                          this->ProjVelHyperDiff.Enabled);
+   CHECK_ERROR_ABORT(
+       Err, "Tendencies: ProjVelHyperDiffTendencyEnable not found in TendConfig");
 }
 
 //------------------------------------------------------------------------------
@@ -335,6 +345,7 @@ Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
       PotientialVortHAdv(Mesh, VCoord), KEGrad(Mesh, VCoord),
       SSHGrad(Mesh, VCoord), VelocityDiffusion(Mesh, VCoord),
       VelocityHyperDiff(Mesh, VCoord), WindForcing(Mesh, VCoord),
+      ProjVelDiffusion(Mesh, VCoord), ProjVelHyperDiff(Mesh, VCoord),
       BottomDrag(Mesh, VCoord), TracerDiffusion(Mesh, VCoord),
       TracerHyperDiff(Mesh, VCoord), TracerHorzAdv(Mesh, VCoord),
       CustomThicknessTend(InCustomThicknessTend),
@@ -458,6 +469,8 @@ void Tendencies::computeVelocityTendenciesOnly(
    OMEGA_SCOPE(LocSSHGrad, SSHGrad);
    OMEGA_SCOPE(LocVelocityDiffusion, VelocityDiffusion);
    OMEGA_SCOPE(LocVelocityHyperDiff, VelocityHyperDiff);
+   OMEGA_SCOPE(LocProjVelDiffusion, ProjVelDiffusion);
+   OMEGA_SCOPE(LocProjVelHyperDiff, ProjVelHyperDiff);
    OMEGA_SCOPE(LocWindForcing, WindForcing);
    OMEGA_SCOPE(LocBottomDrag, BottomDrag);
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
@@ -585,6 +598,48 @@ void Tendencies::computeVelocityTendenciesOnly(
    const auto &NormalStressEdge = AuxState->WindForcingAux.NormalStressEdge;
    const auto &MeanLayerThickEdge =
        AuxState->LayerThicknessAux.MeanLayerThickEdge;
+
+   // Compute del2 horizontal projection velocity diffusion
+   const Array2DReal &ProjDivCell     = AuxState->KineticAux.ProjVelDivCell;
+   const Array2DReal &ProjRVortVertex = AuxState->VorticityAux.ProjRelVortVertex;
+   if (LocProjVelDiffusion.Enabled) {
+      Pacer::start("Tend:projVelDiffusion", 2);
+      parallelForOuter(
+          {Mesh->NEdgesAll}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+             const int KMin   = MinLayerEdgeBot(IEdge);
+             const int KMax   = MaxLayerEdgeTop(IEdge);
+             const int KRange = vertRangeChunked(KMin, KMax);
+             parallelForInner(
+                 Team, KRange, INNER_LAMBDA(int KChunk) {
+                    LocProjVelDiffusion(LocNormalVelocityTend, IEdge, KChunk,
+                                         MeanLayerThickEdge,
+                                         ProjDivCell, ProjRVortVertex);
+                 });
+          });
+      Pacer::stop("Tend:projVelDiffusion", 2);
+   }
+
+   // Compute del4 horizontal diffusion
+   const Array2DReal &Del2ProjDivCell =
+       AuxState->VelocityDel2Aux.Del2ProjDivCell;
+   const Array2DReal &Del2ProjRVortVertex =
+       AuxState->VelocityDel2Aux.Del2ProjRelVortVertex;
+   if (LocProjVelHyperDiff.Enabled) {
+      Pacer::start("Tend:projVelocityHyperDiff", 2);
+      parallelForOuter(
+          {Mesh->NEdgesAll}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+             const int KMin   = MinLayerEdgeBot(IEdge);
+             const int KMax   = MaxLayerEdgeTop(IEdge);
+             const int KRange = vertRangeChunked(KMin, KMax);
+             parallelForInner(
+                 Team, KRange, INNER_LAMBDA(int KChunk) {
+                    LocProjVelHyperDiff(LocNormalVelocityTend, IEdge, KChunk,
+                                        Del2ProjDivCell, Del2ProjRVortVertex);
+                 });
+          });
+      Pacer::stop("Tend:projVelocityHyperDiff", 2);
+   }
+
    if (LocWindForcing.Enabled) {
       Pacer::start("Tend:windForcing", 2);
       parallelForOuter(

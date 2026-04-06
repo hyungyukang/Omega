@@ -62,6 +62,8 @@ Omega:
     PressureGradTendencyEnable: true
     VelVertMixTendencyEnable: true
     TracerVertMixTendencyEnable: true
+    ProjVelDiffTendencyEnable: true
+    ProjVelHyperDiffTendencyEnable: true
   Tracers:
     Base: [Temperature, Salinity]
     Debug: [Debug1, Debug2, Debug3]

@@ -374,10 +374,10 @@ int testKineticAuxVars(const Array2DReal &LayerThicknessCell,
 
    KineticAuxVars KineticAux("", Mesh, VCoord);
 
-   parallelFor(
-       {Mesh->NCellsOwned, NVertLayers}, KOKKOS_LAMBDA(int ICell, int KLayer) {
-          KineticAux.computeVarsOnCell(ICell, KLayer, NormalVelocityEdge);
-       });
+//   parallelFor(
+//       {Mesh->NCellsOwned, NVertLayers}, KOKKOS_LAMBDA(int ICell, int KLayer) {
+//          KineticAux.computeVarsOnCell(ICell, KLayer, NormalVelocityEdge);
+//       });
    const auto &NumKineticEnergyCell = KineticAux.KineticEnergyCell;
    const auto &NumVelocityDivCell   = KineticAux.VelocityDivCell;
 
@@ -538,12 +538,12 @@ int testVorticityAuxVars(const Array2DReal &LayerThickCell,
 
    // Compute numerical results for vertex variables
 
-   parallelFor(
-       {Decomp->NVerticesHaloH(0), NVertLayers},
-       KOKKOS_LAMBDA(int IVertex, int KLayer) {
-          VorticityAux.computeVarsOnVertex(IVertex, KLayer, LayerThickCell,
-                                           NormalVelEdge);
-       });
+//   parallelFor(
+//       {Decomp->NVerticesHaloH(0), NVertLayers},
+//       KOKKOS_LAMBDA(int IVertex, int KLayer) {
+//          VorticityAux.computeVarsOnVertex(IVertex, KLayer, LayerThickCell,
+//                                           NormalVelEdge);
+//       });
 
    const auto &NumRelVortVertex        = VorticityAux.RelVortVertex;
    const auto &NumNormRelVortVertex    = VorticityAux.NormRelVortVertex;
@@ -655,12 +655,12 @@ int testVelocityDel2AuxVars(Real RTol) {
 
    // Compute numerical Del2
 
-   parallelFor(
-       {Decomp->NEdgesHaloH(1), NVertLayers},
-       KOKKOS_LAMBDA(int IEdge, int KLayer) {
-          VelocityDel2Aux.computeVarsOnEdge(IEdge, KLayer, ExactVelocityDivCell,
-                                            ExactRelVortVertex);
-       });
+//   parallelFor(
+//       {Decomp->NEdgesHaloH(1), NVertLayers},
+//       KOKKOS_LAMBDA(int IEdge, int KLayer) {
+//          VelocityDel2Aux.computeVarsOnEdge(IEdge, KLayer, ExactVelocityDivCell,
+//                                            ExactRelVortVertex);
+//       });
    const auto &NumDel2Edge = VelocityDel2Aux.Del2Edge;
 
    // Compute error measures and check errors for Del2

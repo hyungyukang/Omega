@@ -871,8 +871,9 @@ void VertCoord::initMovementWeights() {
 // in each column to compute pressure from the top-most active layer to the
 // bottom-most active layer.
 void VertCoord::computePressure(
-    const Array2DReal &LayerThickness, // [in] pseudo thickness
-    const Array1DReal &SurfacePressure // [in] surface pressure
+    const Array2DReal &LayerThickness,  // [in] pseudo thickness
+    const Array1DReal &SurfacePressure, // [in] surface pressure
+    const Array2DReal &SpecVol          // [in] specific volume
 ) {
 
    OMEGA_SCOPE(LocRho0, Rho0);
@@ -893,7 +894,7 @@ void VertCoord::computePressure(
               Team, KRange, INNER_LAMBDA(int K, Real &Accum, bool IsFinal) {
                  const I4 KLyr = K + KMin;
                  Real Increment =
-                     Gravity * LocRho0 * LayerThickness(ICell, KLyr);
+                     (Gravity / SpecVol(ICell, KLyr)) * LayerThickness(ICell, KLyr);
                  Accum += Increment;
 
                  if (IsFinal) {
@@ -935,8 +936,8 @@ void VertCoord::computeZHeight(
           parallelScanInner(
               Team, KRange, INNER_LAMBDA(int K, Real &Accum, bool IsFinal) {
                  const I4 KLyr = KMax - K;
-                 Real DZ       = LocRho0 * SpecVol(ICell, KLyr) *
-                           LayerThickness(ICell, KLyr);
+                 //Real DZ       = LocRho0 * SpecVol(ICell, KLyr) *
+                 Real DZ       = LayerThickness(ICell, KLyr);
                  Accum += DZ;
                  if (IsFinal) {
                     LocZInterf(ICell, KLyr) = -LocBotDepth(ICell) + Accum;

@@ -215,12 +215,12 @@ int main(int argc, char *argv[]) {
 
          // Iterate to converge LayerThick, SpecVol, PressureMid
          auto &PressureMid = VCoord->PressureMid;
-         VCoord->computePressure(LayerThick, SurfacePressure);
+         //VCoord->computePressure(LayerThick, SurfacePressure);
          deepCopy(PressureMidOld, PressureMid);
          for (int Iteration = 0; Iteration < 15; ++Iteration) {
 
             // compute specific volume from EOS
-            VCoord->computePressure(LayerThick, SurfacePressure);
+            //VCoord->computePressure(LayerThick, SurfacePressure);
             DefEos->computeSpecVol(Temp, Salinity, PressureMid);
 
             // compute psuedo thickness from specific volume
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
          }
 
          // compute pressure once more with converged LayerThick
-         VCoord->computePressure(LayerThick, SurfacePressure);
+         //VCoord->computePressure(LayerThick, SurfacePressure);
 
          // compute z levels
          VCoord->computeZHeight(LayerThick, SpecVol);

@@ -73,7 +73,7 @@ class PressureGradCentered {
          Tend(IEdge,K) -=
              EdgeMask(IEdge,K) * (InvRho0GradP + GradGeopt + GradGeoPot);
 
-         std::cout<<LocRhoSw<<std::endl;
+//         std::cout<<LocRhoSw<<std::endl;
 
          // Centered Montgomery Pot
 

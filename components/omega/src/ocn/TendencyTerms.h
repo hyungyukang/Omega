@@ -620,7 +620,8 @@ class VelVertMixSetupOnEdge {
 
             const Real ViscAlphaEdgeTop =
                 0.5_Real * (VertVisc(JCell0, K + 1) + VertVisc(JCell1, K + 1)) /
-                (LocRhoSw * SpecVolEdgeTop);
+                1.0_Real;
+                //(LocRhoSw * SpecVolEdgeTop);
 
             G = DT * ViscAlphaEdgeTop /
                 (LayerThickEdgeTop * LayerThickEdge(IEdge, K));
@@ -676,7 +677,8 @@ class TracerVertMixSetupOnCell {
                 (LayerThickCellK + LayerThickCellKp1);
 
             const Real DiffAlphaCellTop =
-                VertDiff(ICell, K + 1) / (LocRhoSw * SpecVolCellTop);
+                //VertDiff(ICell, K + 1) / (LocRhoSw * SpecVolCellTop);
+                VertDiff(ICell, K + 1) / 1.0_Real;
 
             G = DT * DiffAlphaCellTop /
                 (LayerThickCellTop * LayerThickCell(ICell, K));

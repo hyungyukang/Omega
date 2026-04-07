@@ -120,10 +120,6 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    const auto AbsSalinity =
        Kokkos::subview(TracerArray, AbsSalinityIdx, Kokkos::ALL, Kokkos::ALL);
 
-   // compute pressure
-   const auto &SurfacePressure = VCoord->SurfacePressure;
-   VCoord->computePressure(LayerThickCell, SurfacePressure);
-
    // convert PressureMid to dbars since that's what Eos expects
    const auto &MinLayerCell    = VCoord->MinLayerCell;
    const auto &MaxLayerCell    = VCoord->MaxLayerCell;
@@ -146,6 +142,13 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
    // compute specific volume
    EosInstance->computeSpecVol(ConservTemp, AbsSalinity, PressureMidDbar);
 
+   // compute pressure
+   // (only works with 'linear Eos' now, only for omega-mpaso)
+   const auto &SpecVol  = EosInstance->SpecVol;
+   const auto &SurfacePressure = VCoord->SurfacePressure;
+   VCoord->computePressure(LayerThickCell, SurfacePressure, SpecVol);
+
+
    // compute height
    VCoord->computeZHeight(LayerThickCell, EosInstance->SpecVol);
 
@@ -156,7 +159,6 @@ void AuxiliaryState::computeVertAux(const OceanState *State,
 
    // compute Brunt-Vaisala frequency (NSquared)
    const auto &PressureInterface  = VCoord->PressureInterface;
-   const auto &SpecVol  = EosInstance->SpecVol;
    EosInstance->computeBruntVaisalaFreqSq(ConservTemp, AbsSalinity, PressureInterface, SpecVol);
 
  // compute vertical mixing coefficient

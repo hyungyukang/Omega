@@ -245,8 +245,9 @@ class VertCoord {
    /// Sums the mass thickness times g from the top layer down, starting with
    /// the surface pressure
    void
-   computePressure(const Array2DReal &LayerThickness, ///< [in] pseudo thickness
-                   const Array1DReal &SurfacePressure ///< [in] surface pressure
+   computePressure(const Array2DReal &LayerThickness,  ///< [in] pseudo thickness
+                   const Array1DReal &SurfacePressure, ///< [in] surface pressure
+                   const Array2DReal &SpecVol          ///< [in] specific volume
    );
 
    /// Sum the mass thickness times specific volume from the bottom layer up,

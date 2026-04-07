@@ -75,6 +75,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Tracers.html">Tracers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TridiagonalSolvers.html">Tridiagonal Solvers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VertCoord.html">Vertical Coordinate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PGrad.html">Pressure Gradient</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Timing.html">Timing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VertAdv.html">Vertical Advection</a></li>
@@ -117,6 +118,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Tracers.html">Tracers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/TridiagonalSolvers.html">Tridiagonal Solvers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/VertCoord.html">Vertical Coordinate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/PGrad.html">Pressure Gradient (PGrad)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Timing.html">Timing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Timing.html#initialization">Initialization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Timing.html#writing-out-timing-data">Writing-out timing data</a></li>
@@ -157,6 +159,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../design/TimeStepping.html">Time Stepping</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../design/Tracers.html">Tracer Infrastructure</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../design/TridiagonalSolver.html">Tridiagonal Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/VertAdv.html">Vertical Advection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../design/VertCoord.html">Vertical Coordinate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../design/VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../design/Template.html">Template</a></li>
@@ -222,6 +225,7 @@ defined in the Omega input configuration file in an IOStreams section:</p>
 <span class="w">      </span><span class="nt">Filename</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ocn.hist.$SimTime</span>
 <span class="w">      </span><span class="nt">Mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">write</span>
 <span class="w">      </span><span class="nt">IfExists</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">replace</span>
+<span class="w">      </span><span class="c1">#FileFormat: adios (optional format if different from default pnetcdf)</span>
 <span class="w">      </span><span class="nt">Precision</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">double</span>
 <span class="w">      </span><span class="nt">Freq</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="w">      </span><span class="nt">FreqUnits</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">months</span>
@@ -288,6 +292,9 @@ file. When re-running an interval, this will also over-write existing
 slices corresponding to the simulation time if they exist in the file.</p></li>
 </ul>
 </li>
+<li><p><strong>FileFormat:</strong> An optional field that can be used if the file has a format
+incompatible with the default IO format. If not supplied, the stream
+will use the default format.</p></li>
 <li><p><strong>Precision:</strong> A field that determines whether floating point numbers are
 written in full (double) precision or reduced (single). Acceptable values
 are double or single. If not present, double is assumed, but a warning

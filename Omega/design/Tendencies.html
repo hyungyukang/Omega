@@ -75,6 +75,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Tracers.html">Tracers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/TridiagonalSolvers.html">Tridiagonal Solvers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/VertCoord.html">Vertical Coordinate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/PGrad.html">Pressure Gradient</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Timing.html">Timing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/VertAdv.html">Vertical Advection</a></li>
@@ -117,6 +118,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Tracers.html">Tracers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/TridiagonalSolvers.html">Tridiagonal Solvers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/VertCoord.html">Vertical Coordinate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/PGrad.html">Pressure Gradient (PGrad)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Timing.html">Timing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Timing.html#initialization">Initialization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Timing.html#writing-out-timing-data">Writing-out timing data</a></li>
@@ -187,6 +189,7 @@
 <li class="toctree-l1"><a class="reference internal" href="TimeStepping.html">Time Stepping</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Tracers.html">Tracer Infrastructure</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TridiagonalSolver.html">Tridiagonal Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="VertAdv.html">Vertical Advection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VertCoord.html">Vertical Coordinate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Template.html">Template</a></li>
@@ -265,7 +268,7 @@ retrieval.</p>
 <span class="w">   </span><span class="n">Array3DReal</span><span class="w"> </span><span class="n">TracerTend</span><span class="p">;</span>
 <span class="w">   </span><span class="c1">// Instances of tendency terms</span>
 <span class="w">   </span><span class="n">ThicknessFluxDivOnCell</span><span class="w"> </span><span class="n">ThicknessFluxDiv</span><span class="p">;</span>
-<span class="w">   </span><span class="n">PotentialVortHAdvOnEdge</span><span class="w"> </span><span class="n">PotientialVortHAdv</span><span class="p">;</span>
+<span class="w">   </span><span class="n">PotentialVortHAdvOnEdge</span><span class="w"> </span><span class="n">PotentialVortHAdv</span><span class="p">;</span>
 <span class="w">   </span><span class="n">KEGradOnEdge</span><span class="w"> </span><span class="n">KEGrad</span><span class="p">;</span>
 <span class="w">   </span><span class="n">SSHGradOnEdge</span><span class="w"> </span><span class="n">SSHGrad</span><span class="p">;</span>
 <span class="w">   </span><span class="n">VelocityDiffusionOnEdge</span><span class="w"> </span><span class="n">VelocityDiffusion</span><span class="p">;</span>

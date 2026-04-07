@@ -74,6 +74,7 @@
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Tracers.html">Tracers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/TridiagonalSolvers.html">Tridiagonal Solvers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/VertCoord.html">Vertical Coordinate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userGuide/PGrad.html">Pressure Gradient</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Timing.html">Timing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/VertAdv.html">Vertical Advection</a></li>
@@ -116,6 +117,7 @@
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Tracers.html">Tracers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/TridiagonalSolvers.html">Tridiagonal Solvers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/VertCoord.html">Vertical Coordinate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devGuide/PGrad.html">Pressure Gradient (PGrad)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Timing.html">Timing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Timing.html#initialization">Initialization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Timing.html#writing-out-timing-data">Writing-out timing data</a></li>
@@ -156,6 +158,7 @@
 <li class="toctree-l1"><a class="reference internal" href="design/TimeStepping.html">Time Stepping</a></li>
 <li class="toctree-l1"><a class="reference internal" href="design/Tracers.html">Tracer Infrastructure</a></li>
 <li class="toctree-l1"><a class="reference internal" href="design/TridiagonalSolver.html">Tridiagonal Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design/VertAdv.html">Vertical Advection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="design/VertCoord.html">Vertical Coordinate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="design/VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
 <li class="toctree-l1"><a class="reference internal" href="design/Template.html">Template</a></li>
@@ -203,6 +206,8 @@ component of E3SM for comparison purposes.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/QuickStart.html">Quick Start for Users</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/OmegaBuild.html">CMake-based Omega Build</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/OmegaBuild.html#if-you-are-using-polaris">If You Are Using Polaris</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/OmegaBuild.html#general-build-overview">General Build Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="userGuide/OmegaBuild.html#standalone-build">Standalone Build</a></li>
 <li class="toctree-l2"><a class="reference internal" href="userGuide/OmegaBuild.html#e3sm-component-build">E3SM Component Build</a></li>
 </ul>
@@ -252,6 +257,12 @@ component of E3SM for comparison purposes.</p>
 <li class="toctree-l2"><a class="reference internal" href="userGuide/VertCoord.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="userGuide/VertCoord.html#variables">Variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="userGuide/VertCoord.html#configuration-options">Configuration options</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="userGuide/PGrad.html">Pressure Gradient</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/PGrad.html#physical-background">Physical Background</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/PGrad.html#configuration-options">Configuration Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/PGrad.html#dependencies">Dependencies</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Timing.html">Timing</a><ul>
@@ -326,6 +337,7 @@ component of E3SM for comparison purposes.</p>
 <li class="toctree-l2"><a class="reference internal" href="devGuide/CMakeBuild.html#step-2-update">Step 2: Update</a></li>
 <li class="toctree-l2"><a class="reference internal" href="devGuide/CMakeBuild.html#step-3-build">Step 3: Build</a></li>
 <li class="toctree-l2"><a class="reference internal" href="devGuide/CMakeBuild.html#step-4-output">Step 4: Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/CMakeBuild.html#standalone-build-commands">Standalone Build Commands</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Logging.html">Developing Omega Logging</a><ul>
@@ -403,6 +415,18 @@ component of E3SM for comparison purposes.</p>
 <li class="toctree-l2"><a class="reference internal" href="devGuide/VertCoord.html#use-of-hierarchical-parallelism">Use of hierarchical parallelism</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="devGuide/PGrad.html">Pressure Gradient (PGrad)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/PGrad.html#pressuregradtype-enum">PressureGradType enum</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/PGrad.html#initialization">Initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/PGrad.html#creating-additional-instances">Creating additional instances</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/PGrad.html#constructor-behavior">Constructor behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/PGrad.html#computing-the-pressure-gradient">Computing the pressure gradient</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/PGrad.html#functors">Functors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/PGrad.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/PGrad.html#data-members">Data members</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/PGrad.html#removal">Removal</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Timing.html">Timing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Timing.html#initialization">Initialization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Timing.html#writing-out-timing-data">Writing-out timing data</a></li>
@@ -461,6 +485,7 @@ component of E3SM for comparison purposes.</p>
 <li class="toctree-l1"><a class="reference internal" href="design/TimeStepping.html">Time Stepping</a></li>
 <li class="toctree-l1"><a class="reference internal" href="design/Tracers.html">Tracer Infrastructure</a></li>
 <li class="toctree-l1"><a class="reference internal" href="design/TridiagonalSolver.html">Tridiagonal Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design/VertAdv.html">Vertical Advection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="design/VertCoord.html">Vertical Coordinate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="design/VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
 <li class="toctree-l1"><a class="reference internal" href="design/Template.html">Template</a></li>

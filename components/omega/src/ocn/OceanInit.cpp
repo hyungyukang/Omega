@@ -203,6 +203,53 @@ int initOmegaModules(MPI_Comm Comm) {
    }
    Tracers::copyToHost(CurTimeLevel);
 
+//////////////////////////////////////////////////
+//////////////////////////////////////////////////
+
+   // For initial GeometricThick -> PseudoThick
+   HorzMesh *Mesh = HorzMesh::getDefault();
+   VertCoord *VCoord = VertCoord::getDefault();
+   Eos *EosInstance = Eos::getInstance();
+
+   // get temperature and salinity
+   I4 ConservTempIdx;
+   I4 AbsSalinityIdx;
+   Array3DReal TracerArray = Tracers::getAll(0);
+
+   Tracers::getIndex(ConservTempIdx, "Temperature");
+   Tracers::getIndex(AbsSalinityIdx, "Salinity");
+
+   const auto ConservTemp =
+       Kokkos::subview(TracerArray, ConservTempIdx, Kokkos::ALL, Kokkos::ALL);
+   const auto AbsSalinity =
+       Kokkos::subview(TracerArray, AbsSalinityIdx, Kokkos::ALL, Kokkos::ALL);
+
+   Array2DReal PressureMidDbar("PressureMidDbar", VCoord->PressureMid.layout());
+   deepCopy(PressureMidDbar, 0.0);
+   EosInstance->computeSpecVol(ConservTemp, AbsSalinity, PressureMidDbar);
+   const auto &SpecVol  = EosInstance->SpecVol;
+
+   // get layer thickness
+   Array2DReal LayerThickCell = DefState->getLayerThickness(0);
+
+   parallelForOuter(
+       "ZtoP", {Mesh->NCellsAll},
+       KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
+          const int KMin   = VCoord->MinLayerCell(ICell);
+          const int KMax   = VCoord->MaxLayerCell(ICell);
+          const int KRange = vertRange(KMin, KMax);
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 const int K               = KMin + KChunk;
+                 LayerThickCell(ICell,K) = LayerThickCell(ICell,K) / (SpecVol(ICell,K)*1026.0);
+                 //std::cout<<LayerThickCell(ICell,K)<<" "<<SpecVol(ICell,K)*1026.0<<std::endl;
+
+              });
+       });
+
+//////////////////////////////////////////////////
+//////////////////////////////////////////////////
+
    return Err;
 
 } // end initOmegaModules

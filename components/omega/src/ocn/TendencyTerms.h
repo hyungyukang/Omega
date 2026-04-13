@@ -414,18 +414,31 @@ class TracerHorzAdvOnCell {
 
    KOKKOS_FUNCTION void operator()(const Array3DReal &Tend, const I4 L,
                                    const I4 ICell, const I4 KChunk) const {
-      const I4 KStart        = KChunk * VecLength;
-      const I4 KEnd          = KStart + VecLength;
+
+      const I4 KStartCell = chunkStart(KChunk, MinLayerCell(ICell));
+      const I4 KLenCell = chunkLength(KChunk, KStartCell, MaxLayerCell(ICell));
+      const I4 KEndCell = KStartCell + KLenCell - 1;
+
       const Real InvAreaCell = 1._Real / AreaCell(ICell);
-      for (int K = KStart; K < KEnd; ++K)
-         Tend(L, ICell, K) = 0;
+
+      Real TracerTendTmp[VecLength] = {0._Real};
 
       for (int I = 0; I < NEdgesOnCell(ICell); ++I) {
          const I4 IEdge = EdgesOnCell(ICell, I);
-         for (int K = KStart; K < KEnd; ++K) {
-            Tend(L, ICell, K) += EdgeSignOnCell(ICell, I) *
-                                 HighOrderFlxHorz(L, IEdge, K) * InvAreaCell;
+         const I4 KStartEdge = Kokkos::max(KStartCell, MinLayerEdgeBot(IEdge));
+         const I4 KEndEdge   = Kokkos::min(KEndCell, MaxLayerEdgeTop(IEdge));
+
+         for (int K = KStartEdge; K <= KEndEdge; ++K) {
+
+            const I4 KVec = K - KStartCell;
+            TracerTendTmp[KVec] += EdgeSignOnCell(ICell, I) *
+                                   HighOrderFlxHorz(L, IEdge, K) * InvAreaCell;
          }
+      }
+
+      for (int KVec = 0; KVec < KLenCell; ++KVec) {
+         const I4 K = KStartCell + KVec;
+         Tend(L, ICell, K) += TracerTendTmp[KVec];
       }
    }
 
@@ -444,6 +457,10 @@ class TracerHorzAdvOnCell {
    Array2DReal EdgeSignOnCell;
    Array1DReal DvEdge;
    Array1DReal AreaCell;
+   Array1DI4 MinLayerCell;
+   Array1DI4 MaxLayerCell;
+   Array1DI4 MinLayerEdgeBot;
+   Array1DI4 MaxLayerEdgeTop;
 };
 
 // Tracer horizontal diffusion term

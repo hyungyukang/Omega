@@ -664,26 +664,11 @@ void Tendencies::computeVelocityTendenciesOnly(
    // Compute pressure gradient
    if (PGrad->Enabled) {
 
-      // TODO: SurfacePressure is being handled temporarily in VertCoord.
-      const auto &SurfacePressure = VCoord->SurfacePressure;
-
       Pacer::start("Tend:pressureGradTerm", 2);
       Array2DReal LayerThick = State->getLayerThickness(ThickTimeLevel);
-      VCoord->computePressure(LayerThick, SurfacePressure);
-
       const auto &PressureMid       = VCoord->PressureMid;
       const auto &PressureInterface = VCoord->PressureInterface;
-      Array2DReal Temp     = Kokkos::subview(TracerArray, Tracers::IndxTemp,
-                                             Kokkos::ALL, Kokkos::ALL);
-      Array2DReal Salinity = Kokkos::subview(TracerArray, Tracers::IndxSalt,
-                                             Kokkos::ALL, Kokkos::ALL);
-      EqState->computeSpecVol(Temp, Salinity, PressureMid);
-
-      // Temporary: ensure vertical geometric/geopotential fields are updated
-      // for pressure-gradient tendency calculations.
       const auto &SpecVol = EqState->SpecVol;
-      VCoord->computeZHeight(LayerThick, SpecVol);
-
       const auto &ZInterface = VCoord->ZInterface;
       PGrad->computePressureGrad(LocNormalVelocityTend, PressureMid,
                                  PressureInterface, SpecVol, ZInterface,

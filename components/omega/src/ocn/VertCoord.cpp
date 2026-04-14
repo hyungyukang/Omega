@@ -168,7 +168,7 @@ VertCoord::VertCoord(const std::string &Name_, //< [in] Name for new VertCoord
 
    // TODO: Temporary handling of SurfacePressure
    SurfacePressure = Array1DReal("SurfacePressure", NCellsSize);
-   deepCopy(SurfacePressure,0);
+   deepCopy(SurfacePressure, 0);
 
    // Make host copies for device arrays not being read from file
    PressureInterfaceH    = createHostMirrorCopy(PressureInterface);

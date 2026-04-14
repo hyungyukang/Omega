@@ -146,10 +146,10 @@ int testAuxState() {
       return -1;
    }
 
-   const auto *Mesh   = HorzMesh::getDefault();
-   auto *MeshHalo     = Halo::getDefault();
-   auto *VCoord = VertCoord::getDefault();
-   auto *VAdv         = VertAdv::getDefault();
+   const auto *Mesh = HorzMesh::getDefault();
+   auto *MeshHalo   = Halo::getDefault();
+   auto *VCoord     = VertCoord::getDefault();
+   auto *VAdv       = VertAdv::getDefault();
    TimeInterval TimeStep;
    // test creation of another auxiliary state
    AuxiliaryState::create("AnotherAuxState", Mesh, MeshHalo, VCoord, VAdv, 3,

@@ -20,9 +20,8 @@ static std::string stripDefault(const std::string &Name) {
 // Constructor. Constructs the member auxiliary variables and registers their
 // fields with IOStreams
 AuxiliaryState::AuxiliaryState(const std::string &Name, const HorzMesh *Mesh,
-                               Halo *MeshHalo, VertCoord *VCoord,
-                               VertAdv *VAdv, int NTracers,
-                               TimeInterval TimeStep)
+                               Halo *MeshHalo, VertCoord *VCoord, VertAdv *VAdv,
+                               int NTracers, TimeInterval TimeStep)
     : Mesh(Mesh), MeshHalo(MeshHalo), VCoord(VCoord), VAdv(VAdv),
       Name(stripDefault(Name)), KineticAux(stripDefault(Name), Mesh, VCoord),
       LayerThicknessAux(stripDefault(Name), Mesh, VCoord),
@@ -66,9 +65,9 @@ AuxiliaryState::~AuxiliaryState() {
 // Compute the diagnostic variables required for momentum equation
 // time stepping
 void AuxiliaryState::computeMomDiag(const OceanState *State,
-                                          const Array3DReal &TracerArray,
-                                          int ThickTimeLevel,
-                                          int VelTimeLevel) const {
+                                    const Array3DReal &TracerArray,
+                                    int ThickTimeLevel,
+                                    int VelTimeLevel) const {
 
    Pacer::start("AuxState:computeMomDiag", 1);
 
@@ -354,7 +353,7 @@ AuxiliaryState *AuxiliaryState::create(const std::string &Name,
 void AuxiliaryState::init() {
    const HorzMesh *DefMesh           = HorzMesh::getDefault();
    Halo *DefHalo                     = Halo::getDefault();
-   VertCoord *DefVCoord        = VertCoord::getDefault();
+   VertCoord *DefVCoord              = VertCoord::getDefault();
    VertAdv *DefVAdv                  = VertAdv::getDefault();
    const TimeStepper *DefTimeStepper = TimeStepper::getDefault();
 

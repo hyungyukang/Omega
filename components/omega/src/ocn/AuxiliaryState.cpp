@@ -5,6 +5,7 @@
 #include "Pacer.h"
 #include "Tendencies.h"
 #include "TimeStepper.h"
+#include "VertMix.h"
 
 namespace OMEGA {
 
@@ -20,7 +21,7 @@ static std::string stripDefault(const std::string &Name) {
 // Constructor. Constructs the member auxiliary variables and registers their
 // fields with IOStreams
 AuxiliaryState::AuxiliaryState(const std::string &Name, const HorzMesh *Mesh,
-                               Halo *MeshHalo, const VertCoord *VCoord,
+                               Halo *MeshHalo, VertCoord *VCoord,
                                VertAdv *VAdv, int NTracers,
                                TimeInterval TimeStep)
     : Mesh(Mesh), MeshHalo(MeshHalo), VCoord(VCoord), VAdv(VAdv),
@@ -61,6 +62,54 @@ AuxiliaryState::~AuxiliaryState() {
    TracerAux.unregisterFields();
 
    FieldGroup::destroy(GroupName);
+}
+
+// Compute the diagnostic variables needed for time stepping
+void AuxiliaryState::computeDiagnosticAux(const OceanState *State,
+                                          const Array3DReal &TracerArray,
+                                          int ThickTimeLevel,
+                                          int VelTimeLevel) const {
+
+   Pacer::start("AuxState:computeDiagnosticAux", 1);
+
+   Eos *EosInstance = Eos::getInstance();
+
+   VertMix *VertMixInstance = VertMix::getInstance();
+
+   // get layer thickness
+   Array2DReal LayerThickCell = State->getLayerThickness(ThickTimeLevel);
+   // get normal velocity
+   Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
+
+   // get temperature and salinity
+   I4 ConservTempIdx;
+   I4 AbsSalinityIdx;
+   Tracers::getIndex(ConservTempIdx, "Temperature");
+   Tracers::getIndex(AbsSalinityIdx, "Salinity");
+
+   const auto ConservTemp =
+       Kokkos::subview(TracerArray, ConservTempIdx, Kokkos::ALL, Kokkos::ALL);
+   const auto AbsSalinity =
+       Kokkos::subview(TracerArray, AbsSalinityIdx, Kokkos::ALL, Kokkos::ALL);
+
+   // compute pressure
+   const auto &SurfacePressure = VCoord->SurfacePressure;
+   VCoord->computePressure(LayerThickCell, SurfacePressure);
+
+   // compute specific volume
+   const auto &PressureMid = VCoord->PressureMid;
+   EosInstance->computeSpecVol(ConservTemp, AbsSalinity, PressureMid);
+
+   // compute geometric height
+   VCoord->computeZHeight(LayerThickCell, EosInstance->SpecVol);
+
+   // compute Brunt-Vaisala frequency (NSquared)
+   const auto &PressureInterface = VCoord->PressureInterface;
+   const auto &SpecVol           = EosInstance->SpecVol;
+   EosInstance->computeBruntVaisalaFreqSq(ConservTemp, AbsSalinity,
+                                          PressureInterface, SpecVol);
+
+   Pacer::stop("AuxState:computeDiagnosticAux", 1);
 }
 
 // Compute the auxiliary variables needed for momentum equation
@@ -290,7 +339,7 @@ void AuxiliaryState::computeAll(const OceanState *State,
 // Create a non-default auxiliary state
 AuxiliaryState *AuxiliaryState::create(const std::string &Name,
                                        const HorzMesh *Mesh, Halo *MeshHalo,
-                                       const VertCoord *VCoord, VertAdv *VAdv,
+                                       VertCoord *VCoord, VertAdv *VAdv,
                                        const int NTracers,
                                        TimeInterval TimeStep) {
    if (AllAuxStates.find(Name) != AllAuxStates.end()) {
@@ -312,7 +361,7 @@ AuxiliaryState *AuxiliaryState::create(const std::string &Name,
 void AuxiliaryState::init() {
    const HorzMesh *DefMesh           = HorzMesh::getDefault();
    Halo *DefHalo                     = Halo::getDefault();
-   const VertCoord *DefVCoord        = VertCoord::getDefault();
+   VertCoord *DefVCoord        = VertCoord::getDefault();
    VertAdv *DefVAdv                  = VertAdv::getDefault();
    const TimeStepper *DefTimeStepper = TimeStepper::getDefault();
 

@@ -664,9 +664,8 @@ void Tendencies::computeVelocityTendenciesOnly(
    // Compute pressure gradient
    if (PGrad->Enabled) {
 
-      // Temporary handling of surface pressure
-      Array1DReal SurfacePressure("SurfacePressure", Mesh->NCellsSize);
-      deepCopy(SurfacePressure, 0.0_Real);
+      // TODO: SurfacePressure is being handled temporarily in VertCoord.
+      const auto &SurfacePressure = VCoord->SurfacePressure;
 
       Pacer::start("Tend:pressureGradTerm", 2);
       Array2DReal LayerThick = State->getLayerThickness(ThickTimeLevel);

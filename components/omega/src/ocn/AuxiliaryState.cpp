@@ -5,7 +5,6 @@
 #include "Pacer.h"
 #include "Tendencies.h"
 #include "TimeStepper.h"
-#include "VertMix.h"
 
 namespace OMEGA {
 
@@ -64,17 +63,16 @@ AuxiliaryState::~AuxiliaryState() {
    FieldGroup::destroy(GroupName);
 }
 
-// Compute the diagnostic variables needed for time stepping
-void AuxiliaryState::computeDiagnosticAux(const OceanState *State,
+// Compute the diagnostic variables required for momentum equation
+// time stepping
+void AuxiliaryState::computeMomDiag(const OceanState *State,
                                           const Array3DReal &TracerArray,
                                           int ThickTimeLevel,
                                           int VelTimeLevel) const {
 
-   Pacer::start("AuxState:computeDiagnosticAux", 1);
+   Pacer::start("AuxState:computeMomDiag", 1);
 
    Eos *EosInstance = Eos::getInstance();
-
-   VertMix *VertMixInstance = VertMix::getInstance();
 
    // get layer thickness
    Array2DReal LayerThickCell = State->getLayerThickness(ThickTimeLevel);
@@ -103,13 +101,7 @@ void AuxiliaryState::computeDiagnosticAux(const OceanState *State,
    // compute geometric height
    VCoord->computeZHeight(LayerThickCell, EosInstance->SpecVol);
 
-   // compute Brunt-Vaisala frequency (NSquared)
-   const auto &PressureInterface = VCoord->PressureInterface;
-   const auto &SpecVol           = EosInstance->SpecVol;
-   EosInstance->computeBruntVaisalaFreqSq(ConservTemp, AbsSalinity,
-                                          PressureInterface, SpecVol);
-
-   Pacer::stop("AuxState:computeDiagnosticAux", 1);
+   Pacer::stop("AuxState:computeMomDiag", 1);
 }
 
 // Compute the auxiliary variables needed for momentum equation
@@ -290,6 +282,7 @@ void AuxiliaryState::computeAll(const OceanState *State,
 
    Pacer::start("AuxState:computeAll", 1);
 
+   computeMomDiag(State, TracerArray, ThickTimeLevel, VelTimeLevel);
    computeMomAux(State, ThickTimeLevel, VelTimeLevel);
 
    Pacer::start("AuxState:cellAuxState3", 2);

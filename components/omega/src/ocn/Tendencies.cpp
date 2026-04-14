@@ -871,6 +871,7 @@ void Tendencies::computeVelocityTendencies(
 ) {
    Pacer::start("Tend:computeVelocityTendencies", 1);
 
+   AuxState->computeMomDiag(State, TracerArray, ThickTimeLevel, VelTimeLevel);
    AuxState->computeMomAux(State, ThickTimeLevel, VelTimeLevel);
    computeVelocityTendenciesOnly(State, AuxState, TracerArray, ThickTimeLevel,
                                  VelTimeLevel, TracerTimeLevel, Time);
@@ -933,10 +934,10 @@ void Tendencies::computeAllTendencies(
 ) {
    AuxState->computeAll(State, TracerArray, ThickTimeLevel, VelTimeLevel);
 
-   computeThicknessTendenciesOnly(State, AuxState, ThickTimeLevel, VelTimeLevel,
-                                  Time);
    computeVelocityTendenciesOnly(State, AuxState, TracerArray, ThickTimeLevel,
                                  VelTimeLevel, TracerTimeLevel, Time);
+   computeThicknessTendenciesOnly(State, AuxState, ThickTimeLevel, VelTimeLevel,
+                                  Time);
    computeTracerTendenciesOnly(State, AuxState, TracerArray, ThickTimeLevel,
                                VelTimeLevel, Time);
 } // end all tendency compute

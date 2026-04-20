@@ -77,8 +77,9 @@ class AuxiliaryState {
    I4 exchangeHalo();
 
    // Compute the diagnostic variables needed for time stepping
-   void computeMomDiag(const OceanState *State, const Array3DReal &TracerArray,
-                       int ThickTimeLevel, int VelTimeLevel) const;
+   void computeMomDiagAux(const OceanState *State,
+                          const Array3DReal &TracerArray, int ThickTimeLevel,
+                          int VelTimeLevel) const;
 
    // Compute all auxiliary variables needed for momentum equation
    void computeMomAux(const OceanState *State, int ThickTimeLevel,

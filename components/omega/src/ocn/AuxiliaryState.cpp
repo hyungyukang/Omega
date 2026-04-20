@@ -64,12 +64,12 @@ AuxiliaryState::~AuxiliaryState() {
 
 // Compute the diagnostic variables required for momentum equation
 // time stepping
-void AuxiliaryState::computeMomDiag(const OceanState *State,
-                                    const Array3DReal &TracerArray,
-                                    int ThickTimeLevel,
-                                    int VelTimeLevel) const {
+void AuxiliaryState::computeMomDiagAux(const OceanState *State,
+                                       const Array3DReal &TracerArray,
+                                       int ThickTimeLevel,
+                                       int VelTimeLevel) const {
 
-   Pacer::start("AuxState:computeMomDiag", 1);
+   Pacer::start("AuxState:computeMomDiagAux", 1);
 
    Eos *EosInstance = Eos::getInstance();
 
@@ -100,7 +100,7 @@ void AuxiliaryState::computeMomDiag(const OceanState *State,
    // compute geometric height
    VCoord->computeZHeight(LayerThickCell, EosInstance->SpecVol);
 
-   Pacer::stop("AuxState:computeMomDiag", 1);
+   Pacer::stop("AuxState:computeMomDiagAux", 1);
 }
 
 // Compute the auxiliary variables needed for momentum equation
@@ -281,7 +281,7 @@ void AuxiliaryState::computeAll(const OceanState *State,
 
    Pacer::start("AuxState:computeAll", 1);
 
-   computeMomDiag(State, TracerArray, ThickTimeLevel, VelTimeLevel);
+   computeMomDiagAux(State, TracerArray, ThickTimeLevel, VelTimeLevel);
    computeMomAux(State, ThickTimeLevel, VelTimeLevel);
 
    Pacer::start("AuxState:cellAuxState3", 2);

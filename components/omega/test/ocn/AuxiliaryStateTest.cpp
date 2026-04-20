@@ -3,6 +3,7 @@
 #include "DataTypes.h"
 #include "Decomp.h"
 #include "Dimension.h"
+#include "Eos.h"
 #include "Field.h"
 #include "GlobalConstants.h"
 #include "Halo.h"
@@ -125,6 +126,8 @@ int initAuxStateTest(const std::string &mesh) {
    }
 
    VertAdv::init();
+
+   Eos::init();
 
    return Err;
 }

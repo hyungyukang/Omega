@@ -427,6 +427,7 @@ void VertMix::defineFields() {
 
 } // end defineIOFields
 
+
 // Apply implicit velocity vertical mixing
 void VertMix::applyVelVertMixImplicit(
     OceanState *State,              ///< [in] State variables
@@ -528,6 +529,7 @@ void VertMix::applyVelVertMixImplicit(
       Pacer::stop("Tend:velocityVertMix", 1);
    }
 } // applyVelVertMixImplicit
+
 
 // Apply implicit tracer vertical mixing
 void VertMix::applyTracerVertMixImplicit(

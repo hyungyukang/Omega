@@ -507,9 +507,9 @@ Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
                        int NTracersIn,           ///< [in] Number of tracers
                        TimeInterval TimeStepIn,  ///< [in] Time step
                        Config *Options)          ///< [in] Configuration options
-    : Tendencies(Name_, Mesh, VCoord, VAdv, PGrad, EqState, VertMix::getInstance(),
-                 NTracersIn, TimeStepIn, Options, CustomTendencyType{},
-                 CustomTendencyType{}) {}
+    : Tendencies(Name_, Mesh, VCoord, VAdv, PGrad, EqState,
+                 VertMix::getInstance(), NTracersIn, TimeStepIn, Options,
+                 CustomTendencyType{}, CustomTendencyType{}) {}
 
 //------------------------------------------------------------------------------
 // Compute tendencies for the pseudo-thickness equation

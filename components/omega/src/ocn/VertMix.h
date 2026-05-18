@@ -408,7 +408,6 @@ class TracerVertMixSetupOnCell {
    Array1DI4 MaxLayerCell;
 };
 
-
 /// Class for Vertical Mixing Coefficient (VertMix) calculations
 class VertMix {
  public:

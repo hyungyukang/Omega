@@ -695,7 +695,6 @@ void VertMix::VertMixImplicit(OceanState *State, AuxiliaryState *AuxState,
    // Apply implicit mixing to tracers
    applyTracerVertMixImplicit(State, AuxState, TracerArray, NTracers, TimeLevel,
                               TimeLevel);
-
 } // VertMixImplicit
 
 } // namespace OMEGA

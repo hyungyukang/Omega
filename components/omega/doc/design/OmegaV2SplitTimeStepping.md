@@ -53,7 +53,7 @@ The layered discrete governing equations for Omega V2 are described in the {ref}
 
 $$
 \frac{\partial \tilde{h}_{i,k}}{\partial t}
-+ \nabla \cdot \left( [\tilde{h}_{k}]_e u_{e,k} \right)
++ \nabla \cdot \left( [\tilde{h}_{k}]_e {\bf u}_{e,k} \right)
 + \left[ \tilde{W}_{tr} \right]^{\text{top}}_{k}
 - \left[ \tilde{W}_{tr} \right]^{\text{top}}_{k+1}
 = 0 .
@@ -63,7 +63,7 @@ $$ (split-discrete-mass)
 
 $$
 \frac{\partial \tilde{h}_{i,k}\varphi_{i,k}}{\partial t}
-+ \nabla \cdot \left( [\tilde{h}_{i,k}\varphi_{i,k}]_e u_{e,k} \right)
++ \nabla \cdot \left( [\tilde{h}_{i,k}\varphi_{i,k}]_e {\bf u}_{e,k} \right)
 + \left\{
 \left[\varphi \tilde{W}_{tr}\right]^{\text{top}}_{k}
 -
@@ -88,14 +88,14 @@ $$
 \left[\frac{\partial h\varphi}{\partial \tilde{z}}\right]_{i,k}
 -
 [\tilde{\kappa}_{v}]_{i,k+1}
-\left[\frac{\partial h\varphi}{\partial \tilde{z}}\right]_{i,k} .
+\left[\frac{\partial h\varphi}{\partial \tilde{z}}\right]_{i,k+1} .
 $$ (split-tracer-vertical-diffusion)
 
 **Velocity:**
 
 $$
-\frac{\partial u_{e,k}}{\partial t}
-+ \left[ {\bf k} \cdot \nabla \times u_{e,k} + f_v \right]_e u^{\perp}_{e,k}
+\frac{\partial {\bf u}_{e,k}}{\partial t}
++ \left[ {\bf k} \cdot \nabla \times {\bf u}_{e,k} + f_v \right]_e {\bf u}^{\perp}_{e,k}
 + [\nabla K]_e
 + \frac{1}{[\tilde{h}_{i,k}]_e}
 \left[\tilde{W}_{tr}\frac{\partial U}{\partial \tilde{z}}\right]_{e,k}
@@ -131,16 +131,16 @@ Define the barotropic velocity, baroclinic velocity, barotropic pressure, and ba
 **Barotropic velocity:**
 
 $$
-\overline{u}
+\overline{{\bf u}}
 \equiv
 \frac{1}{\tilde{H}}
-\sum_{k=0}^{K_{\max}} \tilde{h}_{k}u_{k}.
+\sum_{k=0}^{K_{\max}} \tilde{h}_{k}{\bf u}_{k}.
 $$ (split-barotropic-velocity)
 
 **Baroclinic velocity:**
 
 $$
-u'_k \equiv u_k - \overline{u}.
+{\bf u}'_k \equiv {\bf u}_k - \overline{{\bf u}}.
 $$ (split-baroclinic-velocity)
 
 **Barotropic pressure:**
@@ -277,7 +277,7 @@ The barotropic continuity and momentum equations are written as follows.
 $$
 \frac{\partial B_i'}{\partial t}
 + \left[
-\nabla \cdot \left( [(B_i' + \rho_0 g b_i)]_e \overline{u}_e \right)
+\nabla \cdot \left( [(B_i' + \rho_0 g b_i)]_e \overline{{\bf u}}_e \right)
 \right]_i
 = -\rho_0 g Q_i .
 $$ (split-barotropic-continuity)
@@ -285,8 +285,8 @@ $$ (split-barotropic-continuity)
 **Barotropic momentum equation:**
 
 $$
-\frac{\partial \overline{u}_e}{\partial t}
-+ f_e \overline{u}^{\perp}_e
+\frac{\partial \overline{{\bf u}}_e}{\partial t}
++ f_e \overline{{\bf u}}^{\perp}_e
 = -[\overline{\alpha}_i]_e [\nabla B_i']_e
 + \overline{G}_e .
 $$ (split-barotropic-momentum)
@@ -294,8 +294,8 @@ $$ (split-barotropic-momentum)
 **Baroclinic momentum equation:**
 
 $$
-\frac{\partial u'_{e,k}}{\partial t}
-= -[f_v]_e u_{e,k}^{\prime\perp}
+\frac{\partial {\bf u}'_{e,k}}{\partial t}
+= -[f_v]_e {\bf u}_{e,k}^{\prime\perp}
 + \Gamma_{e,k}
 + [\overline{\alpha}_i]_e [\nabla B_i']_e
 - \overline{G}_e,
@@ -309,7 +309,7 @@ $$
 -[\nabla K]_e
 -(\alpha \nabla p + \nabla \Phi)_{e,k}
 -
-[ {\bf k} \cdot \nabla \times u_{e,k}]_e u^{\perp}_{e,k}
+[ {\bf k} \cdot \nabla \times {\bf u}_{e,k}]_e {\bf u}^{\perp}_{e,k}
 -
 \frac{1}{[\tilde{h}_{i,k}]_e}
 \left[\tilde{W}_{tr}\frac{\partial U}{\partial \tilde{z}}\right]_{e,k}
@@ -325,7 +325,7 @@ The mode-splitting time-stepping algorithm in Omega-V2 follows the MPAS-Ocean sp
 
 The `SE-RK2` option, corresponding to the split-explicit second-order Runge–Kutta scheme used in MPAS-Ocean (`split_explicit`), can be described as a split-explicit RK2-like predictor–corrector scheme. In this approach, provisional end-of-step values are first estimated during the first time step iteration. Midpoint states are then constructed by averaging the old and provisional new states, and the tendencies are recomputed using these midpoint estimates during the second time step iteration. Because the baroclinic velocity advance, barotropic subcycling, and pseudo thickness/tracer updates are performed sequentially rather than as a fully synchronized RK update of all prognostic variables, the method is RK2-like rather than a fully stage-synchronous RK2 scheme.
 
-The SE-AB2 option, corresponding to the split-explicit second-order Adams–Bashforth scheme used in MPAS-Ocean (`split_explicit_ab2`), follows the same split-explicit mode-splitting framework but performs only one time step iteration. Instead of constructing midpoint states through a second RK2-like correction, the baroclinic tendencies are advanced using a second-order Adams–Bashforth extrapolation based on the current and previous tendencies. Compared with `SE-RK2`, `SE-AB2` is computationally less expensive because it requires only one time step iteration, but it requires additional storage for previous-step tendencies or tendency-related forcing terms.
+The `SE-AB2` option, corresponding to the split-explicit second-order Adams–Bashforth scheme used in MPAS-Ocean (`split_explicit_ab2`), follows the same split-explicit mode-splitting framework but performs only one time step iteration. Instead of constructing midpoint states through a second RK2-like correction, the baroclinic tendencies are advanced using a second-order Adams–Bashforth extrapolation based on the current and previous tendencies. Compared with `SE-RK2`, `SE-AB2` is computationally less expensive because it requires only one time step iteration, but it requires additional storage for previous-step tendencies or tendency-related forcing terms.
 
 For the initial implementation, `SE-RK2` is selected as the baseline split-explicit scheme. `SE-AB2` can be implemented later by extending the same framework with Adams–Bashforth extrapolation of the baroclinic tendencies. Therefore, this section first describes the `SE-RK2` algorithm.
 
@@ -359,19 +359,19 @@ $$ (split-nbtrsubcycle)
 Compute the barotropic velocity:
 
 $$
-\overline{u}_e
+\overline{{\bf u}}_e
 \equiv
 \frac{1}{[\tilde{H}_i]_e}
 \sum_{k=0}^{K_{\max}}
-[\tilde{h}_{i,k}]_e u_{e,k}.
+[\tilde{h}_{i,k}]_e {\bf u}_{e,k}.
 $$ (split-initial-barotropic-velocity)
 
-If the model is restarting, $\overline{u}_e$ is read from the previous time step instead.
+If the model is restarting, $\overline{{\bf u}}_e$ is read from the previous time step instead.
 
 Compute the baroclinic velocity:
 
 $$
-u'_{e,k} = u_{e,k} - \overline{u}_e.
+{\bf u}'_{e,k} = {\bf u}_{e,k} - \overline{{\bf u}}_e.
 $$ (split-initial-baroclinic-velocity)
 
 Compute the pressure $p$.
@@ -391,7 +391,7 @@ $$ (split-initial-barotropic-pressure-anomaly)
 Prepare variables before the first iteration:
 
 $$
-u^{*}_{e,k} = u^n_{e,k},
+{\bf u}^{*}_{e,k} = {\bf u}^n_{e,k},
 \qquad
 \tilde{W}^{*}_{i,k} = \tilde{W}^{n}_{i,k},
 \qquad
@@ -423,23 +423,23 @@ $$
 $$ (split-stage1-column-pseudo-thickness)
 
 Compute the Coriolis term using a centered treatment with two iterations. For
-$j = 0, \ldots, \text{NBclIter}-1$, with the default value `NBclIter = 2`, compute $f_e u_{e,k}^{\prime\perp *}$ from $u_{e,k}^{\prime *}$:
+$j = 0, \ldots, \text{NBclIter}-1$, with the default value `NBclIter = 2`, compute $f_e {\bf u}_{e,k}^{\prime\perp *}$ from ${\bf u}_{e,k}^{\prime *}$:
 
 $$
-u_{e,k}^{\prime\perp *}
+{\bf u}_{e,k}^{\prime\perp *}
 =
-\sum_{e'\in ECP(e)} \tilde{E}_{e,e'} f_{e'} u_{e',k}^{\prime *}.
+\sum_{e'\in ECP(e)} \tilde{E}_{e,e'} f_{e'} {\bf u}_{e',k}^{\prime *}.
 $$ (split-stage1-baroclinic-coriolis)
 
 Advance the baroclinic velocity:
 
 $$
-u_{e,k}^{\prime n+1}
+{\bf u}_{e,k}^{\prime n+1}
 =
-u_{e,k}^{\prime n}
+{\bf u}_{e,k}^{\prime n}
 + \Delta t
 \left(
--[f_v]_e u_{e,k}^{\prime\perp *}
+-[f_v]_e {\bf u}_{e,k}^{\prime\perp *}
 + \Gamma^*_{e,k}
 + [\overline{\alpha}^{*}_{i}]_e [\nabla B_i^{\prime *}]_e
 \right).
@@ -451,24 +451,23 @@ $$
 \overline{G}^{*}_e
 =
 \frac{1}{[\tilde{H}^{*}_{i}]_e\Delta t}
-\sum_{k=0}^{K} \tilde{h}^{*}_{i,k}u_{e,k}^{\prime n+1}.
+\sum_{k=0}^{K} \tilde{h}^{*}_{i,k} {\bf u}_{e,k}^{\prime n+1}.
 $$ (split-stage1-gbar)
 
-Set
+For the `Unsplit` algorithm, set 
 
 $$
 \overline{G}^{*}_e = 0
-\quad \text{for the unsplit algorithm}.
 $$ (split-stage1-gbar-unsplit)
 
 Compute the midpoint baroclinic velocity:
 
 $$
-u_{e,k}^{\prime n+0.5}
+{\bf u}_{e,k}^{\prime n+0.5}
 = \frac{1}{2}
 \left(
- u_{e,k}^{\prime n}
-+ u_{e,k}^{\prime n+1}
+ {\bf u}_{e,k}^{\prime n}
++ {\bf u}_{e,k}^{\prime n+1}
 - \Delta t\,\overline{G}^{*}_e
 \right).
 $$ (split-stage1-midpoint-baroclinic-velocity)
@@ -484,7 +483,7 @@ B_i^{\prime n+1}
 = B_i^{\prime n}
 - \Delta t
 \left[
-\nabla \cdot \left( [(B_i^{\prime n}+\rho_0 g b_i)]_e \overline{u}_e^n \right)
+\nabla \cdot \left( [(B_i^{\prime n}+\rho_0 g b_i)]_e \overline{{\bf u}}_e^n \right)
 \right]_i
 - \Delta t\,\rho_0 g Q_i^n.
 $$ (split-stage2-discrete-continuity)
@@ -492,12 +491,12 @@ $$ (split-stage2-discrete-continuity)
 The discrete barotropic momentum update is
 
 $$
-\overline{u}^{n+1}_e
-= \overline{u}^{n}_e
+\overline{{\bf u}}^{n+1}_e
+= \overline{{\bf u}}^{n}_e
 + \Delta t
 \left(
-- f_e \overline{u}^{\perp n}_e
-- [\overline{\alpha}_i^{n}\nabla B_i^{\prime n}]_e
+- f_e \overline{{\bf u}}^{\perp n}_e
+- [\overline{\alpha}_i^{{\bf n}}\nabla B_i^{\prime n}]_e
 + \overline{G}^{*}_e
 \right).
 $$ (split-stage2-discrete-momentum)
@@ -505,9 +504,11 @@ $$ (split-stage2-discrete-momentum)
 Initialize the barotropic subcycling variables:
 
 $$
-\hat{\overline{u}}^{n}_e = \overline{u}^{n}_e,
+\hat{\overline{{\bf u}}}^{n}_e = \overline{{\bf u}}^{n}_e,
 \qquad
-\hat{B}^{\prime n}_i = B_i^{\prime n}.
+\hat{B}^{\prime n}_i = B_i^{\prime n}
+\qquad
+F=0.
 $$ (split-stage2-initialization)
 
 For each predictor-corrector subcycle, $m=0,\ldots,2M-1$, use the following steps.
@@ -515,14 +516,14 @@ For each predictor-corrector subcycle, $m=0,\ldots,2M-1$, use the following step
 **$\overline{u}$ predictor:**
 
 $$
-[\overline{u}^{*}_e]^{n+(m+1)/M}
+[\hat{\overline{{\bf u}}}^{*}_e]^{n+(m+1)/M}
 =
-[\overline{u}_e]^{n+m/M}
+[\hat{\overline{{\bf u}}}_e]^{n+m/M}
 +
 \frac{\Delta t}{M}
 \left(
--f_e[\overline{u}_e^{\perp}]^{n+m/M}
--[\overline{\alpha}_i]^n_e[\nabla B_i']^{n+m/M}_e
+-f_e[\hat{\overline{{\bf u}}}_e^{\perp}]^{n+m/M}
+-[\overline{\alpha}_i]^n_e[\nabla \hat{B}_i']^{n+m/M}_e
 + \overline{G}_e
 \right).
 $$ (split-stage2-u-predictor)
@@ -532,20 +533,20 @@ $$ (split-stage2-u-predictor)
 $$
 [F^{*}_e]^{m+1}
 =
-\left([B_i']^{n+m/M}+\rho_0 g b_i\right)_e
+\left([\hat{B}_i']^{n+m/M}+\rho_0 g b_i\right)_e
 \left(
-(1-\gamma_1)[\overline{u}_e]^{n+m/M}
+(1-\gamma_1)[\hat{\overline{{\bf u}}}_e]^{n+m/M}
 +
-\gamma_1[\overline{u}^{*}_e]^{n+(m+1)/M}
+\gamma_1[\hat{\overline{{\bf u}}}^{*}_e]^{n+(m+1)/M}
 \right),
 $$ (split-stage2-b-predictor-flux)
 
 and
 
 $$
-[B_i^{\prime *}]^{n+(m+1)/M}
+[\hat{B}_i^{\prime *}]^{n+(m+1)/M}
 =
-[B_i']^{n+m/M}
+[\hat{B}_i']^{n+m/M}
 +
 \frac{\Delta t}{M}
 \left(
@@ -558,20 +559,20 @@ $$ (split-stage2-b-predictor)
 **$\overline{u}$ corrector:**
 
 $$
-[\overline{u}_e]^{n+(m+1)/M}
+[\hat{\overline{{\bf u}}}_e]^{n+(m+1)/M}
 =
-[\overline{u}_e]^{n+m/M}
+[\hat{\overline{{\bf u}}}_e]^{n+m/M}
 +
 \frac{\Delta t}{M}
 \left(
--f_e[\overline{u}_e^{\perp *}]^{n+m/M}
+-f_e[\hat{\overline{{\bf u}}}_e^{\perp *}]^{n+m/M}
 -
 [\overline{\alpha}_i]^n_e
 \nabla
 \left(
-(1-\gamma_2)[B_i']^{n+m/M}
+(1-\gamma_2)[\hat{B}_i']^{n+m/M}
 +
-\gamma_2[B_i^{\prime *}]^{n+(m+1)/M}
+\gamma_2[\hat{B}_i^{\prime *}]^{n+(m+1)/M}
 \right)_e
 +
 \overline{G}_e
@@ -585,25 +586,25 @@ $$
 =
 \left[
 \left(
-(1-\gamma_2)[B_i']^{n+m/M}
+(1-\gamma_2)[\hat{B}_i']^{n+m/M}
 +
-\gamma_2[B_i^{\prime *}]^{n+(m+1)/M}
+\gamma_2[\hat{B}_i^{\prime *}]^{n+(m+1)/M}
 \right)
 +\rho_0 g b_i
 \right]_e
 \left(
-(1-\gamma_3)[\overline{u}_e]^{n+m/M}
+(1-\gamma_3)[\hat{\overline{{\bf u}}}_e]^{n+m/M}
 +
-\gamma_3[\overline{u}^{*}_e]^{n+(m+1)/M}
+\gamma_3[\hat{\overline{{\bf u}}}^{*}_e]^{n+(m+1)/M}
 \right),
 $$ (split-stage2-b-corrector-flux)
 
 and
 
 $$
-[B_i^{\prime *}]^{n+(m+1)/M}
+[\hat{B}_i^{\prime *}]^{n+(m+1)/M}
 =
-[B_i']^{n+m/M}
+[\hat{B}_i']^{n+m/M}
 +
 \frac{\Delta t}{M}
 \left(
@@ -613,14 +614,30 @@ $$
 \right).
 $$ (split-stage2-b-corrector)
 
-Compute the time average during subcycling:
+Accumulate the barotropic velocity and flux during subcycling:
+$$
+\overline{{\bf u}}_e^{n}
+=
+\sum_{m=0}^{2M}
+[\hat{\overline{{\bf u}}}_e]^{n+m/M},
+$$ (split-stage2-barotropic-velocity-accumulate)
+
+and 
 
 $$
-\overline{u}_e^{\text{bt}}
+F
+=
+\sum_{m=0}^{2M-1}
+[F_e]^{(m+1)/M}.
+$$ (split-stage2-barotropic-flux-average)
+
+Compute the time average after subcycling:
+
+$$
+\overline{{\bf u}}_e^{\text{bt}}
 =
 \frac{1}{2M+1}
-\sum_{m=0}^{2M}
-[\overline{u}_e]^{n+m/M},
+\overline{{\bf u}}_e^{n}
 $$ (split-stage2-barotropic-velocity-average)
 
 and
@@ -628,12 +645,10 @@ and
 $$
 \overline{F}_e^{\text{bt}}
 =
-\frac{1}{2M}
-\sum_{m=0}^{2M-1}
-[F_e]^{m+1}.
+\frac{1}{2M}F
 $$ (split-stage2-barotropic-flux-average)
 
-Then perform the boundary update on $\overline{u}_e^{\text{bt}}$ and $\overline{F}_e^{\text{bt}}$.
+Then perform the boundary update on $\overline{{\bf u}}_e^{\text{bt}}$ and $\overline{F}_e^{\text{bt}}$. For the practical implementation, we set $\overline{{\bf u}}_e^{n}=\overline{{\bf u}}_e^{\text{bt}}$ and $\overline{F}_e^{\text{bt}}=F$.
 
 #### 3.2.4 Barotropic-baroclinic coupling and barotropic pressure consistency
 
@@ -646,7 +661,7 @@ $$
 +
 \left[
 \nabla \cdot
-\overline{\left([(B_i' + \rho_0 g b_i)]_e \overline{u}_e\right)}^{\text{bt}}
+\overline{\left([(B_i' + \rho_0 g b_i)]_e \overline{{\bf u}}_e\right)}^{\text{bt}}
 \right]_i
 = -\rho_0 g Q_i .
 $$ (split-btr-update-consistency)
@@ -656,34 +671,36 @@ Here, $\overline{\varphi}^{\text{bt}}$ denotes a time-averaged quantity from the
 The velocity correction $u^{\text{co}}$ is written as
 
 $$
-u_{e,k}^{\text{co}}
+{\bf u}_{e,k}^{\text{co}}
 =
 \left\{
-\overline{\left([(B_i' + \rho_0 g b_i)]_e \overline{u}_e\right)}^{\text{bt}}
+\overline{F}_e^{\text{bt}}
 -
 \sum_{k=0}^{K}
 [\tilde{h}_i^{*}]_{e,k}
 \left(
-\overline{u}_e^{\text{bt}}
-+u_{e,k}^{\prime n+0.5}
-+u_{e,k}^{\text{bolus}*}
+\overline{{\bf u}}_e^{\text{bt}}
++{\bf u}_{e,k}^{\prime n+0.5}
++{\bf u}_{e,k}^{\text{bolus}*}
 \right)
 \right\}
 \bigg/
-[\tilde{H}_i^{*}]_e .
+[\tilde{H}_i^{*}]_e ,
 $$ (split-velocity-correction)
+
+where $\overline{F}_e^{\text{bt}}\equiv\overline{\left([(B_i' + \rho_0 g b_i)]_e \overline{{\bf u}}_e\right)}^{\text{bt}}$.
 
 The asterisk indicates the provisional variable that is updated during the baroclinic time step iteartion; the most recent available value is always used for forcing terms.
 
 The transport velocity $u^{\text{tr}}$ is defined as
 
 $$
-u^{\text{tr}}_{e,k}
+{\bf u}^{\text{tr}}_{e,k}
 =
-\overline{u}_e^{\text{bt}}
-+u_{e,k}^{\prime n+0.5}
-+u_{e,k}^{\text{bolus}*}
-+u_{e,k}^{\text{co}}.
+\overline{{\bf u}}_e^{\text{bt}}
++{\bf u}_{e,k}^{\prime n+0.5}
++{\bf u}_{e,k}^{\text{bolus}*}
++{\bf u}_{e,k}^{\text{co}}.
 $$ (split-transport-velocity)
 
 The transport velocity is used to compute vertical transport velocity and horizontal transport for both pseudo thickness and tracers.
@@ -691,22 +708,22 @@ The transport velocity is used to compute vertical transport velocity and horizo
 For the unsplit algorithm, the above processes are skipped except that
 
 $$
-u_{e,k}^{\text{tr}}
-= u_{e,k}^{\prime n+0.5}
-+ u_{e,k}^{\text{bolus}*},
+{\bf u}_{e,k}^{\text{tr}}
+= {\bf u}_{e,k}^{\prime n+0.5}
++ {\bf u}_{e,k}^{\text{bolus}*},
 $$ (split-unsplit-transport-velocity)
 
 where
 
 $$
-u_{e,k}^{\prime n+0.5} = u_{e,k}^{n+0.5}.
+{\bf u}_{e,k}^{\prime n+0.5} = {\bf u}_{e,k}^{n+0.5}.
 $$ (split-unsplit-midpoint-relation)
 
 #### 3.2.5 Stage 3: Update tracers and diagnostics
 
-Compute $\tilde{W}_{i,k}^{*}$ using $u_{e,k}^{\text{tr}}$.
+Compute $\tilde{W}_{i,k}^{*}$ using ${\bf u}_{e,k}^{\text{tr}}$.
 
-Compute pseudo thickness tendencies using $u_{e,k}^{\text{tr}}$:
+Compute pseudo thickness tendencies using ${\bf u}_{e,k}^{\text{tr}}$:
 
 $$
 \tilde{h}_{i,k}^{n+1}
@@ -715,7 +732,7 @@ $$
 -
 \Delta t\,
 \nabla \cdot
-\left([\tilde{h}_{k}^{*}]_e u_{e,k}^{\text{tr}}\right)
+\left([\tilde{h}_{k}^{*}]_e {\bf u}_{e,k}^{\text{tr}}\right)
 -
 \Delta t
 \left(
@@ -725,7 +742,7 @@ $$
 \right).
 $$ (split-stage3-pseudo-thickness-update)
 
-Compute tracer tendencies using $u_{e,k}^{\text{tr}}$:
+Compute tracer tendencies using ${\bf u}_{e,k}^{\text{tr}}$:
 
 $$
 \varphi_{i,k}^{n+1}
@@ -737,7 +754,7 @@ $$
 \left([
 \tilde{h}_{i,k}^{*}]_e
 [\varphi_{i,k}^{*}]_e
-u_{e,k}^{\text{tr}}
+{\bf u}_{e,k}^{\text{tr}}
 \right)
 -
 \Delta t
@@ -753,15 +770,15 @@ $$ (split-stage3-tracer-update)
 If iterating, reset the provisional variables as follows:
 
 $$
-u^{\prime *} = u^{\prime n+0.5} \quad \text{from Stage 1},
+{\bf u}^{\prime *} = {\bf u}^{\prime n+0.5} \quad \text{from Stage 1},
 $$ (split-reset-baroclinic-velocity)
 
 $$
-\overline{u}^{*} = \overline{u}^{\text{bt}} \quad \text{from Stage 2},
+\overline{{\bf u}}^{*} = \overline{{\bf u}}^{\text{bt}} \quad \text{from Stage 2},
 $$ (split-reset-barotropic-velocity)
 
 $$
-u^{*} = \overline{u}^{*} + u^{\prime *},
+{\bf u}^{*} = \overline{{\bf u}}^{*} + u^{\prime *},
 $$ (split-reset-full-velocity)
 
 $$
@@ -786,15 +803,15 @@ Diagnostic variables are then updated.
 After the final iteration,
 
 $$
-u^{\prime n+1} \quad \text{is obtained from Stage 1},
+{\bf u}^{\prime n+1} \quad \text{is obtained from Stage 1},
 $$ (split-final-baroclinic-velocity)
 
 $$
-\overline{u}^{n+1} = \overline{u}^{\text{bt}} \quad \text{from Stage 2},
+\overline{{\bf u}}^{n+1} = \overline{{\bf u}}^{\text{bt}} \quad \text{from Stage 2},
 $$ (split-final-barotropic-velocity)
 
 $$
-u^{n+1} = \overline{u}^{n+1} + u^{\prime n+1},
+{\bf u}^{n+1} = \overline{{\bf u}}^{n+1} + {\bf u}^{\prime n+1},
 $$ (split-final-full-velocity)
 
 $$
@@ -824,7 +841,7 @@ Compute the pressure $p$.
 Prepare variables before the first iteration:
 
 $$
-u^{*}_{e,k} = u^n_{e,k},
+{\bf u}^{*}_{e,k} = {\bf u}^n_{e,k},
 \qquad
 \tilde{W}^{*}_{i,k} = \tilde{W}^{n}_{i,k},
 \qquad
@@ -847,7 +864,7 @@ Compute $\Gamma_{e,k}^{*}$:
 $$
 \Gamma_{e,k}^{*}
 =
--[{\bf k}\cdot\nabla\times u_{e,k}]_e u_{e,k}^{\perp}
+-[{\bf k}\cdot\nabla\times {\bf u}_{e,k}]_e {\bf u}_{e,k}^{\perp}
 -[\nabla K]_e
 -
 \frac{1}{[\tilde{h}_{i,k}]_e}
@@ -864,24 +881,24 @@ $$
 = \sum_{k=0}^{K} \tilde{h}^{*}_{i,k}.
 $$ (unsplit-column-pseudo-thickness)
 
-Compute the Coriolis term using a centered treatment with two iterations. For $j=0,\ldots,\text{NBclIter}-1$, with the default value `NBclIter = 2`, compute $f_e u_{e,k}^{\perp *}$ from $u^{*}_{e,k}$:
+Compute the Coriolis term using a centered treatment with two iterations. For $j=0,\ldots,\text{NBclIter}-1$, with the default value `NBclIter = 2`, compute $f_e {\bf u}_{e,k}^{\perp *}$ from ${\bf u}^{*}_{e,k}$:
 
 $$
-u_{e,k}^{\perp *}
+{\bf u}_{e,k}^{\perp *}
 =
-\sum_{e'\in ECP(e)} \tilde{E}_{e,e'} f_{e'} u_{e',k}^{*}.
+\sum_{e'\in ECP(e)} \tilde{E}_{e,e'} f_{e'} {\bf u}_{e',k}^{*}.
 $$ (unsplit-coriolis)
 
 Advance the velocity:
 
 $$
-u_{e,k}^{n+1}
+{\bf u}_{e,k}^{n+1}
 =
-u_{e,k}^{n}
+{\bf u}_{e,k}^{n}
 +
 \Delta t
 \left(
--[f_v]_e u_{e,k}^{\perp *}
+-[f_v]_e {\bf u}_{e,k}^{\perp *}
 +
 \Gamma_{e,k}^{*}
 \right).
@@ -896,29 +913,29 @@ $$ (unsplit-gbar)
 Compute the midpoint velocity:
 
 $$
-u_{e,k}^{n+0.5}
+{\bf u}_{e,k}^{n+0.5}
 =
 \frac{1}{2}
-\left(u_{e,k}^{n}+u_{e,k}^{n+1}\right).
+\left({\bf u}_{e,k}^{n}+{\bf u}_{e,k}^{n+1}\right).
 $$ (unsplit-midpoint-velocity)
 
 #### 3.3.3 Stage 2: Barotropic velocity advance, explicitly subcycled
 
-For the unsplit time stepper, $\overline{u}=0$. This stage is skipped.
+For the unsplit time stepper, $\overline{{\bf u}}=0$. This stage is skipped.
 
 #### 3.3.4 Stage 3: Update tracers and diagnostics
 
-Compute $u_{e,k}^{\text{tr}}$:
+Compute ${\bf u}_{e,k}^{\text{tr}}$:
 
 $$
-u_{e,k}^{\text{tr}}
-= u_{e,k}^{n+0.5}
-+ u_{e,k}^{\text{bolus}*}.
+{\bf u}_{e,k}^{\text{tr}}
+= {\bf u}_{e,k}^{n+0.5}
++ {\bf u}_{e,k}^{\text{bolus}*}.
 $$ (unsplit-transport-velocity)
 
-Compute $\tilde{W}_{i,k}^{*}$ using $u_{e,k}^{\text{tr}}$.
+Compute $\tilde{W}_{i,k}^{*}$ using ${\bf u}_{e,k}^{\text{tr}}$.
 
-Compute pseudo thickness tendencies using $u_{e,k}^{\text{tr}}$:
+Compute pseudo thickness tendencies using ${\bf u}_{e,k}^{\text{tr}}$:
 
 $$
 \tilde{h}_{i,k}^{n+1}
@@ -927,7 +944,7 @@ $$
 -
 \Delta t\,
 \nabla \cdot
-\left([\tilde{h}_{k}^{*}]_e u_{e,k}^{\text{tr}}\right)
+\left([\tilde{h}_{k}^{*}]_e {\bf u}_{e,k}^{\text{tr}}\right)
 -
 \Delta t
 \left(
@@ -937,7 +954,7 @@ $$
 \right).
 $$ (unsplit-pseudo-thickness-update)
 
-Compute tracer tendencies using $u_{e,k}^{\text{tr}}$:
+Compute tracer tendencies using ${\bf u}_{e,k}^{\text{tr}}$:
 
 $$
 \varphi_{i,k}^{n+1}
@@ -949,7 +966,7 @@ $$
 \left([
 \tilde{h}_{i,k}^{*}]_e
 [\varphi_{i,k}^{*}]_e
-u_{e,k}^{\text{tr}}
+{\bf u}_{e,k}^{\text{tr}}
 \right)
 -
 \Delta t
@@ -965,7 +982,7 @@ $$ (unsplit-tracer-update)
 If iterating, reset the provisional variables as follows:
 
 $$
-u^{*} = u^{n+0.5} \quad \text{from Stage 1},
+{\bf u}^{*} = {\bf u}^{n+0.5} \quad \text{from Stage 1},
 $$ (unsplit-reset-velocity)
 
 $$
@@ -984,7 +1001,7 @@ Diagnostic variables are then updated.
 After the final iteration,
 
 $$
-u^{n+1} \quad \text{is obtained from Stage 1},
+{\bf u}^{n+1} \quad \text{is obtained from Stage 1},
 $$ (unsplit-final-velocity)
 
 $$

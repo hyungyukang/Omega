@@ -9,6 +9,9 @@ of the Omega configuration file:
     CalendarType: No Leap
     TimeStepper: Forward-Backward
     TimeStep: 0000_00:10:00
+    BtrTimeStepper: Predictor-Corrector
+    BtrTimeStep: 0000_00:00:30
+    NSuperCycle: 1
     StartTime: 0001-01-01_00:00:00
     StopTime: 0001-01-01_02:00:00
     RunDuration: none
@@ -30,6 +33,7 @@ The following time steppers are currently available:
 | Forward-Backward | forward-backward |
 | RungeKutta2 | second-order two-stage midpoint Runge Kutta method |
 | RungeKutta4 | classic fourth-order four-stage Runge Kutta method |
+| SE-RK2 | split-explicit RK2 framework |
 
 The time step refers to the main model time step used to advance the solution
 forward. The time step is specified as a formatted string and can be provided
@@ -42,6 +46,12 @@ in any of the following forms:
 
 Days, hours and minutes are optional but must be in order if included.
 Fractional seconds are optional.
+
+The BtrTimeStepper, BtrTimeStep, and NSuperCycle options are used by the
+split-explicit SE-RK2 framework. BtrTimeStepper selects the barotropic
+subcycle algorithm and currently defaults to Predictor-Corrector. BtrTimeStep
+sets the requested barotropic subcycle time step, and NSuperCycle sets the
+number of split-explicit supercycles within one model time step.
 
 The StartTime refers to the starting time for the simulation. It is in the
 format ``yyyy-mm-day_hh:mm:ss`` for year, month, day, hour, minute, second.

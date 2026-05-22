@@ -18,11 +18,15 @@
 ///    # Default is the No Leap (Gregorian calendar with no leap years)
 ///    CalendarType: No Leap
 ///    # Algorithm to use for the dynamics time integration
-///    # Supported options are Forward-Backward (default), RungeKutta2 and
-///    # RungeKutta4
+///    # Supported options are Forward-Backward (default), RungeKutta2,
+///    # RungeKutta4 and SE-RK2
 ///    TimeStepper: Forward-Backward
 ///    # Time step to use, in form of DDDD_hh:mm:ss (days, hours, minutes, secs)
 ///    TimeStep: 0000_00:10:00
+///    # Split-explicit options used by SE-RK2
+///    BtrTimeStepper: Predictor-Corrector
+///    BtrTimeStep: 0000_00:00:30
+///    NSuperCycle: 1
 ///    # Start time of full simulation (YYYY-MM-DD_hh:mm:ss)
 ///    StartTime: 0001-01-01_00:00:00
 ///    # Either stop time or run duration must be supplied with Duration
@@ -61,6 +65,7 @@ enum class TimeStepperType {
    ForwardBackward,
    RungeKutta4,
    RungeKutta2,
+   SplitExplicitRK2,
    Invalid
 };
 

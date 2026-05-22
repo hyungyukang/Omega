@@ -127,6 +127,64 @@ class PotentialVortHAdvOnEdge {
    Array1DI4 MaxLayerEdgeTop;
 };
 
+/// Coriolis acceleration on edges, f times tangential velocity reconstruction
+class CoriolisAccelerationOnEdge {
+ public:
+   /// constructor declaration
+   CoriolisAccelerationOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
+
+   /// The functor takes edge index, vertical chunk index, velocity on edges,
+   /// and Coriolis parameter on edges as inputs, outputs the acceleration array
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Accel, I4 IEdge,
+                                   I4 KChunk,
+                                   const Array2DReal &NormalVelEdge,
+                                   const Array1DReal &FEdge) const {
+
+      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
+      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+
+      Real AccelTmp[VecLength] = {0};
+
+      for (int J = 0; J < NEdgesOnEdge(IEdge); ++J) {
+         const I4 JEdge = EdgesOnEdge(IEdge, J);
+         for (int KVec = 0; KVec < KLen; ++KVec) {
+            const I4 K = KStart + KVec;
+            AccelTmp[KVec] += WeightsOnEdge(IEdge, J) *
+                              NormalVelEdge(JEdge, K) * FEdge(JEdge);
+         }
+      }
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K      = KStart + KVec;
+         Accel(IEdge, K) = AccelTmp[KVec];
+      }
+   }
+
+   /// The functor takes edge index, barotropic velocity on edges, and Coriolis
+   /// parameter on edges as inputs, outputs the barotropic acceleration array
+   KOKKOS_FUNCTION void operator()(const Array1DReal &Accel, I4 IEdge,
+                                   const Array1DReal &NormalVelEdge,
+                                   const Array1DReal &FEdge) const {
+
+      Real AccelTmp = 0._Real;
+
+      for (int J = 0; J < NEdgesOnEdge(IEdge); ++J) {
+         const I4 JEdge = EdgesOnEdge(IEdge, J);
+         AccelTmp += WeightsOnEdge(IEdge, J) * NormalVelEdge(JEdge) *
+                     FEdge(JEdge);
+      }
+
+      Accel(IEdge) = AccelTmp;
+   }
+
+ private:
+   Array1DI4 NEdgesOnEdge;
+   Array2DI4 EdgesOnEdge;
+   Array2DReal WeightsOnEdge;
+   Array1DI4 MinLayerEdgeBot;
+   Array1DI4 MaxLayerEdgeTop;
+};
+
 /// Gradient of kinetic energy defined on edges, for momentum equation
 class KEGradOnEdge {
  public:

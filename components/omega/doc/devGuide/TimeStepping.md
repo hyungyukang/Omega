@@ -13,7 +13,7 @@ enable sharing of common code and data, every time stepper inherits from the
 An enumeration listing all implemented schemes is provided. It needs to be extended every time a new time stepper
 is added. It is used to identify a time stepper at run time.
 ```c++
-enum class TimeStepperType { ForwardBackward, RungeKutta4, RungeKutta2 };
+enum class TimeStepperType { ForwardBackward, RungeKutta4, RungeKutta2, SplitExplicitRK2 };
 ```
 
 ## TimeStepper base class
@@ -170,3 +170,4 @@ The following time steppers are currently implemented
 | ForwardBackwardStepper | TimeStepperType::ForwardBackward | forward-backward |
 | RungeKutta2Stepper | TimeStepperType::RungeKutta2 | second-order two-stage midpoint Runge Kutta method |
 | RungeKutta4Stepper | TimeStepperType::RungeKutta4 | classic fourth-order four-stage Runge Kutta method |
+| SplitExplicitRK2Stepper | TimeStepperType::SplitExplicitRK2 | split-explicit RK2 framework |

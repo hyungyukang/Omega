@@ -457,10 +457,16 @@ int timeStepperTest(const std::string &MeshFile = "OmegaMesh.nc") {
    Err += testTimeStepper("RungeKutta2", TimeStepperType::RungeKutta2,
                           ExpectedOrder, ATol);
 
+   ExpectedOrder = 2;
+   ATol          = 0.1;
+   Err += testTimeStepper("SE-RK2", TimeStepperType::SplitExplicitRK2,
+                          ExpectedOrder, ATol);
+
    // Verify stepper operates correctly without StopTime/EndAlarm
 
    Err += testOptionalStopTime("ForwardBackward",
                                TimeStepperType::ForwardBackward);
+   Err += testOptionalStopTime("SE-RK2", TimeStepperType::SplitExplicitRK2);
 
    if (Err == 0) {
       LOG_INFO("TimeStepperTest: Successful completion");

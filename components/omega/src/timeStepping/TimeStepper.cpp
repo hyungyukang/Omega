@@ -11,6 +11,7 @@
 #include "Logging.h"
 #include "RungeKutta2Stepper.h"
 #include "RungeKutta4Stepper.h"
+#include "SplitExplicitRK2Stepper.h"
 
 namespace OMEGA {
 //------------------------------------------------------------------------------
@@ -39,9 +40,11 @@ TimeStepperType getTimeStepperFromStr(const std::string &InString) {
       TimeStepperChoice = TimeStepperType::RungeKutta4;
    } else if (InString == "RungeKutta2") {
       TimeStepperChoice = TimeStepperType::RungeKutta2;
+   } else if (InString == "SE-RK2" || InString == "SplitExplicitRK2") {
+      TimeStepperChoice = TimeStepperType::SplitExplicitRK2;
    } else {
       ABORT_ERROR("TimeStepper should be one of 'Forward-Backward', "
-                  "'RungeKutta4' or 'RungeKutta2' but got {}:",
+                  "'RungeKutta4', 'RungeKutta2' or 'SE-RK2' but got {}:",
                   InString);
    }
 
@@ -175,6 +178,10 @@ TimeStepper *TimeStepper::create(
    case TimeStepperType::RungeKutta2:
       NewTimeStepper =
           new RungeKutta2Stepper(InName, InTimeStep, InStartTime, InStopTime);
+      break;
+   case TimeStepperType::SplitExplicitRK2:
+      NewTimeStepper = new SplitExplicitRK2Stepper(InName, InTimeStep,
+                                                   InStartTime, InStopTime);
       break;
    case TimeStepperType::Invalid:
       ABORT_ERROR("Invalid time stepping method");

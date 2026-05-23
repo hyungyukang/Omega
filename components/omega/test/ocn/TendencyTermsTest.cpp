@@ -421,9 +421,10 @@ int testThickFluxDiv(int NVertLayers, Real RTol) {
    Array2DReal NumThickFluxDiv("NumThickFluxDiv", Mesh->NCellsOwned,
                                NVertLayers);
    PseudoThicknessFluxDivOnCell ThickFluxDivOnC(Mesh, VCoord);
-   parallelFor(
-       {Mesh->NCellsOwned, NVertLayers}, KOKKOS_LAMBDA(int ICell, int KLayer) {
-          ThickFluxDivOnC(NumThickFluxDiv, ICell, KLayer, OnesEdge,
+   parallelForOuter(
+       LaunchConfig({Mesh->NCellsOwned}, TeamScratch<Real>(NVertLayers)),
+       KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
+          ThickFluxDivOnC(Team, NumThickFluxDiv, ICell, OnesEdge,
                           ThickFluxEdge);
        });
 
@@ -499,9 +500,10 @@ int testPotVortHAdv(int NVertLayers, Real RTol) {
    Array2DReal NumPotVortHAdv("NumPotVortHAdv", Mesh->NEdgesOwned, NVertLayers);
 
    PotentialVortHAdvOnEdge PotVortHAdvOnE(Mesh, VCoord);
-   parallelFor(
-       {Mesh->NEdgesOwned, NVertLayers}, KOKKOS_LAMBDA(int IEdge, int KLayer) {
-          PotVortHAdvOnE(NumPotVortHAdv, IEdge, KLayer, NormRelVortEdge,
+   parallelForOuter(
+       LaunchConfig({Mesh->NEdgesOwned}, TeamScratch<Real>(NVertLayers)),
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          PotVortHAdvOnE(Team, NumPotVortHAdv, IEdge, NormRelVortEdge,
                          NormPlanetVortEdge, PseudoThickEdge, NormVelEdge);
        });
 
@@ -550,9 +552,9 @@ int testKEGrad(int NVertLayers, Real RTol) {
    Array2DReal NumKEGrad("NumKEGrad", Mesh->NEdgesOwned, NVertLayers);
 
    KEGradOnEdge KEGradOnE(Mesh, VCoord);
-   parallelFor(
-       {Mesh->NEdgesOwned, NVertLayers}, KOKKOS_LAMBDA(int IEdge, int KLayer) {
-          KEGradOnE(NumKEGrad, IEdge, KLayer, KECell);
+   parallelForOuter(
+       {Mesh->NEdgesOwned}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          KEGradOnE(Team, NumKEGrad, IEdge, KECell);
        });
 
    // Compute errors
@@ -598,9 +600,9 @@ int testSSHGrad(int NVertLayers, Real RTol) {
    Array2DReal NumSSHGrad("NumSSHGrad", Mesh->NEdgesOwned, NVertLayers);
 
    SSHGradOnEdge SSHGradOnE(Mesh, VCoord);
-   parallelFor(
-       {Mesh->NEdgesOwned, NVertLayers}, KOKKOS_LAMBDA(int IEdge, int KLayer) {
-          SSHGradOnE(NumSSHGrad, IEdge, KLayer, SSHCell);
+   parallelForOuter(
+       {Mesh->NEdgesOwned}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          SSHGradOnE(Team, NumSSHGrad, IEdge, SSHCell);
        });
 
    // Compute errors
@@ -660,9 +662,9 @@ int testVelDiff(int NVertLayers, Real RTol) {
    // Compute numerical result
    Array2DReal NumVelDiff("NumVelDiff", Mesh->NEdgesOwned, NVertLayers);
 
-   parallelFor(
-       {Mesh->NEdgesOwned, NVertLayers}, KOKKOS_LAMBDA(int IEdge, int KLayer) {
-          VelDiffOnE(NumVelDiff, IEdge, KLayer, DivCell, RVortVertex);
+   parallelForOuter(
+       {Mesh->NEdgesOwned}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          VelDiffOnE(Team, NumVelDiff, IEdge, DivCell, RVortVertex);
        });
 
    // Compute errors
@@ -731,9 +733,9 @@ int testVelHyperDiff(int NVertLayers, Real RTol) {
    Array2DReal NumVelHyperDiff("NumVelHyperDiff", Mesh->NEdgesOwned,
                                NVertLayers);
 
-   parallelFor(
-       {Mesh->NEdgesOwned, NVertLayers}, KOKKOS_LAMBDA(int IEdge, int KLayer) {
-          VelHyperDiffOnE(NumVelHyperDiff, IEdge, KLayer, DivCell, RVortVertex);
+   parallelForOuter(
+       {Mesh->NEdgesOwned}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          VelHyperDiffOnE(Team, NumVelHyperDiff, IEdge, DivCell, RVortVertex);
        });
 
    // Compute errors
@@ -801,9 +803,9 @@ int testSfcStressForcing(int NVertLayers) {
 
    SfcStressForcingOnEdge SfcStressForcingOnE(Mesh, VCoord);
 
-   parallelFor(
-       {Mesh->NEdgesOwned, NVertLayers}, KOKKOS_LAMBDA(int IEdge, int KLayer) {
-          SfcStressForcingOnE(NumSfcStressForcing, IEdge, KLayer,
+   parallelForOuter(
+       {Mesh->NEdgesOwned}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          SfcStressForcingOnE(Team, NumSfcStressForcing, IEdge,
                               NormalStressEdge, PseudoThickEdge);
        });
 
@@ -1118,16 +1120,18 @@ int testTracerHorzAdvOnCell(int NVertLayers, int NTracers, Real RTol) {
    TrHorzAdvOnC.ForceLowOrder = true;
    TrHorzAdvOnC.init();
 
-   parallelFor(
-       {NTracers, Mesh->NEdgesAll, NVertLayers},
-       KOKKOS_LAMBDA(int L, int IEdge, int KLayer) {
-          TrHorzAdvOnC(L, IEdge, KLayer, TrCell, ThickEdge, NormalVelocity);
+   parallelForOuter(
+       LaunchConfig({NTracers, Mesh->NEdgesAll},
+                    TeamScratch<Real>(NVertLayers)),
+       KOKKOS_LAMBDA(int L, int IEdge, const TeamMember &Team) {
+          TrHorzAdvOnC(Team, L, IEdge, TrCell, ThickEdge, NormalVelocity);
        });
 
-   parallelFor(
-       {NTracers, Mesh->NCellsOwned, NVertLayers},
-       KOKKOS_LAMBDA(int L, int ICell, int KLayer) {
-          TrHorzAdvOnC(NumTrFluxDiv, L, ICell, KLayer);
+   parallelForOuter(
+       LaunchConfig({NTracers, Mesh->NCellsOwned},
+                    TeamScratch<Real>(NVertLayers)),
+       KOKKOS_LAMBDA(int L, int ICell, const TeamMember &Team) {
+          TrHorzAdvOnC(Team, NumTrFluxDiv, L, ICell);
        });
 
    ErrorMeasures TrHAdvErrors;
@@ -1185,11 +1189,11 @@ int testTracerDiffOnCell(int NVertLayers, int NTracers, Real RTol) {
    TracerDiffOnCell TrDiffOnC(Mesh, VCoord);
    TrDiffOnC.EddyDiff2 = EddyDiff2;
 
-   parallelFor(
-       {NTracers, Mesh->NCellsOwned, NVertLayers},
-       KOKKOS_LAMBDA(int L, int ICell, int KLayer) {
-          TrDiffOnC(NumTracerDiff, L, ICell, KLayer, TracerCell,
-                    PseudoThickEdge);
+   parallelForOuter(
+       LaunchConfig({NTracers, Mesh->NCellsOwned},
+                    TeamScratch<Real>(NVertLayers)),
+       KOKKOS_LAMBDA(int L, int ICell, const TeamMember &Team) {
+          TrDiffOnC(Team, NumTracerDiff, L, ICell, TracerCell, PseudoThickEdge);
        });
 
    ErrorMeasures TrDiffErrors;
@@ -1239,10 +1243,11 @@ int testTracerHyperDiffOnCell(int NVertLayers, int NTracers, Real RTol) {
                                   Mesh->NCellsOwned, NVertLayers);
    TracerHyperDiffOnCell TrHypDiffOnC(Mesh, VCoord);
    TrHypDiffOnC.EddyDiff4 = EddyDiff4;
-   parallelFor(
-       {NTracers, Mesh->NCellsOwned, NVertLayers},
-       KOKKOS_LAMBDA(int L, int ICell, int KLayer) {
-          TrHypDiffOnC(NumTracerHyperDiff, L, ICell, KLayer, TrDel2Cell);
+   parallelForOuter(
+       LaunchConfig({NTracers, Mesh->NCellsOwned},
+                    TeamScratch<Real>(NVertLayers)),
+       KOKKOS_LAMBDA(int L, int ICell, const TeamMember &Team) {
+          TrHypDiffOnC(Team, NumTracerHyperDiff, L, ICell, TrDel2Cell);
        });
 
    ErrorMeasures TrHyperDiffErrors;

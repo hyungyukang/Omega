@@ -32,35 +32,37 @@ class PseudoThicknessFluxDivOnCell {
 
    /// The functor takes cell index, vertical chunk index, and pseudo-thickness
    /// flux array as inputs, outputs the tendency array
-   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 ICell, I4 KChunk,
+   KOKKOS_FUNCTION void operator()(const TeamMember &Team,
+                                   const Array2DReal &Tend, I4 ICell,
                                    const Array2DReal &PseudoThicknessFlux,
                                    const Array2DReal &NormalVelEdge) const {
 
-      const I4 KStartCell = chunkStart(KChunk, MinLayerCell(ICell));
-      const I4 KLenCell = chunkLength(KChunk, KStartCell, MaxLayerCell(ICell));
-      const I4 KEndCell = KStartCell + KLenCell - 1;
       const Real InvAreaCell = 1._Real / AreaCell(ICell);
 
-      Real DivTmp[VecLength] = {0};
+      ScratchArray1DReal DivTmp(teamScratch(Team), NVertLayers);
+      parallelForInner(
+          Team, NVertLayers, INNER_LAMBDA(int K) { DivTmp(K) = 0; });
 
       for (int J = 0; J < NEdgesOnCell(ICell); ++J) {
          const I4 JEdge = EdgesOnCell(ICell, J);
 
-         const I4 KStartEdge = Kokkos::max(KStartCell, MinLayerEdgeBot(JEdge));
-         const I4 KEndEdge   = Kokkos::min(KEndCell, MaxLayerEdgeTop(JEdge));
+         const int MinLyrEdgeBot = MinLayerEdgeBot(JEdge);
+         const int MaxLyrEdgeTop = MaxLayerEdgeTop(JEdge);
 
-         for (int K = KStartEdge; K <= KEndEdge; ++K) {
-            const I4 KVec = K - KStartCell;
-            DivTmp[KVec] -= DvEdge(JEdge) * EdgeSignOnCell(ICell, J) *
-                            PseudoThicknessFlux(JEdge, K) *
-                            NormalVelEdge(JEdge, K) * InvAreaCell;
-         }
+         parallelForInner(
+             Team, Range{MinLyrEdgeBot, MaxLyrEdgeTop}, INNER_LAMBDA(int K) {
+                DivTmp(K) -= DvEdge(JEdge) * EdgeSignOnCell(ICell, J) *
+                             PseudoThicknessFlux(JEdge, K) *
+                             NormalVelEdge(JEdge, K) * InvAreaCell;
+             });
       }
 
-      for (int KVec = 0; KVec < KLenCell; ++KVec) {
-         const I4 K = KStartCell + KVec;
-         Tend(ICell, K) -= DivTmp[KVec];
-      }
+      const int MinLyrCell = MinLayerCell(ICell);
+      const int MaxLyrCell = MaxLayerCell(ICell);
+
+      parallelForInner(
+          Team, Range{MinLyrCell, MaxLyrCell},
+          INNER_LAMBDA(int K) { Tend(ICell, K) -= DivTmp(K); });
    }
 
  private:
@@ -69,6 +71,7 @@ class PseudoThicknessFluxDivOnCell {
    Array1DReal DvEdge;
    Array1DReal AreaCell;
    Array2DReal EdgeSignOnCell;
+   I4 NVertLayers;
    Array1DI4 MinLayerCell;
    Array1DI4 MaxLayerCell;
    Array1DI4 MinLayerEdgeBot;
@@ -88,40 +91,47 @@ class PotentialVortHAdvOnEdge {
    /// normalized relative vorticity, normalized planetary vorticity, layer
    /// thickness on edges, and normal velocity on edges as inputs,
    /// outputs the tendency array
-   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+   KOKKOS_FUNCTION void operator()(const TeamMember &Team,
+                                   const Array2DReal &Tend, I4 IEdge,
                                    const Array2DReal &NormRVortEdge,
                                    const Array2DReal &NormFEdge,
                                    const Array2DReal &FluxPseudoThickEdge,
                                    const Array2DReal &NormVelEdge) const {
 
-      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
-      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
-      Real VortTmp[VecLength] = {0};
+      ScratchArray1DReal VortTmp(teamScratch(Team), NVertLayers);
+
+      const int KMin = MinLayerEdgeBot(IEdge);
+      const int KMax = MaxLayerEdgeTop(IEdge);
+
+      parallelForInner(
+          Team, NVertLayers, INNER_LAMBDA(int K) { VortTmp(K) = 0; });
 
       for (int J = 0; J < NEdgesOnEdge(IEdge); ++J) {
          I4 JEdge = EdgesOnEdge(IEdge, J);
-         for (int KVec = 0; KVec < KLen; ++KVec) {
-            const I4 K    = KStart + KVec;
-            Real NormVort = (NormRVortEdge(IEdge, K) + NormFEdge(IEdge, K) +
-                             NormRVortEdge(JEdge, K) + NormFEdge(JEdge, K)) *
-                            0.5_Real;
+         parallelForInner(
+             Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+                Real NormVort =
+                    (NormRVortEdge(IEdge, K) + NormFEdge(IEdge, K) +
+                     NormRVortEdge(JEdge, K) + NormFEdge(JEdge, K)) *
+                    0.5_Real;
 
-            VortTmp[KVec] += WeightsOnEdge(IEdge, J) *
-                             FluxPseudoThickEdge(JEdge, K) *
-                             NormVelEdge(JEdge, K) * NormVort;
-         }
+                VortTmp(K) += WeightsOnEdge(IEdge, J) *
+                              FluxPseudoThickEdge(JEdge, K) *
+                              NormVelEdge(JEdge, K) * NormVort;
+             });
       }
 
-      for (int KVec = 0; KVec < KLen; ++KVec) {
-         const I4 K = KStart + KVec;
-         Tend(IEdge, K) += EdgeMask(IEdge, K) * VortTmp[KVec];
-      }
+      parallelForInner(
+          Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+             Tend(IEdge, K) += EdgeMask(IEdge, K) * VortTmp(K);
+          });
    }
 
  private:
    Array1DI4 NEdgesOnEdge;
    Array2DI4 EdgesOnEdge;
    Array2DReal WeightsOnEdge;
+   I4 NVertLayers;
    Array2DReal EdgeMask;
    Array1DI4 MinLayerEdgeBot;
    Array1DI4 MaxLayerEdgeTop;
@@ -137,20 +147,24 @@ class KEGradOnEdge {
 
    /// The functor takes edge index, vertical chunk index, and kinetic energy
    /// array as inputs, outputs the tendency array
-   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+   KOKKOS_FUNCTION void operator()(const TeamMember &Team,
+                                   const Array2DReal &Tend, I4 IEdge,
                                    const Array2DReal &KECell) const {
 
-      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
-      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
       const I4 JCell0 = CellsOnEdge(IEdge, 0);
       const I4 JCell1 = CellsOnEdge(IEdge, 1);
+
       const Real InvDcEdge = 1._Real / DcEdge(IEdge);
 
-      for (int KVec = 0; KVec < KLen; ++KVec) {
-         const I4 K = KStart + KVec;
-         Tend(IEdge, K) -= EdgeMask(IEdge, K) *
-                           (KECell(JCell1, K) - KECell(JCell0, K)) * InvDcEdge;
-      }
+      const int KMin = MinLayerEdgeBot(IEdge);
+      const int KMax = MaxLayerEdgeTop(IEdge);
+
+      parallelForInner(
+          Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+             Tend(IEdge, K) -= EdgeMask(IEdge, K) *
+                               (KECell(JCell1, K) - KECell(JCell0, K)) *
+                               InvDcEdge;
+          });
    }
 
  private:
@@ -173,20 +187,23 @@ class SSHGradOnEdge {
 
    /// The functor takes edge index, vertical chunk index, and array of
    /// pseudo-thickness/SSH, outputs tendency array
-   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+   KOKKOS_FUNCTION void operator()(const TeamMember &Team,
+                                   const Array2DReal &Tend, I4 IEdge,
                                    const Array1DReal &SshCell) const {
 
-      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
-      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
       const I4 ICell0 = CellsOnEdge(IEdge, 0);
       const I4 ICell1 = CellsOnEdge(IEdge, 1);
+
       const Real InvDcEdge = 1._Real / DcEdge(IEdge);
 
-      for (int KVec = 0; KVec < KLen; ++KVec) {
-         const I4 K = KStart + KVec;
-         Tend(IEdge, K) -= EdgeMask(IEdge, K) * Gravity *
-                           (SshCell(ICell1) - SshCell(ICell0)) * InvDcEdge;
-      }
+      const int KMin = MinLayerEdgeBot(IEdge);
+      const int KMax = MaxLayerEdgeTop(IEdge);
+
+      parallelForInner(
+          Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+             Tend(IEdge, K) -= EdgeMask(IEdge, K) * Gravity *
+                               (SshCell(ICell1) - SshCell(ICell0)) * InvDcEdge;
+          });
    }
 
  private:
@@ -210,12 +227,11 @@ class VelocityDiffusionOnEdge {
    /// The functor takes edge index, vertical chunk index, and arrays for
    /// divergence of horizontal velocity (defined at cell centers) and relative
    /// vorticity (defined at vertices), outputs tendency array
-   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+   KOKKOS_FUNCTION void operator()(const TeamMember &Team,
+                                   const Array2DReal &Tend, I4 IEdge,
                                    const Array2DReal &DivCell,
                                    const Array2DReal &RVortVertex) const {
 
-      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
-      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
       const I4 ICell0 = CellsOnEdge(IEdge, 0);
       const I4 ICell1 = CellsOnEdge(IEdge, 1);
 
@@ -225,16 +241,19 @@ class VelocityDiffusionOnEdge {
       const Real DcEdgeInv = 1._Real / DcEdge(IEdge);
       const Real DvEdgeInv = 1._Real / DvEdge(IEdge);
 
-      for (int KVec = 0; KVec < KLen; ++KVec) {
-         const I4 K = KStart + KVec;
-         const Real Del2U =
-             ((DivCell(ICell1, K) - DivCell(ICell0, K)) * DcEdgeInv -
-              (RVortVertex(IVertex1, K) - RVortVertex(IVertex0, K)) *
-                  DvEdgeInv);
+      const int KMin = MinLayerEdgeBot(IEdge);
+      const int KMax = MaxLayerEdgeTop(IEdge);
 
-         Tend(IEdge, K) +=
-             EdgeMask(IEdge, K) * ViscDel2 * MeshScalingDel2(IEdge) * Del2U;
-      }
+      parallelForInner(
+          Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+             const Real Del2U =
+                 ((DivCell(ICell1, K) - DivCell(ICell0, K)) * DcEdgeInv -
+                  (RVortVertex(IVertex1, K) - RVortVertex(IVertex0, K)) *
+                      DvEdgeInv);
+
+             Tend(IEdge, K) +=
+                 EdgeMask(IEdge, K) * ViscDel2 * MeshScalingDel2(IEdge) * Del2U;
+          });
    }
 
  private:
@@ -262,12 +281,11 @@ class VelocityHyperDiffOnEdge {
    /// The functor takes the edge index, vertical chunk index, and arrays for
    /// the laplacian of divergence of horizontal velocity and the laplacian of
    /// the relative vorticity, outputs tendency array
-   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+   KOKKOS_FUNCTION void operator()(const TeamMember &Team,
+                                   const Array2DReal &Tend, I4 IEdge,
                                    const Array2DReal &Del2DivCell,
                                    const Array2DReal &Del2RVortVertex) const {
 
-      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
-      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
       const I4 ICell0 = CellsOnEdge(IEdge, 0);
       const I4 ICell1 = CellsOnEdge(IEdge, 1);
 
@@ -277,17 +295,22 @@ class VelocityHyperDiffOnEdge {
       const Real DcEdgeInv = 1._Real / DcEdge(IEdge);
       const Real DvEdgeInv = 1._Real / DvEdge(IEdge);
 
-      for (int KVec = 0; KVec < KLen; ++KVec) {
-         const I4 K = KStart + KVec;
-         const Real Del2U =
-             (DivFactor * (Del2DivCell(ICell1, K) - Del2DivCell(ICell0, K)) *
-                  DcEdgeInv -
-              (Del2RVortVertex(IVertex1, K) - Del2RVortVertex(IVertex0, K)) *
-                  DvEdgeInv);
+      const int KMin = MinLayerEdgeBot(IEdge);
+      const int KMax = MaxLayerEdgeTop(IEdge);
 
-         Tend(IEdge, K) -=
-             EdgeMask(IEdge, K) * ViscDel4 * MeshScalingDel4(IEdge) * Del2U;
-      }
+      parallelForInner(
+          Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+             const Real Del2U =
+                 (DivFactor *
+                      (Del2DivCell(ICell1, K) - Del2DivCell(ICell0, K)) *
+                      DcEdgeInv -
+                  (Del2RVortVertex(IVertex1, K) -
+                   Del2RVortVertex(IVertex0, K)) *
+                      DvEdgeInv);
+
+             Tend(IEdge, K) -=
+                 EdgeMask(IEdge, K) * ViscDel4 * MeshScalingDel4(IEdge) * Del2U;
+          });
    }
 
  private:
@@ -311,21 +334,27 @@ class SfcStressForcingOnEdge {
 
    /// The functor takes the edge index, vertical chunk index, and arrays for
    /// normal surface stress and edge pseudo-thickness, outputs tendency array
-   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+   KOKKOS_FUNCTION void operator()(const TeamMember &Team,
+                                   const Array2DReal &Tend, I4 IEdge,
                                    const Array1DReal &NormalStressEdge,
                                    const Array2DReal &PseudoThickEdge) const {
-      if (KChunk == 0) {
-         const I4 K = MinLayerEdgeBot(IEdge);
+      const I4 KMin = MinLayerEdgeBot(IEdge);
+      const I4 KMax = MaxLayerEdgeTop(IEdge);
 
-         const Real InvThickEdge = 1._Real / PseudoThickEdge(IEdge, K);
-         Tend(IEdge, K) += EdgeMask(IEdge, K) * InvThickEdge *
-                           NormalStressEdge(IEdge) / RhoSw;
-      }
+      parallelForInner(
+          Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+             if (K == KMin) {
+                const Real InvThickEdge = 1._Real / PseudoThickEdge(IEdge, K);
+                Tend(IEdge, K) += EdgeMask(IEdge, K) * InvThickEdge *
+                                  NormalStressEdge(IEdge) / RhoSw;
+             }
+          });
    }
 
  private:
    Array2DReal EdgeMask;
    Array1DI4 MinLayerEdgeBot;
+   Array1DI4 MaxLayerEdgeTop;
 };
 
 /// Bottom drag
@@ -381,62 +410,93 @@ class TracerHorzAdvOnCell {
    Real Coef3rdOrder = 0.25;
    TracerHorzAdvOnCell(const HorzMesh *Mesh, const VertCoord *VCoord);
    void init();
-   KOKKOS_FUNCTION void operator()(const I4 L, const I4 IEdge, const I4 KChunk,
+   KOKKOS_FUNCTION void operator()(const TeamMember &Team, const I4 L,
+                                   const I4 IEdge,
                                    const Array3DReal &TracerCell,
                                    const Array2DReal &FluxPseudoThickEdge,
                                    const Array2DReal &NormVelEdge) const {
-      const I4 KStart = KChunk * VecLength;
-      const I4 KEnd   = KStart + VecLength;
-      for (int K = KStart; K < KEnd; ++K)
-         HighOrderFlxHorz(L, IEdge, K) = 0;
+
+      ScratchArray1DReal FlxTmp(teamScratch(Team), NVertLayers);
+
+      const auto LTracerCell =
+          Kokkos::subview(TracerCell, L, Kokkos::ALL, Kokkos::ALL);
+
+      const int KMin = MinLayerEdgeBot(IEdge);
+      const int KMax = MaxLayerEdgeTop(IEdge);
+
+      parallelForInner(
+          Team, NVertLayers, INNER_LAMBDA(int K) { FlxTmp(K) = 0; });
 
       // Stay at low order at boundaries
-      for (int K = KStart; K < KEnd; ++K) {
-         const I4 JCell0 = CellsOnEdge(IEdge, 0);
-         const I4 JCell1 = CellsOnEdge(IEdge, 1);
-         const Real NormalThicknessFlux =
-             FluxPseudoThickEdge(IEdge, K) * NormVelEdge(IEdge, K);
-         const Real TracerWgt = DvEdge(IEdge) * 0.5_Real * NormalThicknessFlux;
-         HighOrderFlxHorz(L, IEdge, K) +=
-             TracerWgt * (1._Real - AdvMaskHighOrder(IEdge, K)) *
-             (TracerCell(L, JCell1, K) + TracerCell(L, JCell0, K));
-      }
+      parallelForInner(
+          Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+             const I4 JCell0 = CellsOnEdge(IEdge, 0);
+             const I4 JCell1 = CellsOnEdge(IEdge, 1);
+             const Real NormalThicknessFlux =
+                 FluxPseudoThickEdge(IEdge, K) * NormVelEdge(IEdge, K);
+             const Real TracerWgt =
+                 DvEdge(IEdge) * 0.5_Real * NormalThicknessFlux;
+             FlxTmp(K) += TracerWgt * (1._Real - AdvMaskHighOrder(IEdge, K)) *
+                          (LTracerCell(JCell1, K) + LTracerCell(JCell0, K));
+          });
 
       // High order (3rd or 4th) fluxes elsewhere when requested
       //    - If HorzTracerFluxOrder = 2, NAdvCellsForEdge = 0 and
       //      this loop is skipped.
       for (int I = 0; I < NAdvCellsForEdge(IEdge); ++I) {
          const I4 ICell = AdvCellsForEdge(IEdge, I);
-         for (int K = KStart; K < KEnd; ++K) {
-            const Real NormalThicknessFlux =
-                FluxPseudoThickEdge(IEdge, K) * NormVelEdge(IEdge, K);
-            const Real TracerWgt =
-                (AdvCoefs(I, IEdge) +
-                 Coef3rdOrder * std::copysign(1._Real, NormalThicknessFlux) *
-                     AdvCoefs3rd(I, IEdge)) *
-                NormalThicknessFlux;
-            HighOrderFlxHorz(L, IEdge, K) += TracerWgt *
-                                             TracerCell(L, ICell, K) *
-                                             AdvMaskHighOrder(IEdge, K);
-         }
+         parallelForInner(
+             Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+                const Real NormalThicknessFlux =
+                    FluxPseudoThickEdge(IEdge, K) * NormVelEdge(IEdge, K);
+                const Real TracerWgt =
+                    (AdvCoefs(I, IEdge) +
+                     Coef3rdOrder *
+                         std::copysign(1._Real, NormalThicknessFlux) *
+                         AdvCoefs3rd(I, IEdge)) *
+                    NormalThicknessFlux;
+                FlxTmp(K) += TracerWgt * LTracerCell(ICell, K) *
+                             AdvMaskHighOrder(IEdge, K);
+             });
       }
+
+      const auto LHighOrderFlxHorz =
+          Kokkos::subview(HighOrderFlxHorz, L, Kokkos::ALL, Kokkos::ALL);
+
+      parallelForInner(
+          Team, Range{KMin, KMax},
+          INNER_LAMBDA(int K) { LHighOrderFlxHorz(IEdge, K) = FlxTmp(K); });
    }
 
-   KOKKOS_FUNCTION void operator()(const Array3DReal &Tend, const I4 L,
-                                   const I4 ICell, const I4 KChunk) const {
-      const I4 KStart        = KChunk * VecLength;
-      const I4 KEnd          = KStart + VecLength;
+   KOKKOS_FUNCTION void operator()(const TeamMember &Team,
+                                   const Array3DReal &Tend, const I4 L,
+                                   const I4 ICell) const {
+
+      const auto LTend = Kokkos::subview(Tend, L, Kokkos::ALL, Kokkos::ALL);
+      const auto LHighOrderFlxHorz =
+          Kokkos::subview(HighOrderFlxHorz, L, Kokkos::ALL, Kokkos::ALL);
+
       const Real InvAreaCell = 1._Real / AreaCell(ICell);
-      for (int K = KStart; K < KEnd; ++K)
-         Tend(L, ICell, K) = 0;
+
+      ScratchArray1DReal TendTmp(teamScratch(Team), NVertLayers);
+      parallelForInner(
+          Team, NVertLayers, INNER_LAMBDA(int K) { TendTmp(K) = 0; });
+
+      const int KMin = MinLayerCell(ICell);
+      const int KMax = MaxLayerCell(ICell);
 
       for (int I = 0; I < NEdgesOnCell(ICell); ++I) {
          const I4 IEdge = EdgesOnCell(ICell, I);
-         for (int K = KStart; K < KEnd; ++K) {
-            Tend(L, ICell, K) += EdgeSignOnCell(ICell, I) *
-                                 HighOrderFlxHorz(L, IEdge, K) * InvAreaCell;
-         }
+         parallelForInner(
+             Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+                TendTmp(K) += EdgeSignOnCell(ICell, I) *
+                              LHighOrderFlxHorz(IEdge, K) * InvAreaCell;
+             });
       }
+
+      parallelForInner(
+          Team, Range{KMin, KMax},
+          INNER_LAMBDA(int K) { LTend(ICell, K) += TendTmp(K); });
    }
 
  private:
@@ -455,6 +515,12 @@ class TracerHorzAdvOnCell {
    Array2DReal EdgeSignOnCell;
    Array1DReal DvEdge;
    Array1DReal AreaCell;
+
+   I4 NVertLayers;
+   Array1DI4 MinLayerCell;
+   Array1DI4 MaxLayerCell;
+   Array1DI4 MinLayerEdgeBot;
+   Array1DI4 MaxLayerEdgeTop;
 };
 
 // Tracer horizontal diffusion term
@@ -467,21 +533,22 @@ class TracerDiffOnCell {
    TracerDiffOnCell(const HorzMesh *Mesh, const VertCoord *VCoord);
 
    KOKKOS_FUNCTION void
-   operator()(const Array3DReal &Tend, I4 L, I4 ICell, I4 KChunk,
+   operator()(const TeamMember &Team, const Array3DReal &Tend, I4 L, I4 ICell,
               const Array3DReal &TracerCell,
               const Array2DReal &MeanPseudoThickEdge) const {
 
-      const I4 KStartCell = chunkStart(KChunk, MinLayerCell(ICell));
-      const I4 KLenCell = chunkLength(KChunk, KStartCell, MaxLayerCell(ICell));
-      const I4 KEndCell = KStartCell + KLenCell - 1;
+      const auto LTend = Kokkos::subview(Tend, L, Kokkos::ALL, Kokkos::ALL);
+      const auto LTracerCell =
+          Kokkos::subview(TracerCell, L, Kokkos::ALL, Kokkos::ALL);
+
       const Real InvAreaCell = 1._Real / AreaCell(ICell);
 
-      Real DiffTmp[VecLength] = {0};
+      ScratchArray1DReal DiffTmp(teamScratch(Team), NVertLayers);
+      parallelForInner(
+          Team, NVertLayers, INNER_LAMBDA(int K) { DiffTmp(K) = 0; });
 
       for (int J = 0; J < NEdgesOnCell(ICell); ++J) {
-         const I4 JEdge      = EdgesOnCell(ICell, J);
-         const I4 KStartEdge = Kokkos::max(KStartCell, MinLayerEdgeBot(JEdge));
-         const I4 KEndEdge   = Kokkos::min(KEndCell, MaxLayerEdgeTop(JEdge));
+         const I4 JEdge = EdgesOnCell(ICell, J);
 
          const I4 JCell0 = CellsOnEdge(JEdge, 0);
          const I4 JCell1 = CellsOnEdge(JEdge, 1);
@@ -489,19 +556,26 @@ class TracerDiffOnCell {
          const Real RTemp =
              MeshScalingDel2(JEdge) * DvEdge(JEdge) / DcEdge(JEdge);
 
-         for (int K = KStartEdge; K <= KEndEdge; ++K) {
-            const I4 KVec = K - KStartCell;
-            const Real TracerGrad =
-                (TracerCell(L, JCell1, K) - TracerCell(L, JCell0, K));
+         const int MinLyrEdgeBot = MinLayerEdgeBot(JEdge);
+         const int MaxLyrEdgeTop = MaxLayerEdgeTop(JEdge);
 
-            DiffTmp[KVec] -= EdgeMask(JEdge, K) * EdgeSignOnCell(ICell, J) *
-                             RTemp * MeanPseudoThickEdge(JEdge, K) * TracerGrad;
-         }
+         parallelForInner(
+             Team, Range{MinLyrEdgeBot, MaxLyrEdgeTop}, INNER_LAMBDA(int K) {
+                const Real TracerGrad =
+                    (LTracerCell(JCell1, K) - LTracerCell(JCell0, K));
+
+                DiffTmp(K) -= EddyDiff2 * EdgeMask(JEdge, K) *
+                              EdgeSignOnCell(ICell, J) * RTemp *
+                              MeanPseudoThickEdge(JEdge, K) * TracerGrad;
+             });
       }
-      for (int KVec = 0; KVec < KLenCell; ++KVec) {
-         const I4 K = KStartCell + KVec;
-         Tend(L, ICell, K) += EddyDiff2 * DiffTmp[KVec] * InvAreaCell;
-      }
+      const int MinLyrCell = MinLayerCell(ICell);
+      const int MaxLyrCell = MaxLayerCell(ICell);
+
+      parallelForInner(
+          Team, Range{MinLyrCell, MaxLyrCell}, INNER_LAMBDA(int K) {
+             LTend(ICell, K) += EddyDiff2 * DiffTmp(K) * InvAreaCell;
+          });
    }
 
  private:
@@ -513,6 +587,7 @@ class TracerDiffOnCell {
    Array1DReal DcEdge;
    Array1DReal AreaCell;
    Array1DReal MeshScalingDel2;
+   I4 NVertLayers;
    Array2DReal EdgeMask;
    Array1DI4 MinLayerCell;
    Array1DI4 MaxLayerCell;
@@ -529,21 +604,22 @@ class TracerHyperDiffOnCell {
 
    TracerHyperDiffOnCell(const HorzMesh *Mesh, const VertCoord *VCoord);
 
-   KOKKOS_FUNCTION void operator()(const Array3DReal &Tend, I4 L, I4 ICell,
-                                   I4 KChunk,
+   KOKKOS_FUNCTION void operator()(const TeamMember &Team,
+                                   const Array3DReal &Tend, I4 L, I4 ICell,
                                    const Array3DReal &TrDel2Cell) const {
 
-      const I4 KStartCell = chunkStart(KChunk, MinLayerCell(ICell));
-      const I4 KLenCell = chunkLength(KChunk, KStartCell, MaxLayerCell(ICell));
-      const I4 KEndCell = KStartCell + KLenCell - 1;
+      const auto LTend = Kokkos::subview(Tend, L, Kokkos::ALL, Kokkos::ALL);
+      const auto LTrDel2Cell =
+          Kokkos::subview(TrDel2Cell, L, Kokkos::ALL, Kokkos::ALL);
+
       const Real InvAreaCell = 1._Real / AreaCell(ICell);
 
-      Real HypTmp[VecLength] = {0};
+      ScratchArray1DReal HypTmp(teamScratch(Team), NVertLayers);
+      parallelForInner(
+          Team, NVertLayers, INNER_LAMBDA(int K) { HypTmp(K) = 0; });
 
       for (int J = 0; J < NEdgesOnCell(ICell); ++J) {
-         const I4 JEdge      = EdgesOnCell(ICell, J);
-         const I4 KStartEdge = Kokkos::max(KStartCell, MinLayerEdgeBot(JEdge));
-         const I4 KEndEdge   = Kokkos::min(KEndCell, MaxLayerEdgeTop(JEdge));
+         const I4 JEdge = EdgesOnCell(ICell, J);
 
          const I4 JCell0 = CellsOnEdge(JEdge, 0);
          const I4 JCell1 = CellsOnEdge(JEdge, 1);
@@ -551,19 +627,25 @@ class TracerHyperDiffOnCell {
          const Real RTemp =
              MeshScalingDel4(JEdge) * DvEdge(JEdge) / DcEdge(JEdge);
 
-         for (int K = KStartEdge; K <= KEndEdge; ++K) {
-            const I4 KVec = K - KStartCell;
-            const Real Del2TrGrad =
-                (TrDel2Cell(L, JCell1, K) - TrDel2Cell(L, JCell0, K));
+         const int MinLyrEdgeBot = MinLayerEdgeBot(JEdge);
+         const int MaxLyrEdgeTop = MaxLayerEdgeTop(JEdge);
 
-            HypTmp[KVec] -= EdgeMask(JEdge, K) * EdgeSignOnCell(ICell, J) *
-                            RTemp * Del2TrGrad;
-         }
+         parallelForInner(
+             Team, Range{MinLyrEdgeBot, MaxLyrEdgeTop}, INNER_LAMBDA(int K) {
+                const Real Del2TrGrad =
+                    (LTrDel2Cell(JCell1, K) - LTrDel2Cell(JCell0, K));
+
+                HypTmp(K) -= EdgeMask(JEdge, K) * EdgeSignOnCell(ICell, J) *
+                             RTemp * Del2TrGrad;
+             });
       }
-      for (int KVec = 0; KVec < KLenCell; ++KVec) {
-         const I4 K = KStartCell + KVec;
-         Tend(L, ICell, K) -= EddyDiff4 * HypTmp[KVec] * InvAreaCell;
-      }
+      const int MinLyrCell = MinLayerCell(ICell);
+      const int MaxLyrCell = MaxLayerCell(ICell);
+
+      parallelForInner(
+          Team, Range{MinLyrCell, MaxLyrCell}, INNER_LAMBDA(int K) {
+             LTend(ICell, K) -= EddyDiff4 * HypTmp(K) * InvAreaCell;
+          });
    }
 
  private:
@@ -575,6 +657,7 @@ class TracerHyperDiffOnCell {
    Array1DReal DcEdge;
    Array1DReal AreaCell;
    Array1DReal MeshScalingDel4;
+   I4 NVertLayers;
    Array2DReal EdgeMask;
    Array1DI4 MinLayerCell;
    Array1DI4 MaxLayerCell;

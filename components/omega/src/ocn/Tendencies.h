@@ -119,12 +119,12 @@ class Tendencies {
                                     int ThickTimeLevel, int VelTimeLevel,
                                     TimeInstant Time);
    void computeCoriolisAccelerationOnEdge(
-       const Array2DReal &Accel,        ///< [out] Coriolis acceleration
+       const Array2DReal &Tend,         ///< [inout] velocity tendency
        const Array2DReal &NormalVelEdge, ///< [in] normal velocity on edges
        const Array1DReal &FEdge          ///< [in] Coriolis parameter on edges
    ) const;
    void computeCoriolisAccelerationOnEdge(
-       const Array1DReal &Accel,        ///< [out] Coriolis acceleration
+       const Array1DReal &Tend,         ///< [inout] barotropic velocity tendency
        const Array1DReal &NormalVelEdge, ///< [in] normal velocity on edges
        const Array1DReal &FEdge          ///< [in] Coriolis parameter on edges
    ) const;

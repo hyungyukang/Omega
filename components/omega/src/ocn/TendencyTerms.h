@@ -134,8 +134,8 @@ class CoriolisAccelerationOnEdge {
    CoriolisAccelerationOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
 
    /// The functor takes edge index, vertical chunk index, velocity on edges,
-   /// and Coriolis parameter on edges as inputs, outputs the acceleration array
-   KOKKOS_FUNCTION void operator()(const Array2DReal &Accel, I4 IEdge,
+   /// and Coriolis parameter on edges as inputs, updates the tendency array
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge,
                                    I4 KChunk,
                                    const Array2DReal &NormalVelEdge,
                                    const Array1DReal &FEdge) const {
@@ -156,13 +156,13 @@ class CoriolisAccelerationOnEdge {
 
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const I4 K      = KStart + KVec;
-         Accel(IEdge, K) = AccelTmp[KVec];
+         Tend(IEdge, K) -= AccelTmp[KVec];
       }
    }
 
    /// The functor takes edge index, barotropic velocity on edges, and Coriolis
-   /// parameter on edges as inputs, outputs the barotropic acceleration array
-   KOKKOS_FUNCTION void operator()(const Array1DReal &Accel, I4 IEdge,
+   /// parameter on edges as inputs, updates the barotropic tendency array
+   KOKKOS_FUNCTION void operator()(const Array1DReal &Tend, I4 IEdge,
                                    const Array1DReal &NormalVelEdge,
                                    const Array1DReal &FEdge) const {
 
@@ -174,7 +174,7 @@ class CoriolisAccelerationOnEdge {
                      FEdge(JEdge);
       }
 
-      Accel(IEdge) = AccelTmp;
+      Tend(IEdge) -= AccelTmp;
    }
 
  private:

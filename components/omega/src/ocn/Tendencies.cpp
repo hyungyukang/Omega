@@ -908,15 +908,8 @@ void Tendencies::computePseudoThicknessTendencies(
    parallelForOuter(
        "computePseudoThickAux", {Mesh->NEdgesAll},
        KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
-          const int KMin   = MinLayerEdgeBot(IEdge);
-          const int KMax   = MaxLayerEdgeTop(IEdge);
-          const int KRange = vertRangeChunked(KMin, KMax);
-
-          parallelForInner(
-              Team, KRange, INNER_LAMBDA(int KChunk) {
-                 PseudoThicknessAux.computeVarsOnEdge(
-                     IEdge, KChunk, PseudoThickCell, NormalVelEdge);
-              });
+          PseudoThicknessAux.computeVarsOnEdge(Team, IEdge, PseudoThickCell,
+                                               NormalVelEdge);
        });
    Pacer::stop("Tend:computePseudoThickAux", 2);
 
@@ -969,17 +962,12 @@ void Tendencies::computeTracerTendencies(
        AuxState->PseudoThicknessAux.MeanPseudoThickEdge;
    Pacer::start("Tend:computeTracerAuxCell", 2);
    parallelForOuter(
-       "computeTracerAuxCell", {NTracers, Mesh->NCellsAll},
+       "computeTracerAuxCell",
+       LaunchConfig({NTracers, Mesh->NCellsAll},
+                    TeamScratch<Real>(VCoord->NVertLayers)),
        KOKKOS_LAMBDA(int LTracer, int ICell, const TeamMember &Team) {
-          const int KMin   = MinLayerCell(ICell);
-          const int KMax   = MaxLayerCell(ICell);
-          const int KRange = vertRangeChunked(KMin, KMax);
-
-          parallelForInner(
-              Team, KRange, INNER_LAMBDA(int KChunk) {
-                 TracerAux.computeVarsOnCells(LTracer, ICell, KChunk,
-                                              MeanPseudoThickEdge, TracerArray);
-              });
+          TracerAux.computeVarsOnCells(Team, LTracer, ICell,
+                                       MeanPseudoThickEdge, TracerArray);
        });
    Pacer::stop("Tend:computeTracerAuxCell", 2);
 

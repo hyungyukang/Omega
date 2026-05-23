@@ -730,12 +730,15 @@ class Eos {
    Array2DReal SpecVol;            ///< Specific volume field at level centers
    Array2DReal SpecVolDisplaced;   ///< Displaced specific volume field
    Array2DReal BruntVaisalaFreqSq; ///< Squared Brunt-Vaisala frequency field
+   Array1DReal DepthIntegSpecificVolume; ///< Depth-integrated specific volume
 
    std::string SpecVolFldName; ///< Field name for specific volume
    std::string
        SpecVolDisplacedFldName; ///< Field name for displaced specific volume
    std::string BruntVaisalaFreqSqFldName; ///< Field name for squared
                                           ///< Brunt-Vaisala frequency
+   std::string DepthIntegSpecVolFldName;  ///< Field name for depth-integrated
+                                          ///< specific volume
    std::string EosGroupName;              ///< EOS group name (for config)
    std::string Name;                      ///< Name of this EOS instance
 
@@ -743,6 +746,11 @@ class Eos {
    void computeSpecVol(const Array2DReal &ConservTemp,
                        const Array2DReal &AbsSalinity,
                        const Array2DReal &Pressure);
+
+   /// Compute depth-integrated specific volume for all cells
+   void computeDepthIntegratedSpecificVolume(
+       const Array2DReal &LayerThickness ///< [in] pseudo thickness
+   );
 
    /// Compute displaced specific volume (for vertical displacement)
    void computeSpecVolDisp(const Array2DReal &ConservTemp,

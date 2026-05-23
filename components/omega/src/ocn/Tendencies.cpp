@@ -470,9 +470,9 @@ Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
                  CustomTendencyType{}, CustomTendencyType{}) {}
 
 //------------------------------------------------------------------------------
-// Compute f times tangential velocity reconstruction for edge-centered 2D fields
+// Accumulate f times tangential velocity reconstruction for edge-centered 2D fields
 void Tendencies::computeCoriolisAccelerationOnEdge(
-    const Array2DReal &Accel,         ///< [out] Coriolis acceleration
+    const Array2DReal &Tend,          ///< [inout] velocity tendency
     const Array2DReal &NormalVelEdge, ///< [in] normal velocity on edges
     const Array1DReal &FEdge          ///< [in] Coriolis parameter on edges
 ) const {
@@ -489,7 +489,7 @@ void Tendencies::computeCoriolisAccelerationOnEdge(
           const int KRange = vertRangeChunked(KMin, KMax);
           parallelForInner(
               Team, KRange, INNER_LAMBDA(int KChunk) {
-                 LocCoriolisAcceleration(Accel, IEdge, KChunk, NormalVelEdge,
+                 LocCoriolisAcceleration(Tend, IEdge, KChunk, NormalVelEdge,
                                          FEdge);
               });
        });
@@ -497,9 +497,9 @@ void Tendencies::computeCoriolisAccelerationOnEdge(
 }
 
 //------------------------------------------------------------------------------
-// Compute f times tangential velocity reconstruction for edge-centered 1D fields
+// Accumulate f times tangential velocity reconstruction for edge-centered 1D fields
 void Tendencies::computeCoriolisAccelerationOnEdge(
-    const Array1DReal &Accel,         ///< [out] Coriolis acceleration
+    const Array1DReal &Tend,          ///< [inout] barotropic velocity tendency
     const Array1DReal &NormalVelEdge, ///< [in] normal velocity on edges
     const Array1DReal &FEdge          ///< [in] Coriolis parameter on edges
 ) const {
@@ -509,7 +509,7 @@ void Tendencies::computeCoriolisAccelerationOnEdge(
    Pacer::start("Tend:coriolisAccelerationOnEdge1D", 2);
    parallelFor(
        {Mesh->NEdgesAll}, KOKKOS_LAMBDA(int IEdge) {
-          LocCoriolisAcceleration(Accel, IEdge, NormalVelEdge, FEdge);
+          LocCoriolisAcceleration(Tend, IEdge, NormalVelEdge, FEdge);
        });
    Pacer::stop("Tend:coriolisAccelerationOnEdge1D", 2);
 }

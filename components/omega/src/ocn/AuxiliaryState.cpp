@@ -94,6 +94,9 @@ void AuxiliaryState::computeMomVertAux(const OceanState *State,
    // compute specific volume
    const auto &PressureMid = VCoord->PressureMid;
    EosInstance->computeSpecVol(ConservTemp, AbsSalinity, PressureMid);
+   EosInstance->computeDepthIntegratedSpecificVolume(LayerThickCell);
+   VCoord->computeTotalGeometricThickness(
+       EosInstance->DepthIntegSpecificVolume);
 
    // compute geometric height
    VCoord->computeGeomZHeight(PseudoThickCell, EosInstance->SpecVol);

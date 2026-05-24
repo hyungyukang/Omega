@@ -83,6 +83,9 @@ class AuxiliaryState {
    void computeMomAux(const OceanState *State, const Array3DReal &TracerArray,
                       int ThickTimeLevel, int VelTimeLevel,
                       const TimeInterval ProjDt) const;
+   void computeMomAux(const OceanState *State, const Array3DReal &TracerArray,
+                      int ThickTimeLevel, const Array2DReal &NormalVelEdge,
+                      const TimeInterval ProjDt) const;
 
    /// Compute all auxiliary variables based on an ocean state at a given time
    /// level

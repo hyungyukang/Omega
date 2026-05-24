@@ -118,6 +118,37 @@ class PotentialVortHAdvOnEdge {
       }
    }
 
+   /// Relative vorticity horizontal advection without Coriolis. Used for the
+   /// split-explicit baroclinic velocity forcing term.
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+                                   const Array2DReal &NormRVortEdge,
+                                   const Array2DReal &FluxLayerThickEdge,
+                                   const Array2DReal &NormVelEdge) const {
+
+      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
+      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+      Real VortTmp[VecLength] = {0};
+
+      for (int J = 0; J < NEdgesOnEdge(IEdge); ++J) {
+         const I4 JEdge = EdgesOnEdge(IEdge, J);
+         for (int KVec = 0; KVec < KLen; ++KVec) {
+            const I4 K = KStart + KVec;
+            const Real NormVort =
+                (NormRVortEdge(IEdge, K) + NormRVortEdge(JEdge, K)) *
+                0.5_Real;
+
+            VortTmp[KVec] += WeightsOnEdge(IEdge, J) *
+                             FluxLayerThickEdge(JEdge, K) *
+                             NormVelEdge(JEdge, K) * NormVort;
+         }
+      }
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K = KStart + KVec;
+         Tend(IEdge, K) += EdgeMask(IEdge, K) * VortTmp[KVec];
+      }
+   }
+
  private:
    Array1DI4 NEdgesOnEdge;
    Array2DI4 EdgesOnEdge;

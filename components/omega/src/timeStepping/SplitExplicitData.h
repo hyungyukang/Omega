@@ -23,7 +23,7 @@ struct SplitExplicitConfig {
        SplitExplicitBarotropicStepperType::PredictorCorrector;
    I4 NBtrSubcycles          = 1;
    I4 NTimeStepIteration     = 1;
-   I4 NBclCoriolisIteration = 2;
+   I4 NBclCoriolisIteration  = 2;
 };
 
 struct SplitExplicitBuffers {

@@ -63,7 +63,13 @@ AuxiliaryState::~AuxiliaryState() {
 void AuxiliaryState::computeMomVertAux(const OceanState *State,
                                        const Array3DReal &TracerArray,
                                        int ThickTimeLevel,
-                                       int VelTimeLevel) const {
+                                       int /*VelTimeLevel*/) const {
+   computeMomVertAux(State, TracerArray, ThickTimeLevel);
+}
+
+void AuxiliaryState::computeMomVertAux(const OceanState *State,
+                                       const Array3DReal &TracerArray,
+                                       int ThickTimeLevel) const {
 
    Pacer::start("AuxState:computeMomVertAux", 2);
 
@@ -142,7 +148,7 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
 
    Pacer::start("AuxState:computeMomAux", 1);
 
-   computeMomVertAux(State, TracerArray, ThickTimeLevel, VelTimeLevel);
+   computeMomVertAux(State, TracerArray, ThickTimeLevel);
 
    Pacer::start("AuxState:vertexAuxState1", 2);
    parallelForOuter(

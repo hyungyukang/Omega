@@ -726,6 +726,7 @@ class Eos {
    Array2DReal SpecVolDisplaced;   ///< Displaced specific volume field
    Array2DReal BruntVaisalaFreqSq; ///< Squared Brunt-Vaisala frequency field
    Array1DReal DepthIntegSpecificVolume; ///< Depth-integrated specific volume
+   Array1DReal DepthMeanSpecificVolume;  ///< Depth-mean specific volume
 
    std::string SpecVolFldName; ///< Field name for specific volume
    std::string
@@ -733,6 +734,8 @@ class Eos {
    std::string BruntVaisalaFreqSqFldName; ///< Field name for squared
                                           ///< Brunt-Vaisala frequency
    std::string DepthIntegSpecVolFldName;  ///< Field name for depth-integrated
+                                          ///< specific volume
+   std::string DepthMeanSpecVolFldName;   ///< Field name for depth-mean
                                           ///< specific volume
    std::string EosGroupName;              ///< EOS group name (for config)
    std::string Name;                      ///< Name of this EOS instance

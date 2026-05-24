@@ -68,7 +68,7 @@ void SplitExplicitRK2Stepper::doSplitStage1(
    prescribeState(State, CurLevel, State, CurLevel, StageTime);
 
    Tend->computeBaroclinicVelocityTendencies(
-       State, AuxState, CurTracerArray, CurLevel, CurLevel,
+       State, AuxState, CurTracerArray, CurLevel, CurLevel, CurLevel, CurLevel,
        0.5 * StageTimeStep);
 
    updateVelocityByTend(State, NextLevel, State, CurLevel,

@@ -278,6 +278,23 @@ class SSHGradOnEdge {
       }
    }
 
+   /// Computes depth-mean specific volume times the barotropic pressure
+   /// gradient on edges.
+   KOKKOS_FUNCTION void operator()(const Array1DReal &Tend, I4 IEdge,
+                                   const Array1DReal &BtrPressAnomaly,
+                                   const Array1DReal &DepthMeanSpecVol) const {
+
+      const I4 JCell0      = CellsOnEdge(IEdge, 0);
+      const I4 JCell1      = CellsOnEdge(IEdge, 1);
+      const Real InvDcEdge = 1._Real / DcEdge(IEdge);
+      const Real MeanSpecVol =
+          0.5_Real * (DepthMeanSpecVol(JCell0) + DepthMeanSpecVol(JCell1));
+
+      Tend(IEdge) += MeanSpecVol *
+                     (BtrPressAnomaly(JCell1) - BtrPressAnomaly(JCell0)) *
+                     InvDcEdge;
+   }
+
  private:
    Array2DI4 CellsOnEdge;
    Array1DReal DcEdge;

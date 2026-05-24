@@ -20,8 +20,8 @@ class SplitExplicitInit {
        const TimeInterval &TimeStep ///< [in] full baroclinic time step
    );
 
-   static void allocateBuffers(
-       SplitExplicitBuffers &Buffers, ///< [inout] split-explicit scratch data
+   static void allocateScratch(
+       SplitExplicitScratch &Scratch, ///< [inout] split-explicit scratch data
        const HorzMesh *Mesh,          ///< [in] horizontal mesh
        const std::string &Name        ///< [in] owning time stepper name
    );

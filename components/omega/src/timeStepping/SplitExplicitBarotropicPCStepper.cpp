@@ -15,7 +15,7 @@ namespace OMEGA {
 
 //------------------------------------------------------------------------------
 void SplitExplicitBarotropicPCStepper::doSplitStage2(
-    OceanState *State, SplitExplicitBuffers &Buffers,
+    OceanState *State, SplitExplicitScratch &Scratch,
     const SplitExplicitConfig &Config, const HorzMesh *Mesh,
     const VertCoord *VCoord, I4 TimeLevel, const TimeInstant &StageTime,
     const TimeInterval &StageTimeStep) const {
@@ -35,20 +35,20 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
    Array1DReal NormalBarotropicVelocity =
        State->getNormalBarotropicVelocity(TimeLevel);
 
-   deepCopy(Buffers.NormalBarotropicVelocitySubcycleCur,
+   deepCopy(Scratch.NormalBarotropicVelocitySubcycleCur,
             NormalBarotropicVelocity);
 
    for (I4 Subcycle = 0; Subcycle < Config.NBtrSubcycles; ++Subcycle) {
       // Placeholder for the barotropic velocity/SSH predictor-corrector. For
       // now the framework preserves the initialized barotropic mode exactly.
-      deepCopy(Buffers.NormalBarotropicVelocitySubcycleNew,
-               Buffers.NormalBarotropicVelocitySubcycleCur);
-      deepCopy(Buffers.NormalBarotropicVelocitySubcycleCur,
-               Buffers.NormalBarotropicVelocitySubcycleNew);
+      deepCopy(Scratch.NormalBarotropicVelocitySubcycleNew,
+               Scratch.NormalBarotropicVelocitySubcycleCur);
+      deepCopy(Scratch.NormalBarotropicVelocitySubcycleCur,
+               Scratch.NormalBarotropicVelocitySubcycleNew);
    }
 
    deepCopy(NormalBarotropicVelocity,
-            Buffers.NormalBarotropicVelocitySubcycleCur);
+            Scratch.NormalBarotropicVelocitySubcycleCur);
    SplitExplicitInit::combineVelocitySplit(State, Mesh, VCoord, TimeLevel);
 
    Pacer::stop("SE-RK2:stage2BtrPC", 2);

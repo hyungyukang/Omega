@@ -27,6 +27,13 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep) {
    Error Err = OmegaConfig->get(TimeIntConfig);
    CHECK_ERROR_ABORT(Err, "TimeIntegration group not found in Config");
 
+   std::string TimeStepperStr;
+   if (TimeIntConfig.get("TimeStepper", TimeStepperStr).isSuccess()) {
+      if (TimeStepperStr == "Unsplit-RK2" || TimeStepperStr == "UnsplitRK2") {
+         Options.UnsplitFactor = 0._Real;
+      }
+   }
+
    std::string BtrTimeStepStr;
    if (TimeIntConfig.get("BtrTimeStep", BtrTimeStepStr).isSuccess()) {
       Options.BtrTimeStep = TimeInterval(BtrTimeStepStr);
@@ -95,35 +102,35 @@ I4 SplitExplicitInit::computeSubcycleCount(
 }
 
 //------------------------------------------------------------------------------
-void SplitExplicitInit::allocateBuffers(SplitExplicitBuffers &Buffers,
+void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
                                         const HorzMesh *Mesh,
                                         const std::string &Name) {
 
    if (!Mesh)
       LOG_CRITICAL("Invalid mesh");
 
-   Buffers.NormalBarotropicVelocitySubcycleCur = Array1DReal(
+   Scratch.NormalBarotropicVelocitySubcycleCur = Array1DReal(
        "NormalBarotropicVelocitySubcycleCur" + Name, Mesh->NEdgesSize);
-   Buffers.NormalBarotropicVelocitySubcycleNew = Array1DReal(
+   Scratch.NormalBarotropicVelocitySubcycleNew = Array1DReal(
        "NormalBarotropicVelocitySubcycleNew" + Name, Mesh->NEdgesSize);
-   Buffers.BarotropicPressureAnomalySubcycleCur = Array1DReal(
+   Scratch.BarotropicPressureAnomalySubcycleCur = Array1DReal(
        "BarotropicPressureAnomalySubcycleCur" + Name, Mesh->NCellsSize);
-   Buffers.BarotropicPressureAnomalySubcycleNew = Array1DReal(
+   Scratch.BarotropicPressureAnomalySubcycleNew = Array1DReal(
        "BarotropicPressureAnomalySubcycleNew" + Name, Mesh->NCellsSize);
-   Buffers.BarotropicPressure =
+   Scratch.BarotropicPressure =
        Array1DReal("BarotropicPressure" + Name, Mesh->NCellsSize);
-   Buffers.BarotropicForcing =
+   Scratch.BarotropicForcing =
        Array1DReal("BarotropicForcing" + Name, Mesh->NEdgesSize);
-   Buffers.BarotropicFlux =
+   Scratch.BarotropicFlux =
        Array1DReal("BarotropicFlux" + Name, Mesh->NEdgesSize);
 
-   deepCopy(Buffers.NormalBarotropicVelocitySubcycleCur, 0.);
-   deepCopy(Buffers.NormalBarotropicVelocitySubcycleNew, 0.);
-   deepCopy(Buffers.BarotropicPressureAnomalySubcycleCur, 0.);
-   deepCopy(Buffers.BarotropicPressureAnomalySubcycleNew, 0.);
-   deepCopy(Buffers.BarotropicPressure, 0.);
-   deepCopy(Buffers.BarotropicForcing, 0.);
-   deepCopy(Buffers.BarotropicFlux, 0.);
+   deepCopy(Scratch.NormalBarotropicVelocitySubcycleCur, 0.);
+   deepCopy(Scratch.NormalBarotropicVelocitySubcycleNew, 0.);
+   deepCopy(Scratch.BarotropicPressureAnomalySubcycleCur, 0.);
+   deepCopy(Scratch.BarotropicPressureAnomalySubcycleNew, 0.);
+   deepCopy(Scratch.BarotropicPressure, 0.);
+   deepCopy(Scratch.BarotropicForcing, 0.);
+   deepCopy(Scratch.BarotropicFlux, 0.);
 }
 
 //------------------------------------------------------------------------------

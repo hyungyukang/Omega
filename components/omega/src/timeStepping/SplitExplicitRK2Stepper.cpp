@@ -47,16 +47,16 @@ void SplitExplicitRK2Stepper::doSplitStage1(
 
    prescribeState(State, CurLevel, State, CurLevel, StageTime);
 
-   AuxState->computeAll(State, CurTracerArray, CurLevel, CurLevel,
-                        0.5 * StageTimeStep);
    Tend->computeBaroclinicVelocityTendencies(
-       State, AuxState, CurTracerArray, CurLevel, CurLevel, CurLevel,
-       StageTime, 0.5 * StageTimeStep);
+       State, AuxState, CurTracerArray, CurLevel, CurLevel,
+       0.5 * StageTimeStep);
 
-   updateStateByTend(State, NextLevel, State, CurLevel,
-                     0.5 * StageTimeStep);
+   const TimeInterval ZeroTimeStep = 0._Real * StageTimeStep;
+   updateThicknessByTend(State, NextLevel, State, CurLevel, ZeroTimeStep);
+   updateVelocityByTend(State, NextLevel, State, CurLevel,
+                        0.5 * StageTimeStep);
    updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel,
-                       State, CurLevel, 0.5 * StageTimeStep);
+                       State, CurLevel, ZeroTimeStep);
 
    Pacer::stop("SE-RK2:stage1Bcl", 2);
 }
@@ -72,10 +72,17 @@ void SplitExplicitRK2Stepper::doSplitStage3(
    prescribeState(State, NextLevel, State, CurLevel,
                   StageTime + 0.5 * StageTimeStep);
 
-   Tend->computeAllTendencies(State, AuxState, NextTracerArray, NextLevel,
-                              NextLevel, NextLevel,
-                              StageTime + 0.5 * StageTimeStep,
-                              0.5 * StageTimeStep);
+   AuxState->computeAll(State, NextTracerArray, NextLevel, NextLevel,
+                        0.5 * StageTimeStep);
+   Tend->computeThicknessTendenciesOnly(
+       State, AuxState, NextLevel, NextLevel,
+       StageTime + 0.5 * StageTimeStep);
+   Tend->computeVelocityTendenciesOnly(State, AuxState, NextTracerArray,
+                                       NextLevel, NextLevel, NextLevel,
+                                       StageTime + 0.5 * StageTimeStep);
+   Tend->computeTracerTendenciesOnly(State, AuxState, NextTracerArray,
+                                     NextLevel, NextLevel,
+                                     StageTime + 0.5 * StageTimeStep);
 
    updateStateByTend(State, NextLevel, State, CurLevel, StageTimeStep);
    updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel,

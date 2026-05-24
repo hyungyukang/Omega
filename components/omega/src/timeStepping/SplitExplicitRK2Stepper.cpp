@@ -32,7 +32,27 @@ void SplitExplicitRK2Stepper::finalizeInit() {
    if (!MeshHalo)
       LOG_CRITICAL("Invalid MeshHalo");
 
-   SplitExplicitInit::allocateBuffers(SEBuffers, Mesh, Name);
+   SplitExplicitInit::allocateScratch(SEScratch, Mesh, Name);
+   initBarotropicStepper();
+}
+
+//------------------------------------------------------------------------------
+void SplitExplicitRK2Stepper::initBarotropicStepper() {
+
+   if (SEConfig.BtrTimeStepper ==
+       SplitExplicitBarotropicStepperType::PredictorCorrector) {
+      BarotropicStage2 =
+          [this](OceanState *State, I4 TimeLevel,
+                 const TimeInstant &StageTime,
+                 const TimeInterval &StageTimeStep) {
+             BarotropicPCStepper.doSplitStage2(
+                 State, SEScratch, SEConfig, Mesh, VCoord, TimeLevel,
+                 StageTime, StageTimeStep);
+          };
+      return;
+   }
+
+   LOG_CRITICAL("Invalid split-explicit barotropic time stepper");
 }
 
 //------------------------------------------------------------------------------
@@ -51,12 +71,8 @@ void SplitExplicitRK2Stepper::doSplitStage1(
        State, AuxState, CurTracerArray, CurLevel, CurLevel,
        0.5 * StageTimeStep);
 
-   const TimeInterval ZeroTimeStep = 0._Real * StageTimeStep;
-   updateThicknessByTend(State, NextLevel, State, CurLevel, ZeroTimeStep);
    updateVelocityByTend(State, NextLevel, State, CurLevel,
                         0.5 * StageTimeStep);
-   updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel,
-                       State, CurLevel, ZeroTimeStep);
 
    Pacer::stop("SE-RK2:stage1Bcl", 2);
 }
@@ -77,20 +93,28 @@ void SplitExplicitRK2Stepper::doSplitStage3(
    Tend->computeThicknessTendenciesOnly(
        State, AuxState, NextLevel, NextLevel,
        StageTime + 0.5 * StageTimeStep);
-   Tend->computeVelocityTendenciesOnly(State, AuxState, NextTracerArray,
-                                       NextLevel, NextLevel, NextLevel,
-                                       StageTime + 0.5 * StageTimeStep);
    Tend->computeTracerTendenciesOnly(State, AuxState, NextTracerArray,
                                      NextLevel, NextLevel,
                                      StageTime + 0.5 * StageTimeStep);
 
-   updateStateByTend(State, NextLevel, State, CurLevel, StageTimeStep);
+   updateThicknessByTend(State, NextLevel, State, CurLevel, StageTimeStep);
    updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel,
                        State, CurLevel, StageTimeStep);
 
    SplitExplicitInit::computeVelocitySplit(State, Mesh, VCoord, NextLevel);
 
    Pacer::stop("SE-RK2:stage3TrThick", 2);
+}
+
+//------------------------------------------------------------------------------
+void SplitExplicitRK2Stepper::doSplitStage2(
+    OceanState *State, I4 TimeLevel, const TimeInstant &StageTime,
+    const TimeInterval &StageTimeStep) const {
+
+   if (!BarotropicStage2)
+      LOG_CRITICAL("Split-explicit barotropic time stepper not initialized");
+
+   BarotropicStage2(State, TimeLevel, StageTime, StageTimeStep);
 }
 
 //------------------------------------------------------------------------------
@@ -118,21 +142,14 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State, TimeInstant &SimTime)
 
       Pacer::timingBarrier("SE-RK2:haloStage1Barrier", 3, Comm);
       Pacer::start("SE-RK2:haloStage1", 3);
-      State->exchangeHalo(NextLevel);
-      MeshHalo->exchangeFullArrayHalo(NextTracerArray, OnCell);
+      MeshHalo->exchangeFullArrayHalo(
+          State->getNormalBaroclinicVelocity(NextLevel), OnEdge);
       Pacer::stop("SE-RK2:haloStage1", 3);
 
-      SplitExplicitInit::computeVelocitySplit(State, Mesh, VCoord, NextLevel);
-      switch (SEConfig.BtrTimeStepper) {
-      case SplitExplicitBarotropicStepperType::PredictorCorrector:
-         BarotropicPCStepper.doSplitStage2(
-             State, SEBuffers, SEConfig, Mesh, VCoord, NextLevel,
-             StageTime + 0.5 * TimeStepIterationTimeStep,
-             TimeStepIterationTimeStep);
-         break;
-      case SplitExplicitBarotropicStepperType::Invalid:
-      default:
-         LOG_CRITICAL("Invalid split-explicit barotropic time stepper");
+      if (SEConfig.UnsplitFactor != 0._Real) {
+         doSplitStage2(State, NextLevel,
+                       StageTime + 0.5 * TimeStepIterationTimeStep,
+                       TimeStepIterationTimeStep);
       }
 
       doSplitStage3(State, CurTracerArray, NextTracerArray, CurLevel,

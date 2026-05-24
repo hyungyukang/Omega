@@ -19,7 +19,7 @@ class SplitExplicitBarotropicPCStepper {
  public:
    void doSplitStage2(
        OceanState *State,             ///< [inout] model state
-       SplitExplicitBuffers &Buffers, ///< [inout] split-explicit scratch data
+       SplitExplicitScratch &Scratch, ///< [inout] split-explicit scratch data
        const SplitExplicitConfig &Config, ///< [in] split-explicit options
        const HorzMesh *Mesh,              ///< [in] horizontal mesh
        const VertCoord *VCoord,           ///< [in] vertical coordinate

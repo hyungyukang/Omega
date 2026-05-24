@@ -40,11 +40,13 @@ TimeStepperType getTimeStepperFromStr(const std::string &InString) {
       TimeStepperChoice = TimeStepperType::RungeKutta4;
    } else if (InString == "RungeKutta2") {
       TimeStepperChoice = TimeStepperType::RungeKutta2;
-   } else if (InString == "SE-RK2" || InString == "SplitExplicitRK2") {
+   } else if (InString == "SE-RK2" || InString == "SplitExplicitRK2" ||
+              InString == "Unsplit-RK2" || InString == "UnsplitRK2") {
       TimeStepperChoice = TimeStepperType::SplitExplicitRK2;
    } else {
       ABORT_ERROR("TimeStepper should be one of 'Forward-Backward', "
-                  "'RungeKutta4', 'RungeKutta2' or 'SE-RK2' but got {}:",
+                  "'RungeKutta4', 'RungeKutta2', 'SE-RK2' or "
+                  "'Unsplit-RK2' but got {}:",
                   InString);
    }
 

@@ -11,6 +11,8 @@
 #include "SplitExplicitData.h"
 #include "TimeStepper.h"
 
+#include <functional>
+
 namespace OMEGA {
 
 class SplitExplicitRK2Stepper : public TimeStepper {
@@ -52,8 +54,17 @@ class SplitExplicitRK2Stepper : public TimeStepper {
        const TimeInterval &StageTimeStep    ///< [in] current stage time step
    ) const;
 
+   using BarotropicStage2Function = std::function<void(
+       OceanState *, I4, const TimeInstant &, const TimeInterval &)>;
+
+   void initBarotropicStepper();
+   void doSplitStage2(OceanState *State, I4 TimeLevel,
+                      const TimeInstant &StageTime,
+                      const TimeInterval &StageTimeStep) const;
+
    SplitExplicitConfig SEConfig;
-   mutable SplitExplicitBuffers SEBuffers;
+   mutable SplitExplicitScratch SEScratch;
+   BarotropicStage2Function BarotropicStage2;
    SplitExplicitBarotropicPCStepper BarotropicPCStepper;
 };
 

@@ -24,9 +24,10 @@ struct SplitExplicitConfig {
    I4 NBtrSubcycles          = 1;
    I4 NTimeStepIteration     = 1;
    I4 NBclCoriolisIteration  = 2;
+   Real UnsplitFactor        = 1._Real;
 };
 
-struct SplitExplicitBuffers {
+struct SplitExplicitScratch {
    Array1DReal NormalBarotropicVelocitySubcycleCur;
    Array1DReal NormalBarotropicVelocitySubcycleNew;
    Array1DReal BarotropicPressureAnomalySubcycleCur;

@@ -116,10 +116,12 @@ class Tendencies {
    void computeBaroclinicVelocityTendencies(
        const OceanState *State, const AuxiliaryState *AuxState,
        const Array3DReal &TracerArray, int ThickTimeLevel, int VelTimeLevel,
+       int BarotropicVelocityTimeLevel, int BarotropicPressureTimeLevel,
        TimeInterval ProjDt);
    void computeBaroclinicVelocityTendenciesOnly(
        const OceanState *State, const AuxiliaryState *AuxState,
-       int ThickTimeLevel, int VelTimeLevel);
+       int ThickTimeLevel, int VelTimeLevel, int BarotropicVelocityTimeLevel,
+       int BarotropicPressureTimeLevel);
    void computeTracerTendenciesOnly(const OceanState *State,
                                     const AuxiliaryState *AuxState,
                                     const Array3DReal &TracerArray,

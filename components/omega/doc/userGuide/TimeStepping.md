@@ -35,6 +35,7 @@ The following time steppers are currently available:
 | RungeKutta2 | second-order two-stage midpoint Runge Kutta method |
 | RungeKutta4 | classic fourth-order four-stage Runge Kutta method |
 | SE-RK2 | split-explicit RK2 framework |
+| Unsplit-RK2 | RK2 framework without split-explicit barotropic subcycling |
 
 The time step refers to the main model time step used to advance the solution
 forward. The time step is specified as a formatted string and can be provided

@@ -833,11 +833,8 @@ void Tendencies::computeVelocityTendenciesOnly(
 void Tendencies::computeBaroclinicVelocityTendenciesOnly(
     const OceanState *State,        ///< [in] State variables
     const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
-    const Array3DReal &TracerArray, ///< [in] Tracer array
     int ThickTimeLevel,             ///< [in] Time level
-    int VelTimeLevel,               ///< [in] Time level
-    int TracerTimeLevel,            ///< [in] Time level
-    TimeInstant Time                ///< [in] Time
+    int VelTimeLevel                ///< [in] Time level
 ) {
 
    OMEGA_SCOPE(LocNormalVelocityTend, NormalVelocityTend);
@@ -970,8 +967,6 @@ void Tendencies::computeBaroclinicVelocityTendencies(
     const Array3DReal &TracerArray, ///< [in] Tracer array
     int ThickTimeLevel,             ///< [in] Time level
     int VelTimeLevel,               ///< [in] Time level
-    int TracerTimeLevel,            ///< [in] Time level
-    TimeInstant Time,               ///< [in] Time
     TimeInterval ProjDt ///< [in] Time interval for projection over the current
                         ///< time stepper stage
 ) {
@@ -980,9 +975,8 @@ void Tendencies::computeBaroclinicVelocityTendencies(
    Array2DReal NormBclVelEdge = State->getNormalBaroclinicVelocity(VelTimeLevel);
    AuxState->computeMomAux(State, TracerArray, ThickTimeLevel, NormBclVelEdge,
                            ProjDt);
-   computeBaroclinicVelocityTendenciesOnly(
-       State, AuxState, TracerArray, ThickTimeLevel, VelTimeLevel,
-       TracerTimeLevel, Time);
+   computeBaroclinicVelocityTendenciesOnly(State, AuxState, ThickTimeLevel,
+                                           VelTimeLevel);
 
    Pacer::stop("Tend:computeBaroclinicVelocityTendencies", 1);
 }

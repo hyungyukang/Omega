@@ -110,9 +110,17 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
                                    const Array3DReal &TracerArray,
                                    int ThickTimeLevel, int VelTimeLevel,
                                    const TimeInterval ProjDt) const {
+
    Array2DReal PseudoThickCell = State->getPseudoThickness(ThickTimeLevel);
    Array2DReal NormalVelEdge   = State->getNormalVelocity(VelTimeLevel);
+   computeMomAux(State, TracerArray, ThickTimeLevel, NormalVelEdge, ProjDt);
 
+void AuxiliaryState::computeMomAux(const OceanState *State,
+                                   const Array3DReal &TracerArray,
+                                   int ThickTimeLevel,
+                                   const Array2DReal &NormalVelEdge,
+                                   const TimeInterval ProjDt) const {
+   Array2DReal LayerThickCell = State->getLayerThickness(ThickTimeLevel);
    OMEGA_SCOPE(LocKineticAux, KineticAux);
    OMEGA_SCOPE(LocPseudoThicknessAux, PseudoThicknessAux);
    OMEGA_SCOPE(LocVorticityAux, VorticityAux);

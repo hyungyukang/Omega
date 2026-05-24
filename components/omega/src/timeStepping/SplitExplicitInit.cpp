@@ -38,12 +38,21 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep) {
           getBtrTimeStepperFromStr(BtrTimeStepperStr);
    }
 
-   I4 NSuperCycle = 1;
-   if (TimeIntConfig.get("NSuperCycle", NSuperCycle).isSuccess()) {
-      if (NSuperCycle < 1) {
-         ABORT_ERROR("NSuperCycle must be greater than zero");
+   I4 NTimeStepIteration = 1;
+   if (TimeIntConfig.get("NTimeStepIteration", NTimeStepIteration).isSuccess()) {
+      if (NTimeStepIteration < 1) {
+         ABORT_ERROR("NTimeStepIteration must be greater than zero");
       }
-      Options.NSuperCycle = NSuperCycle;
+      Options.NTimeStepIteration = NTimeStepIteration;
+   }
+
+   I4 NBclCoriolisIteration = 2;
+   if (TimeIntConfig.get("NBclCoriolisIteration",
+                         NBclCoriolisIteration).isSuccess()) {
+      if (NBclCoriolisIteration < 1) {
+         ABORT_ERROR("NBclCoriolisIteration must be greater than zero");
+      }
+      Options.NBclCoriolisIteration = NBclCoriolisIteration;
    }
 
    Options.NBtrSubcycles =
@@ -97,6 +106,10 @@ void SplitExplicitInit::allocateBuffers(SplitExplicitBuffers &Buffers,
        "NormalBarotropicVelocitySubcycleCur" + Name, Mesh->NEdgesSize);
    Buffers.NormalBarotropicVelocitySubcycleNew = Array1DReal(
        "NormalBarotropicVelocitySubcycleNew" + Name, Mesh->NEdgesSize);
+   Buffers.BarotropicPressureAnomalySubcycleCur = Array1DReal(
+       "BarotropicPressureAnomalySubcycleCur" + Name, Mesh->NCellsSize);
+   Buffers.BarotropicPressureAnomalySubcycleNew = Array1DReal(
+       "BarotropicPressureAnomalySubcycleNew" + Name, Mesh->NCellsSize);
    Buffers.BarotropicPressure =
        Array1DReal("BarotropicPressure" + Name, Mesh->NCellsSize);
    Buffers.BarotropicForcing =
@@ -106,6 +119,8 @@ void SplitExplicitInit::allocateBuffers(SplitExplicitBuffers &Buffers,
 
    deepCopy(Buffers.NormalBarotropicVelocitySubcycleCur, 0.);
    deepCopy(Buffers.NormalBarotropicVelocitySubcycleNew, 0.);
+   deepCopy(Buffers.BarotropicPressureAnomalySubcycleCur, 0.);
+   deepCopy(Buffers.BarotropicPressureAnomalySubcycleNew, 0.);
    deepCopy(Buffers.BarotropicPressure, 0.);
    deepCopy(Buffers.BarotropicForcing, 0.);
    deepCopy(Buffers.BarotropicFlux, 0.);

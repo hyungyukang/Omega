@@ -10,7 +10,8 @@ Omega:
     TimeStep: 0000_00:10:00
     BtrTimeStepper: Predictor-Corrector
     BtrTimeStep: 0000_00:00:30
-    NSuperCycle: 1
+    NTimeStepIteration: 1
+    NBclCoriolisIteration: 2
     StartTime: 0001-01-01_00:00:00
     StopTime: 0001-01-01_02:00:00
     RunDuration: none

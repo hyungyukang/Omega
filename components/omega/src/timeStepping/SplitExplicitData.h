@@ -21,13 +21,16 @@ struct SplitExplicitConfig {
    TimeInterval BtrTimeStep;
    SplitExplicitBarotropicStepperType BtrTimeStepper =
        SplitExplicitBarotropicStepperType::PredictorCorrector;
-   I4 NBtrSubcycles = 1;
-   I4 NSuperCycle   = 1;
+   I4 NBtrSubcycles          = 1;
+   I4 NTimeStepIteration     = 1;
+   I4 NBclCoriolisIteration = 2;
 };
 
 struct SplitExplicitBuffers {
    Array1DReal NormalBarotropicVelocitySubcycleCur;
    Array1DReal NormalBarotropicVelocitySubcycleNew;
+   Array1DReal BarotropicPressureAnomalySubcycleCur;
+   Array1DReal BarotropicPressureAnomalySubcycleNew;
    Array1DReal BarotropicPressure;
    Array1DReal BarotropicForcing;
    Array1DReal BarotropicFlux;

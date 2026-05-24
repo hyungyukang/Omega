@@ -24,7 +24,7 @@ struct SplitExplicitConfig {
    I4 NBtrSubcycles          = 1;
    I4 NTimeStepIteration     = 1;
    I4 NBclCoriolisIteration  = 2;
-   Real UnsplitFactor        = 1._Real;
+   Real SplitFactor          = 1._Real;
 };
 
 struct SplitExplicitScratch {

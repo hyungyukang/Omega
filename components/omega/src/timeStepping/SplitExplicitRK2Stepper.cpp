@@ -69,7 +69,7 @@ void SplitExplicitRK2Stepper::doSplitStage1(
 
    Tend->computeBaroclinicVelocityTendencies(
        State, AuxState, CurTracerArray, CurLevel, CurLevel, CurLevel, CurLevel,
-       0.5 * StageTimeStep);
+       SEConfig.SplitFactor, 0.5 * StageTimeStep);
 
    updateVelocityByTend(State, NextLevel, State, CurLevel,
                         0.5 * StageTimeStep);
@@ -146,7 +146,7 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State, TimeInstant &SimTime)
           State->getNormalBaroclinicVelocity(NextLevel), OnEdge);
       Pacer::stop("SE-RK2:haloStage1", 3);
 
-      if (SEConfig.UnsplitFactor != 0._Real) {
+      if (SEConfig.SplitFactor != 0._Real) {
          doSplitStage2(State, NextLevel,
                        StageTime + 0.5 * TimeStepIterationTimeStep,
                        TimeStepIterationTimeStep);

@@ -30,7 +30,7 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep) {
    std::string TimeStepperStr;
    if (TimeIntConfig.get("TimeStepper", TimeStepperStr).isSuccess()) {
       if (TimeStepperStr == "Unsplit-RK2" || TimeStepperStr == "UnsplitRK2") {
-         Options.UnsplitFactor = 0._Real;
+         Options.SplitFactor = 0._Real;
       }
    }
 

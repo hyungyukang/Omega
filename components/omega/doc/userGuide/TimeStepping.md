@@ -11,7 +11,8 @@ of the Omega configuration file:
     TimeStep: 0000_00:10:00
     BtrTimeStepper: Predictor-Corrector
     BtrTimeStep: 0000_00:00:30
-    NSuperCycle: 1
+    NTimeStepIteration: 1
+    NBclCoriolisIteration: 2
     StartTime: 0001-01-01_00:00:00
     StopTime: 0001-01-01_02:00:00
     RunDuration: none
@@ -47,11 +48,13 @@ in any of the following forms:
 Days, hours and minutes are optional but must be in order if included.
 Fractional seconds are optional.
 
-The BtrTimeStepper, BtrTimeStep, and NSuperCycle options are used by the
-split-explicit SE-RK2 framework. BtrTimeStepper selects the barotropic
-subcycle algorithm and currently defaults to Predictor-Corrector. BtrTimeStep
-sets the requested barotropic subcycle time step, and NSuperCycle sets the
-number of split-explicit supercycles within one model time step.
+The BtrTimeStepper, BtrTimeStep, NTimeStepIteration, and
+NBclCoriolisIteration options are used by the split-explicit SE-RK2 framework.
+BtrTimeStepper selects the barotropic subcycle algorithm and currently defaults
+to Predictor-Corrector. BtrTimeStep sets the requested barotropic subcycle time
+step, NTimeStepIteration sets the number of split-explicit time-step iterations
+within one model time step, and NBclCoriolisIteration sets the number of
+baroclinic Coriolis iterations.
 
 The StartTime refers to the starting time for the simulation. It is in the
 format ``yyyy-mm-day_hh:mm:ss`` for year, month, day, hour, minute, second.

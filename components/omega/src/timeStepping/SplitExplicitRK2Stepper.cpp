@@ -47,9 +47,11 @@ void SplitExplicitRK2Stepper::doSplitStage1(
 
    prescribeState(State, CurLevel, State, CurLevel, StageTime);
 
-   Tend->computeAllTendencies(State, AuxState, CurTracerArray, CurLevel,
-                              CurLevel, CurLevel, StageTime,
-                              0.5 * StageTimeStep);
+   AuxState->computeAll(State, CurTracerArray, CurLevel, CurLevel,
+                        0.5 * StageTimeStep);
+   Tend->computeBaroclinicVelocityTendencies(
+       State, AuxState, CurTracerArray, CurLevel, CurLevel, CurLevel,
+       StageTime, 0.5 * StageTimeStep);
 
    updateStateByTend(State, NextLevel, State, CurLevel,
                      0.5 * StageTimeStep);
@@ -95,16 +97,17 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State, TimeInstant &SimTime)
    const int NextLevel = 1;
 
    const MPI_Comm Comm = MeshHalo->getComm();
-   const TimeInterval SuperCycleTimeStep =
-       (1._Real / static_cast<Real>(SEConfig.NSuperCycle)) * TimeStep;
+   const TimeInterval TimeStepIterationTimeStep =
+       (1._Real / static_cast<Real>(SEConfig.NTimeStepIteration)) * TimeStep;
 
    TimeInstant StageTime = SimTime;
-   for (I4 SuperCycle = 0; SuperCycle < SEConfig.NSuperCycle; ++SuperCycle) {
+   for (I4 TimeStepIteration = 0;
+        TimeStepIteration < SEConfig.NTimeStepIteration; ++TimeStepIteration) {
       Array3DReal CurTracerArray  = Tracers::getAll(CurLevel);
       Array3DReal NextTracerArray = Tracers::getAll(NextLevel);
 
       doSplitStage1(State, CurTracerArray, NextTracerArray, CurLevel,
-                    NextLevel, StageTime, SuperCycleTimeStep);
+                    NextLevel, StageTime, TimeStepIterationTimeStep);
 
       Pacer::timingBarrier("SE-RK2:haloStage1Barrier", 3, Comm);
       Pacer::start("SE-RK2:haloStage1", 3);
@@ -117,7 +120,8 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State, TimeInstant &SimTime)
       case SplitExplicitBarotropicStepperType::PredictorCorrector:
          BarotropicPCStepper.doSplitStage2(
              State, SEBuffers, SEConfig, Mesh, VCoord, NextLevel,
-             StageTime + 0.5 * SuperCycleTimeStep, SuperCycleTimeStep);
+             StageTime + 0.5 * TimeStepIterationTimeStep,
+             TimeStepIterationTimeStep);
          break;
       case SplitExplicitBarotropicStepperType::Invalid:
       default:
@@ -125,18 +129,18 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State, TimeInstant &SimTime)
       }
 
       doSplitStage3(State, CurTracerArray, NextTracerArray, CurLevel,
-                    NextLevel, StageTime, SuperCycleTimeStep);
+                    NextLevel, StageTime, TimeStepIterationTimeStep);
 
-      if (SuperCycle + 1 < SEConfig.NSuperCycle) {
-         Pacer::timingBarrier("SE-RK2:haloSuperCycleBarrier", 3, Comm);
-         Pacer::start("SE-RK2:haloSuperCycle", 3);
+      if (TimeStepIteration + 1 < SEConfig.NTimeStepIteration) {
+         Pacer::timingBarrier("SE-RK2:haloTimeStepIterationBarrier", 3, Comm);
+         Pacer::start("SE-RK2:haloTimeStepIteration", 3);
          State->exchangeHalo(NextLevel);
          MeshHalo->exchangeFullArrayHalo(NextTracerArray, OnCell);
-         Pacer::stop("SE-RK2:haloSuperCycle", 3);
+         Pacer::stop("SE-RK2:haloTimeStepIteration", 3);
 
          State->updateTimeLevels();
          Tracers::updateTimeLevels();
-         StageTime = StageTime + SuperCycleTimeStep;
+         StageTime = StageTime + TimeStepIterationTimeStep;
       }
    }
 

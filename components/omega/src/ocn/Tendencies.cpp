@@ -741,12 +741,15 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
     const OceanState *State,        ///< [in] State variables
     const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
     int ThickTimeLevel,             ///< [in] Time level
-    int VelTimeLevel                ///< [in] Time level
+    int VelTimeLevel,               ///< [in] Time level
+    int /*BarotropicVelocityTimeLevel*/, ///< [in] Barotropic velocity time level
+    int BarotropicPressureTimeLevel ///< [in] Barotropic pressure time level
 ) {
 
    OMEGA_SCOPE(LocNormalVelocityTend, NormalVelocityTend);
    OMEGA_SCOPE(LocPotentialVortHAdv, PotentialVortHAdv);
    OMEGA_SCOPE(LocKEGrad, KEGrad);
+   OMEGA_SCOPE(LocSSHGrad, SSHGrad);
    OMEGA_SCOPE(LocVelocityDiffusion, VelocityDiffusion);
    OMEGA_SCOPE(LocVelocityHyperDiff, VelocityHyperDiff);
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
@@ -864,6 +867,26 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
       Pacer::stop("Tend:bclPressureGradTerm", 2);
    }
 
+   // Compute depth-mean specific volume times barotropic pressure gradient
+   const Array1DReal &BtrPressAnomaly =
+       State->getBarotropicPressureAnomaly(BarotropicPressureTimeLevel);
+   const Array1DReal &DepthMeanSpecVol = EqState->DepthMeanSpecificVolume;
+   if (LocSSHGrad.Enabled) {
+      Pacer::start("Tend:BclBtrPressureGrad", 2);
+      parallelForOuter(
+          {Mesh->NEdgesAll}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+             const int KMin   = MinLayerEdgeBot(IEdge);
+             const int KMax   = MaxLayerEdgeTop(IEdge);
+             const int KRange = vertRangeChunked(KMin, KMax);
+             parallelForInner(
+                 Team, KRange, INNER_LAMBDA(int KChunk) {
+                    LocSSHGrad(LocNormalVelocityTend, IEdge, KChunk,
+                               BtrPressAnomaly, DepthMeanSpecVol);
+                 });
+          });
+      Pacer::stop("Tend:BclBtrPressureGrad", 2);
+   }
+
    Pacer::stop("Tend:computeBaroclinicVelocityTendenciesOnly", 1);
 
 } // end baroclinic velocity tendency compute
@@ -874,6 +897,8 @@ void Tendencies::computeBaroclinicVelocityTendencies(
     const Array3DReal &TracerArray, ///< [in] Tracer array
     int ThickTimeLevel,             ///< [in] Time level
     int VelTimeLevel,               ///< [in] Time level
+    int BarotropicVelocityTimeLevel, ///< [in] Barotropic velocity time level
+    int BarotropicPressureTimeLevel, ///< [in] Barotropic pressure time level
     TimeInterval ProjDt ///< [in] Time interval for projection over the current
                         ///< time stepper stage
 ) {
@@ -883,7 +908,9 @@ void Tendencies::computeBaroclinicVelocityTendencies(
    AuxState->computeMomAux(State, TracerArray, ThickTimeLevel, NormBclVelEdge,
                            ProjDt);
    computeBaroclinicVelocityTendenciesOnly(State, AuxState, ThickTimeLevel,
-                                           VelTimeLevel);
+                                           VelTimeLevel,
+                                           BarotropicVelocityTimeLevel,
+                                           BarotropicPressureTimeLevel);
 
    Pacer::stop("Tend:computeBaroclinicVelocityTendencies", 1);
 }

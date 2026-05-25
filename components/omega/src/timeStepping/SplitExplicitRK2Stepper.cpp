@@ -254,8 +254,9 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State, TimeInstant &SimTime)
 
       Pacer::timingBarrier("SE-RK2:haloStage1Barrier", 3, Comm);
       Pacer::start("SE-RK2:haloStage1", 3);
-      MeshHalo->exchangeFullArrayHalo(
-          State->getNormalBaroclinicVelocity(NextLevel), OnEdge);
+      Array2DReal NormalBclVelNext =
+          State->getNormalBaroclinicVelocity(NextLevel);
+      MeshHalo->exchangeFullArrayHalo(NormalBclVelNext, OnEdge);
       Pacer::stop("SE-RK2:haloStage1", 3);
 
       if (SEConfig.SplitFactor != 0._Real) {

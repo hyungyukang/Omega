@@ -28,21 +28,20 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep) {
    Error Err = OmegaConfig->get(TimeIntConfig);
    CHECK_ERROR_ABORT(Err, "TimeIntegration group not found in Config");
 
+   bool IsUnsplit = false;
    std::string TimeStepperStr;
    if (TimeIntConfig.get("TimeStepper", TimeStepperStr).isSuccess()) {
-      if (TimeStepperStr == "UnsplitRK2") {
+      if (TimeStepperStr.rfind("Unsplit", 0) == 0) {
+         IsUnsplit            = true;
          SEConfig.SplitFactor = 0._Real;
       }
    }
 
-   std::string BtrTimeStepStr;
-   if (TimeIntConfig.get("BtrTimeStep", BtrTimeStepStr).isSuccess()) {
-      SEConfig.BtrTimeStep = TimeInterval(BtrTimeStepStr);
-   }
-
-   std::string BtrTimeStepperStr = "Predictor-Corrector";
-   if (TimeIntConfig.get("BtrTimeStepper", BtrTimeStepperStr).isSuccess()) {
-      SEConfig.BtrTimeStepper = getBtrTimeStepperFromStr(BtrTimeStepperStr);
+   if (!IsUnsplit) {
+      std::string BtrTimeStepStr;
+      if (TimeIntConfig.get("BtrTimeStep", BtrTimeStepStr).isSuccess()) {
+         SEConfig.BtrTimeStep = TimeInterval(BtrTimeStepStr);
+      }
    }
 
    I4 NTimeStepIteration = 1;
@@ -62,9 +61,14 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep) {
       }
       SEConfig.NBclCoriolisIteration = NBclCoriolisIteration;
    }
+   if (IsUnsplit) {
+      SEConfig.NBclCoriolisIteration = 1;
+   }
 
-   SEConfig.NBtrSubcycles =
-       computeSubcycleCount(TimeStep, SEConfig.BtrTimeStep);
+   if (!IsUnsplit) {
+      SEConfig.NBtrSubcycles =
+          computeSubcycleCount(TimeStep, SEConfig.BtrTimeStep);
+   }
 
    return SEConfig;
 }

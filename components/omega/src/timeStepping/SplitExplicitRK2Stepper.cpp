@@ -64,9 +64,8 @@ void SplitExplicitRK2Stepper::doSplitStage1(
 
    Pacer::start("SE-RK2:stage1Bcl", 2);
 
-   SplitExplicitInit::computeVelocitySplit(State, Mesh, VCoord, CurLevel);
-
    prescribeState(State, CurLevel, State, CurLevel, StageTime);
+   SplitExplicitInit::computeVelocitySplit(State, Mesh, VCoord, CurLevel);
 
    Tend->computeBaroclinicVelocityTendencies(
        State, AuxState, CurTracerArray, CurLevel, CurLevel, CurLevel, CurLevel,
@@ -181,6 +180,22 @@ void SplitExplicitRK2Stepper::updateBaroclinicVelocityByTend(
                      CoeffSeconds * NormalVelTend(IEdge, K);
               });
        });
+}
+
+//------------------------------------------------------------------------------
+void SplitExplicitRK2Stepper::initializeNextBarotropicState(
+    OceanState *State, I4 CurLevel, I4 NextLevel) const {
+
+   Array1DReal NormalBtrVelCur = State->getNormalBarotropicVelocity(CurLevel);
+   Array1DReal NormalBtrVelNext =
+       State->getNormalBarotropicVelocity(NextLevel);
+   Array1DReal BtrPressAnomalyCur =
+       State->getBarotropicPressureAnomaly(CurLevel);
+   Array1DReal BtrPressAnomalyNext =
+       State->getBarotropicPressureAnomaly(NextLevel);
+
+   deepCopy(NormalBtrVelNext, NormalBtrVelCur);
+   deepCopy(BtrPressAnomalyNext, BtrPressAnomalyCur);
 }
 
 //------------------------------------------------------------------------------

@@ -44,7 +44,8 @@ void SplitExplicitRK2Stepper::initializeStateFromInput(OceanState *State,
    if (!State)
       LOG_CRITICAL("Invalid State");
 
-   constexpr I4 CurLevel = 0;
+   constexpr I4 CurLevel  = 0;
+   constexpr I4 NextLevel = 1;
    Array3DReal CurTracerArray = Tracers::getAll(CurLevel);
    AuxState->computeMomVertAux(State, CurTracerArray, CurLevel);
    SplitExplicitInit::initializeBarotropicPressure(SEScratch, State, Mesh,
@@ -52,13 +53,11 @@ void SplitExplicitRK2Stepper::initializeStateFromInput(OceanState *State,
 
    if (SEConfig.SplitFactor == 0._Real) {
       SplitExplicitInit::computeUnsplitVelocitySplit(State, CurLevel);
-      return;
+   } else if (!ReadRestart) {
+      SplitExplicitInit::computeVelocitySplit(State, Mesh, VCoord, CurLevel);
    }
 
-   if (ReadRestart)
-      return;
-
-   SplitExplicitInit::computeVelocitySplit(State, Mesh, VCoord, CurLevel);
+   initializeNextSplitState(State, CurLevel, NextLevel);
 }
 
 //------------------------------------------------------------------------------
@@ -200,9 +199,11 @@ void SplitExplicitRK2Stepper::updateBaroclinicVelocityByTend(
 }
 
 //------------------------------------------------------------------------------
-void SplitExplicitRK2Stepper::initializeNextBarotropicState(
+void SplitExplicitRK2Stepper::initializeNextSplitState(
     OceanState *State, I4 CurLevel, I4 NextLevel) const {
 
+   Array2DReal NormalBclVelCur  = State->getNormalBaroclinicVelocity(CurLevel);
+   Array2DReal NormalBclVelNext = State->getNormalBaroclinicVelocity(NextLevel);
    Array1DReal NormalBtrVelCur  = State->getNormalBarotropicVelocity(CurLevel);
    Array1DReal NormalBtrVelNext = State->getNormalBarotropicVelocity(NextLevel);
    Array1DReal BtrPressAnomalyCur =
@@ -210,6 +211,7 @@ void SplitExplicitRK2Stepper::initializeNextBarotropicState(
    Array1DReal BtrPressAnomalyNext =
        State->getBarotropicPressureAnomaly(NextLevel);
 
+   deepCopy(NormalBclVelNext, NormalBclVelCur);
    deepCopy(NormalBtrVelNext, NormalBtrVelCur);
    deepCopy(BtrPressAnomalyNext, BtrPressAnomalyCur);
 }

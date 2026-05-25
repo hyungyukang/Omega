@@ -85,9 +85,9 @@ class SplitExplicitRK2Stepper : public TimeStepper {
    ) const;
 
    void
-   initializeNextBarotropicState(OceanState *State, ///< [inout] model state
-                                 I4 CurLevel,       ///< [in] current time level
-                                 I4 NextLevel       ///< [in] next time level
+   initializeNextSplitState(OceanState *State, ///< [inout] model state
+                            I4 CurLevel,       ///< [in] current time level
+                            I4 NextLevel       ///< [in] next time level
    ) const;
 
    void

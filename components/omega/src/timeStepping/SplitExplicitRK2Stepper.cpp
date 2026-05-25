@@ -107,14 +107,19 @@ void SplitExplicitRK2Stepper::doSplitStage1(
 void SplitExplicitRK2Stepper::doSplitStage3(
     OceanState *State, const Array3DReal &CurTracerArray,
     const Array3DReal &NextTracerArray, I4 CurLevel, I4 NextLevel,
-    const TimeInstant &StageTime, const TimeInterval &StageTimeStep) const {
+    const TimeInstant &StageTime, const TimeInterval &StageTimeStep,
+    bool FinalIteration) const {
 
    Pacer::start("SE-RK2:stage3TrThick", 2);
 
    prescribeState(State, NextLevel, State, CurLevel,
                   StageTime + 0.5 * StageTimeStep);
 
-   reconstructNormalVelocity(State, NextLevel);
+   if (FinalIteration) {
+      reconstructFinalNormalVelocity(State, CurLevel, NextLevel);
+   } else {
+      reconstructNormalVelocity(State, NextLevel);
+   }
 
    AuxState->computeThicknessTracerAux(State, NextTracerArray, NextLevel,
                                        NextLevel);
@@ -224,6 +229,37 @@ void SplitExplicitRK2Stepper::reconstructNormalVelocity(OceanState *State,
 }
 
 //------------------------------------------------------------------------------
+void SplitExplicitRK2Stepper::reconstructFinalNormalVelocity(
+    OceanState *State, I4 CurLevel, I4 NextLevel) const {
+
+   Array2DReal NormalVelNext = State->getNormalVelocity(NextLevel);
+   Array2DReal NormalBclVelCur =
+       State->getNormalBaroclinicVelocity(CurLevel);
+   Array2DReal NormalBclVelNext =
+       State->getNormalBaroclinicVelocity(NextLevel);
+   Array1DReal NormalBtrVelNext =
+       State->getNormalBarotropicVelocity(NextLevel);
+
+   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
+   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+
+   parallelForOuter(
+       "reconstructFinalNormalVelocity", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          const int KMin = MinLayerEdgeBot(IEdge);
+          const int KMax = MaxLayerEdgeTop(IEdge);
+
+          parallelForInner(
+              Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+                 NormalVelNext(IEdge, K) =
+                     NormalBtrVelNext(IEdge) +
+                     2._Real * NormalBclVelNext(IEdge, K) -
+                     NormalBclVelCur(IEdge, K);
+              });
+       });
+}
+
+//------------------------------------------------------------------------------
 void SplitExplicitRK2Stepper::computeVerticalVelocity(
     OceanState *State, I4 ThickTimeLevel, I4 VelTimeLevel,
     TimeInterval StageTimeStep) const {
@@ -283,18 +319,17 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
                        TimeStepIterationTimeStep);
       }
 
+      const bool FinalIteration =
+          TimeStepIteration + 1 == SEConfig.NTimeStepIteration;
       doSplitStage3(State, CurTracerArray, NextTracerArray, CurLevel, NextLevel,
-                    StageTime, TimeStepIterationTimeStep);
+                    StageTime, TimeStepIterationTimeStep, FinalIteration);
 
       if (TimeStepIteration + 1 < SEConfig.NTimeStepIteration) {
          Pacer::timingBarrier("SE-RK2:haloTimeStepIterationBarrier", 3, Comm);
          Pacer::start("SE-RK2:haloTimeStepIteration", 3);
-         State->exchangeHalo(NextLevel);
-         MeshHalo->exchangeFullArrayHalo(NextTracerArray, OnCell);
-         Pacer::stop("SE-RK2:haloTimeStepIteration", 3);
-
          State->updateTimeLevels();
          Tracers::updateTimeLevels();
+         Pacer::stop("SE-RK2:haloTimeStepIteration", 3);
          StageTime = StageTime + TimeStepIterationTimeStep;
       }
    }

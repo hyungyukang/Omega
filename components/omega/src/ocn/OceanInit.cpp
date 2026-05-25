@@ -148,8 +148,6 @@ int ocnInit(MPI_Comm Comm ///< [in] ocean MPI communicator
    // fields
 
    OceanState *DefState = OceanState::getDefault();
-   DefStepper->initializeStateFromInput(DefState, ReadRestart);
-
    I4 CurTimeLevel      = 0;
    DefState->exchangeHalo(CurTimeLevel);
    DefState->copyToHost(CurTimeLevel);
@@ -165,6 +163,14 @@ int ocnInit(MPI_Comm Comm ///< [in] ocean MPI communicator
    if (Err != 0) {
       ABORT_ERROR("Error updating tracer halo after restart");
    }
+
+   DefStepper->initializeStateFromInput(DefState, ReadRestart);
+   DefState->exchangeHalo(CurTimeLevel);
+   DefState->copyToHost(CurTimeLevel);
+
+   AuxiliaryState *DefAuxState = AuxiliaryState::getDefault();
+   DefAuxState->exchangeHalo();
+
    Tracers::copyToHost(CurTimeLevel);
 
    return Err;

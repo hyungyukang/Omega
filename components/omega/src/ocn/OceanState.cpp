@@ -294,6 +294,9 @@ void OceanState::defineFields() {
 
    FieldGroup::addFieldToGroup(NormalVelocityFldName, "Restart");
    FieldGroup::addFieldToGroup(PseudoThicknessFldName, "Restart");
+   FieldGroup::addFieldToGroup(NormalBaroclinicVelocityFldName, "Restart");
+   FieldGroup::addFieldToGroup(NormalBarotropicVelocityFldName, "Restart");
+   FieldGroup::addFieldToGroup(BarotropicPressureAnomalyFldName, "Restart");
 
    // Associate Field with data
    const I4 TimeIndex = getTimeIndex(0);

@@ -147,6 +147,8 @@ int ocnInit(MPI_Comm Comm ///< [in] ocean MPI communicator
    // fields
 
    OceanState *DefState = OceanState::getDefault();
+   DefStepper->initializeStateFromInput(DefState, !Err2.isFail());
+
    I4 CurTimeLevel      = 0;
    DefState->exchangeHalo(CurTimeLevel);
    DefState->copyToHost(CurTimeLevel);

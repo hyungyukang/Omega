@@ -375,7 +375,6 @@ int initUpdateHaloAndHostArrays() {
    int Err = 0;
 
    OceanState *DefState = OceanState::getDefault();
-   DefStepper->initializeStateFromInput(DefState, !Err2.isFail());
    I4 CurTimeLevel      = 0;
    DefState->exchangeHalo(CurTimeLevel);
 
@@ -398,6 +397,15 @@ int initUpdateHaloAndHostArrays() {
    if (Err != 0) {
       ABORT_ERROR("Error updating tracer halo");
    }
+
+
+   DefStepper->initializeStateFromInput(DefState, ReadRestart);
+   DefState->exchangeHalo(CurTimeLevel);
+   DefState->copyToHost(CurTimeLevel);
+
+   AuxiliaryState *DefAuxState = AuxiliaryState::getDefault();
+   DefAuxState->exchangeHalo();
+
    Tracers::copyToHost(CurTimeLevel);
 
    return Err;

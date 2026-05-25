@@ -19,11 +19,11 @@
 ///    CalendarType: No Leap
 ///    # Algorithm to use for the dynamics time integration
 ///    # Supported options are Forward-Backward (default), RungeKutta2,
-///    # RungeKutta4, SE-RK2 and UnsplitRK2
+///    # RungeKutta4, SplitExplicitRK2 and UnsplitRK2
 ///    TimeStepper: Forward-Backward
 ///    # Time step to use, in form of DDDD_hh:mm:ss (days, hours, minutes, secs)
 ///    TimeStep: 0000_00:10:00
-///    # Split-explicit options used by SE-RK2
+///    # Split-explicit options used by SplitExplicitRK2
 ///    BtrTimeStepper: Predictor-Corrector
 ///    BtrTimeStep: 0000_00:00:30
 ///    NTimeStepIteration: 1

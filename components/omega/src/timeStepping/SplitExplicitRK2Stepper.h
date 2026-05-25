@@ -42,8 +42,7 @@ class SplitExplicitRK2Stepper : public TimeStepper {
  private:
    void doSplitStage1(
        OceanState *State,                  ///< [inout] model state
-       const Array3DReal &CurTracerArray,  ///< [in] current tracers
-       const Array3DReal &NextTracerArray, ///< [out] provisional tracers
+       const Array3DReal &TendencyTracerArray, ///< [in] tracers for tendencies
        I4 CurLevel,                        ///< [in] current time level
        I4 NextLevel,                       ///< [in] next time level
        const TimeInstant &StageTime,       ///< [in] current stage time
@@ -86,9 +85,9 @@ class SplitExplicitRK2Stepper : public TimeStepper {
    ) const;
 
    void
-   initializeNextSplitState(OceanState *State, ///< [inout] model state
-                            I4 CurLevel,       ///< [in] current time level
-                            I4 NextLevel       ///< [in] next time level
+   initializeNextState(OceanState *State, ///< [inout] model state
+                       I4 CurLevel,       ///< [in] current time level
+                       I4 NextLevel       ///< [in] next time level
    ) const;
 
    void

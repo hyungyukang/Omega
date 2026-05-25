@@ -769,7 +769,7 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
 
    const Array2DReal &FluxLayerThickEdge =
        AuxState->LayerThicknessAux.FluxLayerThickEdge;
-   Array2DReal NormBclVelEdge = State->getNormalBaroclinicVelocity(VelTimeLevel);
+   Array2DReal NormVelEdge = State->getNormalVelocity(VelTimeLevel);
 
    // Compute baroclinic relative-vorticity horizontal advection
    const Array2DReal &NormRVortEdge = AuxState->VorticityAux.NormRelVortEdge;
@@ -785,7 +785,7 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
                  Team, KRange, INNER_LAMBDA(int KChunk) {
                     LocPotentialVortHAdv(LocNormalVelocityTend, IEdge, KChunk,
                                          NormRVortEdge, FluxLayerThickEdge,
-                                         NormBclVelEdge);
+                                         NormVelEdge);
                  });
           });
       Pacer::stop("Tend:BclVortHAdv", 2);
@@ -848,7 +848,7 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
    }
 
    Pacer::start("Tend:computeBaroclinicVelocityVAdvTend", 2);
-   VAdv->computeVelocityVAdvTend(NormalVelocityTend, NormBclVelEdge,
+   VAdv->computeVelocityVAdvTend(NormalVelocityTend, NormVelEdge,
                                  FluxLayerThickEdge);
    Pacer::stop("Tend:computeBaroclinicVelocityVAdvTend", 2);
 
@@ -906,8 +906,7 @@ void Tendencies::computeBaroclinicVelocityTendencies(
 ) {
    Pacer::start("Tend:computeBaroclinicVelocityTendencies", 1);
 
-   Array2DReal NormBclVelEdge = State->getNormalBaroclinicVelocity(VelTimeLevel);
-   AuxState->computeMomAux(State, TracerArray, ThickTimeLevel, NormBclVelEdge,
+   AuxState->computeMomAux(State, TracerArray, ThickTimeLevel, VelTimeLevel,
                            ProjDt);
    computeBaroclinicVelocityTendenciesOnly(State, AuxState, ThickTimeLevel,
                                            VelTimeLevel,

@@ -42,14 +42,13 @@ void SplitExplicitRK2Stepper::initBarotropicStepper() {
 
    if (SEConfig.BtrTimeStepper ==
        SplitExplicitBarotropicStepperType::PredictorCorrector) {
-      BarotropicStage2 =
-          [this](OceanState *State, I4 TimeLevel,
-                 const TimeInstant &StageTime,
-                 const TimeInterval &StageTimeStep) {
-             BarotropicPCStepper.doSplitStage2(
-                 State, SEScratch, SEConfig, Mesh, VCoord, TimeLevel,
-                 StageTime, StageTimeStep);
-          };
+      BarotropicStage2 = [this](OceanState *State, I4 TimeLevel,
+                                const TimeInstant &StageTime,
+                                const TimeInterval &StageTimeStep) {
+         BarotropicPCStepper.doSplitStage2(State, SEScratch, SEConfig, Mesh,
+                                           VCoord, TimeLevel, StageTime,
+                                           StageTimeStep);
+      };
       return;
    }
 
@@ -98,16 +97,15 @@ void SplitExplicitRK2Stepper::doSplitStage3(
    AuxState->computeThicknessTracerAux(State, NextTracerArray, NextLevel,
                                        NextLevel);
    computeVerticalVelocity(State, NextLevel, NextLevel, 0.5 * StageTimeStep);
-   Tend->computeThicknessTendenciesOnly(
-       State, AuxState, NextLevel, NextLevel,
-       StageTime + 0.5 * StageTimeStep);
+   Tend->computeThicknessTendenciesOnly(State, AuxState, NextLevel, NextLevel,
+                                        StageTime + 0.5 * StageTimeStep);
    Tend->computeTracerTendenciesOnly(State, AuxState, NextTracerArray,
                                      NextLevel, NextLevel,
                                      StageTime + 0.5 * StageTimeStep);
 
    updateThicknessByTend(State, NextLevel, State, CurLevel, StageTimeStep);
-   updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel,
-                       State, CurLevel, StageTimeStep);
+   updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel, State,
+                       CurLevel, StageTimeStep);
 
    SplitExplicitInit::computeVelocitySplit(State, Mesh, VCoord, NextLevel);
 
@@ -155,10 +153,8 @@ void SplitExplicitRK2Stepper::updateBaroclinicVelocityByTend(
     OceanState *State1, I4 TimeLevel1, OceanState *State2, I4 TimeLevel2,
     TimeInterval Coeff) const {
 
-   Array2DReal NormalBclVel1 =
-       State1->getNormalBaroclinicVelocity(TimeLevel1);
-   Array2DReal NormalBclVel2 =
-       State2->getNormalBaroclinicVelocity(TimeLevel2);
+   Array2DReal NormalBclVel1 = State1->getNormalBaroclinicVelocity(TimeLevel1);
+   Array2DReal NormalBclVel2 = State2->getNormalBaroclinicVelocity(TimeLevel2);
 
    R8 CoeffSeconds;
    Coeff.get(CoeffSeconds, TimeUnits::Seconds);
@@ -186,9 +182,8 @@ void SplitExplicitRK2Stepper::updateBaroclinicVelocityByTend(
 void SplitExplicitRK2Stepper::initializeNextBarotropicState(
     OceanState *State, I4 CurLevel, I4 NextLevel) const {
 
-   Array1DReal NormalBtrVelCur = State->getNormalBarotropicVelocity(CurLevel);
-   Array1DReal NormalBtrVelNext =
-       State->getNormalBarotropicVelocity(NextLevel);
+   Array1DReal NormalBtrVelCur  = State->getNormalBarotropicVelocity(CurLevel);
+   Array1DReal NormalBtrVelNext = State->getNormalBarotropicVelocity(NextLevel);
    Array1DReal BtrPressAnomalyCur =
        State->getBarotropicPressureAnomaly(CurLevel);
    Array1DReal BtrPressAnomalyNext =
@@ -225,13 +220,13 @@ void SplitExplicitRK2Stepper::computeVerticalVelocity(
 
    const auto &FluxLayerThickEdge =
        AuxState->LayerThicknessAux.FluxLayerThickEdge;
-   VertAdvection->computeVerticalVelocity(
-       NormalVelEdge, FluxLayerThickEdge, LayerThickCell, DtSeconds);
+   VertAdvection->computeVerticalVelocity(NormalVelEdge, FluxLayerThickEdge,
+                                          LayerThickCell, DtSeconds);
 }
 
 //------------------------------------------------------------------------------
-void SplitExplicitRK2Stepper::doStep(OceanState *State, TimeInstant &SimTime)
-    const {
+void SplitExplicitRK2Stepper::doStep(OceanState *State,
+                                     TimeInstant &SimTime) const {
 
    if (!State)
       LOG_CRITICAL("Invalid State");
@@ -249,8 +244,8 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State, TimeInstant &SimTime)
       Array3DReal CurTracerArray  = Tracers::getAll(CurLevel);
       Array3DReal NextTracerArray = Tracers::getAll(NextLevel);
 
-      doSplitStage1(State, CurTracerArray, NextTracerArray, CurLevel,
-                    NextLevel, StageTime, TimeStepIterationTimeStep);
+      doSplitStage1(State, CurTracerArray, NextTracerArray, CurLevel, NextLevel,
+                    StageTime, TimeStepIterationTimeStep);
 
       Pacer::timingBarrier("SE-RK2:haloStage1Barrier", 3, Comm);
       Pacer::start("SE-RK2:haloStage1", 3);
@@ -265,8 +260,8 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State, TimeInstant &SimTime)
                        TimeStepIterationTimeStep);
       }
 
-      doSplitStage3(State, CurTracerArray, NextTracerArray, CurLevel,
-                    NextLevel, StageTime, TimeStepIterationTimeStep);
+      doSplitStage3(State, CurTracerArray, NextTracerArray, CurLevel, NextLevel,
+                    StageTime, TimeStepIterationTimeStep);
 
       if (TimeStepIteration + 1 < SEConfig.NTimeStepIteration) {
          Pacer::timingBarrier("SE-RK2:haloTimeStepIterationBarrier", 3, Comm);

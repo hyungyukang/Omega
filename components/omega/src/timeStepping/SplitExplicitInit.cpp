@@ -41,12 +41,12 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep) {
 
    std::string BtrTimeStepperStr = "Predictor-Corrector";
    if (TimeIntConfig.get("BtrTimeStepper", BtrTimeStepperStr).isSuccess()) {
-      Options.BtrTimeStepper =
-          getBtrTimeStepperFromStr(BtrTimeStepperStr);
+      Options.BtrTimeStepper = getBtrTimeStepperFromStr(BtrTimeStepperStr);
    }
 
    I4 NTimeStepIteration = 1;
-   if (TimeIntConfig.get("NTimeStepIteration", NTimeStepIteration).isSuccess()) {
+   if (TimeIntConfig.get("NTimeStepIteration", NTimeStepIteration)
+           .isSuccess()) {
       if (NTimeStepIteration < 1) {
          ABORT_ERROR("NTimeStepIteration must be greater than zero");
       }
@@ -54,16 +54,15 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep) {
    }
 
    I4 NBclCoriolisIteration = 2;
-   if (TimeIntConfig.get("NBclCoriolisIteration",
-                         NBclCoriolisIteration).isSuccess()) {
+   if (TimeIntConfig.get("NBclCoriolisIteration", NBclCoriolisIteration)
+           .isSuccess()) {
       if (NBclCoriolisIteration < 1) {
          ABORT_ERROR("NBclCoriolisIteration must be greater than zero");
       }
       Options.NBclCoriolisIteration = NBclCoriolisIteration;
    }
 
-   Options.NBtrSubcycles =
-       computeSubcycleCount(TimeStep, Options.BtrTimeStep);
+   Options.NBtrSubcycles = computeSubcycleCount(TimeStep, Options.BtrTimeStep);
 
    return Options;
 }
@@ -72,9 +71,9 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep) {
 SplitExplicitBarotropicStepperType
 SplitExplicitInit::getBtrTimeStepperFromStr(const std::string &InString) {
 
-   if (InString == "Predictor-Corrector" ||
-       InString == "PredictorCorrector" || InString == "PC" ||
-       InString == "FBPC" || InString == "Forward-Backward-Predictor-Corrector") {
+   if (InString == "Predictor-Corrector" || InString == "PredictorCorrector" ||
+       InString == "PC" || InString == "FBPC" ||
+       InString == "Forward-Backward-Predictor-Corrector") {
       return SplitExplicitBarotropicStepperType::PredictorCorrector;
    }
 
@@ -85,8 +84,8 @@ SplitExplicitInit::getBtrTimeStepperFromStr(const std::string &InString) {
 }
 
 //------------------------------------------------------------------------------
-I4 SplitExplicitInit::computeSubcycleCount(
-    const TimeInterval &TimeStep, const TimeInterval &BtrTimeStep) {
+I4 SplitExplicitInit::computeSubcycleCount(const TimeInterval &TimeStep,
+                                           const TimeInterval &BtrTimeStep) {
 
    R8 TimeStepSeconds;
    R8 BtrTimeStepSeconds;
@@ -126,9 +125,8 @@ void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
        Array1DReal("BarotropicForcing" + Name, Mesh->NEdgesSize);
    Scratch.BarotropicFlux =
        Array1DReal("BarotropicFlux" + Name, Mesh->NEdgesSize);
-   Scratch.BaseVelocityTend =
-       Array2DReal("BaseVelocityTend" + Name, Mesh->NEdgesSize,
-                   VCoord->NVertLayers);
+   Scratch.BaseVelocityTend = Array2DReal(
+       "BaseVelocityTend" + Name, Mesh->NEdgesSize, VCoord->NVertLayers);
 
    deepCopy(Scratch.NormalBarotropicVelocitySubcycleCur, 0.);
    deepCopy(Scratch.NormalBarotropicVelocitySubcycleNew, 0.);
@@ -180,9 +178,8 @@ void SplitExplicitInit::computeVelocitySplit(OceanState *State,
           Real ThicknessSum = 0._Real;
           Real FluxSum      = 0._Real;
           for (I4 K = KMin; K <= KMax; ++K) {
-             const Real EdgeThickness =
-                 0.5_Real *
-                 (LayerThickness(Cell1, K) + LayerThickness(Cell2, K));
+             const Real EdgeThickness = 0.5_Real * (LayerThickness(Cell1, K) +
+                                                    LayerThickness(Cell2, K));
              ThicknessSum += EdgeThickness;
              FluxSum += EdgeThickness * NormalVelocity(IEdge, K);
           }

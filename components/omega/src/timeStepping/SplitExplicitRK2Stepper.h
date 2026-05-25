@@ -35,23 +35,23 @@ class SplitExplicitRK2Stepper : public TimeStepper {
 
  private:
    void doSplitStage1(
-       OceanState *State,                   ///< [inout] model state
-       const Array3DReal &CurTracerArray,   ///< [in] current tracers
-       const Array3DReal &NextTracerArray,  ///< [out] provisional tracers
-       I4 CurLevel,                         ///< [in] current time level
-       I4 NextLevel,                        ///< [in] next time level
-       const TimeInstant &StageTime,        ///< [in] current stage time
-       const TimeInterval &StageTimeStep    ///< [in] current stage time step
+       OceanState *State,                  ///< [inout] model state
+       const Array3DReal &CurTracerArray,  ///< [in] current tracers
+       const Array3DReal &NextTracerArray, ///< [out] provisional tracers
+       I4 CurLevel,                        ///< [in] current time level
+       I4 NextLevel,                       ///< [in] next time level
+       const TimeInstant &StageTime,       ///< [in] current stage time
+       const TimeInterval &StageTimeStep   ///< [in] current stage time step
    ) const;
 
    void doSplitStage3(
-       OceanState *State,                   ///< [inout] model state
-       const Array3DReal &CurTracerArray,   ///< [in] current tracers
-       const Array3DReal &NextTracerArray,  ///< [out] next tracers
-       I4 CurLevel,                         ///< [in] current time level
-       I4 NextLevel,                        ///< [in] next time level
-       const TimeInstant &StageTime,        ///< [in] current stage time
-       const TimeInterval &StageTimeStep    ///< [in] current stage time step
+       OceanState *State,                  ///< [inout] model state
+       const Array3DReal &CurTracerArray,  ///< [in] current tracers
+       const Array3DReal &NextTracerArray, ///< [out] next tracers
+       I4 CurLevel,                        ///< [in] current time level
+       I4 NextLevel,                       ///< [in] next time level
+       const TimeInstant &StageTime,       ///< [in] current stage time
+       const TimeInterval &StageTimeStep   ///< [in] current stage time step
    ) const;
 
    using BarotropicStage2Function = std::function<void(
@@ -63,11 +63,11 @@ class SplitExplicitRK2Stepper : public TimeStepper {
                       const TimeInterval &StageTimeStep) const;
 
    void doBaroclinicCoriolisIteration(
-       OceanState *State,                  ///< [inout] model state
+       OceanState *State,                   ///< [inout] model state
        const Array2DReal &BaseVelocityTend, ///< [in] non-Coriolis tendency
-       I4 CurLevel,                        ///< [in] current time level
-       I4 NextLevel,                       ///< [in] next time level
-       const TimeInterval &StageTimeStep   ///< [in] current stage time step
+       I4 CurLevel,                         ///< [in] current time level
+       I4 NextLevel,                        ///< [in] next time level
+       const TimeInterval &StageTimeStep    ///< [in] current stage time step
    ) const;
 
    void updateBaroclinicVelocityByTend(
@@ -78,15 +78,15 @@ class SplitExplicitRK2Stepper : public TimeStepper {
        TimeInterval Coeff  ///< [in] time-related coeff for tendency
    ) const;
 
-   void initializeNextBarotropicState(
-       OceanState *State, ///< [inout] model state
-       I4 CurLevel,       ///< [in] current time level
-       I4 NextLevel       ///< [in] next time level
+   void
+   initializeNextBarotropicState(OceanState *State, ///< [inout] model state
+                                 I4 CurLevel,       ///< [in] current time level
+                                 I4 NextLevel       ///< [in] next time level
    ) const;
 
-   void reconstructNormalVelocity(
-       OceanState *State, ///< [inout] model state
-       I4 TimeLevel       ///< [in] time level to reconstruct
+   void
+   reconstructNormalVelocity(OceanState *State, ///< [inout] model state
+                             I4 TimeLevel ///< [in] time level to reconstruct
    ) const;
 
    void computeVerticalVelocity(

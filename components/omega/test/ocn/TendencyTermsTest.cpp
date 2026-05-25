@@ -516,8 +516,8 @@ int testCoriolisAccelerationOnEdge(int NVertLayers, Real RTol) {
           const int KRange = vertRangeChunked(KMin, KMax);
           parallelForInner(
               Team, KRange, INNER_LAMBDA(int KChunk) {
-                 CoriolisAccelOnE(NumCoriolis2D, IEdge, KChunk,
-                                  NormalVelEdge, FEdge);
+                 CoriolisAccelOnE(NumCoriolis2D, IEdge, KChunk, NormalVelEdge,
+                                  FEdge);
               });
        });
 

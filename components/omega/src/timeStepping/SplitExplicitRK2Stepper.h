@@ -57,7 +57,8 @@ class SplitExplicitRK2Stepper : public TimeStepper {
        I4 CurLevel,                        ///< [in] current time level
        I4 NextLevel,                       ///< [in] next time level
        const TimeInstant &StageTime,       ///< [in] current stage time
-       const TimeInterval &StageTimeStep   ///< [in] current stage time step
+       const TimeInterval &StageTimeStep,  ///< [in] current stage time step
+       bool FinalIteration ///< [in] true on the final time-step iteration
    ) const;
 
    using BarotropicStage2Function = std::function<void(
@@ -93,6 +94,12 @@ class SplitExplicitRK2Stepper : public TimeStepper {
    void
    reconstructNormalVelocity(OceanState *State, ///< [inout] model state
                              I4 TimeLevel ///< [in] time level to reconstruct
+   ) const;
+
+   void reconstructFinalNormalVelocity(
+       OceanState *State, ///< [inout] model state
+       I4 CurLevel,       ///< [in] current time level
+       I4 NextLevel       ///< [in] next time level
    ) const;
 
    void computeVerticalVelocity(

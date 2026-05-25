@@ -343,7 +343,7 @@ void VertCoord::defineFields() {
    );
 
    auto TotalGeometricThicknessField = Field::create(
-       TotalGeomThickFldName, // field name
+       TotalGeomThickFldName,                           // field name
        "Total geometric thickness in each cell column", // long name
        "m",                                             // units
        "",                                              // CF standard Name
@@ -1141,9 +1141,10 @@ void VertCoord::computeTotalPseudoThickness(
               },
               ColumnThickness);
 
-          Kokkos::single(PerTeam(Team), INNER_LAMBDA() {
-             LocTotalPseudoThickness(ICell) = ColumnThickness;
-          });
+          Kokkos::single(
+              PerTeam(Team), INNER_LAMBDA() {
+                 LocTotalPseudoThickness(ICell) = ColumnThickness;
+              });
        });
 } // end computeTotalPseudoThickness
 
@@ -1201,8 +1202,7 @@ void VertCoord::computeTotalGeometricThickness(
    OMEGA_SCOPE(LocTotalGeometricThickness, TotalGeometricThickness);
 
    parallelFor(
-       "computeTotalGeometricThickness", {NCellsAll},
-       KOKKOS_LAMBDA(int ICell) {
+       "computeTotalGeometricThickness", {NCellsAll}, KOKKOS_LAMBDA(int ICell) {
           LocTotalGeometricThickness(ICell) =
               RhoSw * DepthIntegSpecificVolume(ICell);
        });

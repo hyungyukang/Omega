@@ -165,10 +165,9 @@ int main(int argc, char *argv[]) {
       /// Check results
       Err = 0;
       for (int ICell = 0; ICell < NCellsAll; ICell++) {
-         Real ExpectedTotal =
-             (DefVertCoord->MaxLayerCellH(ICell) -
-              DefVertCoord->MinLayerCellH(ICell) + 1) /
-             (Gravity * Rho0);
+         Real ExpectedTotal = (DefVertCoord->MaxLayerCellH(ICell) -
+                               DefVertCoord->MinLayerCellH(ICell) + 1) /
+                              (Gravity * Rho0);
          Real TotalDiff =
              std::abs(TotalPseudoThicknessH(ICell) - ExpectedTotal);
          if (TotalDiff > 1e-10) {
@@ -284,9 +283,8 @@ int main(int argc, char *argv[]) {
       /// Check results
       Err = 0;
       for (int ICell = 0; ICell < NCellsAll; ICell++) {
-         Real ExpectedTotal =
-             DefVertCoord->MaxLayerCellH(ICell) -
-             DefVertCoord->MinLayerCellH(ICell) + 1;
+         Real ExpectedTotal = DefVertCoord->MaxLayerCellH(ICell) -
+                              DefVertCoord->MinLayerCellH(ICell) + 1;
          Real TotalDiff =
              std::abs(TotalGeometricThicknessH(ICell) - ExpectedTotal);
          if (TotalDiff > 1e-10) {

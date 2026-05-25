@@ -470,7 +470,8 @@ Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
                  CustomTendencyType{}, CustomTendencyType{}) {}
 
 //------------------------------------------------------------------------------
-// Accumulate f times tangential velocity reconstruction for edge-centered 2D fields
+// Accumulate f times tangential velocity reconstruction for edge-centered 2D
+// fields
 void Tendencies::computeCoriolisAccelerationOnEdge(
     const Array2DReal &Tend,          ///< [inout] velocity tendency
     const Array2DReal &NormalVelEdge, ///< [in] normal velocity on edges
@@ -497,7 +498,8 @@ void Tendencies::computeCoriolisAccelerationOnEdge(
 }
 
 //------------------------------------------------------------------------------
-// Accumulate f times tangential velocity reconstruction for edge-centered 1D fields
+// Accumulate f times tangential velocity reconstruction for edge-centered 1D
+// fields
 void Tendencies::computeCoriolisAccelerationOnEdge(
     const Array1DReal &Tend,          ///< [inout] barotropic velocity tendency
     const Array1DReal &NormalVelEdge, ///< [in] normal velocity on edges
@@ -778,13 +780,13 @@ void Tendencies::computeVelocityTendenciesOnly(
 //------------------------------------------------------------------------------
 // Compute baroclinic velocity tendencies for the split-explicit forcing term
 void Tendencies::computeBaroclinicVelocityTendenciesOnly(
-    const OceanState *State,        ///< [in] State variables
-    const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
-    int ThickTimeLevel,             ///< [in] Time level
-    int VelTimeLevel,               ///< [in] Time level
+    const OceanState *State,         ///< [in] State variables
+    const AuxiliaryState *AuxState,  ///< [in] Auxilary state variables
+    int ThickTimeLevel,              ///< [in] Time level
+    int VelTimeLevel,                ///< [in] Time level
     int BarotropicVelocityTimeLevel, ///< [in] Barotropic velocity time level
     int BarotropicPressureTimeLevel, ///< [in] Barotropic pressure time level
-    Real SplitFactor                ///< [in] Split-explicit forcing factor
+    Real SplitFactor                 ///< [in] Split-explicit forcing factor
 ) {
    OMEGA_SCOPE(LocNormalVelocityTend, NormalVelocityTend);
    OMEGA_SCOPE(LocPotentialVortHAdv, PotentialVortHAdv);
@@ -921,8 +923,7 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
              parallelForInner(
                  Team, KRange, INNER_LAMBDA(int KChunk) {
                     LocSSHGrad(LocNormalVelocityTend, IEdge, KChunk,
-                               BtrPressAnomaly, DepthMeanSpecVol,
-                               SplitFactor);
+                               BtrPressAnomaly, DepthMeanSpecVol, SplitFactor);
                  });
           });
       Pacer::stop("Tend:BclBtrPressureGrad", 2);
@@ -933,14 +934,14 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
 } // end baroclinic velocity tendency compute
 
 void Tendencies::computeBaroclinicVelocityTendencies(
-    const OceanState *State,        ///< [in] State variables
-    const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
-    const Array3DReal &TracerArray, ///< [in] Tracer array
-    int ThickTimeLevel,             ///< [in] Time level
-    int VelTimeLevel,               ///< [in] Time level
+    const OceanState *State,         ///< [in] State variables
+    const AuxiliaryState *AuxState,  ///< [in] Auxilary state variables
+    const Array3DReal &TracerArray,  ///< [in] Tracer array
+    int ThickTimeLevel,              ///< [in] Time level
+    int VelTimeLevel,                ///< [in] Time level
     int BarotropicVelocityTimeLevel, ///< [in] Barotropic velocity time level
     int BarotropicPressureTimeLevel, ///< [in] Barotropic pressure time level
-    Real SplitFactor,               ///< [in] Split-explicit forcing factor
+    Real SplitFactor,                ///< [in] Split-explicit forcing factor
     TimeInterval ProjDt ///< [in] Time interval for projection over the current
                         ///< time stepper stage
 ) {
@@ -948,11 +949,9 @@ void Tendencies::computeBaroclinicVelocityTendencies(
 
    AuxState->computeMomAux(State, TracerArray, ThickTimeLevel, VelTimeLevel,
                            ProjDt);
-   computeBaroclinicVelocityTendenciesOnly(State, AuxState, ThickTimeLevel,
-                                           VelTimeLevel,
-                                           BarotropicVelocityTimeLevel,
-                                           BarotropicPressureTimeLevel,
-                                           SplitFactor);
+   computeBaroclinicVelocityTendenciesOnly(
+       State, AuxState, ThickTimeLevel, VelTimeLevel,
+       BarotropicVelocityTimeLevel, BarotropicPressureTimeLevel, SplitFactor);
 
    Pacer::stop("Tend:computeBaroclinicVelocityTendencies", 1);
 }

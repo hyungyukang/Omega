@@ -134,8 +134,7 @@ class PotentialVortHAdvOnEdge {
          for (int KVec = 0; KVec < KLen; ++KVec) {
             const I4 K = KStart + KVec;
             const Real NormVort =
-                (NormRVortEdge(IEdge, K) + NormRVortEdge(JEdge, K)) *
-                0.5_Real;
+                (NormRVortEdge(IEdge, K) + NormRVortEdge(JEdge, K)) * 0.5_Real;
 
             VortTmp[KVec] += WeightsOnEdge(IEdge, J) *
                              FluxLayerThickEdge(JEdge, K) *
@@ -166,8 +165,7 @@ class CoriolisAccelerationOnEdge {
 
    /// The functor takes edge index, vertical chunk index, velocity on edges,
    /// and Coriolis parameter on edges as inputs, updates the tendency array
-   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge,
-                                   I4 KChunk,
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
                                    const Array2DReal &NormalVelEdge,
                                    const Array1DReal &FEdge) const {
 
@@ -186,7 +184,7 @@ class CoriolisAccelerationOnEdge {
       }
 
       for (int KVec = 0; KVec < KLen; ++KVec) {
-         const I4 K      = KStart + KVec;
+         const I4 K = KStart + KVec;
          Tend(IEdge, K) -= AccelTmp[KVec];
       }
    }
@@ -201,8 +199,8 @@ class CoriolisAccelerationOnEdge {
 
       for (int J = 0; J < NEdgesOnEdge(IEdge); ++J) {
          const I4 JEdge = EdgesOnEdge(IEdge, J);
-         AccelTmp += WeightsOnEdge(IEdge, J) * NormalVelEdge(JEdge) *
-                     FEdge(JEdge);
+         AccelTmp +=
+             WeightsOnEdge(IEdge, J) * NormalVelEdge(JEdge) * FEdge(JEdge);
       }
 
       Tend(IEdge) -= AccelTmp;
@@ -297,16 +295,15 @@ class SSHGradOnEdge {
 
    /// Computes depth-mean specific volume times the barotropic pressure
    /// gradient on edges and adds it to every active vertical layer.
-   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge,
-                                   I4 KChunk,
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
                                    const Array1DReal &BtrPressAnomaly,
                                    const Array1DReal &DepthMeanSpecVol,
                                    Real SplitFactor) const {
 
-      const I4 KStart      = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
-      const I4 KLen        = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
-      const I4 JCell0      = CellsOnEdge(IEdge, 0);
-      const I4 JCell1      = CellsOnEdge(IEdge, 1);
+      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
+      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+      const I4 JCell0 = CellsOnEdge(IEdge, 0);
+      const I4 JCell1 = CellsOnEdge(IEdge, 1);
       const Real InvDcEdge = 1._Real / DcEdge(IEdge);
       const Real MeanSpecVol =
           0.5_Real * (DepthMeanSpecVol(JCell0) + DepthMeanSpecVol(JCell1));
@@ -316,8 +313,7 @@ class SSHGradOnEdge {
 
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const I4 K = KStart + KVec;
-         Tend(IEdge, K) += EdgeMask(IEdge, K) * SplitFactor *
-                           BtrPressGradTend;
+         Tend(IEdge, K) += EdgeMask(IEdge, K) * SplitFactor * BtrPressGradTend;
       }
    }
 

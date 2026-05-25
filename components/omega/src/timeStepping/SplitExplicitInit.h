@@ -27,18 +27,18 @@ class SplitExplicitInit {
        const std::string &Name        ///< [in] owning time stepper name
    );
 
-   static void computeVelocitySplit(
-       OceanState *State,       ///< [inout] ocean state
-       const HorzMesh *Mesh,    ///< [in] horizontal mesh
-       const VertCoord *VCoord, ///< [in] vertical coordinate
-       I4 TimeLevel             ///< [in] state time level to split
+   static void
+   computeVelocitySplit(OceanState *State,       ///< [inout] ocean state
+                        const HorzMesh *Mesh,    ///< [in] horizontal mesh
+                        const VertCoord *VCoord, ///< [in] vertical coordinate
+                        I4 TimeLevel ///< [in] state time level to split
    );
 
-   static void combineVelocitySplit(
-       OceanState *State,       ///< [inout] ocean state
-       const HorzMesh *Mesh,    ///< [in] horizontal mesh
-       const VertCoord *VCoord, ///< [in] vertical coordinate
-       I4 TimeLevel             ///< [in] state time level to update
+   static void
+   combineVelocitySplit(OceanState *State,       ///< [inout] ocean state
+                        const HorzMesh *Mesh,    ///< [in] horizontal mesh
+                        const VertCoord *VCoord, ///< [in] vertical coordinate
+                        I4 TimeLevel ///< [in] state time level to update
    );
 
  private:

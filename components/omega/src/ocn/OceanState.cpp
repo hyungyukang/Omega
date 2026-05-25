@@ -109,12 +109,10 @@ OceanState::OceanState(
       NormalBaroclinicVelocityH[I] =
           HostArray2DReal("NormalBaroclinicVelocity" + std::to_string(I),
                           NEdgesSize, NVertLayers);
-      NormalBarotropicVelocityH[I] =
-          HostArray1DReal("NormalBarotropicVelocity" + std::to_string(I),
-                          NEdgesSize);
-      BarotropicPressureAnomalyH[I] =
-          HostArray1DReal("BarotropicPressureAnomaly" + std::to_string(I),
-                          NCellsSize);
+      NormalBarotropicVelocityH[I] = HostArray1DReal(
+          "NormalBarotropicVelocity" + std::to_string(I), NEdgesSize);
+      BarotropicPressureAnomalyH[I] = HostArray1DReal(
+          "BarotropicPressureAnomaly" + std::to_string(I), NCellsSize);
    }
 
    // Allocate state device arrays
@@ -133,12 +131,10 @@ OceanState::OceanState(
       NormalBaroclinicVelocity[I] =
           Array2DReal("NormalBaroclinicVelocity" + std::to_string(I),
                       NEdgesSize, NVertLayers);
-      NormalBarotropicVelocity[I] =
-          Array1DReal("NormalBarotropicVelocity" + std::to_string(I),
-                      NEdgesSize);
-      BarotropicPressureAnomaly[I] =
-          Array1DReal("BarotropicPressureAnomaly" + std::to_string(I),
-                      NCellsSize);
+      NormalBarotropicVelocity[I] = Array1DReal(
+          "NormalBarotropicVelocity" + std::to_string(I), NEdgesSize);
+      BarotropicPressureAnomaly[I] = Array1DReal(
+          "BarotropicPressureAnomaly" + std::to_string(I), NCellsSize);
 
       deepCopy(NormalBaroclinicVelocityH[I], 0.);
       deepCopy(NormalBarotropicVelocityH[I], 0.);
@@ -373,8 +369,7 @@ HostArray2DReal OceanState::getNormalVelocityH(const I4 TimeLevel) const {
 
 //------------------------------------------------------------------------------
 // Get normal baroclinic velocity device array
-Array2DReal OceanState::getNormalBaroclinicVelocity(
-    const I4 TimeLevel) const {
+Array2DReal OceanState::getNormalBaroclinicVelocity(const I4 TimeLevel) const {
    const I4 TimeIndex = getTimeIndex(TimeLevel);
    return NormalBaroclinicVelocity[TimeIndex];
 }
@@ -389,8 +384,7 @@ OceanState::getNormalBaroclinicVelocityH(const I4 TimeLevel) const {
 
 //------------------------------------------------------------------------------
 // Get normal barotropic velocity device array
-Array1DReal OceanState::getNormalBarotropicVelocity(
-    const I4 TimeLevel) const {
+Array1DReal OceanState::getNormalBarotropicVelocity(const I4 TimeLevel) const {
    const I4 TimeIndex = getTimeIndex(TimeLevel);
    return NormalBarotropicVelocity[TimeIndex];
 }
@@ -405,8 +399,7 @@ OceanState::getNormalBarotropicVelocityH(const I4 TimeLevel) const {
 
 //------------------------------------------------------------------------------
 // Get barotropic pressure anomaly device array
-Array1DReal OceanState::getBarotropicPressureAnomaly(
-    const I4 TimeLevel) const {
+Array1DReal OceanState::getBarotropicPressureAnomaly(const I4 TimeLevel) const {
    const I4 TimeIndex = getTimeIndex(TimeLevel);
    return BarotropicPressureAnomaly[TimeIndex];
 }
@@ -477,10 +470,8 @@ void OceanState::exchangeHalo(const I4 TimeLevel) {
 
    MeshHalo->exchangeFullArrayHalo(PseudoThickness[TimeIndex], OnCell);
    MeshHalo->exchangeFullArrayHalo(NormalVelocity[TimeIndex], OnEdge);
-   MeshHalo->exchangeFullArrayHalo(NormalBaroclinicVelocity[TimeIndex],
-                                   OnEdge);
-   MeshHalo->exchangeFullArrayHalo(NormalBarotropicVelocity[TimeIndex],
-                                   OnEdge);
+   MeshHalo->exchangeFullArrayHalo(NormalBaroclinicVelocity[TimeIndex], OnEdge);
+   MeshHalo->exchangeFullArrayHalo(NormalBarotropicVelocity[TimeIndex], OnEdge);
    MeshHalo->exchangeFullArrayHalo(BarotropicPressureAnomaly[TimeIndex],
                                    OnCell);
 

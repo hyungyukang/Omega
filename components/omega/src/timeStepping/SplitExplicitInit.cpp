@@ -104,10 +104,13 @@ I4 SplitExplicitInit::computeSubcycleCount(
 //------------------------------------------------------------------------------
 void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
                                         const HorzMesh *Mesh,
+                                        const VertCoord *VCoord,
                                         const std::string &Name) {
 
    if (!Mesh)
       LOG_CRITICAL("Invalid mesh");
+   if (!VCoord)
+      LOG_CRITICAL("Invalid vertical coordinate");
 
    Scratch.NormalBarotropicVelocitySubcycleCur = Array1DReal(
        "NormalBarotropicVelocitySubcycleCur" + Name, Mesh->NEdgesSize);
@@ -123,6 +126,9 @@ void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
        Array1DReal("BarotropicForcing" + Name, Mesh->NEdgesSize);
    Scratch.BarotropicFlux =
        Array1DReal("BarotropicFlux" + Name, Mesh->NEdgesSize);
+   Scratch.BaseVelocityTend =
+       Array2DReal("BaseVelocityTend" + Name, Mesh->NEdgesSize,
+                   VCoord->NVertLayers);
 
    deepCopy(Scratch.NormalBarotropicVelocitySubcycleCur, 0.);
    deepCopy(Scratch.NormalBarotropicVelocitySubcycleNew, 0.);
@@ -131,6 +137,7 @@ void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
    deepCopy(Scratch.BarotropicPressure, 0.);
    deepCopy(Scratch.BarotropicForcing, 0.);
    deepCopy(Scratch.BarotropicFlux, 0.);
+   deepCopy(Scratch.BaseVelocityTend, 0.);
 }
 
 //------------------------------------------------------------------------------

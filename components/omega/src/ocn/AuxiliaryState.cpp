@@ -340,6 +340,83 @@ void AuxiliaryState::computeAll(const OceanState *State,
    computeAll(State, TracerArray, TimeLevel, TimeLevel, ProjDt);
 }
 
+void AuxiliaryState::computeThicknessTracerAux(
+    const OceanState *State, const Array3DReal &TracerArray,
+    int ThickTimeLevel, int VelTimeLevel) const {
+
+   Array2DReal LayerThickCell = State->getLayerThickness(ThickTimeLevel);
+   Array2DReal NormalVelEdge  = State->getNormalVelocity(VelTimeLevel);
+
+   const int NTracers = TracerArray.extent_int(0);
+
+   OMEGA_SCOPE(LocLayerThicknessAux, LayerThicknessAux);
+   OMEGA_SCOPE(LocTracerAux, TracerAux);
+   OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
+   OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
+   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
+   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+
+   R8 TimeStepSeconds;
+   TimeStep.get(TimeStepSeconds, TimeUnits::Seconds);
+
+   Pacer::start("AuxState:computeThicknessTracerAux", 1);
+
+   computeMomVertAux(State, TracerArray, ThickTimeLevel);
+
+   Pacer::start("AuxState:edgeThicknessTracerAux", 2);
+   parallelForOuter(
+       "edgeThicknessTracerAux", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          const int KMin   = MinLayerEdgeBot(IEdge);
+          const int KMax   = MaxLayerEdgeTop(IEdge);
+          const int KRange = vertRangeChunked(KMin, KMax);
+
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 LocLayerThicknessAux.computeVarsOnEdge(
+                     IEdge, KChunk, LayerThickCell, NormalVelEdge);
+              });
+       });
+   Pacer::stop("AuxState:edgeThicknessTracerAux", 2);
+
+   Pacer::start("AuxState:cellThicknessAux", 2);
+   parallelForOuter(
+       "cellThicknessAux", {Mesh->NCellsAll},
+       KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
+          const int KMin   = MinLayerCell(ICell);
+          const int KMax   = MaxLayerCell(ICell);
+          const int KRange = vertRangeChunked(KMin, KMax);
+
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 LocLayerThicknessAux.computeVarsOnCells(
+                     ICell, KChunk, LayerThickCell, NormalVelEdge,
+                     TimeStepSeconds);
+              });
+       });
+   Pacer::stop("AuxState:cellThicknessAux", 2);
+
+   const auto &MeanLayerThickEdge = LayerThicknessAux.MeanLayerThickEdge;
+
+   Pacer::start("AuxState:cellTracerAux", 2);
+   parallelForOuter(
+       "cellTracerAux", {NTracers, Mesh->NCellsAll},
+       KOKKOS_LAMBDA(int LTracer, int ICell, const TeamMember &Team) {
+          const int KMin   = MinLayerCell(ICell);
+          const int KMax   = MaxLayerCell(ICell);
+          const int KRange = vertRangeChunked(KMin, KMax);
+
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 LocTracerAux.computeVarsOnCells(
+                     LTracer, ICell, KChunk, MeanLayerThickEdge, TracerArray);
+              });
+       });
+   Pacer::stop("AuxState:cellTracerAux", 2);
+
+   Pacer::stop("AuxState:computeThicknessTracerAux", 1);
+}
+
 // Create a non-default auxiliary state
 AuxiliaryState *AuxiliaryState::create(const std::string &Name,
                                        const HorzMesh *Mesh, Halo *MeshHalo,

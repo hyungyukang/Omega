@@ -9,6 +9,7 @@
 #include "Logging.h"
 #include "Pacer.h"
 #include "SplitExplicitInit.h"
+#include "VertAdv.h"
 
 namespace OMEGA {
 
@@ -32,7 +33,7 @@ void SplitExplicitRK2Stepper::finalizeInit() {
    if (!MeshHalo)
       LOG_CRITICAL("Invalid MeshHalo");
 
-   SplitExplicitInit::allocateScratch(SEScratch, Mesh, Name);
+   SplitExplicitInit::allocateScratch(SEScratch, Mesh, VCoord, Name);
    initBarotropicStepper();
 }
 
@@ -71,8 +72,13 @@ void SplitExplicitRK2Stepper::doSplitStage1(
        State, AuxState, CurTracerArray, CurLevel, CurLevel, CurLevel, CurLevel,
        SEConfig.SplitFactor, 0.5 * StageTimeStep);
 
-   updateVelocityByTend(State, NextLevel, State, CurLevel,
-                        0.5 * StageTimeStep);
+   deepCopy(SEScratch.BaseVelocityTend, Tend->NormalVelocityTend);
+
+   updateBaroclinicVelocityByTend(State, NextLevel, State, CurLevel,
+                                  0.5 * StageTimeStep);
+
+   doBaroclinicCoriolisIteration(State, SEScratch.BaseVelocityTend, CurLevel,
+                                 NextLevel, StageTimeStep);
 
    Pacer::stop("SE-RK2:stage1Bcl", 2);
 }
@@ -88,8 +94,11 @@ void SplitExplicitRK2Stepper::doSplitStage3(
    prescribeState(State, NextLevel, State, CurLevel,
                   StageTime + 0.5 * StageTimeStep);
 
-   AuxState->computeAll(State, NextTracerArray, NextLevel, NextLevel,
-                        0.5 * StageTimeStep);
+   reconstructNormalVelocity(State, NextLevel);
+
+   AuxState->computeThicknessTracerAux(State, NextTracerArray, NextLevel,
+                                       NextLevel);
+   computeVerticalVelocity(State, NextLevel, NextLevel, 0.5 * StageTimeStep);
    Tend->computeThicknessTendenciesOnly(
        State, AuxState, NextLevel, NextLevel,
        StageTime + 0.5 * StageTimeStep);
@@ -115,6 +124,94 @@ void SplitExplicitRK2Stepper::doSplitStage2(
       LOG_CRITICAL("Split-explicit barotropic time stepper not initialized");
 
    BarotropicStage2(State, TimeLevel, StageTime, StageTimeStep);
+}
+
+//------------------------------------------------------------------------------
+void SplitExplicitRK2Stepper::doBaroclinicCoriolisIteration(
+    OceanState *State, const Array2DReal &BaseVelocityTend, I4 CurLevel,
+    I4 NextLevel, const TimeInterval &StageTimeStep) const {
+
+   Pacer::start("SE-RK2:bclCoriolisIter", 2);
+
+   const Array1DReal &FEdge = Mesh->FEdge;
+   for (I4 Iter = 0; Iter < SEConfig.NBclCoriolisIteration; ++Iter) {
+      if (Iter > 0) {
+         deepCopy(Tend->NormalVelocityTend, BaseVelocityTend);
+      }
+
+      Array2DReal NormalBclVelEdge =
+          State->getNormalBaroclinicVelocity(NextLevel);
+      Tend->computeCoriolisAccelerationOnEdge(Tend->NormalVelocityTend,
+                                              NormalBclVelEdge, FEdge);
+
+      updateBaroclinicVelocityByTend(State, NextLevel, State, CurLevel,
+                                     0.5 * StageTimeStep);
+   }
+
+   Pacer::stop("SE-RK2:bclCoriolisIter", 2);
+}
+
+//------------------------------------------------------------------------------
+void SplitExplicitRK2Stepper::updateBaroclinicVelocityByTend(
+    OceanState *State1, I4 TimeLevel1, OceanState *State2, I4 TimeLevel2,
+    TimeInterval Coeff) const {
+
+   Array2DReal NormalBclVel1 =
+       State1->getNormalBaroclinicVelocity(TimeLevel1);
+   Array2DReal NormalBclVel2 =
+       State2->getNormalBaroclinicVelocity(TimeLevel2);
+
+   R8 CoeffSeconds;
+   Coeff.get(CoeffSeconds, TimeUnits::Seconds);
+
+   OMEGA_SCOPE(NormalVelTend, Tend->NormalVelocityTend);
+   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
+   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+
+   parallelForOuter(
+       "updateBclVelByTend", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          const int KMin = MinLayerEdgeBot(IEdge);
+          const int KMax = MaxLayerEdgeTop(IEdge);
+
+          parallelForInner(
+              Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+                 NormalBclVel1(IEdge, K) =
+                     NormalBclVel2(IEdge, K) +
+                     CoeffSeconds * NormalVelTend(IEdge, K);
+              });
+       });
+}
+
+//------------------------------------------------------------------------------
+void SplitExplicitRK2Stepper::reconstructNormalVelocity(OceanState *State,
+                                                        I4 TimeLevel) const {
+
+   SplitExplicitInit::combineVelocitySplit(State, Mesh, VCoord, TimeLevel);
+}
+
+//------------------------------------------------------------------------------
+void SplitExplicitRK2Stepper::computeVerticalVelocity(
+    OceanState *State, I4 ThickTimeLevel, I4 VelTimeLevel,
+    TimeInterval StageTimeStep) const {
+
+   if (!State)
+      LOG_CRITICAL("Invalid State");
+
+   Array2DReal LayerThickCell = State->getLayerThickness(ThickTimeLevel);
+   Array2DReal NormalVelEdge  = State->getNormalVelocity(VelTimeLevel);
+
+   R8 DtSeconds;
+   StageTimeStep.get(DtSeconds, TimeUnits::Seconds);
+
+   VertAdv *VertAdvection = VertAdv::getDefault();
+   if (!VertAdvection)
+      LOG_CRITICAL("Invalid vertical advection");
+
+   const auto &FluxLayerThickEdge =
+       AuxState->LayerThicknessAux.FluxLayerThickEdge;
+   VertAdvection->computeVerticalVelocity(
+       NormalVelEdge, FluxLayerThickEdge, LayerThickCell, DtSeconds);
 }
 
 //------------------------------------------------------------------------------

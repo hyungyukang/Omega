@@ -34,6 +34,11 @@ class SplitExplicitInit {
                         I4 TimeLevel ///< [in] state time level to split
    );
 
+   static void computeUnsplitVelocitySplit(
+       OceanState *State, ///< [inout] ocean state
+       I4 TimeLevel       ///< [in] state time level to initialize
+   );
+
    static void
    combineVelocitySplit(OceanState *State,       ///< [inout] ocean state
                         const HorzMesh *Mesh,    ///< [in] horizontal mesh

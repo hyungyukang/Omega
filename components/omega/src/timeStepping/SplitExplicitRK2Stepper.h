@@ -62,6 +62,34 @@ class SplitExplicitRK2Stepper : public TimeStepper {
                       const TimeInstant &StageTime,
                       const TimeInterval &StageTimeStep) const;
 
+   void doBaroclinicCoriolisIteration(
+       OceanState *State,                  ///< [inout] model state
+       const Array2DReal &BaseVelocityTend, ///< [in] non-Coriolis tendency
+       I4 CurLevel,                        ///< [in] current time level
+       I4 NextLevel,                       ///< [in] next time level
+       const TimeInterval &StageTimeStep   ///< [in] current stage time step
+   ) const;
+
+   void updateBaroclinicVelocityByTend(
+       OceanState *State1, ///< [out] updated state
+       I4 TimeLevel1,      ///< [in] time level index for new time
+       OceanState *State2, ///< [in] state for current time
+       I4 TimeLevel2,      ///< [in] time level index for current time
+       TimeInterval Coeff  ///< [in] time-related coeff for tendency
+   ) const;
+
+   void reconstructNormalVelocity(
+       OceanState *State, ///< [inout] model state
+       I4 TimeLevel       ///< [in] time level to reconstruct
+   ) const;
+
+   void computeVerticalVelocity(
+       OceanState *State,         ///< [inout] model state
+       I4 ThickTimeLevel,         ///< [in] thickness time level
+       I4 VelTimeLevel,           ///< [in] reconstructed velocity time level
+       TimeInterval StageTimeStep ///< [in] current stage time step
+   ) const;
+
    SplitExplicitConfig SEConfig;
    mutable SplitExplicitScratch SEScratch;
    BarotropicStage2Function BarotropicStage2;

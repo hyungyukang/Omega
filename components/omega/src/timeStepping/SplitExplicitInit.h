@@ -23,6 +23,7 @@ class SplitExplicitInit {
    static void allocateScratch(
        SplitExplicitScratch &Scratch, ///< [inout] split-explicit scratch data
        const HorzMesh *Mesh,          ///< [in] horizontal mesh
+       const VertCoord *VCoord,       ///< [in] vertical coordinate
        const std::string &Name        ///< [in] owning time stepper name
    );
 

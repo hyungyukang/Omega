@@ -375,6 +375,7 @@ int initUpdateHaloAndHostArrays() {
    int Err = 0;
 
    OceanState *DefState = OceanState::getDefault();
+   DefStepper->initializeStateFromInput(DefState, !Err2.isFail());
    I4 CurTimeLevel      = 0;
    DefState->exchangeHalo(CurTimeLevel);
 

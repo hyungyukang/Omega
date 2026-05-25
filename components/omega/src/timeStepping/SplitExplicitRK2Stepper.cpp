@@ -38,6 +38,25 @@ void SplitExplicitRK2Stepper::finalizeInit() {
 }
 
 //------------------------------------------------------------------------------
+void SplitExplicitRK2Stepper::initializeStateFromInput(OceanState *State,
+                                                       bool ReadRestart) const {
+
+   if (!State)
+      LOG_CRITICAL("Invalid State");
+
+   constexpr I4 CurLevel = 0;
+   if (SEConfig.SplitFactor == 0._Real) {
+      SplitExplicitInit::computeUnsplitVelocitySplit(State, CurLevel);
+      return;
+   }
+
+   if (ReadRestart)
+      return;
+
+   SplitExplicitInit::computeVelocitySplit(State, Mesh, VCoord, CurLevel);
+}
+
+//------------------------------------------------------------------------------
 void SplitExplicitRK2Stepper::initBarotropicStepper() {
 
    if (SEConfig.BtrTimeStepper ==
@@ -64,7 +83,6 @@ void SplitExplicitRK2Stepper::doSplitStage1(
    Pacer::start("SE-RK2:stage1Bcl", 2);
 
    prescribeState(State, CurLevel, State, CurLevel, StageTime);
-   SplitExplicitInit::computeVelocitySplit(State, Mesh, VCoord, CurLevel);
 
    Tend->computeBaroclinicVelocityTendencies(
        State, AuxState, CurTracerArray, CurLevel, CurLevel, CurLevel, CurLevel,
@@ -106,8 +124,6 @@ void SplitExplicitRK2Stepper::doSplitStage3(
    updateThicknessByTend(State, NextLevel, State, CurLevel, StageTimeStep);
    updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel, State,
                        CurLevel, StageTimeStep);
-
-   SplitExplicitInit::computeVelocitySplit(State, Mesh, VCoord, NextLevel);
 
    Pacer::stop("SE-RK2:stage3TrThick", 2);
 }

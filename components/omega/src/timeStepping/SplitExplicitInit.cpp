@@ -197,6 +197,23 @@ void SplitExplicitInit::computeVelocitySplit(OceanState *State,
 }
 
 //------------------------------------------------------------------------------
+void SplitExplicitInit::computeUnsplitVelocitySplit(OceanState *State,
+                                                    I4 TimeLevel) {
+
+   if (!State)
+      LOG_CRITICAL("Invalid State");
+
+   Array2DReal NormalVelocity = State->getNormalVelocity(TimeLevel);
+   Array2DReal NormalBaroclinicVelocity =
+       State->getNormalBaroclinicVelocity(TimeLevel);
+   Array1DReal NormalBarotropicVelocity =
+       State->getNormalBarotropicVelocity(TimeLevel);
+
+   deepCopy(NormalBaroclinicVelocity, NormalVelocity);
+   deepCopy(NormalBarotropicVelocity, 0.);
+}
+
+//------------------------------------------------------------------------------
 void SplitExplicitInit::combineVelocitySplit(OceanState *State,
                                              const HorzMesh *Mesh,
                                              const VertCoord *VCoord,

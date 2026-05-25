@@ -29,6 +29,12 @@ class SplitExplicitRK2Stepper : public TimeStepper {
                TimeInstant &SimTime ///< [inout] current simulation time
    ) const override;
 
+   /// Initialize split-explicit state after initial/restart input is read.
+   void initializeStateFromInput(
+       OceanState *State, ///< [inout] model state after input has been read
+       bool ReadRestart   ///< [in] true if restart input initialized the state
+   ) const override;
+
  protected:
    /// Performs additional initialization for split-explicit scratch fields.
    void finalizeInit() override;

@@ -306,12 +306,15 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
 
    Array3DReal CurTracerArray  = Tracers::getAll(CurLevel);
    Array3DReal NextTracerArray = Tracers::getAll(NextLevel);
+
+   // Initialize NextLevel from CurLevel
    initializeNextState(State, CurLevel, NextLevel);
    deepCopy(NextTracerArray, CurTracerArray);
 
    TimeInstant StageTime = SimTime;
    for (I4 TimeStepIteration = 0;
         TimeStepIteration < SEConfig.NTimeStepIteration; ++TimeStepIteration) {
+      // Stage 1: Baroclinic velocity advance, with long time step
       doSplitStage1(State, NextTracerArray, CurLevel, NextLevel, StageTime,
                     TimeStepIterationTimeStep);
 
@@ -323,6 +326,7 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
       Pacer::stop("SE-RK2:haloStage1", 3);
 
       if (SEConfig.SplitFactor != 0._Real) {
+         // Stage 2: Barotropic velocity advance, explicitly subcycled
          doSplitStage2(State, NextLevel,
                        StageTime + 0.5 * TimeStepIterationTimeStep,
                        TimeStepIterationTimeStep);
@@ -330,6 +334,8 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
 
       const bool FinalIteration =
           TimeStepIteration + 1 == SEConfig.NTimeStepIteration;
+
+      // Stage 3: Update thickness, tracers, other diagnostics
       doSplitStage3(State, CurTracerArray, NextTracerArray, CurLevel, NextLevel,
                     StageTime, TimeStepIterationTimeStep, FinalIteration);
 

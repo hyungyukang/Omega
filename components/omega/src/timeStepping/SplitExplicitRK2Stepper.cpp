@@ -45,6 +45,11 @@ void SplitExplicitRK2Stepper::initializeStateFromInput(OceanState *State,
       LOG_CRITICAL("Invalid State");
 
    constexpr I4 CurLevel = 0;
+   Array3DReal CurTracerArray = Tracers::getAll(CurLevel);
+   AuxState->computeMomVertAux(State, CurTracerArray, CurLevel);
+   SplitExplicitInit::initializeBarotropicPressure(SEScratch, State, Mesh,
+                                                   VCoord, CurLevel);
+
    if (SEConfig.SplitFactor == 0._Real) {
       SplitExplicitInit::computeUnsplitVelocitySplit(State, CurLevel);
       return;

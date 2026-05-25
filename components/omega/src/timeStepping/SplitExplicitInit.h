@@ -39,6 +39,14 @@ class SplitExplicitInit {
        I4 TimeLevel       ///< [in] state time level to initialize
    );
 
+   static void initializeBarotropicPressure(
+       SplitExplicitScratch &Scratch, ///< [inout] split-explicit scratch data
+       OceanState *State,             ///< [inout] ocean state
+       const HorzMesh *Mesh,          ///< [in] horizontal mesh
+       const VertCoord *VCoord,       ///< [in] vertical coordinate
+       I4 TimeLevel                   ///< [in] state time level to initialize
+   );
+
    static void
    combineVelocitySplit(OceanState *State,       ///< [inout] ocean state
                         const HorzMesh *Mesh,    ///< [in] horizontal mesh

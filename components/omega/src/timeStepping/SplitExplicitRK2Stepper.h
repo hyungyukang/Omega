@@ -78,6 +78,12 @@ class SplitExplicitRK2Stepper : public TimeStepper {
        TimeInterval Coeff  ///< [in] time-related coeff for tendency
    ) const;
 
+   void initializeNextBarotropicState(
+       OceanState *State, ///< [inout] model state
+       I4 CurLevel,       ///< [in] current time level
+       I4 NextLevel       ///< [in] next time level
+   ) const;
+
    void reconstructNormalVelocity(
        OceanState *State, ///< [inout] model state
        I4 TimeLevel       ///< [in] time level to reconstruct

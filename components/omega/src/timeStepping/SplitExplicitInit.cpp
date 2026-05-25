@@ -73,14 +73,11 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep) {
 SplitExplicitBarotropicStepperType
 SplitExplicitInit::getBtrTimeStepperFromStr(const std::string &InString) {
 
-   if (InString == "Predictor-Corrector" || InString == "PredictorCorrector" ||
-       InString == "PC" || InString == "FBPC" ||
-       InString == "Forward-Backward-Predictor-Corrector") {
+   if (InString == "Predictor-Corrector") {
       return SplitExplicitBarotropicStepperType::PredictorCorrector;
    }
 
-   ABORT_ERROR("BtrTimeStepper should be one of 'Predictor-Corrector' or "
-               "'PC' but got {}",
+   ABORT_ERROR("BtrTimeStepper should be 'Predictor-Corrector' but got {}",
                InString);
    return SplitExplicitBarotropicStepperType::Invalid;
 }

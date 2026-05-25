@@ -3,7 +3,8 @@
 //===-- SplitExplicitTypes.h - split-explicit shared types -----*- C++ -*-===//
 //
 /// \file
-/// \brief Contains shared configuration and scratch arrays for SE time stepping.
+/// \brief Contains shared configuration and scratch arrays for SE time
+/// stepping.
 //
 //===----------------------------------------------------------------------===//
 
@@ -12,19 +13,16 @@
 
 namespace OMEGA {
 
-enum class SplitExplicitBarotropicStepperType {
-   PredictorCorrector,
-   Invalid
-};
+enum class SplitExplicitBarotropicStepperType { PredictorCorrector, Invalid };
 
 struct SplitExplicitConfig {
    TimeInterval BtrTimeStep;
    SplitExplicitBarotropicStepperType BtrTimeStepper =
        SplitExplicitBarotropicStepperType::PredictorCorrector;
-   I4 NBtrSubcycles          = 1;
-   I4 NTimeStepIteration     = 1;
-   I4 NBclCoriolisIteration  = 2;
-   Real SplitFactor          = 1._Real;
+   I4 NBtrSubcycles         = 1;
+   I4 NTimeStepIteration    = 1;
+   I4 NBclCoriolisIteration = 2;
+   Real SplitFactor         = 1._Real;
 };
 
 struct SplitExplicitScratch {

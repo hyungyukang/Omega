@@ -222,12 +222,13 @@ void Eos::computeDepthIntegratedSpecificVolume(
               },
               DepthIntegSpecVol);
 
-          Kokkos::single(PerTeam(Team), INNER_LAMBDA() {
-             LocDepthIntegSpecificVolume(ICell) = DepthIntegSpecVol;
-             const Real ColumnThickness = LocTotalPseudoThickness(ICell);
-             LocDepthMeanSpecificVolume(ICell) =
-                 DepthIntegSpecVol / ColumnThickness;
-          });
+          Kokkos::single(
+              PerTeam(Team), INNER_LAMBDA() {
+                 LocDepthIntegSpecificVolume(ICell) = DepthIntegSpecVol;
+                 const Real ColumnThickness = LocTotalPseudoThickness(ICell);
+                 LocDepthMeanSpecificVolume(ICell) =
+                     DepthIntegSpecVol / ColumnThickness;
+              });
        });
 }
 
@@ -451,28 +452,28 @@ void Eos::defineFields() {
    NDims = 1;
    DimNames.resize(NDims);
    DimNames[0] = "NCells";
-   auto DepthIntegSpecificVolumeField = Field::create(
-       DepthIntegSpecVolFldName, // Field name
-       "Depth-integrated specific volume", // Long Name
-       "m4 kg-1",                          // Units
-       "",                                 // CF-ish Name
-       0.0,                                // Min valid value
-       std::numeric_limits<Real>::max(),   // Max valid value
-       FillValue, // Scalar used for undefined entries
-       NDims,     // Number of dimensions
-       DimNames   // Dimension names
-   );
-   auto DepthMeanSpecificVolumeField = Field::create(
-       DepthMeanSpecVolFldName, // Field name
-       "Depth-mean specific volume", // Long Name
-       "m3 kg-1",                    // Units
-       "",                           // CF-ish Name
-       0.0,                          // Min valid value
-       std::numeric_limits<Real>::max(), // Max valid value
-       FillValue, // Scalar used for undefined entries
-       NDims,     // Number of dimensions
-       DimNames   // Dimension names
-   );
+   auto DepthIntegSpecificVolumeField =
+       Field::create(DepthIntegSpecVolFldName,           // Field name
+                     "Depth-integrated specific volume", // Long Name
+                     "m4 kg-1",                          // Units
+                     "",                                 // CF-ish Name
+                     0.0,                                // Min valid value
+                     std::numeric_limits<Real>::max(),   // Max valid value
+                     FillValue, // Scalar used for undefined entries
+                     NDims,     // Number of dimensions
+                     DimNames   // Dimension names
+       );
+   auto DepthMeanSpecificVolumeField =
+       Field::create(DepthMeanSpecVolFldName,          // Field name
+                     "Depth-mean specific volume",     // Long Name
+                     "m3 kg-1",                        // Units
+                     "",                               // CF-ish Name
+                     0.0,                              // Min valid value
+                     std::numeric_limits<Real>::max(), // Max valid value
+                     FillValue, // Scalar used for undefined entries
+                     NDims,     // Number of dimensions
+                     DimNames   // Dimension names
+       );
 
    // Create a field group for the eos-specific state fields
    EosGroupName = "Eos";

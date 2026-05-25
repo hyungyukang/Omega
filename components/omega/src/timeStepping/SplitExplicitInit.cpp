@@ -19,8 +19,8 @@ namespace OMEGA {
 SplitExplicitConfig
 SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep) {
 
-   SplitExplicitConfig Options;
-   Options.BtrTimeStep = TimeStep;
+   SplitExplicitConfig SEConfig;
+   SEConfig.BtrTimeStep = TimeStep;
 
    Config *OmegaConfig = Config::getOmegaConfig();
    Config TimeIntConfig("TimeIntegration");
@@ -30,18 +30,18 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep) {
    std::string TimeStepperStr;
    if (TimeIntConfig.get("TimeStepper", TimeStepperStr).isSuccess()) {
       if (TimeStepperStr == "UnsplitRK2") {
-         Options.SplitFactor = 0._Real;
+         SEConfig.SplitFactor = 0._Real;
       }
    }
 
    std::string BtrTimeStepStr;
    if (TimeIntConfig.get("BtrTimeStep", BtrTimeStepStr).isSuccess()) {
-      Options.BtrTimeStep = TimeInterval(BtrTimeStepStr);
+      SEConfig.BtrTimeStep = TimeInterval(BtrTimeStepStr);
    }
 
    std::string BtrTimeStepperStr = "Predictor-Corrector";
    if (TimeIntConfig.get("BtrTimeStepper", BtrTimeStepperStr).isSuccess()) {
-      Options.BtrTimeStepper = getBtrTimeStepperFromStr(BtrTimeStepperStr);
+      SEConfig.BtrTimeStepper = getBtrTimeStepperFromStr(BtrTimeStepperStr);
    }
 
    I4 NTimeStepIteration = 1;
@@ -50,7 +50,7 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep) {
       if (NTimeStepIteration < 1) {
          ABORT_ERROR("NTimeStepIteration must be greater than zero");
       }
-      Options.NTimeStepIteration = NTimeStepIteration;
+      SEConfig.NTimeStepIteration = NTimeStepIteration;
    }
 
    I4 NBclCoriolisIteration = 2;
@@ -59,12 +59,13 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep) {
       if (NBclCoriolisIteration < 1) {
          ABORT_ERROR("NBclCoriolisIteration must be greater than zero");
       }
-      Options.NBclCoriolisIteration = NBclCoriolisIteration;
+      SEConfig.NBclCoriolisIteration = NBclCoriolisIteration;
    }
 
-   Options.NBtrSubcycles = computeSubcycleCount(TimeStep, Options.BtrTimeStep);
+   SEConfig.NBtrSubcycles =
+       computeSubcycleCount(TimeStep, SEConfig.BtrTimeStep);
 
-   return Options;
+   return SEConfig;
 }
 
 //------------------------------------------------------------------------------

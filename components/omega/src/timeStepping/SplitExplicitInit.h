@@ -9,7 +9,7 @@
 
 #include "HorzMesh.h"
 #include "OceanState.h"
-#include "SplitExplicitData.h"
+#include "SplitExplicitTypes.h"
 #include "VertCoord.h"
 
 namespace OMEGA {

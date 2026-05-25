@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "SplitExplicitBarotropicPCStepper.h"
-#include "SplitExplicitData.h"
+#include "SplitExplicitTypes.h"
 #include "TimeStepper.h"
 
 #include <functional>

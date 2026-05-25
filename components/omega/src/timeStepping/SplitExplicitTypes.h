@@ -1,6 +1,6 @@
-#ifndef OMEGA_SPLIT_EXPLICIT_DATA_H
-#define OMEGA_SPLIT_EXPLICIT_DATA_H
-//===-- SplitExplicitData.h - split-explicit shared data -------*- C++ -*-===//
+#ifndef OMEGA_SPLIT_EXPLICIT_TYPES_H
+#define OMEGA_SPLIT_EXPLICIT_TYPES_H
+//===-- SplitExplicitTypes.h - split-explicit shared types -----*- C++ -*-===//
 //
 /// \file
 /// \brief Contains shared configuration and scratch arrays for SE time stepping.

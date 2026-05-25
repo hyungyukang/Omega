@@ -86,18 +86,24 @@ void SplitExplicitRK2Stepper::doSplitStage1(
 
    Pacer::start("SE-RK2:stage1Bcl", 2);
 
+   // TODO: A placeholder at this moment.
    prescribeState(State, CurLevel, State, CurLevel, StageTime);
 
+   // Compute baroclinic velocity tendencies and update baroclinic velocity for the
+   // first half of the stage time step. 
    Tend->computeBaroclinicVelocityTendencies(
        State, AuxState, TendencyTracerArray, NextLevel, NextLevel, NextLevel,
        NextLevel, SEConfig.SplitFactor,
        0.5 * StageTimeStep);
 
+   // Save the baroclinic velocity tendencies before the baroclinic velocity update
+   // TODO: this can be optimized in the future.
    deepCopy(SEScratch.BaseVelocityTend, Tend->NormalVelocityTend);
 
    updateBaroclinicVelocityByTend(State, NextLevel, State, CurLevel,
                                   0.5 * StageTimeStep);
 
+   // Perform baroclinic velocity iteration with Coriolis acceleration.
    doBaroclinicCoriolisIteration(State, SEScratch.BaseVelocityTend, CurLevel,
                                  NextLevel, StageTimeStep);
 
@@ -113,24 +119,33 @@ void SplitExplicitRK2Stepper::doSplitStage3(
 
    Pacer::start("SE-RK2:stage3TrThick", 2);
 
+   // TODO: A placeholder at this moment
    prescribeState(State, NextLevel, State, CurLevel,
                   StageTime + 0.5 * StageTimeStep);
 
    if (FinalIteration) {
+      // If the final TimeStepIteration, reconstruct the final normal velocity at (n+1) for output and diagnostics
       reconstructFinalNormalVelocity(State, CurLevel, NextLevel);
    } else {
+      // During the time step iteration, reconstruct normal velocity at (n+1/2) for the next iteration
       reconstructNormalVelocity(State, NextLevel);
    }
 
+   // Compute thickness auxiliary variables at the new time level
    AuxState->computeThicknessTracerAux(State, NextTracerArray, NextLevel,
                                        NextLevel);
+
+   // Compute vertical velocity at the new time level for the vertical advection term in thickness and tracer tendencies
    computeVerticalVelocity(State, NextLevel, NextLevel, 0.5 * StageTimeStep);
+
+   // Compute thickness and tracer tendencies at the new time level
    Tend->computeThicknessTendenciesOnly(State, AuxState, NextLevel, NextLevel,
                                         StageTime + 0.5 * StageTimeStep);
    Tend->computeTracerTendenciesOnly(State, AuxState, NextTracerArray,
                                      NextLevel, NextLevel,
                                      StageTime + 0.5 * StageTimeStep);
-
+ 
+   // Update thickness and tracers by the computed tendencies for the next iteration of the time step iteration
    updateThicknessByTend(State, NextLevel, State, CurLevel, StageTimeStep);
    updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel, State,
                        CurLevel, StageTimeStep);

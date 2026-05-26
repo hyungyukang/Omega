@@ -1016,13 +1016,149 @@ $$ (unsplit-final-column-pseudo-thickness)
 Diagnostic variables are then updated.
 
 ## 4. Design
+
+The split-explicit time stepping implementation consists of a baroclinic stepper with a barotropic subcycle stage.  The same
+stepper also supports an unsplit mode by setting the split forcing factor to zero and skipping the barotropic subcycling stage.
+
 ### 4.1 Data types and parameters
+
+Split-explicit options are read from the `TimeIntegration` group.  The
+configuration is stored in `SplitExplicitConfig`, and temporary arrays used by
+the stepper are stored in `SplitExplicitScratch`.
+
 #### 4.1.1 Parameters
-- `NTimeStepIteration`: Number of baroclinic iterations per timestep (default: 2)
+
+- `TimeStepper`: Selects the time integration algorithm.  `SplitExplicitRK2`
+  uses the split-explicit algorithm.  Any `Unsplit*` time stepper uses the
+  unsplit form.
+- `NTimeStepIteration`: Number of baroclinic iterations per time step.  Each
+  iteration uses a time step of `TimeStep / NTimeStepIteration`.
+- `NBclCoriolisIteration`: Number of centered Coriolis iterations used in the
+  baroclinic velocity update.  The default is 2 for split-explicit stepping and
+  1 for unsplit stepping.
+- `BtrTimeStep`: Barotropic subcycle time step.  This option is used only for
+  split-explicit stepping.
+- `BtrTimeStepper`: Barotropic subcycle algorithm.  The initial implementation
+  supports `Predictor-Corrector`.
+- `SplitFactor`: Internal factor multiplying the barotropic pressure-anomaly
+  contribution to the baroclinic velocity tendency.  It is 1 for
+  `SplitExplicitRK2` and 0 for unsplit stepping.
+- `NBtrSubcycles`: Internal number of barotropic subcycles, computed from the
+  ratio of the full time step to `BtrTimeStep`.
 
 #### 4.1.2 Class/structs/data types
 
+- `SplitExplicitConfig`: Holds split-explicit configuration, including
+  barotropic stepper selection, subcycle count, time-step iteration count,
+  Coriolis iteration count, and `SplitFactor`.
+- `SplitExplicitScratch`: Holds temporary arrays for barotropic subcycling and
+  baroclinic updates.  These include subcycle barotropic velocity and pressure
+  anomaly arrays, barotropic pressure, barotropic forcing, barotropic flux, and
+  a saved copy of the non-Coriolis baroclinic velocity tendency.
+- `SplitExplicitInit`: Provides initialization utilities for reading
+  split-explicit options, allocating scratch arrays, splitting full normal
+  velocity into barotropic and baroclinic parts, reconstructing full normal
+  velocity, and initializing barotropic pressure and pressure anomaly.
+- `SplitExplicitRK2Stepper`: Implements the RK2 time step, including the
+  baroclinic velocity stage, optional barotropic subcycle stage, thickness and
+  tracer stage, halo exchanges, and time-level rotation.
+- `SplitExplicitBarotropicPCStepper`: Implements the predictor-corrector
+  barotropic stage interface.  This class owns the details of the barotropic
+  algorithm so that `SplitExplicitRK2Stepper` can call a generic stage-2
+  function.
+- `OceanState`: Stores the additional split-explicit prognostic fields:
+  `NormalBaroclinicVelocity`, `NormalBarotropicVelocity`, and
+  `BarotropicPressureAnomaly`.  These fields are included in restart output.
+- `Tendencies`: Provides baroclinic velocity tendency wrappers used by the
+  split-explicit stepper.  The baroclinic velocity tendency includes the
+  kinetic-energy gradient, pressure gradient, relative-vorticity horizontal
+  advection without the Coriolis part, vertical advection, velocity diffusion,
+  velocity hyperdiffusion, and the depth-mean-specific-volume times barotropic
+  pressure-anomaly gradient.
+- `Eos`: Stores `DepthMeanSpecificVolume`, computed from depth-integrated
+  specific volume divided by total pseudo-thickness.  This field is used in the
+  barotropic pressure-anomaly contribution to the baroclinic velocity tendency.
+
 ### 4.2 Methods
+
+#### 4.2.1 Initialization
+
+After the initial condition or restart state has been read, the selected time
+stepper initializes the split-explicit state through
+`TimeStepper::initializeStateFromInput`.  For `SplitExplicitRK2Stepper`, this
+initialization performs the following operations:
+
+1. Compute momentum vertical auxiliary variables needed for pressure.
+2. Compute barotropic pressure and barotropic pressure anomaly from the pressure
+   interface and surface pressure fields.
+3. Initialize velocity split fields.  For an initial run with
+   `SplitExplicitRK2`, full normal velocity is split into barotropic and
+   baroclinic components.  For a restart run, the restart values of the split
+   velocity fields are preserved.  For unsplit stepping, barotropic velocity is
+   set to zero and baroclinic velocity is set equal to full normal velocity.
+4. Initialize time level 1 from time level 0 so that the first time step starts
+   from a consistent pair of time levels.
+
+At the beginning of every full time step, time level 1 is refreshed from time
+level 0 for the state fields advanced by the split-explicit scheme, and tracer
+time level 1 is copied from tracer time level 0.  The state at time level 0 is
+kept fixed during the internal time-step iterations.  Time level 1 is updated
+repeatedly and provides the most recent state for tendency computations.
+
+#### 4.2.2 Stage 1: baroclinic velocity
+
+Stage 1 computes the baroclinic velocity tendency at the current iteration
+state and advances `NormalBaroclinicVelocity` by half of the iteration time
+step.  The non-Coriolis tendency is saved in `SplitExplicitScratch` before the
+centered Coriolis iteration begins.
+
+The centered Coriolis treatment repeats `NBclCoriolisIteration` times.  Each
+iteration restores the saved non-Coriolis tendency, adds the Coriolis
+acceleration computed from the updated baroclinic velocity, and updates
+`NormalBaroclinicVelocity` again from the fixed time-level-0 base state.  After
+stage 1, only the updated baroclinic velocity halo is exchanged.
+
+#### 4.2.3 Stage 2: barotropic subcycling
+
+Stage 2 advances the barotropic velocity and barotropic pressure anomaly using
+the configured barotropic stepper.  The RK2 stepper delegates this work through
+a generic barotropic-stage callback so that additional barotropic algorithms can
+be added without complicating the RK2 stage logic.
+
+For `SplitExplicitRK2`, the barotropic stage is active and currently uses the
+predictor-corrector barotropic stepper.  For unsplit stepping, `SplitFactor` is
+zero and stage 2 is skipped.
+
+#### 4.2.4 Stage 3: thickness and tracers
+
+Stage 3 reconstructs full normal velocity from the split velocity fields,
+computes the auxiliary variables needed by thickness and tracer tendencies,
+computes vertical velocity using the reconstructed full velocity, and advances
+layer thickness and tracers.
+
+During intermediate time-step iterations, full normal velocity is reconstructed
+as the sum of barotropic and baroclinic velocity at time level 1.  On the final
+iteration, full normal velocity is reconstructed at time level $n+1$ using
+
+$$
+u^{n+1} = u_\mathrm{bt}^{n+1}
+        + 2 u_\mathrm{bc}^{n+1/2}
+        - u_\mathrm{bc}^{n}.
+$$
+
+This final reconstruction follows the MPAS-Ocean split-explicit update: the
+baroclinic velocity stored at time level 1 is the midpoint value, but the full
+normal velocity must be available at the final time level for output,
+diagnostics, restart, and the next time step.
+
+#### 4.2.5 Time-level management
+
+The internal time-step iterations do not rotate Ocean state or tracer time
+levels.  Instead, time level 0 remains the base state for RK2 updates and time
+level 1 is updated in place.  Halo exchanges are performed on time level 1
+between internal iterations.  After the final iteration, `updateTimeLevels` is
+called once for the Ocean state and tracers, making the completed time-level-1
+state the new time-level-0 state.
 
 ## 5. Verification and testing
 ### 5.1 Unit testing

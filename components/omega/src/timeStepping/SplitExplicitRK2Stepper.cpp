@@ -316,8 +316,6 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
    const int NextLevel = 1;
 
    const MPI_Comm Comm = MeshHalo->getComm();
-   const TimeInterval TimeStepIterationTimeStep =
-       (1._Real / static_cast<Real>(SEConfig.NTimeStepIteration)) * TimeStep;
 
    Array3DReal CurTracerArray  = Tracers::getAll(CurLevel);
    Array3DReal NextTracerArray = Tracers::getAll(NextLevel);
@@ -326,12 +324,12 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
    initializeNextState(State, CurLevel, NextLevel);
    deepCopy(NextTracerArray, CurTracerArray);
 
-   TimeInstant StageTime = SimTime;
+   const TimeInstant StageTime = SimTime;
    for (I4 TimeStepIteration = 0;
         TimeStepIteration < SEConfig.NTimeStepIteration; ++TimeStepIteration) {
       // Stage 1: Baroclinic velocity advance, with long time step
       doSplitStage1(State, NextTracerArray, CurLevel, NextLevel, StageTime,
-                    TimeStepIterationTimeStep);
+                    TimeStep);
 
       Pacer::timingBarrier("SE-RK2:haloStage1Barrier", 3, Comm);
       Pacer::start("SE-RK2:haloStage1", 3);
@@ -342,9 +340,7 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
 
       if (SEConfig.SplitFactor != 0._Real) {
          // Stage 2: Barotropic velocity advance, explicitly subcycled
-         doSplitStage2(State, NextLevel,
-                       StageTime + 0.5 * TimeStepIterationTimeStep,
-                       TimeStepIterationTimeStep);
+         doSplitStage2(State, NextLevel, StageTime + 0.5 * TimeStep, TimeStep);
       }
 
       const bool FinalIteration =
@@ -352,7 +348,7 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
 
       // Stage 3: Update thickness, tracers, other diagnostics
       doSplitStage3(State, CurTracerArray, NextTracerArray, CurLevel, NextLevel,
-                    StageTime, TimeStepIterationTimeStep, FinalIteration);
+                    StageTime, TimeStep, FinalIteration);
 
       if (TimeStepIteration + 1 < SEConfig.NTimeStepIteration) {
          Pacer::timingBarrier("SE-RK2:haloTimeStepIterationBarrier", 3, Comm);
@@ -360,7 +356,6 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
          State->exchangeHalo(NextLevel);
          MeshHalo->exchangeFullArrayHalo(NextTracerArray, OnCell);
          Pacer::stop("SE-RK2:haloTimeStepIteration", 3);
-         StageTime = StageTime + TimeStepIterationTimeStep;
       }
    }
 

@@ -120,13 +120,8 @@ void SplitExplicitRK2Stepper::doSplitStage3(
    prescribeState(State, NextLevel, State, CurLevel,
                   StageTime + 0.5 * StageTimeStep);
 
-   if (FinalIteration) {
-      // If the final TimeStepIteration, reconstruct the final normal velocity at (n+1) for output and diagnostics
-      reconstructFinalNormalVelocity(State, CurLevel, NextLevel);
-   } else {
-      // During the time step iteration, reconstruct normal velocity at (n+1/2) for the next iteration
-      reconstructNormalVelocity(State, NextLevel);
-   }
+   // During the time step iteration, reconstruct normal velocity at (n+1/2) for the next iteration
+   reconstructNormalVelocity(State, NextLevel);
 
    // Compute thickness auxiliary variables at the new time level
    AuxState->computeThicknessTracerAux(State, NextTracerArray, NextLevel,
@@ -144,6 +139,9 @@ void SplitExplicitRK2Stepper::doSplitStage3(
  
    // Update thickness and tracers by the computed tendencies for the next iteration of the time step iteration
    if (FinalIteration) {
+      // If the final TimeStepIteration, reconstruct the final normal velocity at (n+1) for output and diagnostics
+      reconstructFinalNormalVelocity(State, CurLevel, NextLevel);
+
       // If the final TimeStepIteration, update thickness and tracers at n+1
       updateThicknessByTend(State, NextLevel, State, CurLevel, StageTimeStep);
       updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel, State,

@@ -100,9 +100,6 @@ void SplitExplicitRK2Stepper::doSplitStage1(
    // TODO: this can be optimized in the future.
    deepCopy(SEScratch.BaseVelocityTend, Tend->NormalVelocityTend);
 
-   updateBaroclinicVelocityByTend(State, NextLevel, State, CurLevel,
-                                  0.5 * StageTimeStep);
-
    // Perform baroclinic velocity iteration with Coriolis acceleration.
    doBaroclinicCoriolisIteration(State, SEScratch.BaseVelocityTend, CurLevel,
                                  NextLevel, StageTimeStep);
@@ -329,6 +326,7 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
    Array3DReal NextTracerArray = Tracers::getAll(NextLevel);
 
    // Initialize NextLevel from CurLevel
+   // TODO: This can be optimized in the future.
    initializeNextState(State, CurLevel, NextLevel);
    deepCopy(NextTracerArray, CurTracerArray);
 

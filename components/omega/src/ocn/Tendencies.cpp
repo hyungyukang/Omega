@@ -909,11 +909,12 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
       Pacer::stop("Tend:bclPressureGradTerm", 2);
    }
 
-   // Compute depth-mean specific volume times barotropic pressure gradient
-   const Array1DReal &BtrPressAnomaly =
-       State->getBarotropicPressureAnomaly(BarotropicPressureTimeLevel);
-   const Array1DReal &DepthMeanSpecVol = EqState->DepthMeanSpecificVolume;
-   if (LocSSHGrad.Enabled) {
+   // Compute the barotropic pressure anomaly gradient term
+   if (LocSSHGrad.Enabled && SplitFactor != 0._Real) {
+      const Array1DReal &BtrPressAnomaly =
+          State->getBarotropicPressureAnomaly(BarotropicPressureTimeLevel);
+      const Array1DReal &DepthMeanSpecVol = EqState->DepthMeanSpecificVolume;
+
       Pacer::start("Tend:BclBtrPressureGrad", 2);
       parallelForOuter(
           {Mesh->NEdgesAll}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
@@ -923,7 +924,7 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
              parallelForInner(
                  Team, KRange, INNER_LAMBDA(int KChunk) {
                     LocSSHGrad(LocNormalVelocityTend, IEdge, KChunk,
-                               BtrPressAnomaly, DepthMeanSpecVol, SplitFactor);
+                               BtrPressAnomaly, DepthMeanSpecVol);
                  });
           });
       Pacer::stop("Tend:BclBtrPressureGrad", 2);

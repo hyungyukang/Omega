@@ -297,8 +297,7 @@ class SSHGradOnEdge {
    /// gradient on edges and adds it to every active vertical layer.
    KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
                                    const Array1DReal &BtrPressAnomaly,
-                                   const Array1DReal &DepthMeanSpecVol,
-                                   Real SplitFactor) const {
+                                   const Array1DReal &DepthMeanSpecVol) const {
 
       const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
       const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
@@ -313,7 +312,7 @@ class SSHGradOnEdge {
 
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const I4 K = KStart + KVec;
-         Tend(IEdge, K) += EdgeMask(IEdge, K) * SplitFactor * BtrPressGradTend;
+         Tend(IEdge, K) += EdgeMask(IEdge, K) * BtrPressGradTend;
       }
    }
 

@@ -146,9 +146,17 @@ void SplitExplicitRK2Stepper::doSplitStage3(
                                      StageTime + 0.5 * StageTimeStep);
  
    // Update thickness and tracers by the computed tendencies for the next iteration of the time step iteration
-   updateThicknessByTend(State, NextLevel, State, CurLevel, StageTimeStep);
-   updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel, State,
-                       CurLevel, StageTimeStep);
+   if (FinalIteration) {
+      // If the final TimeStepIteration, update thickness and tracers at n+1
+      updateThicknessByTend(State, NextLevel, State, CurLevel, StageTimeStep);
+      updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel, State,
+                          CurLevel, StageTimeStep);
+   } else {
+      // During the time step iteration, update thickness and tracers at n+1/2
+      updateThicknessByTend(State, NextLevel, State, CurLevel, 0.5 * StageTimeStep);
+      updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel, State,
+                          CurLevel, 0.5 * StageTimeStep);
+   }
 
    Pacer::stop("SE-RK2:stage3TrThick", 2);
 }

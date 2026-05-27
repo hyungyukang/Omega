@@ -617,7 +617,7 @@ $$ (split-stage2-b-corrector)
 Accumulate the barotropic velocity and flux during subcycling:
 
 $$
-\overline{{\bf u}}_e^{n}
+\overline{{\bf u}}_e^{n+1}
 =
 \sum_{m=0}^{2M}
 [\hat{\overline{{\bf u}}}_e]^{n+m/M},
@@ -626,7 +626,7 @@ $$ (split-stage2-barotropic-velocity-accumulate)
 and
 
 $$
-F
+F_e
 =
 \sum_{m=0}^{2M-1}
 [F_e]^{(m+1)/M}.
@@ -635,10 +635,10 @@ $$ (split-stage2-barotropic-flux-accumulate)
 Compute the time average after subcycling:
 
 $$
-\overline{{\bf u}}_e^{\text{bt}}
+\overline{ {\bar {\bf u}}}_e^{\text{bt}}
 =
 \frac{1}{2M+1}
-\overline{{\bf u}}_e^{n}
+\overline{{\bf u}}_e^{n+1}
 $$ (split-stage2-barotropic-velocity-average)
 
 and
@@ -646,10 +646,10 @@ and
 $$
 \overline{F}_e^{\text{bt}}
 =
-\frac{1}{2M}F
+\frac{1}{2M}F_e
 $$ (split-stage2-barotropic-flux-average)
 
-Then perform the boundary update on $\overline{{\bf u}}_e^{\text{bt}}$ and $\overline{F}_e^{\text{bt}}$. For the practical implementation, we set $\overline{{\bf u}}_e^{n}=\overline{{\bf u}}_e^{\text{bt}}$ and $\overline{F}_e^{\text{bt}}=F$.
+Then perform the boundary update on $\overline{{\bar {\bf u}}}_e^{\text{bt}}$ and $\overline{F}_e^{\text{bt}}$. For the practical implementation, we set $\overline{{\bf u}}_e^{n+1}=\overline{{\bar {\bf u}}}_e^{\text{bt}}$ and $\overline{F}_e^{\text{bt}}=F_e$.
 
 #### 3.2.4 Barotropic-baroclinic coupling and barotropic pressure consistency
 
@@ -669,7 +669,7 @@ $$ (split-btr-update-consistency)
 
 Here, $\overline{\varphi}^{\text{bt}}$ denotes a time-averaged quantity from the barotropic subcycles, and $n$ indicates the baroclinic time step.
 
-The velocity correction $u^{\text{co}}$ is written as
+The velocity correction ${\bf u}^{\text{co}}$ is written as
 
 $$
 {\bf u}_{e,k}^{\text{co}}
@@ -680,7 +680,7 @@ $$
 \sum_{k=0}^{K}
 [\tilde{h}_i^{*}]_{e,k}
 \left(
-\overline{{\bf u}}_e^{\text{bt}}
+\overline{{\bar {\bf u}}}_e^{\text{bt}}
 +{\bf u}_{e,k}^{\prime n+0.5}
 +{\bf u}_{e,k}^{\text{bolus}*}
 \right)
@@ -698,7 +698,7 @@ The transport velocity $u^{\text{tr}}$ is defined as
 $$
 {\bf u}^{\text{tr}}_{e,k}
 =
-\overline{{\bf u}}_e^{\text{bt}}
+\overline{{\bar {\bf u}}}_e^{\text{bt}}
 +{\bf u}_{e,k}^{\prime n+0.5}
 +{\bf u}_{e,k}^{\text{bolus}*}
 +{\bf u}_{e,k}^{\text{co}}.
@@ -775,7 +775,7 @@ $$
 $$ (split-reset-baroclinic-velocity)
 
 $$
-\overline{{\bf u}}^{*} = \overline{{\bf u}}^{\text{bt}} \quad \text{from Stage 2},
+\overline{{\bf u}}^{*} = \overline{{\bar {\bf u}}}^{\text{bt}} \quad \text{from Stage 2},
 $$ (split-reset-barotropic-velocity)
 
 $$
@@ -808,7 +808,7 @@ $$
 $$ (split-final-baroclinic-velocity)
 
 $$
-\overline{{\bf u}}^{n+1} = \overline{{\bf u}}^{\text{bt}} \quad \text{from Stage 2},
+\overline{{\bf u}}^{n+1} = \overline{{\bar {\bf u}}}^{\text{bt}} \quad \text{from Stage 2},
 $$ (split-final-barotropic-velocity)
 
 $$
@@ -1080,6 +1080,49 @@ the stepper are stored in `SplitExplicitScratch`.
   barotropic pressure-anomaly contribution to the baroclinic velocity tendency.
 
 ### 4.2 Methods
+```c++
+void SplitExplicitRK2Stepper::doStep(OceanState *State,
+                                     TimeInstant &SimTime) const {
+
+   const int CurLevel  = 0;
+   const int NextLevel = 1;
+
+   const MPI_Comm Comm = MeshHalo->getComm();
+
+   Array3DReal CurTracerArray  = Tracers::getAll(CurLevel);
+   Array3DReal NextTracerArray = Tracers::getAll(NextLevel);
+
+   // Initialize NextLevel from CurLevel
+   initializeNextState(State, CurLevel, NextLevel);
+   deepCopy(NextTracerArray, CurTracerArray);
+
+   const TimeInstant StageTime = SimTime;
+   for (I4 TimeStepIteration = 0;
+        TimeStepIteration < SEConfig.NTimeStepIteration; ++TimeStepIteration) {
+
+      // Stage 1: Baroclinic velocity advance, with long time step
+      doSplitStage1(State, NextTracerArray, CurLevel, NextLevel, StageTime, TimeStep);
+
+      if (SEConfig.SplitFactor != 0._Real) {
+         // Stage 2: Barotropic velocity advance, explicitly subcycled
+         doSplitStage2(State, NextLevel, StageTime + 0.5 * TimeStep, TimeStep);
+      }
+
+      const bool FinalIteration =
+          TimeStepIteration + 1 == SEConfig.NTimeStepIteration;
+
+      // Stage 3: Update thickness, tracers, other diagnostics
+      doSplitStage3(State, CurTracerArray, NextTracerArray, CurLevel, NextLevel,
+                    StageTime, TimeStep, FinalIteration);
+   }
+
+   State->updateTimeLevels();
+   Tracers::updateTimeLevels();
+
+   StepClock->advance();
+   SimTime = StepClock->getCurrentTime();
+}
+```
 
 #### 4.2.1 Initialization
 
@@ -1141,9 +1184,9 @@ as the sum of barotropic and baroclinic velocity at time level 1.  On the final
 iteration, full normal velocity is reconstructed at time level $n+1$ using
 
 $$
-u^{n+1} = u_\mathrm{bt}^{n+1}
-        + 2 u_\mathrm{bc}^{n+1/2}
-        - u_\mathrm{bc}^{n}.
+{\bf u}^{n+1} = {\overline {\bar {\bf u}}}^{\mathrm{bt}}
+        + 2 {\bf u}'^{n+1/2}
+        - {\bf u}'^{n}.
 $$
 
 This final reconstruction follows the MPAS-Ocean split-explicit update: the

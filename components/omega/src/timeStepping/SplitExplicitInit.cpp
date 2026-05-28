@@ -170,11 +170,6 @@ void SplitExplicitInit::computeVelocitySplit(OceanState *State,
           const I4 KMin = MinLayerEdgeBot(IEdge);
           const I4 KMax = MaxLayerEdgeTop(IEdge);
 
-          if (KMax < KMin) {
-             NormalBarotropicVelocity(IEdge) = 0._Real;
-             return;
-          }
-
           const I4 Cell1 = CellsOnEdge(IEdge, 0);
           const I4 Cell2 = CellsOnEdge(IEdge, 1);
 
@@ -241,12 +236,6 @@ void SplitExplicitInit::initializeBarotropicPressure(
           const I4 KMin = MinLayerCell(ICell);
           const I4 KMax = MaxLayerCell(ICell);
 
-          if (KMax < KMin) {
-             BtrPressure(ICell)     = 0._Real;
-             BtrPressAnomaly(ICell) = 0._Real;
-             return;
-          }
-
           const Real Pressure =
               PressureInterface(ICell, KMax + 1) - SurfacePressure(ICell);
           BtrPressure(ICell)     = Pressure;
@@ -280,10 +269,6 @@ void SplitExplicitInit::combineVelocitySplit(OceanState *State,
        KOKKOS_LAMBDA(int IEdge) {
           const I4 KMin = MinLayerEdgeBot(IEdge);
           const I4 KMax = MaxLayerEdgeTop(IEdge);
-
-          if (KMax < KMin) {
-             return;
-          }
 
           const Real BarotropicVelocity = NormalBarotropicVelocity(IEdge);
           for (I4 K = KMin; K <= KMax; ++K) {

@@ -87,7 +87,7 @@ void SplitExplicitRK2Stepper::doSplitStage1(
    Pacer::start("SE-RK2:stage1Bcl", 2);
 
    // TODO: A placeholder at this moment.
-   prescribeState(State, CurLevel, State, CurLevel, StageTime);
+   //prescribeState(State, CurLevel, State, CurLevel, StageTime);
 
    // Compute baroclinic velocity tendencies and update baroclinic velocity for the
    // first half of the stage time step. 
@@ -117,11 +117,12 @@ void SplitExplicitRK2Stepper::doSplitStage3(
    Pacer::start("SE-RK2:stage3TrThick", 2);
 
    // TODO: A placeholder at this moment
-   prescribeState(State, NextLevel, State, CurLevel,
-                  StageTime + 0.5 * StageTimeStep);
+   //prescribeState(State, NextLevel, State, CurLevel,
+   //               StageTime + 0.5 * StageTimeStep);
 
    // During the time step iteration, reconstruct normal velocity at (n+1/2) for the next iteration
    reconstructNormalVelocity(State, NextLevel);
+   //reconstructFinalNormalVelocity(State, CurLevel, NextLevel);
 
    // Compute thickness auxiliary variables at the new time level
    AuxState->computeThicknessTracerAux(State, NextTracerArray, NextLevel,
@@ -139,6 +140,7 @@ void SplitExplicitRK2Stepper::doSplitStage3(
  
    // Update thickness and tracers by the computed tendencies for the next iteration of the time step iteration
    if (FinalIteration) {
+
       // If the final TimeStepIteration, reconstruct the final normal velocity at (n+1) for output and diagnostics
       reconstructFinalNormalVelocity(State, CurLevel, NextLevel);
 
@@ -274,12 +276,20 @@ void SplitExplicitRK2Stepper::reconstructFinalNormalVelocity(
           const int KMin = MinLayerEdgeBot(IEdge);
           const int KMax = MaxLayerEdgeTop(IEdge);
 
+          // Reconstruct NormalBclVel at n+1
+          parallelForInner(
+              Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+                 NormalBclVelNext(IEdge, K) =
+                     2._Real * NormalBclVelNext(IEdge, K) -
+                     NormalBclVelCur(IEdge, K);
+              });
+
+          // Reconstruct NormalVel at n+1
           parallelForInner(
               Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
                  NormalVelNext(IEdge, K) =
                      NormalBtrVelNext(IEdge) +
-                     2._Real * NormalBclVelNext(IEdge, K) -
-                     NormalBclVelCur(IEdge, K);
+                     NormalBclVelNext(IEdge, K);
               });
        });
 }
@@ -331,6 +341,10 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
    const TimeInstant StageTime = SimTime;
    for (I4 TimeStepIteration = 0;
         TimeStepIteration < SEConfig.NTimeStepIteration; ++TimeStepIteration) {
+
+      const bool FinalIteration =
+          TimeStepIteration + 1 == SEConfig.NTimeStepIteration;
+
       // Stage 1: Baroclinic velocity advance, with long time step
       doSplitStage1(State, NextTracerArray, CurLevel, NextLevel, StageTime,
                     TimeStep);
@@ -346,9 +360,6 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
          // Stage 2: Barotropic velocity advance, explicitly subcycled
          doSplitStage2(State, NextLevel, StageTime + 0.5 * TimeStep, TimeStep);
       }
-
-      const bool FinalIteration =
-          TimeStepIteration + 1 == SEConfig.NTimeStepIteration;
 
       // Stage 3: Update thickness, tracers, other diagnostics
       doSplitStage3(State, CurTracerArray, NextTracerArray, CurLevel, NextLevel,

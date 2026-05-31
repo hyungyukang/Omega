@@ -90,7 +90,7 @@ void SplitExplicitRK2Stepper::doSplitStage1(
    //prescribeState(State, CurLevel, State, CurLevel, StageTime);
 
    // Compute baroclinic velocity tendencies and update baroclinic velocity for the
-   // first half of the stage time step. 
+   // first half of the stage time step.
    Tend->computeBaroclinicVelocityTendencies(
        State, AuxState, TendencyTracerArray, NextLevel, NextLevel, NextLevel,
        NextLevel, SEConfig.SplitFactor,
@@ -137,7 +137,7 @@ void SplitExplicitRK2Stepper::doSplitStage3(
    Tend->computeTracerTendenciesOnly(State, AuxState, NextTracerArray,
                                      NextLevel, NextLevel,
                                      StageTime + 0.5 * StageTimeStep);
- 
+
    // Update thickness and tracers by the computed tendencies for the next iteration of the time step iteration
    if (FinalIteration) {
 
@@ -184,15 +184,99 @@ void SplitExplicitRK2Stepper::doBaroclinicCoriolisIteration(
 
       Array2DReal NormalBclVelEdge =
           State->getNormalBaroclinicVelocity(NextLevel);
+
+      // Compute the baroclinic part of the Coriolis acceleration
       Tend->computeCoriolisAccelerationOnEdge(Tend->NormalVelocityTend,
                                               NormalBclVelEdge, FEdge);
 
+      // Compute the barotropic forcing
+      computeBarotropicForcing(State, CurLevel, NextLevel, StageTimeStep);
+
+      // Update the baroclinic velocity by tendency at (n+1/2)
       updateBaroclinicVelocityByTend(State, NextLevel, State, CurLevel,
                                      0.5 * StageTimeStep);
    }
 
    Pacer::stop("SE-RK2:bclCoriolisIter", 2);
 }
+
+//------------------------------------------------------------------------------
+void SplitExplicitRK2Stepper::computeBarotropicForcing(
+    OceanState *State, I4 CurLevel, I4 NextLevel,
+    const TimeInterval &StageTimeStep) const {
+
+    const Real LocSplitFactor = SEConfig.SplitFactor;
+
+    // Return if the unsplit time stepper (i.e., BarotropicForcing = 0)
+    if ( LocSplitFactor == 0._Real ) return;
+
+    Pacer::start("SE-RK2:barotropicForcing", 2);
+
+    Array2DReal NormalBclVelCur =
+        State->getNormalBaroclinicVelocity(CurLevel);
+    Array2DReal LayerThickCell =
+        State->getLayerThickness(NextLevel);
+    Array2DReal NormalVelTend = Tend->NormalVelocityTend;
+    Array1DReal BtrForcing = SEScratch.BarotropicForcing;
+
+    R8 DtSecondsR8;
+    StageTimeStep.get(DtSecondsR8, TimeUnits::Seconds);
+    const Real DtSeconds        = DtSecondsR8;
+    const Real InvDtSeconds     = 1._Real / DtSeconds;
+
+    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
+    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+    OMEGA_SCOPE(CellsOnEdge, Mesh->CellsOnEdge);
+
+    parallelForOuter(
+        "computeBarotropicForcing", {Mesh->NEdgesAll},
+        KOKKOS_LAMBDA(I4 IEdge, const TeamMember &Team) {
+           const I4 KMin = MinLayerEdgeBot(IEdge);
+           const I4 KMax = MaxLayerEdgeTop(IEdge);
+
+           const I4 Cell0 = CellsOnEdge(IEdge, 0);
+           const I4 Cell1 = CellsOnEdge(IEdge, 1);
+
+           Real ThicknessSum = 0._Real;
+           parallelReduceInner(
+               Team, Range{KMin, KMax},
+               INNER_LAMBDA(I4 K, Real &Accum) {
+                  Accum += 0.5_Real * (LayerThickCell(Cell0, K) +
+                                       LayerThickCell(Cell1, K));
+               },
+               ThicknessSum);
+
+           Real NormalThicknessFluxSum = 0._Real;
+           parallelReduceInner(
+               Team, Range{KMin, KMax},
+               INNER_LAMBDA(I4 K, Real &Accum) {
+                  const Real ProvisionalBclVel =
+                      NormalBclVelCur(IEdge, K) +
+                      DtSeconds * NormalVelTend(IEdge, K);
+                  Accum += 0.5_Real * (LayerThickCell(Cell0, K) +
+                                       LayerThickCell(Cell1, K)) *
+                           ProvisionalBclVel;
+               },
+               NormalThicknessFluxSum);
+
+           const Real Forcing =
+               ThicknessSum > 0._Real
+                   ? LocSplitFactor * NormalThicknessFluxSum /
+                         ThicknessSum * InvDtSeconds
+                   : 0._Real;
+
+           Kokkos::single(PerTeam(Team),
+                          INNER_LAMBDA() { BtrForcing(IEdge) = Forcing; });
+
+           parallelForInner(
+               Team, Range{KMin, KMax}, INNER_LAMBDA(I4 K) {
+                  NormalVelTend(IEdge, K) -= Forcing;
+               });
+        });
+
+    Pacer::stop("SE-RK2:barotropicForcing", 2);
+}
+
 
 //------------------------------------------------------------------------------
 void SplitExplicitRK2Stepper::updateBaroclinicVelocityByTend(

@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "HorzMesh.h"
+#include "Halo.h"
 #include "OceanState.h"
 #include "SplitExplicitTypes.h"
 #include "TimeMgr.h"
@@ -22,6 +23,7 @@ class SplitExplicitBarotropicPCStepper {
        SplitExplicitScratch &Scratch, ///< [inout] split-explicit scratch data
        const SplitExplicitConfig &Config, ///< [in] split-explicit options
        const HorzMesh *Mesh,              ///< [in] horizontal mesh
+       Halo *MeshHalo,                    ///< [in] mesh halo exchange
        const VertCoord *VCoord,           ///< [in] vertical coordinate
        I4 TimeLevel,                      ///< [in] state time level to update
        const TimeInstant &StageTime,      ///< [in] current stage time

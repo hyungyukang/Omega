@@ -102,6 +102,11 @@ class AuxiliaryState {
    void computeThicknessTracerAux(const OceanState *State,
                                   const Array3DReal &TracerArray,
                                   int ThickTimeLevel, int VelTimeLevel) const;
+   void computeThicknessTracerAux(const OceanState *State,
+                                  const Array3DReal &TracerArray,
+                                  int ThickTimeLevel,
+                                  const Array2DReal &NormalVelEdge,
+                                  const TimeInterval ProjDt) const;
 
  private:
    AuxiliaryState(const std::string &Name, const HorzMesh *Mesh, Halo *MeshHalo,

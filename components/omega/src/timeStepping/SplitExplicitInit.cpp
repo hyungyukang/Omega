@@ -130,6 +130,9 @@ void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
        Array1DReal("BarotropicFlux" + Name, Mesh->NEdgesSize);
    Scratch.BaseVelocityTend = Array2DReal(
        "BaseVelocityTend" + Name, Mesh->NEdgesSize, VCoord->NVertLayers);
+   Scratch.NormalTransportVelocity =
+       Array2DReal("NormalTransportVelocity" + Name, Mesh->NEdgesSize,
+                   VCoord->NVertLayers);
 
    deepCopy(Scratch.NormalBarotropicVelocitySubcycleCur, 0.);
    deepCopy(Scratch.NormalBarotropicVelocitySubcycleNew, 0.);
@@ -139,6 +142,7 @@ void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
    deepCopy(Scratch.BarotropicForcing, 0.);
    deepCopy(Scratch.BarotropicFlux, 0.);
    deepCopy(Scratch.BaseVelocityTend, 0.);
+   deepCopy(Scratch.NormalTransportVelocity, 0.);
 }
 
 //------------------------------------------------------------------------------

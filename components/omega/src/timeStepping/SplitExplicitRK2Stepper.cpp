@@ -69,7 +69,7 @@ void SplitExplicitRK2Stepper::initBarotropicStepper() {
                                 const TimeInstant &StageTime,
                                 const TimeInterval &StageTimeStep) {
          BarotropicPCStepper.doSplitStage2(State, SEScratch, SEConfig, Mesh,
-                                           VCoord, TimeLevel, StageTime,
+                                           MeshHalo, VCoord, TimeLevel, StageTime,
                                            StageTimeStep);
       };
       return;
@@ -120,40 +120,42 @@ void SplitExplicitRK2Stepper::doSplitStage3(
    //prescribeState(State, NextLevel, State, CurLevel,
    //               StageTime + 0.5 * StageTimeStep);
 
-   // During the time step iteration, reconstruct normal velocity at (n+1/2) for the next iteration
-   reconstructNormalVelocity(State, NextLevel);
-   //reconstructFinalNormalVelocity(State, CurLevel, NextLevel);
+   // NormalTransportVelocity is the corrected transport velocity provided by
+   // computeTransportVelocity before this stage.
+   const Array2DReal NormalTransportVelocity =
+       SEScratch.NormalTransportVelocity;
+   const TimeInterval UpdateTimeStep =
+       FinalIteration ? StageTimeStep : 0.5 * StageTimeStep;
 
    // Compute thickness auxiliary variables at the new time level
    AuxState->computeThicknessTracerAux(State, NextTracerArray, NextLevel,
-                                       NextLevel);
+                                       NormalTransportVelocity,
+                                       UpdateTimeStep);
 
    // Compute vertical velocity at the new time level for the vertical advection term in thickness and tracer tendencies
-   computeVerticalVelocity(State, NextLevel, NextLevel, 0.5 * StageTimeStep);
+   computeVerticalVelocity(State, NextLevel, NormalTransportVelocity,
+                           0.5 * StageTimeStep);
 
    // Compute thickness and tracer tendencies at the new time level
-   Tend->computeThicknessTendenciesOnly(State, AuxState, NextLevel, NextLevel,
-                                        StageTime + 0.5 * StageTimeStep);
+   Tend->computeThicknessTendenciesOnly(
+       State, AuxState, NextLevel, NextLevel, NormalTransportVelocity,
+       StageTime + 0.5 * StageTimeStep);
    Tend->computeTracerTendenciesOnly(State, AuxState, NextTracerArray,
-                                     NextLevel, NextLevel,
-                                     StageTime + 0.5 * StageTimeStep);
+                                     NextLevel, NormalTransportVelocity,
+                                     StageTime + 0.5 * StageTimeStep,
+                                     UpdateTimeStep);
 
-   // Update thickness and tracers by the computed tendencies for the next iteration of the time step iteration
    if (FinalIteration) {
-
-      // If the final TimeStepIteration, reconstruct the final normal velocity at (n+1) for output and diagnostics
+      // Reconstruct the final normal velocity at n+1 for output and
+      // diagnostics.
       reconstructFinalNormalVelocity(State, CurLevel, NextLevel);
-
-      // If the final TimeStepIteration, update thickness and tracers at n+1
-      updateThicknessByTend(State, NextLevel, State, CurLevel, StageTimeStep);
-      updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel, State,
-                          CurLevel, StageTimeStep);
-   } else {
-      // During the time step iteration, update thickness and tracers at n+1/2
-      updateThicknessByTend(State, NextLevel, State, CurLevel, 0.5 * StageTimeStep);
-      updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel, State,
-                          CurLevel, 0.5 * StageTimeStep);
    }
+
+   // Update thickness and tracers at n+1/2 during the first iteration and at
+   // n+1 during the final iteration.
+   updateThicknessByTend(State, NextLevel, State, CurLevel, UpdateTimeStep);
+   updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel, State,
+                       CurLevel, UpdateTimeStep);
 
    Pacer::stop("SE-RK2:stage3TrThick", 2);
 }
@@ -167,6 +169,78 @@ void SplitExplicitRK2Stepper::doSplitStage2(
       LOG_CRITICAL("Split-explicit barotropic time stepper not initialized");
 
    BarotropicStage2(State, TimeLevel, StageTime, StageTimeStep);
+}
+
+//------------------------------------------------------------------------------
+void SplitExplicitRK2Stepper::computeTransportVelocity(OceanState *State,
+                                                       I4 TimeLevel) const {
+
+   Pacer::start("SE-RK2:computeTransportVelocity", 2);
+
+   Array2DReal NormalVel          = State->getNormalVelocity(TimeLevel);
+   Array2DReal NormalTransportVel = SEScratch.NormalTransportVelocity;
+   Array2DReal NormalBclVel =
+       State->getNormalBaroclinicVelocity(TimeLevel);
+   Array1DReal NormalBtrVel =
+       State->getNormalBarotropicVelocity(TimeLevel);
+   Array2DReal LayerThickCell = State->getLayerThickness(TimeLevel);
+   Array1DReal BtrFlux        = SEScratch.BarotropicFlux;
+   const Real LocSplitFactor   = SEConfig.SplitFactor;
+
+   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
+   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+   OMEGA_SCOPE(CellsOnEdge, Mesh->CellsOnEdge);
+
+   parallelForOuter(
+       "computeSplitExplicitTransportVelocity", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(I4 IEdge, const TeamMember &Team) {
+          const I4 KMin = MinLayerEdgeBot(IEdge);
+          const I4 KMax = MaxLayerEdgeTop(IEdge);
+
+          if (KMax < KMin) {
+             return;
+          }
+
+          const I4 Cell0 = CellsOnEdge(IEdge, 0);
+          const I4 Cell1 = CellsOnEdge(IEdge, 1);
+
+          Real ThicknessSum = 0._Real;
+          parallelReduceInner(
+              Team, Range{KMin, KMax},
+              INNER_LAMBDA(I4 K, Real &Accum) {
+                 Accum += 0.5_Real * (LayerThickCell(Cell0, K) +
+                                      LayerThickCell(Cell1, K));
+              },
+              ThicknessSum);
+
+          Real TransportSum = 0._Real;
+          parallelReduceInner(
+              Team, Range{KMin, KMax},
+              INNER_LAMBDA(I4 K, Real &Accum) {
+                 const Real TransportVel =
+                     NormalBtrVel(IEdge) + NormalBclVel(IEdge, K);
+                 const Real EdgeThickness =
+                     0.5_Real * (LayerThickCell(Cell0, K) +
+                                 LayerThickCell(Cell1, K));
+                 Accum += EdgeThickness * TransportVel;
+              },
+              TransportSum);
+
+          const Real VelCorrection =
+              LocSplitFactor != 0._Real && ThicknessSum > 0._Real
+                  ? (BtrFlux(IEdge) - TransportSum) / ThicknessSum
+                  : 0._Real;
+
+          parallelForInner(
+              Team, Range{KMin, KMax}, INNER_LAMBDA(I4 K) {
+                 const Real TotalVel =
+                     NormalBtrVel(IEdge) + NormalBclVel(IEdge, K);
+                 NormalVel(IEdge, K) = TotalVel;
+                 NormalTransportVel(IEdge, K) = TotalVel + VelCorrection;
+              });
+       });
+
+   Pacer::stop("SE-RK2:computeTransportVelocity", 2);
 }
 
 //------------------------------------------------------------------------------
@@ -386,8 +460,20 @@ void SplitExplicitRK2Stepper::computeVerticalVelocity(
    if (!State)
       LOG_CRITICAL("Invalid State");
 
+   Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
+   computeVerticalVelocity(State, ThickTimeLevel, NormalVelEdge,
+                           StageTimeStep);
+}
+
+//------------------------------------------------------------------------------
+void SplitExplicitRK2Stepper::computeVerticalVelocity(
+    OceanState *State, I4 ThickTimeLevel, const Array2DReal &NormalVelEdge,
+    TimeInterval StageTimeStep) const {
+
+   if (!State)
+      LOG_CRITICAL("Invalid State");
+
    Array2DReal LayerThickCell = State->getLayerThickness(ThickTimeLevel);
-   Array2DReal NormalVelEdge  = State->getNormalVelocity(VelTimeLevel);
 
    R8 DtSeconds;
    StageTimeStep.get(DtSeconds, TimeUnits::Seconds);
@@ -444,6 +530,10 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
          // Stage 2: Barotropic velocity advance, explicitly subcycled
          doSplitStage2(State, NextLevel, StageTime + 0.5 * TimeStep, TimeStep);
       }
+
+      // Compute physical total velocity and the corrected transport velocity
+      // used in Stage 3.
+      computeTransportVelocity(State, NextLevel);
 
       // Stage 3: Update thickness, tracers, other diagnostics
       doSplitStage3(State, CurTracerArray, NextTracerArray, CurLevel, NextLevel,

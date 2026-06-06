@@ -34,6 +34,7 @@ struct SplitExplicitScratch {
    Array1DReal BarotropicForcing;
    Array1DReal BarotropicFlux;
    Array2DReal BaseVelocityTend;
+   Array2DReal NormalTransportVelocity;
 };
 
 } // namespace OMEGA

@@ -103,6 +103,12 @@ class Tendencies {
                                              int ThickTimeLevel,
                                              int VelTimeLevel,
                                              TimeInstant Time);
+   void computePseudoThicknessTendenciesOnly(const OceanState *State,
+                                             const AuxiliaryState *AuxState,
+                                             int ThickTimeLevel,
+                                             int VelTimeLevel,
+                                             const Array2DReal &NormalVelEdge,
+                                             TimeInstant Time);
    void computeVelocityTendenciesOnly(const OceanState *State,
                                       const AuxiliaryState *AuxState,
                                       const Array3DReal &TracerArray,
@@ -122,6 +128,11 @@ class Tendencies {
                                     const Array3DReal &TracerArray,
                                     int ThickTimeLevel, int VelTimeLevel,
                                     TimeInstant Time);
+   void computeTracerTendenciesOnly(
+       const OceanState *State, const AuxiliaryState *AuxState,
+       const Array3DReal &TracerArray, int ThickTimeLevel,
+       const Array2DReal &NormalVelEdge, TimeInstant Time,
+       const TimeInterval ProjDt);
    void computeCoriolisAccelerationOnEdge(
        const Array2DReal &Tend,          ///< [inout] velocity tendency
        const Array2DReal &NormalVelEdge, ///< [in] normal velocity on edges

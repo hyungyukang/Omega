@@ -345,8 +345,16 @@ void AuxiliaryState::computeThicknessTracerAux(const OceanState *State,
                                                int ThickTimeLevel,
                                                int VelTimeLevel) const {
 
-   Array2DReal LayerThickCell = State->getLayerThickness(ThickTimeLevel);
    Array2DReal NormalVelEdge  = State->getNormalVelocity(VelTimeLevel);
+   computeThicknessTracerAux(State, TracerArray, ThickTimeLevel,
+                             NormalVelEdge, TimeStep);
+}
+
+void AuxiliaryState::computeThicknessTracerAux(
+    const OceanState *State, const Array3DReal &TracerArray, int ThickTimeLevel,
+    const Array2DReal &NormalVelEdge, const TimeInterval ProjDt) const {
+
+   Array2DReal LayerThickCell = State->getLayerThickness(ThickTimeLevel);
 
    const int NTracers = TracerArray.extent_int(0);
 
@@ -357,8 +365,8 @@ void AuxiliaryState::computeThicknessTracerAux(const OceanState *State,
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
 
-   R8 TimeStepSeconds;
-   TimeStep.get(TimeStepSeconds, TimeUnits::Seconds);
+   R8 ProjDtSeconds;
+   ProjDt.get(ProjDtSeconds, TimeUnits::Seconds);
 
    Pacer::start("AuxState:computeThicknessTracerAux", 1);
 
@@ -392,7 +400,7 @@ void AuxiliaryState::computeThicknessTracerAux(const OceanState *State,
               Team, KRange, INNER_LAMBDA(int KChunk) {
                  LocLayerThicknessAux.computeVarsOnCells(
                      ICell, KChunk, LayerThickCell, NormalVelEdge,
-                     TimeStepSeconds);
+                     ProjDtSeconds);
               });
        });
    Pacer::stop("AuxState:cellThicknessAux", 2);

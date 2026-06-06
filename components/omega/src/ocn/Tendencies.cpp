@@ -569,12 +569,24 @@ void Tendencies::computePseudoThicknessTendenciesOnly(
     TimeInstant Time                ///< [in] Time
 ) {
 
+   Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
+
+   computePseudoThicknessTendenciesOnly(State, AuxState, ThickTimeLevel, VelTimeLevel,
+                                  NormalVelEdge, Time);
+
+void Tendencies::computePseudoThicknessTendenciesOnly(
+    const OceanState *State,           ///< [in] State variables
+    const AuxiliaryState *AuxState,    ///< [in] Auxilary state variables
+    int ThickTimeLevel,                ///< [in] Time level
+    int VelTimeLevel,                  ///< [in] Time level
+    const Array2DReal &NormalVelEdge,  ///< [in] normal velocity on edges
+    TimeInstant Time                   ///< [in] Time
+) {
+
    OMEGA_SCOPE(LocPseudoThicknessTend, PseudoThicknessTend);
    OMEGA_SCOPE(LocThicknessFluxDiv, PseudoThicknessFluxDiv);
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
-
-   Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
 
    Pacer::start("Tend:computePseudoThicknessTendenciesOnly", 1);
 
@@ -1018,6 +1030,21 @@ void Tendencies::computeTracerTendenciesOnly(
     int VelTimeLevel,               ///< [in] Time level
     TimeInstant Time                ///< [in] Time
 ) {
+
+   Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
+   computeTracerTendenciesOnly(State, AuxState, TracerArray, ThickTimeLevel,
+                               NormalVelEdge, Time, TimeStep);
+}
+
+void Tendencies::computeTracerTendenciesOnly(
+    const OceanState *State,           ///< [in] State variables
+    const AuxiliaryState *AuxState,    ///< [in] Auxilary state variables
+    const Array3DReal &TracerArray,    ///< [in] Tracer array
+    int ThickTimeLevel,                ///< [in] Time level
+    const Array2DReal &NormalVelEdge,  ///< [in] normal velocity on edges
+    TimeInstant Time,                  ///< [in] Time
+    const TimeInterval ProjDt          ///< [in] projection time interval
+) {
    OMEGA_SCOPE(LocTracerTend, TracerTend);
    OMEGA_SCOPE(LocTracerHorzAdv, TracerHorzAdv);
    OMEGA_SCOPE(LocTracerDiffusion, TracerDiffusion);
@@ -1044,6 +1071,7 @@ void Tendencies::computeTracerTendenciesOnly(
    Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
    const Array2DReal &FluxPseudoThickEdge =
        AuxState->PseudoThicknessAux.FluxPseudoThickEdge;
+
    if (LocTracerHorzAdv.Enabled) {
       Pacer::start("Tend:tracerHorzAdv", 2);
       parallelForOuter(
@@ -1122,7 +1150,7 @@ void Tendencies::computeTracerTendenciesOnly(
       ThicknessForVAdv = AuxState->PseudoThicknessAux.ProvPseudoThickness;
    }
    VAdv->computeTracerVAdvTend(LocTracerTend, TracerArray, ThicknessForVAdv,
-                               TimeStep);
+                               ProjDt);
    Pacer::stop("Tend:computeTracerVAdvTend", 2);
 
    // compute tracer surface restoring

@@ -69,6 +69,11 @@ class SplitExplicitRK2Stepper : public TimeStepper {
                       const TimeInstant &StageTime,
                       const TimeInterval &StageTimeStep) const;
 
+   void computeTransportVelocity(
+       OceanState *State, ///< [inout] model state
+       I4 TimeLevel       ///< [in] time level for split velocity
+   ) const;
+
    void doBaroclinicCoriolisIteration(
        OceanState *State,                   ///< [inout] model state
        const Array2DReal &BaseVelocityTend, ///< [in] non-Coriolis tendency
@@ -114,6 +119,12 @@ class SplitExplicitRK2Stepper : public TimeStepper {
        I4 ThickTimeLevel,         ///< [in] thickness time level
        I4 VelTimeLevel,           ///< [in] reconstructed velocity time level
        TimeInterval StageTimeStep ///< [in] current stage time step
+   ) const;
+   void computeVerticalVelocity(
+       OceanState *State,                 ///< [inout] model state
+       I4 ThickTimeLevel,                 ///< [in] thickness time level
+       const Array2DReal &NormalVelEdge,  ///< [in] velocity on edges
+       TimeInterval StageTimeStep         ///< [in] current stage time step
    ) const;
 
    SplitExplicitConfig SEConfig;

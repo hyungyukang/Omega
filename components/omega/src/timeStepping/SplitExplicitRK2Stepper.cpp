@@ -6,6 +6,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "SplitExplicitRK2Stepper.h"
+#include "GlobalConstants.h"
 #include "Logging.h"
 #include "Pacer.h"
 #include "SplitExplicitInit.h"
@@ -186,6 +187,7 @@ void SplitExplicitRK2Stepper::computeTransportVelocity(OceanState *State,
    Array2DReal LayerThickCell = State->getLayerThickness(TimeLevel);
    Array1DReal BtrFlux        = SEScratch.BarotropicFlux;
    const Real LocSplitFactor   = SEConfig.SplitFactor;
+   constexpr Real RhoGravity   = RhoSw * Gravity;
 
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
@@ -228,7 +230,7 @@ void SplitExplicitRK2Stepper::computeTransportVelocity(OceanState *State,
 
           const Real VelCorrection =
               LocSplitFactor != 0._Real && ThicknessSum > 0._Real
-                  ? (BtrFlux(IEdge) - TransportSum) / ThicknessSum
+                  ? (BtrFlux(IEdge) / RhoGravity - TransportSum) / ThicknessSum
                   : 0._Real;
 
           parallelForInner(

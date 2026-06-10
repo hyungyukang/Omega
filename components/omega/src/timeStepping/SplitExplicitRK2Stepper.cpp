@@ -146,17 +146,13 @@ void SplitExplicitRK2Stepper::doSplitStage3(
                                      StageTime + 0.5 * StageTimeStep,
                                      UpdateTimeStep);
 
-   if (FinalIteration) {
-      // Reconstruct the final normal velocity at n+1 for output and
-      // diagnostics.
-      reconstructFinalNormalVelocity(State, CurLevel, NextLevel);
-   }
-
    // Update thickness and tracers at n+1/2 during the first iteration and at
    // n+1 during the final iteration.
    updateThicknessByTend(State, NextLevel, State, CurLevel, UpdateTimeStep);
    updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel, State,
                        CurLevel, UpdateTimeStep);
+
+   finalizeTimeStepIterationState(State, CurLevel, NextLevel, FinalIteration);
 
    Pacer::stop("SE-RK2:stage3TrThick", 2);
 }
@@ -452,6 +448,40 @@ void SplitExplicitRK2Stepper::reconstructFinalNormalVelocity(
                      NormalBclVelNext(IEdge, K);
               });
        });
+}
+
+//------------------------------------------------------------------------------
+void SplitExplicitRK2Stepper::finalizeTimeStepIterationState(
+    OceanState *State, I4 CurLevel, I4 NextLevel, bool FinalIteration) const {
+
+   Pacer::start("SE-RK2:finalizeTimeStepIterationState", 2);
+
+   if (FinalIteration) {
+      // Reconstruct the final normal velocity at n+1 for output and
+      // diagnostics.
+      reconstructFinalNormalVelocity(State, CurLevel, NextLevel);
+   }
+
+   // Keep the barotropic pressure anomaly consistent with the most recently
+   // updated column pseudo-thickness.
+   Array2DReal LayerThickNext = State->getLayerThickness(NextLevel);
+   VCoord->computeTotalPseudoThickness(LayerThickNext);
+
+   Array1DReal BtrPressAnomalyNext =
+       State->getBarotropicPressureAnomaly(NextLevel);
+   constexpr Real RhoGravity = RhoSw * Gravity;
+
+   OMEGA_SCOPE(TotalPseudoThickness, VCoord->TotalPseudoThickness);
+   OMEGA_SCOPE(BottomDepth, VCoord->BottomDepth);
+
+   parallelFor(
+       "resetBarotropicPressureAnomaly", {Mesh->NCellsAll},
+       KOKKOS_LAMBDA(I4 ICell) {
+          BtrPressAnomalyNext(ICell) =
+              RhoGravity * (TotalPseudoThickness(ICell) - BottomDepth(ICell));
+       });
+
+   Pacer::stop("SE-RK2:finalizeTimeStepIterationState", 2);
 }
 
 //------------------------------------------------------------------------------

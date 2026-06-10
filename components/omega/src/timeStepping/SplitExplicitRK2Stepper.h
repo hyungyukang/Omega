@@ -114,6 +114,13 @@ class SplitExplicitRK2Stepper : public TimeStepper {
        I4 NextLevel       ///< [in] next time level
    ) const;
 
+   void finalizeTimeStepIterationState(
+       OceanState *State, ///< [inout] model state
+       I4 CurLevel,       ///< [in] current time level
+       I4 NextLevel,      ///< [in] next time level
+       bool FinalIteration ///< [in] true on the final time-step iteration
+   ) const;
+
    void computeVerticalVelocity(
        OceanState *State,         ///< [inout] model state
        I4 ThickTimeLevel,         ///< [in] thickness time level

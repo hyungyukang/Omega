@@ -30,8 +30,7 @@ AuxiliaryState::AuxiliaryState(const std::string &Name, const HorzMesh *Mesh,
       VelocityDel2Aux(stripDefault(Name), Mesh, VCoord),
       SurfTracerRestAux(stripDefault(Name), Mesh, NTracers),
       TracerAux(stripDefault(Name), Mesh, VCoord, NTracers),
-      TransportAux(stripDefault(Name), Mesh, VCoord),
-      TimeStep(TimeStep) {
+      TransportAux(stripDefault(Name), Mesh, VCoord), TimeStep(TimeStep) {
 
    GroupName = "AuxiliaryState";
    if (Name != "Default") {
@@ -105,6 +104,18 @@ void AuxiliaryState::computeMomVertAux(const OceanState *State,
    VCoord->computeTargetThickness();
 
    Pacer::stop("AuxState:computeMomVertAux", 2);
+}
+
+// Compute transport velocity for pseudo-thickness and tracers
+void AuxiliaryState::computeTransportVelocity(const OceanState *State,
+                                              int VelTimeLevel) const {
+   Pacer::start("AuxState:computeTransportVelocity", 2);
+
+   Array2DReal NormalVel = State->getNormalVelocity(VelTimeLevel);
+
+   deep_copy(TransportAux.NormalTransportVelocity, NormalVel);
+
+   Pacer::stop("AuxState:computeTransportVelocity", 2);
 }
 
 // Compute the auxiliary variables needed for pseudo-thickness equation

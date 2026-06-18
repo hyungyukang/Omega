@@ -104,6 +104,38 @@ void AuxiliaryState::computeMomVertAux(const OceanState *State,
    Pacer::stop("AuxState:computeMomVertAux", 2);
 }
 
+// Compute the auxiliary variables needed for pseudo-thickness equation
+void AuxiliaryState::computePseudoThicknessAux(
+    const OceanState *State, const Array3DReal &TracerArray, int ThickTimeLevel,
+    int VelTimeLevel, const TimeInterval ProjDt) const {
+
+   Array2DReal PseudoThickCell = State->getPseudoThickness(ThickTimeLevel);
+   Array2DReal NormalVelEdge   = State->getNormalVelocity(VelTimeLevel);
+   OMEGA_SCOPE(LocPseudoThicknessAux, PseudoThicknessAux);
+   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
+   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+
+   R8 ProjDtSeconds;
+   ProjDt.get(ProjDtSeconds, TimeUnits::Seconds);
+
+   Pacer::start("AuxState:computePseudoThickAux", 2);
+   parallelForOuter(
+       "computePseudoThickAux", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          LocPseudoThicknessAux.computeVarsOnEdge(Team, IEdge, PseudoThickCell,
+                                                  NormalVelEdge);
+       });
+   Pacer::stop("AuxState:computePseudoThickAux", 2);
+
+   Pacer::start("AuxState:computeVerticalPseudoVelocity", 2);
+
+   const auto &FluxPseudoThickEdge = PseudoThicknessAux.FluxPseudoThickEdge;
+   VAdv->computeVerticalPseudoVelocity(NormalVelEdge, FluxPseudoThickEdge,
+                                       PseudoThickCell, ProjDtSeconds);
+
+   Pacer::stop("AuxState:computeVerticalPseudoVelocity", 2);
+}
+
 // Compute the auxiliary variables needed for momentum equation
 void AuxiliaryState::computeMomAux(const OceanState *State,
                                    const Array3DReal &TracerArray,

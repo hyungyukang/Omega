@@ -108,8 +108,9 @@ class Tendencies {
    // Methods to compute tendency groups
    void computePseudoThicknessTendencies(const OceanState *State,
                                          const AuxiliaryState *AuxState,
+                                         const Array3DReal &TracerArray,
                                          int ThickTimeLevel, int VelTimeLevel,
-                                         TimeInstant Time);
+                                         TimeInstant Time, TimeInterval ProjDt);
    void computeVelocityTendencies(const OceanState *State,
                                   const AuxiliaryState *AuxState,
                                   const Array3DReal &TracerArray,

@@ -249,6 +249,57 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
    Pacer::stop("AuxState:computeMomAux", 1);
 }
 
+// Compute the auxiliary variables needed for tracer equation
+void AuxiliaryState::computeTracerAux(const OceanState *State,
+                                      const Array3DReal &TracerArray,
+                                      int ThickTimeLevel, int VelTimeLevel,
+                                      const TimeInterval ProjDt) const {
+
+   OMEGA_SCOPE(LocPseudoThicknessAux, PseudoThicknessAux);
+   OMEGA_SCOPE(LocTracerAux, TracerAux);
+   OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
+   OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
+   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
+   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+
+   R8 ProjDtSeconds;
+   ProjDt.get(ProjDtSeconds, TimeUnits::Seconds);
+
+   Array2DReal PseudoThickCell = State->getPseudoThickness(ThickTimeLevel);
+   Array2DReal NormalVelEdge   = State->getNormalVelocity(VelTimeLevel);
+
+   Pacer::start("AuxState:computePseudoThickAux", 2);
+   parallelForOuter(
+       "computePseudoThickAux", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          LocPseudoThicknessAux.computeVarsOnEdge(Team, IEdge, PseudoThickCell,
+                                                  NormalVelEdge);
+       });
+   Pacer::stop("AuxState:computePseudoThickAux", 2);
+
+   const int NTracers              = Tracers::getNumTracers();
+   const auto &MeanPseudoThickEdge = PseudoThicknessAux.MeanPseudoThickEdge;
+
+   Pacer::start("Tend:computeTracerAuxCell", 2);
+   parallelForOuter(
+       "computeTracerAuxCell",
+       LaunchConfig({NTracers, Mesh->NCellsAll},
+                    TeamScratch<Real>(VCoord->NVertLayers)),
+       KOKKOS_LAMBDA(int LTracer, int ICell, const TeamMember &Team) {
+          TracerAux.computeVarsOnCells(Team, LTracer, ICell,
+                                       MeanPseudoThickEdge, TracerArray);
+       });
+   Pacer::stop("Tend:computeTracerAuxCell", 2);
+
+   Pacer::start("AuxState:computeVerticalPseudoVelocity", 2);
+
+   const auto &FluxPseudoThickEdge = PseudoThicknessAux.FluxPseudoThickEdge;
+   VAdv->computeVerticalPseudoVelocity(NormalVelEdge, FluxPseudoThickEdge,
+                                       PseudoThickCell, ProjDtSeconds);
+
+   Pacer::stop("AuxState:computeVerticalPseudoVelocity", 2);
+}
+
 // Compute the auxiliary variables
 void AuxiliaryState::computeAll(const OceanState *State,
                                 const Array3DReal &TracerArray,

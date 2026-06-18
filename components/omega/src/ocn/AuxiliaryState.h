@@ -90,6 +90,11 @@ class AuxiliaryState {
                       int ThickTimeLevel, int VelTimeLevel,
                       const TimeInterval ProjDt) const;
 
+   // Compute all auxiliary variables needed for tracer equation
+   void computeTracerAux(const OceanState *State,
+                         const Array3DReal &TracerArray, int ThickTimeLevel,
+                         int VelTimeLevel, const TimeInterval ProjDt) const;
+
    /// Compute all auxiliary variables based on an ocean state at a given time
    /// level
    void computeAll(const OceanState *State, const Array3DReal &TracerArray,

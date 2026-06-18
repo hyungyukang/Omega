@@ -14,6 +14,7 @@
 #include "auxiliaryVars/PseudoThicknessAuxVars.h"
 #include "auxiliaryVars/SurfTracerRestAuxVars.h"
 #include "auxiliaryVars/TracerAuxVars.h"
+#include "auxiliaryVars/TransportAuxVars.h"
 #include "auxiliaryVars/VelocityDel2AuxVars.h"
 #include "auxiliaryVars/VorticityAuxVars.h"
 
@@ -42,6 +43,7 @@ class AuxiliaryState {
    VorticityAuxVars VorticityAux;
    VelocityDel2AuxVars VelocityDel2Aux;
    SurfTracerRestAuxVars SurfTracerRestAux;
+   TransportAuxVars TransportAux;
 
    ~AuxiliaryState();
 

@@ -74,6 +74,12 @@ class AuxiliaryState {
    /// Exchange halo
    I4 exchangeHalo();
 
+   // Compute all auxiliary variables needed for pseudo-thickness equation
+   void computePseudoThicknessAux(const OceanState *State,
+                                  const Array3DReal &TracerArray,
+                                  int ThickTimeLevel, int VelTimeLevel,
+                                  const TimeInterval ProjDt) const;
+
    // Compute auxiliary variables for vertical dynamics
    void computeMomVertAux(const OceanState *State,
                           const Array3DReal &TracerArray, int ThickTimeLevel,

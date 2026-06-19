@@ -115,11 +115,12 @@ constexpr Real Pa2Db      = 1.0e-4;    // Pascal to Decibar
 constexpr Real Cm2M       = 1.0e-2;    // Centimeters to meters
 constexpr Real M2Cm       = 1.0e2;     // Meters to centimeters
 constexpr Real HFluxFac =
-    1.0 / (RhoSw * CpSw);         // Heat flux (W/m^2) to temp flux (C*m/s)
+    1.0 / (RhoSw * Cp0Sw); // Heat flux (W/m^2) to Conserv Temp flux (C*m/s)
 constexpr Real FwFluxFac = 1.e-6; // Fw flux (kg/m^2/s) to salt((msu/psu)*m/s)
 constexpr Real SaltFac =
-    -OcnRefSal * FwFluxFac;    // Fw flux (kg/m^2/s) to salt flux (msu*m/s)
-constexpr Real SFluxFac = 1.0; // Salt flux (kg/m^2/s) to salt flux (msu*m/s)
+    -OcnRefSal * FwFluxFac; // Fw flux (kg/m^2/s) to salt flux (msu*m/s)
+constexpr Real SFluxFac =
+    1.e3 / RhoSw; // Salt flux (kg/m^2/s) to salinity flux (m*(g/kg)/s)
 
 } // namespace OMEGA
 #endif

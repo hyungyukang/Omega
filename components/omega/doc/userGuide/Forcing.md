@@ -5,6 +5,7 @@
 This page documents the user-facing configuration and behavior for current forcing in Omega:
 
 - Surface stress forcing (e.g. wind stress)
+- Coupled flux forcing
 - Surface tracer restoring
 
 ## Surface stress forcing
@@ -38,6 +39,73 @@ Surface stress forcing uses surface stress input fields:
 
 These are stored in forcing variables and used to form edge-normal stress
 (`NormalStressEdge`) that enters momentum tendencies.
+
+## Surface flux forcing
+
+Surface flux forcing applies ocean-atmosphere and ocean-sea ice fluxes from the other model
+components (atmosphere, sea ice) to the thickness and tracer equations. This enables
+the ocean to respond to heat, freshwater, and salt exchanges at the surface. These fluxes can be from data or (active) coupled components.
+
+### Surface flux forcing configuration
+
+Surface flux forcing is controlled by two configuration flags:
+
+```yaml
+Omega:
+  Tendencies:
+    SfcThicknessForcingTendencyEnable: false
+    SfcTracerForcingTendencyEnable: false
+```
+
+- `Tendencies.SfcThicknessForcingTendencyEnable`: enables coupled freshwater and salt flux forcing on thickness
+- `Tendencies.SfcTracerForcingTendencyEnable`: enables coupled heat and salt flux forcing on tracers
+
+### Required input fields
+
+Coupled flux forcing uses 13 auxiliary fields organized by type:
+
+**Freshwater mass fluxes (kg m⁻² s⁻¹):**
+- `SnowFlux`: precipitation from snow
+- `RainFlux`: precipitation from rain
+- `EvaporationFlux`: evaporative water loss
+- `SeaIceFreshWaterFlux`: freshwater input from sea-ice melt or formation
+- `IceRunoffFlux`: runoff from land ice
+- `RiverRunoffFlux`: runoff from rivers
+
+**Heat fluxes (W m⁻²):**
+- `LatentHeatFlux`: latent heat transfer
+- `SensibleHeatFlux`: sensible heat transfer
+- `LongWaveHeatFluxUp`: upward longwave radiation
+- `LongWaveHeatFluxDown`: downward longwave radiation
+- `SeaIceHeatFlux`: heat from sea-ice interaction
+- `ShortWaveHeatFlux`: shortwave (solar) radiation
+
+**Salt mass flux (kg m⁻² s⁻¹):**
+- `SeaIceSaltFlux`: salt flux from sea-ice formation/melt processes
+
+These fields are populated by external coupling components (typically atmosphere
+and ice models). Omega assumes the incoming values match the documented units.
+For now, there are assumed to come from a `forcing.nc` file, but later will be provided
+by the equivalent `ocn_comp_mct.F`.
+
+### Notes
+
+- Coupled fluxes are applied only at the surface layer (top active layer) for each cell.
+- Pseudo-thickness tendency is computed from the (six) freshwater mass fluxes and the salt mass flux
+  `SeaIceSaltFlux`, converted to a pseudo-thickness change.
+- Temperature tendency is computed from the sum of the six heat-flux fields,
+  converted to conservative-temperature tendency via
+  $H_{\text{FluxFac}} = 1.0 / (\rho_{sw} c^0_{p,sw})$ where $c^0_{p,sw}$ is the reference
+  specific heat of seawater defined by TEOS-10. [soon to be updated with latent heat and enthalpy of liquid water]
+- Salinity tendency from `SeaIceSaltFlux` is scaled by
+  $S_{\text{FluxFac}} = 1.0e3 / \rho_{sw}$ to account for unit conversion from
+  kg/(m²·s) to salinity units (g/kg).
+- Fluxes are assumed to be in the documented units (i.e. net mass fluxes);
+  any unit conversion should be performed by the coupling component before providing flux
+  values to Omega.
+- The reference density used here ($\rho_{sw}$) is not a Boussinesq density, it is the
+  conversion factor from mass to pseudo-thickness.
+- No iceberg fluxes are included for now.
 
 ## Surface tracer restoring
 

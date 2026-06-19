@@ -372,6 +372,92 @@ class BottomDragOnEdge {
    Array1DI4 MaxLayerEdgeTop;
 };
 
+/// Coupled freshwater flux forcing for thickness equation.
+class SfcThicknessForcingOnCell {
+ public:
+   bool Enabled = false;
+
+   SfcThicknessForcingOnCell(const HorzMesh *Mesh, const VertCoord *VCoord);
+
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 ICell,
+                                   const Array1DReal &SnowFlux,
+                                   const Array1DReal &RainFlux,
+                                   const Array1DReal &EvaporationFlux,
+                                   const Array1DReal &SeaIceFreshWaterFlux,
+                                   const Array1DReal &IceRunoffFlux,
+                                   const Array1DReal &RiverRunoffFlux,
+                                   const Array1DReal &SeaIceSaltFlux) const {
+
+      const I4 KTop = MinLayerCell(ICell);
+      if (KTop > MaxLayerCell(ICell)) {
+         return;
+      }
+
+      const Real FreshWaterFlux = SnowFlux(ICell) + RainFlux(ICell) +
+                                  EvaporationFlux(ICell) +
+                                  SeaIceFreshWaterFlux(ICell) +
+                                  IceRunoffFlux(ICell) + RiverRunoffFlux(ICell);
+
+      Tend(ICell, KTop) += (FreshWaterFlux + SeaIceSaltFlux(ICell)) / RhoSw;
+   }
+
+ private:
+   Array1DI4 MinLayerCell;
+   Array1DI4 MaxLayerCell;
+};
+
+/// Coupled surface flux forcing for active tracers.
+class SfcTracerForcingOnCell {
+ public:
+   bool Enabled = false;
+
+   SfcTracerForcingOnCell(const HorzMesh *Mesh, const VertCoord *VCoord,
+                          I4 TempTracerIndex, I4 SaltTracerIndex);
+
+   KOKKOS_FUNCTION void operator()(const Array3DReal &Tend, I4 ICell,
+                                   const Array1DReal &LatentHeatFlux,
+                                   const Array1DReal &SensibleHeatFlux,
+                                   const Array1DReal &LongWaveHeatFluxUp,
+                                   const Array1DReal &LongWaveHeatFluxDown,
+                                   const Array1DReal &SeaIceHeatFlux,
+                                   const Array1DReal &ShortWaveHeatFlux,
+                                   const Array1DReal &SnowFlux,
+                                   const Array1DReal &IceRunoffFlux,
+                                   const Array1DReal &SeaIceSaltFlux) const {
+
+      const I4 KTop = MinLayerCell(ICell);
+      if (KTop > MaxLayerCell(ICell)) {
+         return;
+      }
+
+      if (TempIndex >= 0) {
+         const Real HeatFlux = LatentHeatFlux(ICell) + SensibleHeatFlux(ICell) +
+                               LongWaveHeatFluxUp(ICell) +
+                               LongWaveHeatFluxDown(ICell) +
+                               SeaIceHeatFlux(ICell) + ShortWaveHeatFlux(ICell);
+         //	 +
+         //             (RainFlux(ICell) + RiverRunoffFlux(ICell)) *
+         //             Cp0Sw * TracerCell(TempIndex, ICell, KTop) +
+         //             (SnowFlux(ICell) + IceRunoffFlux(ICell)) *
+         //             (Cp0Sw * Eos.Ctfreez - LatIce;
+
+         Tend(TempIndex, ICell, KTop) += HeatFlux * HFluxFactor;
+      }
+
+      if (SaltIndex >= 0) {
+         Tend(SaltIndex, ICell, KTop) += SeaIceSaltFlux(ICell) * SFluxFactor;
+      }
+   }
+
+ private:
+   I4 TempIndex;
+   I4 SaltIndex;
+   Real HFluxFactor;
+   Real SFluxFactor;
+   Array1DI4 MinLayerCell;
+   Array1DI4 MaxLayerCell;
+};
+
 // Tracer horizontal advection term
 class TracerHorzAdvOnCell {
  public:

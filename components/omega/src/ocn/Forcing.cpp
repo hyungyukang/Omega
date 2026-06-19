@@ -30,7 +30,7 @@ static std::string stripDefault(const std::string &Name) {
 // mesh/halo.
 Forcing::Forcing(const std::string &Name, const HorzMesh *Mesh, Halo *MeshHalo)
     : Name(stripDefault(Name)), SfcStressForcing(stripDefault(Name), Mesh),
-      Mesh(Mesh), MeshHalo(MeshHalo) {}
+      TracerForcing(stripDefault(Name), Mesh), Mesh(Mesh), MeshHalo(MeshHalo) {}
 
 // Destructor. Unregisters fields from IO streams.
 Forcing::~Forcing() { unregisterFields(); }
@@ -38,10 +38,14 @@ Forcing::~Forcing() { unregisterFields(); }
 // Register surface stress fields with IO streams for a given mesh.
 void Forcing::registerFields(const std::string &MeshName) const {
    SfcStressForcing.registerFields(MeshName);
+   TracerForcing.registerFields(MeshName);
 }
 
 // Unregister surface stress fields from IO streams.
-void Forcing::unregisterFields() const { SfcStressForcing.unregisterFields(); }
+void Forcing::unregisterFields() const {
+   SfcStressForcing.unregisterFields();
+   TracerForcing.unregisterFields();
+}
 
 // Create and register a non-default forcing instance.
 Forcing *Forcing::create(const std::string &Name, const HorzMesh *Mesh,
@@ -169,6 +173,33 @@ I4 Forcing::exchangeHalo() const {
    Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.ZonalStressCell,
                                           OnCell);
    Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.MeridStressCell,
+                                          OnCell);
+
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.SnowFluxCell, OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.RainFluxCell, OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.EvaporationFluxCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(
+       TracerForcing.SeaIceFreshWaterFluxCell, OnCell);
+   Err +=
+       MeshHalo->exchangeFullArrayHalo(TracerForcing.IceRunoffFluxCell, OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.RiverRunoffFluxCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.LatentHeatFluxCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.SensibleHeatFluxCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.LongWaveHeatFluxUpCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(
+       TracerForcing.LongWaveHeatFluxDownCell, OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.SeaIceHeatFluxCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.ShortWaveHeatFluxCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.SeaIceSaltFluxCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.SurfInsituTemperature,
                                           OnCell);
 
    return Err;

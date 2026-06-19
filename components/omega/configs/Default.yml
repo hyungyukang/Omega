@@ -58,6 +58,8 @@ Omega:
       Mode: Implicit
       Type: Constant
       BottomDragCoeff: 1.0e-3
+    SfcThicknessForcingTendencyEnable: false
+    SfcTracerForcingTendencyEnable: false
     TracerHorzAdvTendencyEnable: true
     TracerDiffTendencyEnable: true
     EddyDiff2: 10.0

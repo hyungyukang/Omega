@@ -255,6 +255,8 @@ int initTimeStepperTest(const std::string &mesh) {
    TestTendencies->TracerDiffusion.Enabled        = false;
    TestTendencies->TracerHyperDiff.Enabled        = false;
    TestTendencies->SfcStressForcing.Enabled       = false;
+   TestTendencies->SfcTracerForcing.Enabled       = false;
+   TestTendencies->SfcThicknessForcing.Enabled    = false;
    TestTendencies->SurfaceTracerRestoring.Enabled = false;
    TestTendencies->ExplicitBottomDrag.Enabled     = false;
    DefVAdv->ThickVertAdvEnabled                   = false;

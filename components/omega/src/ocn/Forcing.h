@@ -17,6 +17,7 @@
 #include "Halo.h"
 #include "HorzMesh.h"
 #include "forcingVars/SfcStressForcingVars.h"
+#include "forcingVars/TracerForcingVars.h"
 
 #include <map>
 #include <memory>
@@ -32,6 +33,7 @@ class Forcing {
    std::string Name; ///< Name identifier for this forcing instance
 
    SfcStressForcingVars SfcStressForcing; ///< Surface stress forcing variables
+   TracerForcingVars TracerForcing; ///< Tracer forcing vars (thickness and T,S)
 
    ~Forcing();
 

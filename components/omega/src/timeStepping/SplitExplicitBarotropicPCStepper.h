@@ -25,7 +25,8 @@ class SplitExplicitBarotropicPCStepper {
        const HorzMesh *Mesh,              ///< [in] horizontal mesh
        Halo *MeshHalo,                    ///< [in] mesh halo exchange
        const VertCoord *VCoord,           ///< [in] vertical coordinate
-       I4 TimeLevel,                      ///< [in] state time level to update
+       I4 CurLevel,                       ///< [in] state time level to update
+       I4 NextLevel,                      ///< [in] state time level to update
        const TimeInstant &StageTime,      ///< [in] current stage time
        const TimeInterval &StageTimeStep  ///< [in] current stage time step
    ) const;

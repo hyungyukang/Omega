@@ -61,7 +61,7 @@ class SplitExplicitRK2Stepper : public TimeStepper {
    ) const;
 
    using BarotropicStage2Function = std::function<void(
-       OceanState *, I4, const TimeInstant &, const TimeInterval &)>;
+       OceanState *, I4, I4, const TimeInstant &, const TimeInterval &)>;
 
    void initBarotropicStepper();
 

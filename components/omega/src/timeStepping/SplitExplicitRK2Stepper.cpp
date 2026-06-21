@@ -66,12 +66,12 @@ void SplitExplicitRK2Stepper::initBarotropicStepper() {
 
    if (SEConfig.BtrTimeStepper ==
        SplitExplicitBarotropicStepperType::PredictorCorrector) {
-      BarotropicStage2 = [this](OceanState *State, I4 TimeLevel,
+      BarotropicStage2 = [this](OceanState *State, I4 CurLevel, I4 NextLevel,
                                 const TimeInstant &StageTime,
                                 const TimeInterval &StageTimeStep) {
          BarotropicPCStepper.doSplitStage2(State, SEScratch, SEConfig, Mesh,
-                                           MeshHalo, VCoord, TimeLevel, StageTime,
-                                           StageTimeStep);
+                                           MeshHalo, VCoord, CurLevel, NextLevel,
+                                           StageTime, StageTimeStep);
       };
       return;
    }
@@ -159,13 +159,13 @@ void SplitExplicitRK2Stepper::doSplitStage3(
 
 //------------------------------------------------------------------------------
 void SplitExplicitRK2Stepper::doSplitStage2(
-    OceanState *State, I4 TimeLevel, const TimeInstant &StageTime,
+    OceanState *State, I4 CurLevel, I4 NextLevel, const TimeInstant &StageTime,
     const TimeInterval &StageTimeStep) const {
 
    if (!BarotropicStage2)
       LOG_CRITICAL("Split-explicit barotropic time stepper not initialized");
 
-   BarotropicStage2(State, TimeLevel, StageTime, StageTimeStep);
+   BarotropicStage2(State, CurLevel, NextLevel, StageTime, StageTimeStep);
 }
 
 //------------------------------------------------------------------------------
@@ -454,34 +454,38 @@ void SplitExplicitRK2Stepper::reconstructFinalNormalVelocity(
 void SplitExplicitRK2Stepper::finalizeTimeStepIterationState(
     OceanState *State, I4 CurLevel, I4 NextLevel, bool FinalIteration) const {
 
-   Pacer::start("SE-RK2:finalizeTimeStepIterationState", 2);
+    const Real LocSplitFactor = SEConfig.SplitFactor;
 
-   if (FinalIteration) {
-      // Reconstruct the final normal velocity at n+1 for output and
-      // diagnostics.
-      reconstructFinalNormalVelocity(State, CurLevel, NextLevel);
-   }
+    Pacer::start("SE-RK2:finalizeTimeStepIterationState", 2);
 
-   // Keep the barotropic pressure anomaly consistent with the most recently
-   // updated column pseudo-thickness.
-   Array2DReal LayerThickNext = State->getLayerThickness(NextLevel);
-   VCoord->computeTotalPseudoThickness(LayerThickNext);
+    if (FinalIteration) {
+       // Reconstruct the final normal velocity at n+1 for output and
+       // diagnostics.
+       reconstructFinalNormalVelocity(State, CurLevel, NextLevel);
+    }
 
-   Array1DReal BtrPressAnomalyNext =
-       State->getBarotropicPressureAnomaly(NextLevel);
-   constexpr Real RhoGravity = RhoSw * Gravity;
+    if ( LocSplitFactor == 0._Real ) return;
 
-   OMEGA_SCOPE(TotalPseudoThickness, VCoord->TotalPseudoThickness);
-   OMEGA_SCOPE(BottomDepth, VCoord->BottomDepth);
+    // Keep the barotropic pressure anomaly consistent with the most recently
+    // updated column pseudo-thickness.
+    Array2DReal LayerThickNext = State->getLayerThickness(NextLevel);
+    VCoord->computeTotalPseudoThickness(LayerThickNext);
 
-   parallelFor(
-       "resetBarotropicPressureAnomaly", {Mesh->NCellsAll},
-       KOKKOS_LAMBDA(I4 ICell) {
-          BtrPressAnomalyNext(ICell) =
-              RhoGravity * (TotalPseudoThickness(ICell) - BottomDepth(ICell));
-       });
+    Array1DReal BtrPressAnomalyNext =
+        State->getBarotropicPressureAnomaly(NextLevel);
+    constexpr Real RhoGravity = RhoSw * Gravity;
 
-   Pacer::stop("SE-RK2:finalizeTimeStepIterationState", 2);
+    OMEGA_SCOPE(TotalPseudoThickness, VCoord->TotalPseudoThickness);
+    OMEGA_SCOPE(BottomDepth, VCoord->BottomDepth);
+
+    parallelFor(
+        "resetBarotropicPressureAnomaly", {Mesh->NCellsAll},
+        KOKKOS_LAMBDA(I4 ICell) {
+           BtrPressAnomalyNext(ICell) =
+               RhoGravity * (TotalPseudoThickness(ICell) - BottomDepth(ICell));
+        });
+
+    Pacer::stop("SE-RK2:finalizeTimeStepIterationState", 2);
 }
 
 //------------------------------------------------------------------------------
@@ -560,7 +564,9 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
 
       if (SEConfig.SplitFactor != 0._Real) {
          // Stage 2: Barotropic velocity advance, explicitly subcycled
-         doSplitStage2(State, NextLevel, StageTime + 0.5 * TimeStep, TimeStep);
+         //doSplitStage2(State, NextLevel, StageTime + 0.5 * TimeStep, TimeStep);
+         doSplitStage2(State, CurLevel, NextLevel,
+                       StageTime + 0.5 * TimeStep, TimeStep);
       }
 
       // Compute physical total velocity and the corrected transport velocity

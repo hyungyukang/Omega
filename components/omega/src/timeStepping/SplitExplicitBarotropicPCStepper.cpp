@@ -20,7 +20,7 @@ namespace OMEGA {
 void SplitExplicitBarotropicPCStepper::doSplitStage2(
     OceanState *State, SplitExplicitScratch &Scratch,
     const SplitExplicitConfig &SEConfig, const HorzMesh *Mesh,
-    Halo *MeshHalo, const VertCoord *VCoord, I4 TimeLevel,
+    Halo *MeshHalo, const VertCoord *VCoord, I4 CurLevel, I4 NextLevel,
     const TimeInstant &StageTime, const TimeInterval &StageTimeStep) const {
 
    if (SEConfig.NBtrSubcycles < 1)
@@ -49,8 +49,11 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
    Pacer::start("SE-RK2:stage2BtrPC", 2);
 
    // Get array required
-   Array1DReal NormalBtrVel    = State->getNormalBarotropicVelocity(TimeLevel);
-   Array1DReal BtrPressAnomaly = State->getBarotropicPressureAnomaly(TimeLevel);
+   Array1DReal NormalBtrVelCur    = State->getNormalBarotropicVelocity(CurLevel);
+   Array1DReal BtrPressAnomalyCur = State->getBarotropicPressureAnomaly(CurLevel);
+   Array1DReal NormalBtrVelNext    = State->getNormalBarotropicVelocity(NextLevel);
+   Array1DReal BtrPressAnomalyNext = State->getBarotropicPressureAnomaly(NextLevel);
+
    Array1DReal NormalBtrVelSubcycleCur =
        Scratch.NormalBarotropicVelocitySubcycleCur;
    Array1DReal NormalBtrVelSubcycleNew =
@@ -78,9 +81,9 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
    OMEGA_SCOPE(DepthMeanSpecVol, EqState->DepthMeanSpecificVolume);
 
    // Initialize barotropic vars
-   deepCopy(NormalBtrVelSubcycleCur, NormalBtrVel);
-   deepCopy(BtrPressAnomalySubcycleCur, BtrPressAnomaly);
-   deepCopy(NormalBtrVel, NormalBtrVelSubcycleCur);
+   deepCopy(NormalBtrVelSubcycleCur, NormalBtrVelCur);
+   deepCopy(BtrPressAnomalySubcycleCur, BtrPressAnomalyCur);
+   deepCopy(NormalBtrVelNext, NormalBtrVelSubcycleCur);
    deepCopy(BtrFlux, 0._Real);
 
    for (I4 Subcycle = 0; Subcycle < NBtrSubcycles; ++Subcycle) {
@@ -253,7 +256,7 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
 
       parallelFor("btrVelocityAccumulate", {Mesh->NEdgesOwned},
                   KOKKOS_LAMBDA(I4 IEdge) {
-                     NormalBtrVel(IEdge) +=
+                     NormalBtrVelNext(IEdge) +=
                          NormalBtrVelSubcycleNew(IEdge);
                   });
 
@@ -263,13 +266,13 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
 
    parallelFor(
        "btrSubcycleAverage", {Mesh->NEdgesOwned}, KOKKOS_LAMBDA(I4 IEdge) {
-          NormalBtrVel(IEdge) *= InvBtrVelAvgCount;
+          NormalBtrVelNext(IEdge) *= InvBtrVelAvgCount;
           BtrFlux(IEdge) *= InvBtrFluxAvgCount;
        });
-   deepCopy(BtrPressAnomaly, BtrPressAnomalySubcycleCur);
-   MeshHalo->exchangeFullArrayHalo(NormalBtrVel, OnEdge);
+   deepCopy(BtrPressAnomalyNext, BtrPressAnomalySubcycleCur);
+   MeshHalo->exchangeFullArrayHalo(NormalBtrVelNext, OnEdge);
    MeshHalo->exchangeFullArrayHalo(BtrFlux, OnEdge);
-   MeshHalo->exchangeFullArrayHalo(BtrPressAnomaly, OnCell);
+   MeshHalo->exchangeFullArrayHalo(BtrPressAnomalyNext, OnCell);
 
    Pacer::stop("SE-RK2:stage2BtrPC", 2);
 }

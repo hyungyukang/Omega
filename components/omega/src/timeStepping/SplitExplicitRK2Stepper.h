@@ -65,7 +65,7 @@ class SplitExplicitRK2Stepper : public TimeStepper {
 
    void initBarotropicStepper();
 
-   void doSplitStage2(OceanState *State, I4 TimeLevel,
+   void doSplitStage2(OceanState *State, I4 CurLevel, I4 NextLevel,
                       const TimeInstant &StageTime,
                       const TimeInterval &StageTimeStep) const;
 

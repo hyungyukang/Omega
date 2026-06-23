@@ -564,7 +564,6 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
 
       if (SEConfig.SplitFactor != 0._Real) {
          // Stage 2: Barotropic velocity advance, explicitly subcycled
-         //doSplitStage2(State, NextLevel, StageTime + 0.5 * TimeStep, TimeStep);
          doSplitStage2(State, CurLevel, NextLevel,
                        StageTime + 0.5 * TimeStep, TimeStep);
       }

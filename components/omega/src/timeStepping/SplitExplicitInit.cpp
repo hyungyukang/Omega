@@ -174,14 +174,14 @@ void SplitExplicitInit::computeVelocitySplit(OceanState *State,
           const I4 KMin = MinLayerEdgeBot(IEdge);
           const I4 KMax = MaxLayerEdgeTop(IEdge);
 
-          const I4 Cell1 = CellsOnEdge(IEdge, 0);
-          const I4 Cell2 = CellsOnEdge(IEdge, 1);
+          const I4 Cell0 = CellsOnEdge(IEdge, 0);
+          const I4 Cell1 = CellsOnEdge(IEdge, 1);
 
           Real ThicknessSum = 0._Real;
           Real FluxSum      = 0._Real;
           for (I4 K = KMin; K <= KMax; ++K) {
-             const Real EdgeThickness = 0.5_Real * (LayerThickness(Cell1, K) +
-                                                    LayerThickness(Cell2, K));
+             const Real EdgeThickness = 0.5_Real * (LayerThickness(Cell0, K) +
+                                                    LayerThickness(Cell1, K));
              ThicknessSum += EdgeThickness;
              FluxSum += EdgeThickness * NormalVelocity(IEdge, K);
           }

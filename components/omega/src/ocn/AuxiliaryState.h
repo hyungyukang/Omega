@@ -76,9 +76,6 @@ class AuxiliaryState {
 
    // Compute auxiliary variables for vertical dynamics
    void computeMomVertAux(const OceanState *State,
-                          const Array3DReal &TracerArray, int ThickTimeLevel,
-                          int VelTimeLevel) const;
-   void computeMomVertAux(const OceanState *State,
                           const Array3DReal &TracerArray,
                           int ThickTimeLevel) const;
 
@@ -99,10 +96,10 @@ class AuxiliaryState {
                    int TimeLevel, const TimeInterval ProjDt) const;
 
    /// Compute auxiliary variables needed for thickness and tracer tendencies.
-   void computeThicknessTracerAux(const OceanState *State,
+   void computePseudoThicknessTracerAux(const OceanState *State,
                                   const Array3DReal &TracerArray,
                                   int ThickTimeLevel, int VelTimeLevel) const;
-   void computeThicknessTracerAux(const OceanState *State,
+   void computePseudoThicknessTracerAux(const OceanState *State,
                                   const Array3DReal &TracerArray,
                                   int ThickTimeLevel,
                                   const Array2DReal &NormalVelEdge,

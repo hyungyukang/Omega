@@ -64,13 +64,6 @@ AuxiliaryState::~AuxiliaryState() {
 // Compute auxiliary variables for vertical dynamics
 void AuxiliaryState::computeMomVertAux(const OceanState *State,
                                        const Array3DReal &TracerArray,
-                                       int ThickTimeLevel,
-                                       int /*VelTimeLevel*/) const {
-   computeMomVertAux(State, TracerArray, ThickTimeLevel);
-}
-
-void AuxiliaryState::computeMomVertAux(const OceanState *State,
-                                       const Array3DReal &TracerArray,
                                        int ThickTimeLevel) const {
 
    Pacer::start("AuxState:computeMomVertAux", 2);
@@ -79,8 +72,6 @@ void AuxiliaryState::computeMomVertAux(const OceanState *State,
 
    // get pseudo-thickness
    Array2DReal PseudoThickCell = State->getPseudoThickness(ThickTimeLevel);
-   // get normal velocity
-   Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
 
    // get temperature and salinity
    I4 ConservTempIdx;
@@ -100,7 +91,7 @@ void AuxiliaryState::computeMomVertAux(const OceanState *State,
    // compute specific volume
    const auto &PressureMid = VCoord->PressureMid;
    EosInstance->computeSpecVol(ConservTemp, AbsSalinity, PressureMid);
-   EosInstance->computeDepthIntegratedSpecificVolume(LayerThickCell);
+   EosInstance->computeDepthIntegratedSpecificVolume(PseudoThickCell);
    VCoord->computeTotalGeometricThickness(
        EosInstance->DepthIntegSpecificVolume);
 
@@ -122,13 +113,14 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
    Array2DReal PseudoThickCell = State->getPseudoThickness(ThickTimeLevel);
    Array2DReal NormalVelEdge   = State->getNormalVelocity(VelTimeLevel);
    computeMomAux(State, TracerArray, ThickTimeLevel, NormalVelEdge, ProjDt);
+}
 
 void AuxiliaryState::computeMomAux(const OceanState *State,
                                    const Array3DReal &TracerArray,
                                    int ThickTimeLevel,
                                    const Array2DReal &NormalVelEdge,
                                    const TimeInterval ProjDt) const {
-   Array2DReal LayerThickCell = State->getLayerThickness(ThickTimeLevel);
+   Array2DReal PseudoThickCell = State->getPseudoThickness(ThickTimeLevel);
    OMEGA_SCOPE(LocKineticAux, KineticAux);
    OMEGA_SCOPE(LocPseudoThicknessAux, PseudoThicknessAux);
    OMEGA_SCOPE(LocVorticityAux, VorticityAux);
@@ -340,25 +332,25 @@ void AuxiliaryState::computeAll(const OceanState *State,
    computeAll(State, TracerArray, TimeLevel, TimeLevel, ProjDt);
 }
 
-void AuxiliaryState::computeThicknessTracerAux(const OceanState *State,
+void AuxiliaryState::computePseudoThicknessTracerAux(const OceanState *State,
                                                const Array3DReal &TracerArray,
                                                int ThickTimeLevel,
                                                int VelTimeLevel) const {
 
    Array2DReal NormalVelEdge  = State->getNormalVelocity(VelTimeLevel);
-   computeThicknessTracerAux(State, TracerArray, ThickTimeLevel,
+   computePseudoThicknessTracerAux(State, TracerArray, ThickTimeLevel,
                              NormalVelEdge, TimeStep);
 }
 
-void AuxiliaryState::computeThicknessTracerAux(
+void AuxiliaryState::computePseudoThicknessTracerAux(
     const OceanState *State, const Array3DReal &TracerArray, int ThickTimeLevel,
     const Array2DReal &NormalVelEdge, const TimeInterval ProjDt) const {
 
-   Array2DReal LayerThickCell = State->getLayerThickness(ThickTimeLevel);
+   Array2DReal PseudoThickCell = State->getPseudoThickness(ThickTimeLevel);
 
    const int NTracers = TracerArray.extent_int(0);
 
-   OMEGA_SCOPE(LocLayerThicknessAux, LayerThicknessAux);
+   OMEGA_SCOPE(LocPseudoThicknessAux, PseudoThicknessAux);
    OMEGA_SCOPE(LocTracerAux, TracerAux);
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
@@ -368,7 +360,7 @@ void AuxiliaryState::computeThicknessTracerAux(
    R8 ProjDtSeconds;
    ProjDt.get(ProjDtSeconds, TimeUnits::Seconds);
 
-   Pacer::start("AuxState:computeThicknessTracerAux", 1);
+   Pacer::start("AuxState:computePseudoThicknessTracerAux", 1);
 
    computeMomVertAux(State, TracerArray, ThickTimeLevel);
 
@@ -382,8 +374,8 @@ void AuxiliaryState::computeThicknessTracerAux(
 
           parallelForInner(
               Team, KRange, INNER_LAMBDA(int KChunk) {
-                 LocLayerThicknessAux.computeVarsOnEdge(
-                     IEdge, KChunk, LayerThickCell, NormalVelEdge);
+                 LocPseudoThicknessAux.computeVarsOnEdge(
+                     IEdge, KChunk, PseudoThickCell, NormalVelEdge);
               });
        });
    Pacer::stop("AuxState:edgeThicknessTracerAux", 2);
@@ -398,14 +390,14 @@ void AuxiliaryState::computeThicknessTracerAux(
 
           parallelForInner(
               Team, KRange, INNER_LAMBDA(int KChunk) {
-                 LocLayerThicknessAux.computeVarsOnCells(
-                     ICell, KChunk, LayerThickCell, NormalVelEdge,
+                 LocPseudoThicknessAux.computeVarsOnCells(
+                     ICell, KChunk, PseudoThickCell, NormalVelEdge,
                      ProjDtSeconds);
               });
        });
    Pacer::stop("AuxState:cellThicknessAux", 2);
 
-   const auto &MeanLayerThickEdge = LayerThicknessAux.MeanLayerThickEdge;
+   const auto &MeanPseudoThickEdge = PseudoThicknessAux.MeanPseudoThickEdge;
 
    Pacer::start("AuxState:cellTracerAux", 2);
    parallelForOuter(
@@ -418,12 +410,12 @@ void AuxiliaryState::computeThicknessTracerAux(
           parallelForInner(
               Team, KRange, INNER_LAMBDA(int KChunk) {
                  LocTracerAux.computeVarsOnCells(
-                     LTracer, ICell, KChunk, MeanLayerThickEdge, TracerArray);
+                     LTracer, ICell, KChunk, MeanPseudoThickEdge, TracerArray);
               });
        });
    Pacer::stop("AuxState:cellTracerAux", 2);
 
-   Pacer::stop("AuxState:computeThicknessTracerAux", 1);
+   Pacer::stop("AuxState:computePseudoThicknessTracerAux", 1);
 }
 
 // Create a non-default auxiliary state

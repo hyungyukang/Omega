@@ -129,16 +129,16 @@ void SplitExplicitRK2Stepper::doSplitStage3(
        FinalIteration ? StageTimeStep : 0.5 * StageTimeStep;
 
    // Compute thickness auxiliary variables at the new time level
-   AuxState->computeThicknessTracerAux(State, NextTracerArray, NextLevel,
+   AuxState->computePseudoThicknessTracerAux(State, NextTracerArray, NextLevel,
                                        NormalTransportVelocity,
                                        UpdateTimeStep);
 
    // Compute vertical velocity at the new time level for the vertical advection term in thickness and tracer tendencies
-   computeVerticalVelocity(State, NextLevel, NormalTransportVelocity,
+   computeVerticalPseudoVelocity(State, NextLevel, NormalTransportVelocity,
                            0.5 * StageTimeStep);
 
    // Compute thickness and tracer tendencies at the new time level
-   Tend->computeThicknessTendenciesOnly(
+   Tend->computePseudoThicknessTendenciesOnly(
        State, AuxState, NextLevel, NextLevel, NormalTransportVelocity,
        StageTime + 0.5 * StageTimeStep);
    Tend->computeTracerTendenciesOnly(State, AuxState, NextTracerArray,
@@ -180,7 +180,7 @@ void SplitExplicitRK2Stepper::computeTransportVelocity(OceanState *State,
        State->getNormalBaroclinicVelocity(TimeLevel);
    Array1DReal NormalBtrVel =
        State->getNormalBarotropicVelocity(TimeLevel);
-   Array2DReal LayerThickCell = State->getLayerThickness(TimeLevel);
+   Array2DReal PseudoThickCell = State->getPseudoThickness(TimeLevel);
    Array1DReal BtrFlux        = SEScratch.BarotropicFlux;
    const Real LocSplitFactor   = SEConfig.SplitFactor;
    constexpr Real RhoGravity   = RhoSw * Gravity;
@@ -206,8 +206,8 @@ void SplitExplicitRK2Stepper::computeTransportVelocity(OceanState *State,
           parallelReduceInner(
               Team, Range{KMin, KMax},
               INNER_LAMBDA(I4 K, Real &Accum) {
-                 Accum += 0.5_Real * (LayerThickCell(Cell0, K) +
-                                      LayerThickCell(Cell1, K));
+                 Accum += 0.5_Real * (PseudoThickCell(Cell0, K) +
+                                      PseudoThickCell(Cell1, K));
               },
               ThicknessSum);
 
@@ -218,8 +218,8 @@ void SplitExplicitRK2Stepper::computeTransportVelocity(OceanState *State,
                  const Real TransportVel =
                      NormalBtrVel(IEdge) + NormalBclVel(IEdge, K);
                  const Real EdgeThickness =
-                     0.5_Real * (LayerThickCell(Cell0, K) +
-                                 LayerThickCell(Cell1, K));
+                     0.5_Real * (PseudoThickCell(Cell0, K) +
+                                 PseudoThickCell(Cell1, K));
                  Accum += EdgeThickness * TransportVel;
               },
               TransportSum);
@@ -286,8 +286,8 @@ void SplitExplicitRK2Stepper::computeBarotropicForcing(
 
     Array2DReal NormalBclVelCur =
         State->getNormalBaroclinicVelocity(CurLevel);
-    Array2DReal LayerThickCell =
-        State->getLayerThickness(NextLevel);
+    Array2DReal PseudoThickCell =
+        State->getPseudoThickness(NextLevel);
     Array2DReal NormalVelTend = Tend->NormalVelocityTend;
     Array1DReal BtrForcing = SEScratch.BarotropicForcing;
 
@@ -313,8 +313,8 @@ void SplitExplicitRK2Stepper::computeBarotropicForcing(
            parallelReduceInner(
                Team, Range{KMin, KMax},
                INNER_LAMBDA(I4 K, Real &Accum) {
-                  Accum += 0.5_Real * (LayerThickCell(Cell0, K) +
-                                       LayerThickCell(Cell1, K));
+                  Accum += 0.5_Real * (PseudoThickCell(Cell0, K) +
+                                       PseudoThickCell(Cell1, K));
                },
                ThicknessSum);
 
@@ -325,8 +325,8 @@ void SplitExplicitRK2Stepper::computeBarotropicForcing(
                   const Real ProvisionalBclVel =
                       NormalBclVelCur(IEdge, K) +
                       DtSeconds * NormalVelTend(IEdge, K);
-                  Accum += 0.5_Real * (LayerThickCell(Cell0, K) +
-                                       LayerThickCell(Cell1, K)) *
+                  Accum += 0.5_Real * (PseudoThickCell(Cell0, K) +
+                                       PseudoThickCell(Cell1, K)) *
                            ProvisionalBclVel;
                },
                NormalThicknessFluxSum);
@@ -384,8 +384,8 @@ void SplitExplicitRK2Stepper::updateBaroclinicVelocityByTend(
 void SplitExplicitRK2Stepper::initializeNextState(
     OceanState *State, I4 CurLevel, I4 NextLevel) const {
 
-   Array2DReal LayerThickCur  = State->getLayerThickness(CurLevel);
-   Array2DReal LayerThickNext = State->getLayerThickness(NextLevel);
+   Array2DReal PseudoThickCur  = State->getPseudoThickness(CurLevel);
+   Array2DReal PseudoThickNext = State->getPseudoThickness(NextLevel);
    Array2DReal NormalVelCur   = State->getNormalVelocity(CurLevel);
    Array2DReal NormalVelNext  = State->getNormalVelocity(NextLevel);
    Array2DReal NormalBclVelCur  = State->getNormalBaroclinicVelocity(CurLevel);
@@ -397,7 +397,7 @@ void SplitExplicitRK2Stepper::initializeNextState(
    Array1DReal BtrPressAnomalyNext =
        State->getBarotropicPressureAnomaly(NextLevel);
 
-   deepCopy(LayerThickNext, LayerThickCur);
+   deepCopy(PseudoThickNext, PseudoThickCur);
    deepCopy(NormalVelNext, NormalVelCur);
    deepCopy(NormalBclVelNext, NormalBclVelCur);
    deepCopy(NormalBtrVelNext, NormalBtrVelCur);
@@ -468,28 +468,28 @@ void SplitExplicitRK2Stepper::finalizeTimeStepIterationState(
 
     // Keep the barotropic pressure anomaly consistent with the most recently
     // updated column pseudo-thickness.
-    Array2DReal LayerThickNext = State->getLayerThickness(NextLevel);
-    VCoord->computeTotalPseudoThickness(LayerThickNext);
+    Array2DReal PseudoThickNext = State->getPseudoThickness(NextLevel);
+    VCoord->computeTotalPseudoThickness(PseudoThickNext);
 
     Array1DReal BtrPressAnomalyNext =
         State->getBarotropicPressureAnomaly(NextLevel);
     constexpr Real RhoGravity = RhoSw * Gravity;
 
     OMEGA_SCOPE(TotalPseudoThickness, VCoord->TotalPseudoThickness);
-    OMEGA_SCOPE(BottomDepth, VCoord->BottomDepth);
+    OMEGA_SCOPE(BottomGeomDepth, VCoord->BottomGeomDepth);
 
     parallelFor(
         "resetBarotropicPressureAnomaly", {Mesh->NCellsAll},
         KOKKOS_LAMBDA(I4 ICell) {
            BtrPressAnomalyNext(ICell) =
-               RhoGravity * (TotalPseudoThickness(ICell) - BottomDepth(ICell));
+               RhoGravity * (TotalPseudoThickness(ICell) - BottomGeomDepth(ICell));
         });
 
     Pacer::stop("SE-RK2:finalizeTimeStepIterationState", 2);
 }
 
 //------------------------------------------------------------------------------
-void SplitExplicitRK2Stepper::computeVerticalVelocity(
+void SplitExplicitRK2Stepper::computeVerticalPseudoVelocity(
     OceanState *State, I4 ThickTimeLevel, I4 VelTimeLevel,
     TimeInterval StageTimeStep) const {
 
@@ -497,19 +497,19 @@ void SplitExplicitRK2Stepper::computeVerticalVelocity(
       LOG_CRITICAL("Invalid State");
 
    Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
-   computeVerticalVelocity(State, ThickTimeLevel, NormalVelEdge,
+   computeVerticalPseudoVelocity(State, ThickTimeLevel, NormalVelEdge,
                            StageTimeStep);
 }
 
 //------------------------------------------------------------------------------
-void SplitExplicitRK2Stepper::computeVerticalVelocity(
+void SplitExplicitRK2Stepper::computeVerticalPseudoVelocity(
     OceanState *State, I4 ThickTimeLevel, const Array2DReal &NormalVelEdge,
     TimeInterval StageTimeStep) const {
 
    if (!State)
       LOG_CRITICAL("Invalid State");
 
-   Array2DReal LayerThickCell = State->getLayerThickness(ThickTimeLevel);
+   Array2DReal PseudoThickCell = State->getPseudoThickness(ThickTimeLevel);
 
    R8 DtSeconds;
    StageTimeStep.get(DtSeconds, TimeUnits::Seconds);
@@ -518,10 +518,10 @@ void SplitExplicitRK2Stepper::computeVerticalVelocity(
    if (!VertAdvection)
       LOG_CRITICAL("Invalid vertical advection");
 
-   const auto &FluxLayerThickEdge =
-       AuxState->LayerThicknessAux.FluxLayerThickEdge;
-   VertAdvection->computeVerticalVelocity(NormalVelEdge, FluxLayerThickEdge,
-                                          LayerThickCell, DtSeconds);
+   const auto &FluxPseudoThickEdge =
+       AuxState->PseudoThicknessAux.FluxPseudoThickEdge;
+   VertAdvection->computeVerticalPseudoVelocity(NormalVelEdge, FluxPseudoThickEdge,
+                                          PseudoThickCell, DtSeconds);
 }
 
 //------------------------------------------------------------------------------

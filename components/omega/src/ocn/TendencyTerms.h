@@ -122,7 +122,7 @@ class PotentialVortHAdvOnEdge {
    /// split-explicit baroclinic velocity forcing term.
    KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
                                    const Array2DReal &NormRVortEdge,
-                                   const Array2DReal &FluxLayerThickEdge,
+                                   const Array2DReal &FluxPseudoThickEdge,
                                    const Array2DReal &NormVelEdge) const {
 
       const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
@@ -137,7 +137,7 @@ class PotentialVortHAdvOnEdge {
                 (NormRVortEdge(IEdge, K) + NormRVortEdge(JEdge, K)) * 0.5_Real;
 
             VortTmp[KVec] += WeightsOnEdge(IEdge, J) *
-                             FluxLayerThickEdge(JEdge, K) *
+                             FluxPseudoThickEdge(JEdge, K) *
                              NormVelEdge(JEdge, K) * NormVort;
          }
       }

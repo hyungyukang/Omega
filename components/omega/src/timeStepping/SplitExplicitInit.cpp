@@ -155,7 +155,7 @@ void SplitExplicitInit::computeVelocitySplit(OceanState *State,
       LOG_CRITICAL("Invalid State");
 
    Array2DReal NormalVelocity = State->getNormalVelocity(TimeLevel);
-   Array2DReal LayerThickness = State->getLayerThickness(TimeLevel);
+   Array2DReal PseudoThickness = State->getPseudoThickness(TimeLevel);
    Array2DReal NormalBaroclinicVelocity =
        State->getNormalBaroclinicVelocity(TimeLevel);
    Array1DReal NormalBarotropicVelocity =
@@ -180,8 +180,8 @@ void SplitExplicitInit::computeVelocitySplit(OceanState *State,
           Real ThicknessSum = 0._Real;
           Real FluxSum      = 0._Real;
           for (I4 K = KMin; K <= KMax; ++K) {
-             const Real EdgeThickness = 0.5_Real * (LayerThickness(Cell0, K) +
-                                                    LayerThickness(Cell1, K));
+             const Real EdgeThickness = 0.5_Real * (PseudoThickness(Cell0, K) +
+                                                    PseudoThickness(Cell1, K));
              ThicknessSum += EdgeThickness;
              FluxSum += EdgeThickness * NormalVelocity(IEdge, K);
           }
@@ -230,7 +230,7 @@ void SplitExplicitInit::initializeBarotropicPressure(
    Array1DReal BtrPressAnomaly    = State->getBarotropicPressureAnomaly(TimeLevel);
    Array1DReal SurfacePressure    = VCoord->SurfacePressure;
    Array2DReal PressureInterface  = VCoord->PressureInterface;
-   Array1DReal BottomDepth        = VCoord->BottomDepth;
+   Array1DReal BottomGeomDepth    = VCoord->BottomGeomDepth;
    Array1DI4 MinLayerCell         = VCoord->MinLayerCell;
    Array1DI4 MaxLayerCell         = VCoord->MaxLayerCell;
 
@@ -243,7 +243,7 @@ void SplitExplicitInit::initializeBarotropicPressure(
           const Real Pressure =
               PressureInterface(ICell, KMax + 1) - SurfacePressure(ICell);
           BtrPressure(ICell)     = Pressure;
-          BtrPressAnomaly(ICell) = Pressure - RhoSw * Gravity * BottomDepth(ICell);
+          BtrPressAnomaly(ICell) = Pressure - RhoSw * Gravity * BottomGeomDepth(ICell);
        });
 
    deepCopy(Scratch.BarotropicPressureAnomalySubcycleCur, BtrPressAnomaly);

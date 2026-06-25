@@ -287,7 +287,7 @@ int main(int argc, char *argv[]) {
                  (MaxLayerCell(ICell) - MinLayerCell(ICell) + 1) / Rho0;
           });
       DefVertCoord->computeTotalGeometricThickness(DepthIntegSpecificVolume);
-      DefVertCoord->computeZHeight(LayerThickness, SpecVol);
+      DefVertCoord->computeGeomZHeight(PseudoThickness, SpecVol);
       auto TotalGeometricThicknessH =
           createHostMirrorCopy(DefVertCoord->TotalGeometricThickness);
 

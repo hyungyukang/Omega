@@ -199,7 +199,7 @@ void Eos::computeSpecVol(const Array2DReal &ConservTemp,
 
 /// Compute depth-integrated specific volume for all cells
 void Eos::computeDepthIntegratedSpecificVolume(
-    const Array2DReal &LayerThickness // [in] pseudo thickness
+    const Array2DReal &PseudoThickness // [in] pseudo thickness
 ) {
    OMEGA_SCOPE(LocDepthIntegSpecificVolume, DepthIntegSpecificVolume);
    OMEGA_SCOPE(LocDepthMeanSpecificVolume, DepthMeanSpecificVolume);
@@ -218,7 +218,7 @@ void Eos::computeDepthIntegratedSpecificVolume(
           parallelReduceInner(
               Team, Range{KMin, KMax},
               INNER_LAMBDA(const int K, Real &Accum) {
-                 Accum += LocSpecVol(ICell, K) * LayerThickness(ICell, K);
+                 Accum += LocSpecVol(ICell, K) * PseudoThickness(ICell, K);
               },
               DepthIntegSpecVol);
 

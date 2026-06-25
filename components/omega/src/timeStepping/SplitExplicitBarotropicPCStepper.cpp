@@ -76,7 +76,7 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
    OMEGA_SCOPE(DvEdge, Mesh->DvEdge);
    OMEGA_SCOPE(AreaCell, Mesh->AreaCell);
    OMEGA_SCOPE(FEdge, Mesh->FEdge);
-   OMEGA_SCOPE(BottomDepth, VCoord->BottomDepth);
+   OMEGA_SCOPE(BottomGeomDepth, VCoord->BottomGeomDepth);
    OMEGA_SCOPE(EdgeMask, VCoord->EdgeMask);
    OMEGA_SCOPE(DepthMeanSpecVol, EqState->DepthMeanSpecificVolume);
 
@@ -130,9 +130,9 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
                 const I4 Cell1 = CellsOnEdge(JEdge, 1);
                 const Real BtrPressureEdge =
                     0.5_Real * (BtrPressAnomalySubcycleCur(Cell0) +
-                                RhoGravity * BottomDepth(Cell0) +
+                                RhoGravity * BottomGeomDepth(Cell0) +
                                 BtrPressAnomalySubcycleCur(Cell1) +
-                                RhoGravity * BottomDepth(Cell1));
+                                RhoGravity * BottomGeomDepth(Cell1));
                 const Real NormalBtrVelEdge =
                     (1._Real - Gamma1) * NormalBtrVelSubcycleCur(JEdge) +
                     Gamma1 * NormalBtrVelSubcycleNew(JEdge);
@@ -205,8 +205,8 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
                  Gamma2 * BtrPressAnomalySubcycleNew(Cell1);
 
              const Real BtrPressureEdge =
-                 0.5_Real * (BtrPressure0 + RhoGravity * BottomDepth(Cell0) +
-                             BtrPressure1 + RhoGravity * BottomDepth(Cell1));
+                 0.5_Real * (BtrPressure0 + RhoGravity * BottomGeomDepth(Cell0) +
+                             BtrPressure1 + RhoGravity * BottomGeomDepth(Cell1));
 
              const Real NormalBtrVelEdge =
                  (1._Real - Gamma3) * NormalBtrVelSubcycleCur(IEdge) +
@@ -234,8 +234,8 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
                     Gamma2 * BtrPressAnomalySubcycleNew(Cell1);
 
                 const Real BtrPressureEdge =
-                    0.5_Real * (BtrPressure0 + RhoGravity * BottomDepth(Cell0) +
-                                BtrPressure1 + RhoGravity * BottomDepth(Cell1));
+                    0.5_Real * (BtrPressure0 + RhoGravity * BottomGeomDepth(Cell0) +
+                                BtrPressure1 + RhoGravity * BottomGeomDepth(Cell1));
 
                 const Real NormalBtrVelEdge =
                     (1._Real - Gamma3) * NormalBtrVelSubcycleCur(JEdge) +

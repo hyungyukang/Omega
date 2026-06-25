@@ -488,6 +488,8 @@ void Tendencies::computePseudoThicknessTendenciesOnly(
    computePseudoThicknessTendenciesOnly(State, AuxState, ThickTimeLevel, VelTimeLevel,
                                   NormalVelEdge, Time);
 
+}
+
 void Tendencies::computePseudoThicknessTendenciesOnly(
     const OceanState *State,           ///< [in] State variables
     const AuxiliaryState *AuxState,    ///< [in] Auxilary state variables
@@ -781,8 +783,8 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
               INNER_LAMBDA(int K) { LocNormalVelocityTend(IEdge, K) = 0; });
        });
 
-   const Array2DReal &FluxLayerThickEdge =
-       AuxState->LayerThicknessAux.FluxLayerThickEdge;
+   const Array2DReal &FluxPseudoThickEdge =
+       AuxState->PseudoThicknessAux.FluxPseudoThickEdge;
    Array2DReal NormVelEdge = State->getNormalVelocity(VelTimeLevel);
 
    // Compute baroclinic relative-vorticity horizontal advection
@@ -798,7 +800,7 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
              parallelForInner(
                  Team, KRange, INNER_LAMBDA(int KChunk) {
                     LocPotentialVortHAdv(LocNormalVelocityTend, IEdge, KChunk,
-                                         NormRVortEdge, FluxLayerThickEdge,
+                                         NormRVortEdge, FluxPseudoThickEdge,
                                          NormVelEdge);
                  });
           });
@@ -863,21 +865,21 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
 
    Pacer::start("Tend:computeBaroclinicVelocityVAdvTend", 2);
    VAdv->computeVelocityVAdvTend(NormalVelocityTend, NormVelEdge,
-                                 FluxLayerThickEdge);
+                                 FluxPseudoThickEdge);
    Pacer::stop("Tend:computeBaroclinicVelocityVAdvTend", 2);
 
    // Compute pressure gradient
    if (PGrad->Enabled) {
 
       Pacer::start("Tend:bclPressureGradTerm", 2);
-      Array2DReal LayerThick        = State->getLayerThickness(ThickTimeLevel);
+      Array2DReal PseudoThick       = State->getPseudoThickness(ThickTimeLevel);
       const auto &PressureMid       = VCoord->PressureMid;
       const auto &PressureInterface = VCoord->PressureInterface;
       const auto &SpecVol           = EqState->SpecVol;
-      const auto &ZInterface        = VCoord->ZInterface;
+      const auto &GeomZInterface    = VCoord->GeomZInterface;
       PGrad->computePressureGrad(LocNormalVelocityTend, PressureMid,
-                                 PressureInterface, SpecVol, ZInterface,
-                                 LayerThick);
+                                 PressureInterface, SpecVol, GeomZInterface,
+                                 PseudoThick);
       Pacer::stop("Tend:bclPressureGradTerm", 2);
    }
 
@@ -975,7 +977,6 @@ void Tendencies::computeTracerTendenciesOnly(
        });
 
    // compute tracer horizotal advection
-   Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
    const Array2DReal &FluxPseudoThickEdge =
        AuxState->PseudoThicknessAux.FluxPseudoThickEdge;
 

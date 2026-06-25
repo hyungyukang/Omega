@@ -259,7 +259,7 @@ class VertCoord {
 
    /// Sum pseudo thickness vertically within each cell column
    void computeTotalPseudoThickness(
-       const Array2DReal &LayerThickness ///< [in] pseudo thickness
+       const Array2DReal &PseudoThickness ///< [in] pseudo thickness
    );
 
    /// Sum the mass thickness times specific volume from the bottom layer up,

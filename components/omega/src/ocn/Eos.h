@@ -747,7 +747,7 @@ class Eos {
 
    /// Compute depth-integrated specific volume for all cells
    void computeDepthIntegratedSpecificVolume(
-       const Array2DReal &LayerThickness ///< [in] pseudo thickness
+       const Array2DReal &PseudoThickness ///< [in] pseudo thickness
    );
 
    /// Compute displaced specific volume (for vertical displacement)

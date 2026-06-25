@@ -1021,7 +1021,7 @@ void VertCoord::computePressure(
     const Array1DReal &SurfacePressure  // [in] surface pressure
 ) {
 
-   computeTotalPseudoThickness(LayerThickness);
+   computeTotalPseudoThickness(PseudoThickness);
 
    OMEGA_SCOPE(LocMinLayerCell, MinLayerCell);
    OMEGA_SCOPE(LocMaxLayerCell, MaxLayerCell);
@@ -1053,7 +1053,7 @@ void VertCoord::computePressure(
 //------------------------------------------------------------------------------
 // Compute total pseudo thickness in each cell column.
 void VertCoord::computeTotalPseudoThickness(
-    const Array2DReal &LayerThickness // [in] pseudo thickness
+    const Array2DReal &PseudoThickness // [in] pseudo thickness
 ) {
 
    OMEGA_SCOPE(LocMinLayerCell, MinLayerCell);
@@ -1070,7 +1070,7 @@ void VertCoord::computeTotalPseudoThickness(
           parallelReduceInner(
               Team, Range{KMin, KMax},
               INNER_LAMBDA(const int K, Real &Accum) {
-                 Accum += LayerThickness(ICell, K);
+                 Accum += PseudoThickness(ICell, K);
               },
               ColumnThickness);
 

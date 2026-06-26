@@ -1027,6 +1027,12 @@ class Eos {
    /// Convert potential temperature to Conservative Temperature
    Real calcCtFromPt(const Real &Sa, const Real &Pt) const;
 
+   /// Calculate freezing Conservative Temperature for TEOS-10.
+   /// Aborts if EOS is not TEOS-10: CT freezing is not yet implemented
+   /// for other equation-of-state choices.
+   Real calcCtFreezing(const Real Sa, const Real P,
+                       const Real SaturationFract) const;
+
    /// Initialize EOS from config and mesh
    static void init();
 

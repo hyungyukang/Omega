@@ -488,7 +488,8 @@ Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
       VelocityDiffusion(Mesh, VCoord), VelocityHyperDiff(Mesh, VCoord),
       SfcStressForcing(Mesh, VCoord), ExplicitBottomDrag(Mesh, VCoord),
       SfcThicknessForcing(Mesh, VCoord),
-      SfcTracerForcing(Mesh, VCoord, Tracers::IndxTemp, Tracers::IndxSalt),
+      SfcTracerForcing(Mesh, VCoord, Tracers::IndxTemp, Tracers::IndxSalt,
+                       EqState),
       TracerDiffusion(Mesh, VCoord), TracerHyperDiff(Mesh, VCoord),
       TracerHorzAdv(Mesh, VCoord), SurfaceTracerRestoring(Mesh),
       CustomThicknessTend(InCustomThicknessTend),
@@ -942,16 +943,21 @@ void Tendencies::computeTracerTendenciesOnly(
       const auto &ShortWaveHeatFlux =
           ForcingState->TracerForcing.ShortWaveHeatFluxCell;
       const auto &SnowFlux      = ForcingState->TracerForcing.SnowFluxCell;
+      const auto &RainFlux      = ForcingState->TracerForcing.RainFluxCell;
       const auto &IceRunoffFlux = ForcingState->TracerForcing.IceRunoffFluxCell;
+      const auto &RiverRunoffFlux =
+          ForcingState->TracerForcing.RiverRunoffFluxCell;
       const auto &SeaIceSaltFlux =
           ForcingState->TracerForcing.SeaIceSaltFluxCell;
+      const auto &PressureMid = VCoord->PressureMid;
 
       parallelFor(
           {Mesh->NCellsAll}, KOKKOS_LAMBDA(int ICell) {
              LocSfcTracerForcing(
-                 LocTracerTend, ICell, LatentHeatFlux, SensibleHeatFlux,
-                 LongWaveHeatFluxUp, LongWaveHeatFluxDown, SeaIceHeatFlux,
-                 ShortWaveHeatFlux, SnowFlux, IceRunoffFlux, SeaIceSaltFlux);
+                 LocTracerTend, ICell, TracerArray, PressureMid, LatentHeatFlux,
+                 SensibleHeatFlux, LongWaveHeatFluxUp, LongWaveHeatFluxDown,
+                 SeaIceHeatFlux, ShortWaveHeatFlux, SnowFlux, RainFlux,
+                 IceRunoffFlux, RiverRunoffFlux, SeaIceSaltFlux);
           });
       Pacer::stop("Tend:sfcTracerForcing", 2);
    }

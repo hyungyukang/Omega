@@ -346,6 +346,18 @@ Real Eos::calcCtFromPt(const Real &Sa, const Real &Pt) const {
    return Pt;
 }
 
+Real Eos::calcCtFreezing(const Real Sa, const Real P,
+                         const Real SaturationFract) const {
+   if (EosChoice == EosType::Teos10Eos) {
+      return ComputeSpecVolTeos10.calcCtFreezing(Sa, P, SaturationFract);
+   }
+
+   ABORT_ERROR("Eos::calcCtFreezing: CT freezing temperature is only "
+               "implemented for TEOS-10. Support for the current EOS "
+               "choice has not yet been developed.");
+   return 0;
+}
+
 /// Define IO fields and metadata for output
 void Eos::defineFields() {
 

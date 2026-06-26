@@ -11,6 +11,7 @@
 #include "TendencyTerms.h"
 #include "AuxiliaryState.h"
 #include "DataTypes.h"
+#include "Eos.h"
 #include "HorzMesh.h"
 #include "HorzOperators.h"
 #include "OceanState.h"
@@ -78,9 +79,11 @@ SfcThicknessForcingOnCell::SfcThicknessForcingOnCell(const HorzMesh *Mesh,
 SfcTracerForcingOnCell::SfcTracerForcingOnCell(const HorzMesh *Mesh,
                                                const VertCoord *VCoord,
                                                I4 TempTracerIndex,
-                                               I4 SaltTracerIndex)
+                                               I4 SaltTracerIndex,
+                                               const Eos *EosInst)
     : TempIndex(TempTracerIndex), SaltIndex(SaltTracerIndex),
-      MinLayerCell(VCoord->MinLayerCell), MaxLayerCell(VCoord->MaxLayerCell) {}
+      MinLayerCell(VCoord->MinLayerCell), MaxLayerCell(VCoord->MaxLayerCell),
+      EosImpl(VCoord) {}
 
 TracerHorzAdvOnCell::TracerHorzAdvOnCell(const HorzMesh *Mesh,
                                          const VertCoord *VCoord)

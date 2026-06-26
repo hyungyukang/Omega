@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "AuxiliaryState.h"
+#include "Eos.h"
 #include "GlobalConstants.h"
 #include "HorzMesh.h"
 #include "MachEnv.h"
@@ -412,18 +413,20 @@ class SfcTracerForcingOnCell {
    bool Enabled = false;
 
    SfcTracerForcingOnCell(const HorzMesh *Mesh, const VertCoord *VCoord,
-                          I4 TempTracerIndex, I4 SaltTracerIndex);
+                          I4 TempTracerIndex, I4 SaltTracerIndex,
+                          const Eos *EosInst);
 
-   KOKKOS_FUNCTION void operator()(const Array3DReal &Tend, I4 ICell,
-                                   const Array1DReal &LatentHeatFlux,
-                                   const Array1DReal &SensibleHeatFlux,
-                                   const Array1DReal &LongWaveHeatFluxUp,
-                                   const Array1DReal &LongWaveHeatFluxDown,
-                                   const Array1DReal &SeaIceHeatFlux,
-                                   const Array1DReal &ShortWaveHeatFlux,
-                                   const Array1DReal &SnowFlux,
-                                   const Array1DReal &IceRunoffFlux,
-                                   const Array1DReal &SeaIceSaltFlux) const {
+   KOKKOS_FUNCTION void
+   operator()(const Array3DReal &Tend, I4 ICell, const Array3DReal &TracerCell,
+              const Array2DReal &PressureMid, const Array1DReal &LatentHeatFlux,
+              const Array1DReal &SensibleHeatFlux,
+              const Array1DReal &LongWaveHeatFluxUp,
+              const Array1DReal &LongWaveHeatFluxDown,
+              const Array1DReal &SeaIceHeatFlux,
+              const Array1DReal &ShortWaveHeatFlux, const Array1DReal &SnowFlux,
+              const Array1DReal &RainFlux, const Array1DReal &IceRunoffFlux,
+              const Array1DReal &RiverRunoffFlux,
+              const Array1DReal &SeaIceSaltFlux) const {
 
       const I4 KTop = MinLayerCell(ICell);
       if (KTop > MaxLayerCell(ICell)) {
@@ -431,31 +434,42 @@ class SfcTracerForcingOnCell {
       }
 
       if (TempIndex >= 0) {
-         const Real HeatFlux = LatentHeatFlux(ICell) + SensibleHeatFlux(ICell) +
-                               LongWaveHeatFluxUp(ICell) +
-                               LongWaveHeatFluxDown(ICell) +
-                               SeaIceHeatFlux(ICell) + ShortWaveHeatFlux(ICell);
-         //	 +
-         //             (RainFlux(ICell) + RiverRunoffFlux(ICell)) *
-         //             Cp0Sw * TracerCell(TempIndex, ICell, KTop) +
-         //             (SnowFlux(ICell) + IceRunoffFlux(ICell)) *
-         //             (Cp0Sw * Eos.Ctfreez - LatIce;
+         const Real PTop  = PressureMid(ICell, KTop);
+         const Real SaTop = SaltIndex >= 0
+                                ? TracerCell(SaltIndex, ICell, KTop)
+                                : 0.0_Real; // not sure we want zero here?
+         const Real CtFrz = EosImpl.calcCtFreezing(SaTop, PTop, 0.0_Real);
+         const Real CtTop = TracerCell(TempIndex, ICell, KTop);
 
-         Tend(TempIndex, ICell, KTop) += HeatFlux * HFluxFactor;
+         // Heat tendencies are due to direct heat fluxes + enthalpy fluxes
+         // The enthalpy of liquid water is assumed to be:
+         // - local SST for liquid mass fluxes (rain, rivers)
+         // - local freezing point for solid --> liq mass fluxes (snow, frozen
+         // runoff)
+         // - solid mass fluxes are locally melted by the ocean (constant Lat
+         // heat of fusion)
+         const Real HeatFlux =
+             LatentHeatFlux(ICell) + SensibleHeatFlux(ICell) +
+             LongWaveHeatFluxUp(ICell) + LongWaveHeatFluxDown(ICell) +
+             SeaIceHeatFlux(ICell) + ShortWaveHeatFlux(ICell) +
+             (RainFlux(ICell) + RiverRunoffFlux(ICell)) * Cp0Sw * CtTop +
+             (SnowFlux(ICell) + IceRunoffFlux(ICell)) *
+                 (Cp0Sw * CtFrz - LatIce);
+
+         Tend(TempIndex, ICell, KTop) += HeatFlux * HFluxFac;
       }
 
       if (SaltIndex >= 0) {
-         Tend(SaltIndex, ICell, KTop) += SeaIceSaltFlux(ICell) * SFluxFactor;
+         Tend(SaltIndex, ICell, KTop) += SeaIceSaltFlux(ICell) * SFluxFac;
       }
    }
 
  private:
    I4 TempIndex;
    I4 SaltIndex;
-   Real HFluxFactor;
-   Real SFluxFactor;
    Array1DI4 MinLayerCell;
    Array1DI4 MaxLayerCell;
+   Teos10Eos EosImpl;
 };
 
 // Tracer horizontal advection term

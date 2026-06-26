@@ -355,7 +355,9 @@ Real Eos::calcCtFreezing(const Real Sa, const Real P,
    ABORT_ERROR("Eos::calcCtFreezing: CT freezing temperature is only "
                "implemented for TEOS-10. Support for the current EOS "
                "choice has not yet been developed.");
-   return 0;
+   // most likely I'd implement a polynomial here for non-teos10 e.g.
+   // return 0.0 - 0.0575 * Sa + 1.710523e-3 * sqrt(Sa^3) - 2.154996e-4 * Sa^2
+   return 0.0;
 }
 
 /// Define IO fields and metadata for output

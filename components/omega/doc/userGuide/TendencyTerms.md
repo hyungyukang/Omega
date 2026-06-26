@@ -21,7 +21,7 @@ tendency terms are currently implemented:
 | SfcStressForcingOnEdge | forcing by surface stress (e.g. wind), defined on edges
 | BottomDragOnEdge | bottom drag, defined on edges
 | SfcThicknessForcingOnCell | surface pseudo-thickness forcing from coupled freshwater and salt fluxes, defined on cells
-| SfcTracerForcingOnCell | surface tracer forcing from coupled heat and salt fluxes, defined on cells
+| SfcTracerForcingOnCell | surface tracer forcing from coupled heat and salt fluxes, with direct heat always and mass-flux enthalpy terms gated by thickness forcing, defined on cells
 | SurfaceTracerRestoringOnCell | surface tracer restoring, defined on cells
 
 Among the internal data stored by each functor is a `bool` which can enable or

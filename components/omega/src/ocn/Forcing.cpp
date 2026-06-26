@@ -133,7 +133,10 @@ void Forcing::readConfigOptions(Config *OmegaConfig) {
 }
 
 // Compute all forcing variables (dispatches to specific computations).
-void Forcing::computeAll() const { computeSfcStressForcingOnEdge(); }
+void Forcing::computeAll() const {
+   exchangeHalo();
+   computeSfcStressForcingOnEdge();
+}
 
 // Compute edge-normal stress from cell-center zonal and meridional components.
 void Forcing::computeSfcStressForcingOnEdge() const {
@@ -154,6 +157,23 @@ I4 Forcing::exchangeHalo() const {
    Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.ZonalStressCell,
                                           OnCell);
    Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.MeridStressCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.LatentHeatFlux,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.SensibleHeatFlux,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.ShortWaveHeatFlux,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.EvaporationFlux,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.RainFlux, OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.RiverRunoffFlux,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.IceRunoffFlux,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.SubglacialRunoffFlux,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.IcebergFreshWaterFlux,
                                           OnCell);
 
    return Err;

@@ -84,6 +84,18 @@ class Tendencies {
    // Enables explicit non-local tracer tendency from KPP
    bool TracerNonLocalFluxEnabled = false;
 
+   // Temporary bridge: compute temperature surface tracer flux from forcing
+   // inside Tendencies until a dedicated forcing class provides this field.
+   // Keep this isolated and easy to disable/revert.
+   bool UseTempSurfaceTracerFluxBridge = true;
+
+   // Temporary bridge: apply a direct top-layer temperature tendency from
+   // SurfaceTracerFlux so cooling/warming appears explicitly in layer 1.
+   bool UseTempTopLayerFluxTendencyBridge = true;
+
+   // Controls whether KPP is recomputed during tendency stages.
+   bool StageVerticalMixingEnabled = true;
+
    Real KPPHeatFluxToBuoyancyFactor      = 0.0_Real;
    Real KPPThicknessFluxToBuoyancyFactor = 0.0_Real;
 

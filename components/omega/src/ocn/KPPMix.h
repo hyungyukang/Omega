@@ -53,8 +53,8 @@ class KPPMix {
    /// Output arrays are computed in-place.
    void computeKPPMix(
        const Array2DReal
-           &PotentialDensity,             ///< Density (kg/m³) [NCells×NLevels]
-       const Array2DReal &NormalVelocity, ///< Normal vel on edges (m/s)
+           &PotentialDensity, ///< Density (kg/m³) [NCells×NLevels]
+       const Array2DReal &NormalVelocity,     ///< Normal vel on edges (m/s)
        const Array2DReal &TangentialVelocity, ///< Tangential vel on edges (m/s)
        const Array1DReal &SurfaceFrictionVelocity, ///< u* (m/s)
        const Array1DReal &SurfaceBuoyancyFlux,     ///< B_0 (m²/s³)
@@ -92,6 +92,19 @@ class KPPMix {
    /// @brief Bulk Richardson number profile used in OBL search (dimensionless)
    /// Size: [nCells][nLevels+1]
    Array2DReal BulkRichardsonNumber;
+
+   /// @brief Shear contribution to bulk Richardson denominator (m^2/s^2)
+   /// Size: [nCells][nLevels+1]
+   Array2DReal BulkRichardsonShear;
+
+   /// @brief Unresolved shear contribution Vt^2 (m^2/s^2)
+   /// Size: [nCells][nLevels+1]
+   Array2DReal UnresolvedShear;
+
+   /// @brief Buoyancy jump (density anomaly converted to buoyancy) (m/s²)
+   /// Size: [nCells][nLevels+1]
+   /// Captures delta_b = g * delta_rho / rho_sw at each layer during OBL search
+   Array2DReal BuoyancyJump;
 
    /// @brief Turbulent velocity scale profile (m/s), tracer branch
    /// Size: [nCells][nLevels+1]
@@ -139,11 +152,14 @@ class KPPMix {
    bool UseEnhancedDiffusion  = true;    ///< Apply enhanced mixing at OBL base
 
    // Field names for I/O
+   std::string BuoyancyJumpFldName;
    std::string VertDiffFldName;
    std::string VertViscFldName;
    std::string OBLDepthFldName;
    std::string NonLocalFluxFldName;
    std::string BulkRichardsonFldName;
+   std::string BulkRichardsonShearFldName;
+   std::string UnresolvedShearFldName;
    std::string TurbulentVelScaleFldName;
    std::string PotentialDensityFldName;
    std::string SurfFricVelFldName;

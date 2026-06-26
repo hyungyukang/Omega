@@ -345,7 +345,7 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
          ABORT_ERROR("Tendencies: VertMix must be initialized when"
                      "vertical mixing tendencies are enabled");
       }
-      // Optional KPP non-local tracer tendency — no abort if missing
+      // Optional KPP non-local tracer tendency: no abort if missing
       Error TracerNonLocalErr = TendConfig.get(
           "TracerNonLocalFluxTendencyEnable", this->TracerNonLocalFluxEnabled);
       if (!TracerNonLocalErr.isSuccess()) {
@@ -353,7 +353,23 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
          this->TracerNonLocalFluxEnabled = false;
       }
 
-      // Conversion factors: heat flux → buoyancy, freshwater flux → buoyancy.
+      Error TempFluxBridgeErr =
+          TendConfig.get("UseTempSurfaceTracerFluxBridge",
+                         this->UseTempSurfaceTracerFluxBridge);
+      if (!TempFluxBridgeErr.isSuccess()) {
+         TempFluxBridgeErr.reset();
+         this->UseTempSurfaceTracerFluxBridge = true;
+      }
+
+      Error TempTopLayerBridgeErr =
+          TendConfig.get("UseTempTopLayerFluxTendencyBridge",
+                         this->UseTempTopLayerFluxTendencyBridge);
+      if (!TempTopLayerBridgeErr.isSuccess()) {
+         TempTopLayerBridgeErr.reset();
+         this->UseTempTopLayerFluxTendencyBridge = true;
+      }
+
+      // Conversion factors: heat flux to buoyancy, freshwater flux to buoyancy.
       // Fall back to physically-derived defaults if not in config.
       const Real HFluxFac  = 1._Real / (RhoSw * CpSw);
       const Real FwFluxFac = 1._Real / RhoFw;
@@ -373,6 +389,7 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
              -Gravity * 8.0e-4_Real * OcnRefSal * FwFluxFac;
       }
    }
+}
 
    //------------------------------------------------------------------------------
    // Define fields associated with tendencies
@@ -730,12 +747,17 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
       Pacer::stop("Tend:computeVelocityVAdvTend", 2);
 
       // Compute surface stress forcing
-      const auto *ForcingState = Forcing::getDefault();
-      const auto &NormalStressEdge =
-          ForcingState->SfcStressForcing.NormalStressEdge;
-      const auto &MeanPseudoThickEdge =
-          AuxState->PseudoThicknessAux.MeanPseudoThickEdge;
       if (LocSfcStressForcing.Enabled) {
+         const auto *ForcingState = Forcing::getDefault();
+         if (!ForcingState) {
+            ABORT_ERROR("Tendencies::computeVelocityTendenciesOnly: surface "
+                        "stress forcing is enabled but Forcing has not been "
+                        "initialized");
+         }
+         const auto &NormalStressEdge =
+             ForcingState->SfcStressForcing.NormalStressEdge;
+         const auto &MeanPseudoThickEdge =
+             AuxState->PseudoThicknessAux.MeanPseudoThickEdge;
          Pacer::start("Tend:sfcStressForcing", 2);
          parallelForOuter(
              {Mesh->NEdgesAll},
@@ -873,6 +895,7 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
       OMEGA_SCOPE(LocTracerDiffusion, TracerDiffusion);
       OMEGA_SCOPE(LocTracerHyperDiff, TracerHyperDiff);
       OMEGA_SCOPE(LocSurfaceTracerRestoring, SurfaceTracerRestoring);
+      OMEGA_SCOPE(LocSurfaceTracerFlux, SurfaceTracerFlux);
       OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
       OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
       OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
@@ -1000,9 +1023,6 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
          if (KPPInstance && KPPInstance->Enabled) {
             Pacer::start("Tend:tracerNonLocalFlux", 2);
             OMEGA_SCOPE(LocNonLocalFlux, KPPInstance->VertNonLocalFlux);
-            OMEGA_SCOPE(LocSurfaceTracerFlux, SurfaceTracerFlux);
-            const auto &LayerThickCell =
-                State->getPseudoThickness(ThickTimeLevel);
             parallelForOuter(
                 {NTracers, Mesh->NCellsAll},
                 KOKKOS_LAMBDA(int L, int ICell, const TeamMember &Team) {
@@ -1015,17 +1035,29 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
                           const I4 KLen   = chunkLength(KChunk, KStart, KMax);
                           for (int KVec = 0; KVec < KLen; ++KVec) {
                              const I4 K = KStart + KVec;
-                             const Real InvThick =
-                                 1._Real / LayerThickCell(ICell, K);
                              LocTracerTend(L, ICell, K) +=
-                                 InvThick * (LocSurfaceTracerFlux(L, ICell) *
-                                                 LocNonLocalFlux(ICell, K) -
-                                             LocSurfaceTracerFlux(L, ICell) *
-                                                 LocNonLocalFlux(ICell, K + 1));
+                                 LocSurfaceTracerFlux(L, ICell) *
+                                     LocNonLocalFlux(ICell, K) -
+                                 LocSurfaceTracerFlux(L, ICell) *
+                                     LocNonLocalFlux(ICell, K + 1);
                           }
                        });
                 });
             Pacer::stop("Tend:tracerNonLocalFlux", 2);
+         }
+      }
+
+      if (UseTempSurfaceTracerFluxBridge && UseTempTopLayerFluxTendencyBridge) {
+         I4 TempIdx = -1;
+         if (Tracers::getIndex(TempIdx, "Temperature") == 0) {
+            const I4 TempTracerIndex = TempIdx;
+            parallelFor(
+                "TempTopLayerFluxTendencyBridge", {Mesh->NCellsAll},
+                KOKKOS_LAMBDA(I4 ICell) {
+                   const I4 KMin = MinLayerCell(ICell);
+                   LocTracerTend(TempTracerIndex, ICell, KMin) +=
+                       LocSurfaceTracerFlux(TempTracerIndex, ICell);
+                });
          }
       }
 
@@ -1085,8 +1117,10 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
    ) {
       Pacer::start("Tend:computeVelocityTendencies", 1);
 
-      computeStageVerticalMixing(State, AuxState, TracerArray, ThickTimeLevel,
-                                 VelTimeLevel);
+      if (StageVerticalMixingEnabled) {
+         computeStageVerticalMixing(State, AuxState, TracerArray, ThickTimeLevel,
+                                    VelTimeLevel);
+      }
       AuxState->computeMomAux(State, TracerArray, ThickTimeLevel, VelTimeLevel,
                               ProjDt);
       computeVelocityTendenciesOnly(State, AuxState, TracerArray,
@@ -1114,8 +1148,10 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
 
       Pacer::start("Tend:computeTracerTendencies", 1);
 
-      computeStageVerticalMixing(State, AuxState, TracerArray, ThickTimeLevel,
-                                 VelTimeLevel);
+      if (StageVerticalMixingEnabled) {
+         computeStageVerticalMixing(State, AuxState, TracerArray, ThickTimeLevel,
+                                    VelTimeLevel);
+      }
       const auto &MeanPseudoThickEdge =
           AuxState->PseudoThicknessAux.MeanPseudoThickEdge;
       Pacer::start("Tend:computeTracerAuxCell", 2);
@@ -1157,8 +1193,10 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
       AuxState->computeAll(State, TracerArray, ThickTimeLevel, VelTimeLevel,
                            ProjDt);
 
-      computeStageVerticalMixing(State, AuxState, TracerArray, ThickTimeLevel,
-                                 VelTimeLevel);
+      if (StageVerticalMixingEnabled) {
+         computeStageVerticalMixing(State, AuxState, TracerArray, ThickTimeLevel,
+                                    VelTimeLevel);
+      }
       computePseudoThicknessTendenciesOnly(State, AuxState, ThickTimeLevel,
                                            VelTimeLevel, Time);
       computeVelocityTendenciesOnly(State, AuxState, TracerArray,
@@ -1181,10 +1219,12 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
    }
 
    //------------------------------------------------------------------------------
-   // Run KPP mixing for the current stage and merge results into VertMix arrays
+   // Run KPP mixing for the current stage. VertMixImplicit merges the KPP
+   // coefficients into VertMix after the base coefficients are recomputed.
    void Tendencies::computeStageVerticalMixing(
        const OceanState *State, const AuxiliaryState *AuxState,
        const Array3DReal &TracerArray, int ThickTimeLevel, int VelTimeLevel) {
+      (void)AuxState;
       KPPMix *KPPInstance = KPPMix::getInstance();
 
       if (!EqState || !KPPInstance || !KPPInstance->Enabled)
@@ -1277,21 +1317,37 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
       const Real LocKPPThicknessFluxToBuoyancyFactor =
           KPPThicknessFluxToBuoyancyFactor;
 
-      OMEGA_SCOPE(ZonalStressCell, AuxState->WindForcingAux.ZonalStressCell);
-      OMEGA_SCOPE(MeridStressCell, AuxState->WindForcingAux.MeridStressCell);
-      OMEGA_SCOPE(LocLatentHeatFlux, AuxState->WindForcingAux.LatentHeatFlux);
-      OMEGA_SCOPE(LocSensibleHeatFlux,
-                  AuxState->WindForcingAux.SensibleHeatFlux);
-      OMEGA_SCOPE(LocShortWaveHeatFlux,
-                  AuxState->WindForcingAux.ShortWaveHeatFlux);
-      OMEGA_SCOPE(LocEvaporationFlux, AuxState->WindForcingAux.EvaporationFlux);
-      OMEGA_SCOPE(LocRainFlux, AuxState->WindForcingAux.RainFlux);
-      OMEGA_SCOPE(LocRiverRunoffFlux, AuxState->WindForcingAux.RiverRunoffFlux);
-      OMEGA_SCOPE(LocIceRunoffFlux, AuxState->WindForcingAux.IceRunoffFlux);
+      const auto *ForcingState = Forcing::getDefault();
+      if (!ForcingState) {
+         LOG_WARN("Tendencies::computeStageVerticalMixing: Forcing has not "
+                  "been initialized, skipping KPP stage update");
+         return;
+      }
+
+      const auto &SfcStressForcing = ForcingState->SfcStressForcing;
+      OMEGA_SCOPE(ZonalStressCell, SfcStressForcing.ZonalStressCell);
+      OMEGA_SCOPE(MeridStressCell, SfcStressForcing.MeridStressCell);
+      OMEGA_SCOPE(LocLatentHeatFlux, SfcStressForcing.LatentHeatFlux);
+      OMEGA_SCOPE(LocSensibleHeatFlux, SfcStressForcing.SensibleHeatFlux);
+      OMEGA_SCOPE(LocShortWaveHeatFlux, SfcStressForcing.ShortWaveHeatFlux);
+      OMEGA_SCOPE(LocEvaporationFlux, SfcStressForcing.EvaporationFlux);
+      OMEGA_SCOPE(LocRainFlux, SfcStressForcing.RainFlux);
+      OMEGA_SCOPE(LocRiverRunoffFlux, SfcStressForcing.RiverRunoffFlux);
+      OMEGA_SCOPE(LocIceRunoffFlux, SfcStressForcing.IceRunoffFlux);
       OMEGA_SCOPE(LocSubglacialRunoffFlux,
-                  AuxState->WindForcingAux.SubglacialRunoffFlux);
+                  SfcStressForcing.SubglacialRunoffFlux);
       OMEGA_SCOPE(LocIcebergFreshWaterFlux,
-                  AuxState->WindForcingAux.IcebergFreshWaterFlux);
+                  SfcStressForcing.IcebergFreshWaterFlux);
+      OMEGA_SCOPE(LocSurfaceTracerFlux, SurfaceTracerFlux);
+
+      const bool LocUseTempSurfaceTracerFluxBridge =
+          TracerNonLocalFluxEnabled && UseTempSurfaceTracerFluxBridge;
+      const I4 TempTracerIndex = TempIdx;
+      const Real HeatFluxToTracerFluxFactor = 1._Real / (RhoSw * CpSw);
+
+      if (LocUseTempSurfaceTracerFluxBridge) {
+         deepCopy(SurfaceTracerFlux, 0.0_Real);
+      }
 
       parallelFor(
           "KPP-SurfaceForcing", {NCellsAll}, KOKKOS_LAMBDA(I4 ICell) {
@@ -1310,6 +1366,10 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
              LocSurfaceBuoyancyFlux(ICell) =
                  heat_flux * LocKPPHeatFluxToBuoyancyFactor +
                  freshwater_flux * LocKPPThicknessFluxToBuoyancyFactor;
+             if (LocUseTempSurfaceTracerFluxBridge) {
+                LocSurfaceTracerFlux(TempTracerIndex, ICell) =
+                    heat_flux * HeatFluxToTracerFluxFactor;
+             }
              IceFraction(ICell) = 0.0_Real;
           });
 
@@ -1320,7 +1380,7 @@ void Tendencies::readConfig(Config *OmegaConfig ///< [in] Omega config
           KPPInstance->SurfaceBuoyancyFlux, EqState->BruntVaisalaFreqSq,
           IceFraction, WindSpeed10m);
       // KPP VertDiff/VertVisc are merged into VertMix inside VertMixImplicit(),
-      // after computeVertMix() resets them — so no merge needed here.
+      // after computeVertMix() resets them, so no merge needed here.
    }
 
 } // end namespace OMEGA

@@ -819,8 +819,9 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
           const int KMax = MaxLayerEdgeTop(IEdge);
 
           parallelForInner(
-              Team, Range{KMin, KMax},
-              INNER_LAMBDA(int K) { LocNormalVelocityTend(IEdge, K) = 0; });
+              Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+                  LocNormalVelocityTend(IEdge, K) = 0;
+              });
        });
 
    const Array2DReal &FluxPseudoThickEdge =

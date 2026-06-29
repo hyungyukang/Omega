@@ -133,7 +133,8 @@ void SplitExplicitRK2Stepper::doSplitStage3(
                                        NormalTransportVelocity,
                                        UpdateTimeStep);
 
-   // Compute vertical velocity at the new time level for the vertical advection term in thickness and tracer tendencies
+   // Compute vertical velocity at the new time level for the vertical
+   // advection term in thickness and tracer tendencies
    computeVerticalPseudoVelocity(State, NextLevel, NormalTransportVelocity,
                            0.5 * StageTimeStep);
 
@@ -337,8 +338,9 @@ void SplitExplicitRK2Stepper::computeBarotropicForcing(
                          ThicknessSum * InvDtSeconds
                    : 0._Real;
 
-           Kokkos::single(PerTeam(Team),
-                          INNER_LAMBDA() { BtrForcing(IEdge) = Forcing; });
+           Kokkos::single(PerTeam(Team), INNER_LAMBDA() {
+               BtrForcing(IEdge) = Forcing;
+               });
 
            parallelForInner(
                Team, Range{KMin, KMax}, INNER_LAMBDA(I4 K) {

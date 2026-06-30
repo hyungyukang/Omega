@@ -223,7 +223,7 @@ void VertMix::computeVertMix(const Array2DReal &NormalVelocity,
    OMEGA_SCOPE(LocBackVisc, BackVisc);
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
-   OMEGA_SCOPE(NVertLayers, VCoord->NVertLayers);
+   // OMEGA_SCOPE(NVertLayers, VCoord->NVertLayers);
 
    /// First, initialize VertDiff and VertVisc to background values
    parallelForOuter(
@@ -260,8 +260,6 @@ void VertMix::computeVertMix(const Array2DReal &NormalVelocity,
 
              parallelForInner(
                  Team, KRange, INNER_LAMBDA(int KChunk) {
-                    LocComputeVertMixConv(LocVertDiff, LocVertVisc, ICell,
-                                          KChunk, BruntVaisalaFreqSq);
                     LocComputeGradRichardsonNum(
                         LocGradRichNum, ICell, KChunk, NormalVelocity,
                         TangentialVelocity, BruntVaisalaFreqSq);

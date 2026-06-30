@@ -363,11 +363,14 @@ void KPPMix::computeOBLDepth(const Array2DReal &PotentialDensity,
    // Compute Langmuir enhancement factors if wind speed is available
    // =======================================================================
    Array1DReal LangmuirFactor("LangmuirFactor", Mesh->NCellsAll);
+   const bool LocUseLangmuirCirculation      = UseLangmuirCirculation;
+   const Real LocSurfaceLayerExtent          = SurfaceLayerExtent;
+   const Real LocCriticalRichardson          = CriticalRichardson;
    const Real LocIceFracThresholdForLangmuir = IceFractionThresholdForLangmuir;
    parallelFor(
        "KPP-Langmuir", {Mesh->NCellsAll}, KOKKOS_LAMBDA(I4 ICell) {
           const Real iceFrac = IceFraction(ICell);
-          if (UseLangmuirCirculation &&
+          if (LocUseLangmuirCirculation &&
               iceFrac < LocIceFracThresholdForLangmuir) {
              const Real uStar = SurfaceFrictionVelocity(ICell);
              const Real u10 =
@@ -432,16 +435,16 @@ void KPPMix::computeOBLDepth(const Array2DReal &PotentialDensity,
 
           Real obl_depth        = Kokkos::abs(ZInterface(ICell, KIntDeep));
           I4 k_cross            = -1;
-          const Real ri_crit    = CriticalRichardson;
-          const Real ri_scaling = 1.0_Real - 0.5_Real * SurfaceLayerExtent;
+          const Real ri_crit    = LocCriticalRichardson;
+          const Real ri_scaling = 1.0_Real - 0.5_Real * LocSurfaceLayerExtent;
           const Real b0_eff     = b0 * LocLangmuirFactor(ICell);
 
           // CVMix default unresolved-shear constants.
           const Real c_s_unres = 24.0_Real * Kokkos::sqrt(17.0_Real);
           const Real vtc =
-              Kokkos::sqrt(
-                  0.2_Real /
-                  Kokkos::max(1.0e-12_Real, c_s_unres * SurfaceLayerExtent)) /
+              Kokkos::sqrt(0.2_Real /
+                           Kokkos::max(1.0e-12_Real,
+                                       c_s_unres * LocSurfaceLayerExtent)) /
               (VonKar * VonKar);
 
           // -------------------------------------------------------------------
@@ -514,7 +517,7 @@ void KPPMix::computeOBLDepth(const Array2DReal &PotentialDensity,
              if (z_depth < 1.0e-12)
                 continue;
 
-             const Real surf_layer_depth = SurfaceLayerExtent * z_depth;
+             const Real surf_layer_depth = LocSurfaceLayerExtent * z_depth;
 
              // Advance cell surface average for density
              while (k_surface_avg < k &&
@@ -582,13 +585,13 @@ void KPPMix::computeOBLDepth(const Array2DReal &PotentialDensity,
                  Kokkos::max(deltaVsq, 1.0e-15_Real);
 
              const Real sigma_loc = Kokkos::fmin(
-                 1.0_Real, Kokkos::fmax(0.0_Real, SurfaceLayerExtent));
+                 1.0_Real, Kokkos::fmax(0.0_Real, LocSurfaceLayerExtent));
 
              Real w_turb = 0.0_Real;
              if (u_star > 1.0e-12_Real) {
-                const Real u3   = u_star * u_star * u_star;
-                const Real zeta = sigma_loc * z_depth * VonKar * b0_eff /
-                                  Kokkos::max(u3, 1.0e-20_Real);
+                const Real u3        = u_star * u_star * u_star;
+                const Real zeta      = sigma_loc * z_depth * VonKar * b0_eff /
+                                       Kokkos::max(u3, 1.0e-20_Real);
                 const Real phi_inv_s = KPP::KPPProfileS2(zeta);
                 w_turb = VonKar * u_star * Kokkos::max(phi_inv_s, 0.0_Real);
              } else if (b0_eff < 0.0_Real) {
@@ -761,9 +764,10 @@ void KPPMix::computeMixingCoefficients(
    OMEGA_SCOPE(ZInterface, VCoord->GeomZInterface);
 
    // Capture member variables for use in lambda
-   Real LocBackgroundDiff  = BackgroundDiff;
-   Real LocBackgroundVisc  = BackgroundVisc;
-   bool LocUseNonLocalFlux = UseNonLocalFlux;
+   Real LocBackgroundDiff           = BackgroundDiff;
+   Real LocBackgroundVisc           = BackgroundVisc;
+   bool LocUseNonLocalFlux          = UseNonLocalFlux;
+   const Real LocSurfaceLayerExtent = SurfaceLayerExtent;
    I4 LocMatchTechnique = 0; // 0=SimpleShapes, 1=MatchBoth, 2=ParabolicNonLocal
    if (MatchTechniqueStr == "MatchBoth") {
       LocMatchTechnique = 1;
@@ -776,7 +780,7 @@ void KPPMix::computeMixingCoefficients(
    // SurfaceLayerExtent
    const Real LocNonLocalCs =
        10.0_Real * VonKar *
-       Kokkos::pow(KPP::C_MO_S * VonKar * SurfaceLayerExtent,
+       Kokkos::pow(KPP::C_MO_S * VonKar * LocSurfaceLayerExtent,
                    1.0_Real / 3.0_Real);
    bool LocUseEnhancedDiffusion = UseEnhancedDiffusion;
    I4 LocInterpType2            = 3; // 0=Linear, 1=Quadratic, 2=Cubic, 3=LMD94
@@ -838,7 +842,7 @@ void KPPMix::computeMixingCoefficients(
                 // with explicit free-convection limits when u*=0.
                 const Real sigma_coord = -sigma; // [0,1]
                 const Real sigma_loc   = Kokkos::fmin(
-                    SurfaceLayerExtent, Kokkos::fmax(0.0_Real, sigma_coord));
+                    LocSurfaceLayerExtent, Kokkos::fmax(0.0_Real, sigma_coord));
 
                 Real zeta     = 0.0_Real;
                 Real w_m_turb = 0.0_Real;
@@ -847,7 +851,7 @@ void KPPMix::computeMixingCoefficients(
                 if (u_star > 0.0_Real) {
                    const Real u3 = u_star * u_star * u_star;
                    zeta          = sigma_loc * h_obl * b0 * LocKappa /
-                          Kokkos::max(u3, 1.0e-20_Real);
+                                   Kokkos::max(u3, 1.0e-20_Real);
 
                    // KPPProfileM2/S2 return phi^{-1}; do not invert again.
                    const Real phi_inv_m = KPP::KPPProfileM2(zeta);

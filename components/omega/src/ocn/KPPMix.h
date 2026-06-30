@@ -53,8 +53,8 @@ class KPPMix {
    /// Output arrays are computed in-place.
    void computeKPPMix(
        const Array2DReal
-           &PotentialDensity, ///< Density (kg/m³) [NCells×NLevels]
-       const Array2DReal &NormalVelocity,     ///< Normal vel on edges (m/s)
+           &PotentialDensity,             ///< Density (kg/m³) [NCells×NLevels]
+       const Array2DReal &NormalVelocity, ///< Normal vel on edges (m/s)
        const Array2DReal &TangentialVelocity, ///< Tangential vel on edges (m/s)
        const Array1DReal &SurfaceFrictionVelocity, ///< u* (m/s)
        const Array1DReal &SurfaceBuoyancyFlux,     ///< B_0 (m²/s³)
@@ -181,6 +181,7 @@ class KPPMix {
    const HorzMesh *Mesh;
    const VertCoord *VCoord;
 
+ public:
    /// @brief Stage 1: Compute OBL depth using edge-based velocity shear
    void computeOBLDepth(const Array2DReal &PotentialDensity,
                         const Array2DReal &NormalVelocity,
@@ -196,6 +197,7 @@ class KPPMix {
                                   const Array1DReal &SurfaceFrictionVelocity,
                                   const Array1DReal &SurfaceBuoyancyFlux);
 
+ private:
    /// @brief Print targeted diagnostics for KPP troubleshooting
    void logDiagnostics(const Array2DReal &PotentialDensity,
                        const Array2DReal &NormalVelocity,

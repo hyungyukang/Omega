@@ -22,7 +22,10 @@ Omega:
     IODefaultFormat: pnetcdf
   State:
     NTimeLevels: 2
+    PrescribeThicknessType: None
+    PrescribeVelocityType: None
   Advection:
+    Coef3rdOrder: 0.25
     FluxThicknessType: Center
     HorzTracerFluxOrder: 2
     VerticalTracerFluxLimiterEnable: true
@@ -30,6 +33,11 @@ Omega:
   SfcStress:
     FluxTracerType: Center
     InterpType: Isotropic
+  SurfaceRestoring:
+    TracersToRestore: [Temperature, Salinity]
+    PistonVelocity: 1.585e-5
+  PressureGrad:
+    PressureGradType: Centered
   VertCoord:
     Density0: 1026.0
     MovementWeightType: Uniform
@@ -96,7 +104,6 @@ Omega:
       MatchTechnique: SimpleShapes
       InterpType2: LMD94
       UseEnhancedDiffusion: true
-      BoundaryLayerDepthScheme: SimpleShapes
       IceFractionThresholdForLangmuir: 0.05
       IceFractionThresholdForMinimumOBL: 0.15
       MinimumOBLUnderSeaIce: 5.0

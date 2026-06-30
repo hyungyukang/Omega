@@ -109,17 +109,6 @@ class KPPComputeOBLDepth {
       ComputedOBLIndex = KMin;
 
       // =======================================================================
-      // Stage 1a: Check for suppression conditions
-      // =======================================================================
-      if (ShouldSuppressOBL(IceFraction, LandIceMask)) {
-         // Under ice or land ice: set to minimum
-         ComputedOBLDepth = MIN_OBL_UNDER_ICE;
-         ComputedOBLIndex =
-             findLayerIndexForDepth(KMin, KMax, ComputedOBLDepth);
-         return;
-      }
-
-      // =======================================================================
       // Stage 1b: Perform bulk Richardson search
       // CRITICAL: Accumulate sums to avoid redundant calculation
       // =======================================================================

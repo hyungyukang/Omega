@@ -28,6 +28,31 @@ constexpr Real ZETA_M_SCALE = VonKar; // Momentum scale (normalized)
 constexpr Real ZETA_S_SCALE = 0.16;   // Tracer/salt scale
 constexpr Real ZETA_T_SCALE = 0.16;   // Temperature scale
 
+// ==========================================================================
+// Monin-Obukhov stability function parameters (Large et al. 1994, App. B)
+// Transition thresholds between weakly and strongly unstable regimes
+// ==========================================================================
+
+/// Transition zeta for momentum: below this value, strongly-unstable formula
+/// is used. Default: -0.2 (CVMix default).
+constexpr Real ZETA_M = -0.2_Real;
+
+/// Transition zeta for scalars: below this value, strongly-unstable formula
+/// is used. Default: -1.0 (CVMix default).
+constexpr Real ZETA_S = -1.0_Real;
+
+/// Derived constants for phi_m^{-1} strongly-unstable branch (momentum).
+/// a_m = (1-16*ZETA_M)^{-0.25} * (1 - 4*ZETA_M)
+constexpr Real A_MO_M = 1.2573615702_Real;
+/// c_m = (1-16*ZETA_M)^{-0.25} * 12
+constexpr Real C_MO_M = 8.3824104679_Real;
+
+/// Derived constants for phi_s^{-1} strongly-unstable branch (scalar).
+/// a_s = sqrt(1-16*ZETA_S) * (1 + 8*ZETA_S)  (can be negative)
+constexpr Real A_MO_S = -28.8617393793_Real;
+/// c_s = 24 * sqrt(1-16*ZETA_S)
+constexpr Real C_MO_S = 98.9545350148_Real;
+
 /// Surface mixing coefficients
 constexpr Real HUON = 0.03;  // Surface momentum mixing parameter
 constexpr Real BD   = 1.0;   // Buoyancy parameter (dimensionless)
@@ -36,10 +61,9 @@ constexpr Real C1   = 0.112; // Langmuir circulation parameter
 /// Langmuir enhancement factor parameters
 constexpr Real PEC_LANGMUIR = 0.5; // Peclet number for Langmuir
 
-/// Minimum/maximum bounds on diffusivity/viscosity values
-constexpr Real MIN_COEFFICIENT = 1.0e-6; // Minimum m²/s allowed
-constexpr Real MIN_USTAR       = 1.0e-4; // Minimum friction velocity (m/s)
-constexpr Real MAX_USTAR       = 1.0;    // Upper limit to clamp rare extremes
+/// Minimum/maximum bounds on friction velocity values
+constexpr Real MIN_USTAR = 1.0e-4; // Minimum friction velocity (m/s)
+constexpr Real MAX_USTAR = 1.0;    // Upper limit to clamp rare extremes
 
 /// Maximum vertical levels (for static allocations if needed)
 constexpr I4 NLEV_MAX = 500;
@@ -146,24 +170,25 @@ Real KPPProfileM1(Real sigma) {
    return sigma_mu * (1.0 - sigma_mu) * (1.0 - sigma_mu);
 }
 
-/// @brief M2(zeta) - Momentum Monin-Obukhov stability correction
-/// Modifies mixing based on zeta = z/L where L is Monin-Obukhov length
-/// REFERENCES: Large et al. (1994) Eq. (14)
+/// @brief phi_m^{-1}(zeta) - Inverse momentum Monin-Obukhov stability function
+/// Multiplied by von Karman constant and friction velocity to give turbulent
+/// momentum velocity scale: w_m = kappa * u* * phi_m^{-1}(zeta)
+/// Three-regime formulation per Large et al. (1994) Appendix B and CVMix.
 ///
 /// @param zeta Monin-Obukhov stability coordinate (dimensionless)
-/// @return Stability correction factor (dimensionless)
+/// @return phi_m^{-1} (dimensionless, > 0)
 KOKKOS_INLINE_FUNCTION
 Real KPPProfileM2(Real zeta) {
-   // Unstable side (zeta < 0): free-convective enhancement.
-   // Use a bounded MO form similar to (a_m - c_m*zeta)^(-1/3).
-   if (zeta < 0.0_Real) {
-      const Real a_m = 1.0_Real;
-      const Real c_m = 16.0_Real;
-      const Real arg = Kokkos::fmax(1.0e-12_Real, a_m - c_m * zeta);
-      return Kokkos::pow(arg, -1.0_Real / 3.0_Real);
+   if (zeta >= 0.0_Real) {
+      // Stable regime
+      return 1.0_Real / (1.0_Real + 5.0_Real * zeta);
+   } else if (zeta >= ZETA_M) {
+      // Weakly unstable: (1 - 16*zeta)^{1/4}
+      return Kokkos::pow(1.0_Real - 16.0_Real * zeta, 0.25_Real);
+   } else {
+      // Strongly unstable: (a_m - c_m*zeta)^{1/3}
+      return Kokkos::pow(A_MO_M - C_MO_M * zeta, 1.0_Real / 3.0_Real);
    }
-   // Stable side (zeta > 0): suppress mixing with increasing stability.
-   return 1.0_Real / (1.0_Real + 5.0_Real * zeta);
 }
 
 /// @brief S1(sigma) - Tracer/scalar mixing profile function
@@ -181,22 +206,26 @@ Real KPPProfileS1(Real sigma) {
    return sigma_mu * (1.0 - sigma_mu) * (1.0 - sigma_mu);
 }
 
-/// @brief S2(zeta) - Tracer Monin-Obukhov stability correction
-/// Modifies scalar mixing based on zeta = z/L
-/// REFERENCES: Large et al. (1994) Eq. (14)
+/// @brief phi_s^{-1}(zeta) - Inverse scalar Monin-Obukhov stability function
+/// Multiplied by von Karman constant and friction velocity to give turbulent
+/// scalar velocity scale: w_s = kappa * u* * phi_s^{-1}(zeta)
+/// Three-regime formulation per Large et al. (1994) Appendix B and CVMix.
+/// Note: scalar and momentum exponents differ in the weakly-unstable regime.
 ///
 /// @param zeta Monin-Obukhov stability coordinate (dimensionless)
-/// @return Stability correction factor (dimensionless)
+/// @return phi_s^{-1} (dimensionless, > 0)
 KOKKOS_INLINE_FUNCTION
 Real KPPProfileS2(Real zeta) {
-   // Unstable side (zeta < 0): scalar free-convective enhancement.
-   if (zeta < 0.0_Real) {
-      const Real a_s = 1.0_Real;
-      const Real c_s = 16.0_Real;
-      const Real arg = Kokkos::fmax(1.0e-12_Real, a_s - c_s * zeta);
-      return Kokkos::pow(arg, -1.0_Real / 3.0_Real);
+   if (zeta >= 0.0_Real) {
+      // Stable regime
+      return 1.0_Real / (1.0_Real + 5.0_Real * zeta);
+   } else if (zeta >= ZETA_S) {
+      // Weakly unstable: (1 - 16*zeta)^{1/2}  (scalar uses 1/2, not 1/4)
+      return Kokkos::sqrt(1.0_Real - 16.0_Real * zeta);
+   } else {
+      // Strongly unstable: (a_s - c_s*zeta)^{1/3}
+      return Kokkos::pow(A_MO_S - C_MO_S * zeta, 1.0_Real / 3.0_Real);
    }
-   return 1.0_Real / (1.0_Real + 5.0_Real * zeta);
 }
 
 /// @brief Hu(sigma) - Momentum surface value scaling

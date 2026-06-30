@@ -258,6 +258,12 @@ class VelVertMixSetupOnEdge {
       const Real PseudoThickEdgeK =
           0.5_Real * (PseudoThickCell(JCell0, K) + PseudoThickCell(JCell1, K));
 
+      H = PseudoThickEdgeK;
+
+      const Real PseudoThickEdgeKp1 =
+          0.5_Real *
+          (PseudoThickCell(JCell0, K + 1) + PseudoThickCell(JCell1, K + 1));
+
       // Row-scaled conservative form.
       // Unknown is u^{n+1}.
       H = PseudoThickEdgeK;

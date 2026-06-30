@@ -145,6 +145,24 @@ void TracerHorzAdvOnCell::init() {
        {NEdgesAll}, KOKKOS_LAMBDA(int IEdge) { masksAndCoefficients(IEdge); });
    Kokkos::fence();
 }
+
+PresGradZOnEdge::PresGradZOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord)
+    : LocRhoSw(RhoSw), CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
+      MinLayerCell(VCoord->MinLayerCell), MaxLayerCell(VCoord->MaxLayerCell),
+      EdgeMask(VCoord->EdgeMask), MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
+      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
+
+PresGradForceOnEdge::PresGradForceOnEdge(const HorzMesh *Mesh,
+                                         const VertCoord *VCoord)
+    : CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
+      EdgeMask(VCoord->EdgeMask), MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
+      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
+
+GeoptGradOnEdge::GeoptGradOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord)
+    : CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
+      EdgeMask(VCoord->EdgeMask), MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
+      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
+
 } // end namespace OMEGA
 
 //===----------------------------------------------------------------------===//

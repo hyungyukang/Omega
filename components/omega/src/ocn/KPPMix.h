@@ -16,6 +16,7 @@
 #include "Config.h"
 #include "DataTypes.h"
 #include "HorzMesh.h"
+#include "HorzOperators.h"
 #include "KPPConstants.h"
 #include "MachEnv.h"
 #include "OmegaKokkos.h"
@@ -46,12 +47,15 @@ class KPPMix {
    /// @brief Main computation routine
    /// Calls Stage 1 and Stage 2 computation in sequence
    ///
-   /// Input arrays should be pre-populated with current state
-   /// Output arrays are computed in-place
+   /// Input arrays should be pre-populated with current state.
+   /// NormalVelocity and TangentialVelocity are edge-based quantities
+   /// (C-grid convention): dimensions [NEdges × NVertLayers].
+   /// Output arrays are computed in-place.
    void computeKPPMix(
-       const Array2DReal &PotentialDensity,   ///< Density (kg/m³)
-       const Array2DReal &NormalVelocity,     ///< Normal velocity (m/s)
-       const Array2DReal &TangentialVelocity, ///< Tangential velocity (m/s)
+       const Array2DReal
+           &PotentialDensity,             ///< Density (kg/m³) [NCells×NLevels]
+       const Array2DReal &NormalVelocity, ///< Normal vel on edges (m/s)
+       const Array2DReal &TangentialVelocity, ///< Tangential vel on edges (m/s)
        const Array1DReal &SurfaceFrictionVelocity, ///< u* (m/s)
        const Array1DReal &SurfaceBuoyancyFlux,     ///< B_0 (m²/s³)
        const Array2DReal &BruntVaisalaFreqSq,      ///< N² (s⁻²)
@@ -93,6 +97,18 @@ class KPPMix {
    /// Size: [nCells][nLevels+1]
    Array2DReal TurbulentVelocityScale;
 
+   /// @brief Potential density used by KPP OBL search (kg/m^3)
+   /// Size: [nCells][nLevels]
+   Array2DReal PotentialDensity;
+
+   /// @brief Surface friction velocity u* (m/s)
+   /// Size: [nCells]
+   Array1DReal SurfaceFrictionVelocity;
+
+   /// @brief Surface buoyancy flux B_0 (m²/s³)
+   /// Size: [nCells]
+   Array1DReal SurfaceBuoyancyFlux;
+
    // =======================================================================
    // Configuration Parameters
    // =======================================================================
@@ -129,6 +145,9 @@ class KPPMix {
    std::string NonLocalFluxFldName;
    std::string BulkRichardsonFldName;
    std::string TurbulentVelScaleFldName;
+   std::string PotentialDensityFldName;
+   std::string SurfFricVelFldName;
+   std::string SurfBuoyFluxFldName;
    std::string Name;
 
  private:
@@ -146,7 +165,7 @@ class KPPMix {
    const HorzMesh *Mesh;
    const VertCoord *VCoord;
 
-   /// @brief Stage 1: Compute OBL depth
+   /// @brief Stage 1: Compute OBL depth using edge-based velocity shear
    void computeOBLDepth(const Array2DReal &PotentialDensity,
                         const Array2DReal &NormalVelocity,
                         const Array2DReal &TangentialVelocity,
@@ -158,8 +177,6 @@ class KPPMix {
 
    /// @brief Stage 2: Compute mixing coefficients
    void computeMixingCoefficients(const Array2DReal &PotentialDensity,
-                                  const Array2DReal &NormalVelocity,
-                                  const Array2DReal &TangentialVelocity,
                                   const Array1DReal &SurfaceFrictionVelocity,
                                   const Array1DReal &SurfaceBuoyancyFlux);
 

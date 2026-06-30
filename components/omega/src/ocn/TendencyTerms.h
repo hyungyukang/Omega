@@ -599,5 +599,182 @@ class SurfaceTracerRestoringOnCell {
    }
 };
 
+/// Pressure gradient contribution from sloping surfaces
+class PresGradZOnEdge {
+ public:
+   bool Enabled = false;
+   Real LocRhoSw;
+
+   PresGradZOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
+
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+                                   const Array2DReal &SpecVol,
+                                   const Array2DReal &LayerThickEdge,
+                                   const Array2DReal &LayerThickCell,
+                                   const Array2DReal &PressureInterface) const {
+
+      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
+      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+      const I4 ICell0 = CellsOnEdge(IEdge, 0);
+      const I4 ICell1 = CellsOnEdge(IEdge, 1);
+      const Real InvDcEdge       = 1._Real / DcEdge(IEdge);
+      const Real InvRhoSwGravity = 1._Real / (LocRhoSw * Gravity);
+      const I4 KMin              = MinLayerEdgeBot(IEdge);
+      const I4 KMax              = MaxLayerEdgeTop(IEdge);
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K        = KStart + KVec;
+         const I4 KM1Cell0 = Kokkos::max(K - 1, MinLayerCell(ICell0));
+         const I4 KM1Cell1 = Kokkos::max(K - 1, MinLayerCell(ICell1));
+         const I4 KP1Cell0 = Kokkos::min(K + 1, MaxLayerCell(ICell0));
+         const I4 KP1Cell1 = Kokkos::min(K + 1, MaxLayerCell(ICell1));
+
+         const Real LayerThickCell0TopK =
+             0.5_Real *
+             (LayerThickCell(ICell0, KM1Cell0) + LayerThickCell(ICell0, K));
+         const Real LayerThickCell1TopK =
+             0.5_Real *
+             (LayerThickCell(ICell1, KM1Cell1) + LayerThickCell(ICell1, K));
+         const Real LayerThickCell0TopKP1 =
+             0.5_Real *
+             (LayerThickCell(ICell0, K) + LayerThickCell(ICell0, KP1Cell0));
+         const Real LayerThickCell1TopKP1 =
+             0.5_Real *
+             (LayerThickCell(ICell1, K) + LayerThickCell(ICell1, KP1Cell1));
+         const Real SpecVolCell0TopK =
+             0.5_Real *
+             (SpecVol(ICell0, KM1Cell0) * LayerThickCell(ICell0, KM1Cell0) +
+              SpecVol(ICell0, K) * LayerThickCell(ICell0, K)) /
+             LayerThickCell0TopK;
+         const Real SpecVolCell1TopK =
+             0.5_Real *
+             (SpecVol(ICell1, KM1Cell1) * LayerThickCell(ICell1, KM1Cell1) +
+              SpecVol(ICell1, K) * LayerThickCell(ICell1, K)) /
+             LayerThickCell1TopK;
+         const Real SpecVolCell0TopKP1 =
+             0.5_Real *
+             (SpecVol(ICell0, K) * LayerThickCell(ICell0, K) +
+              SpecVol(ICell0, KP1Cell0) * LayerThickCell(ICell0, KP1Cell0)) /
+             LayerThickCell0TopKP1;
+         const Real SpecVolCell1TopKP1 =
+             0.5_Real *
+             (SpecVol(ICell1, K) * LayerThickCell(ICell1, K) +
+              SpecVol(ICell1, KP1Cell1) * LayerThickCell(ICell1, KP1Cell1)) /
+             LayerThickCell1TopKP1;
+
+         const Real PSpecVolEdgeTopK =
+             0.5_Real * (PressureInterface(ICell0, K) * SpecVolCell0TopK +
+                         PressureInterface(ICell1, K) * SpecVolCell1TopK);
+         const Real PSpecVolEdgeTopKP1 =
+             0.5_Real *
+             (PressureInterface(ICell0, KP1Cell0) * SpecVolCell0TopKP1 +
+              PressureInterface(ICell1, KP1Cell1) * SpecVolCell1TopKP1);
+
+         const Real GradZTildeTopK =
+             (-PressureInterface(ICell1, K) + PressureInterface(ICell0, K)) *
+             InvRhoSwGravity;
+         const Real GradZTildeTopKP1 = (-PressureInterface(ICell1, KP1Cell1) +
+                                        PressureInterface(ICell0, KP1Cell0)) *
+                                       InvRhoSwGravity;
+
+         const Real InvLayerThickEdge = 1._Real / LayerThickEdge(IEdge, K);
+
+         Real PresSpecVolGradZK   = PSpecVolEdgeTopK * GradZTildeTopK;
+         Real PresSpecVolGradZKP1 = PSpecVolEdgeTopKP1 * GradZTildeTopKP1;
+         if (K == KMin)
+            PresSpecVolGradZK = 0._Real;
+         if (K == KMax)
+            PresSpecVolGradZKP1 = 0._Real;
+
+         const Real ZGradTerm = -InvDcEdge * InvLayerThickEdge *
+                                (PresSpecVolGradZK - PresSpecVolGradZKP1);
+         Tend(IEdge, K) += EdgeMask(IEdge, K) * ZGradTerm;
+      }
+   }
+
+ private:
+   Array2DI4 CellsOnEdge;
+   Array1DReal DcEdge;
+   Array2DReal EdgeMask;
+   Array1DI4 MinLayerCell;
+   Array1DI4 MaxLayerCell;
+   Array1DI4 MinLayerEdgeBot;
+   Array1DI4 MaxLayerEdgeTop;
+};
+
+/// Pressure gradient force
+class PresGradForceOnEdge {
+ public:
+   bool Enabled = false;
+
+   PresGradForceOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
+
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+                                   const Array2DReal &SpecVol,
+                                   const Array2DReal &LayerThickEdge,
+                                   const Array2DReal &LayerThickCell,
+                                   const Array2DReal &PressureMid) const {
+
+      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
+      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+      const I4 ICell0 = CellsOnEdge(IEdge, 0);
+      const I4 ICell1 = CellsOnEdge(IEdge, 1);
+      const Real InvDcEdge = 1._Real / DcEdge(IEdge);
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K                       = KStart + KVec;
+         const Real LayerSpecVolPresCell0 = LayerThickCell(ICell0, K) *
+                                            SpecVol(ICell0, K) *
+                                            PressureMid(ICell0, K);
+         const Real LayerSpecVolPresCell1 = LayerThickCell(ICell1, K) *
+                                            SpecVol(ICell1, K) *
+                                            PressureMid(ICell1, K);
+         const Real PGFTerm = -InvDcEdge *
+                              (LayerSpecVolPresCell1 - LayerSpecVolPresCell0) /
+                              LayerThickEdge(IEdge, K);
+         Tend(IEdge, K) += EdgeMask(IEdge, K) * PGFTerm;
+      }
+   }
+
+ private:
+   Array2DI4 CellsOnEdge;
+   Array1DReal DcEdge;
+   Array2DReal EdgeMask;
+   Array1DI4 MinLayerEdgeBot;
+   Array1DI4 MaxLayerEdgeTop;
+};
+
+/// Gradient of geopotential
+class GeoptGradOnEdge {
+ public:
+   bool Enabled = false;
+
+   GeoptGradOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
+
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+                                   const Array2DReal &GeoptMid) const {
+
+      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
+      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+      const I4 ICell0 = CellsOnEdge(IEdge, 0);
+      const I4 ICell1 = CellsOnEdge(IEdge, 1);
+      const Real InvDcEdge = 1._Real / DcEdge(IEdge);
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K = KStart + KVec;
+         const Real GeoptGradTerm =
+             -InvDcEdge * (GeoptMid(ICell1, K) - GeoptMid(ICell0, K));
+         Tend(IEdge, K) += EdgeMask(IEdge, K) * GeoptGradTerm;
+      }
+   }
+
+ private:
+   Array2DI4 CellsOnEdge;
+   Array1DReal DcEdge;
+   Array2DReal EdgeMask;
+   Array1DI4 MinLayerEdgeBot;
+   Array1DI4 MaxLayerEdgeTop;
+};
+
 } // namespace OMEGA
 #endif

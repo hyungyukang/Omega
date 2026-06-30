@@ -89,13 +89,6 @@ class KPPComputeNonLocalFlux {
             // Evaluate G(σ) profile
             Real g_sigma = KPPProfileG(sigma);
 
-            // Optional: Apply stability correction based on Ri_g
-            if (k < KMax) {
-               Real ri_g = Kokkos::fmax(0.0, GradientRichardsonNum(k));
-               Real stability_correction = KPPProfileS2(sigma, ri_g);
-               g_sigma *= stability_correction;
-            }
-
             NonLocalFluxProfile(k) = g_sigma;
 
          } else {

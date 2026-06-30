@@ -223,6 +223,7 @@ void VertMix::computeVertMix(const Array2DReal &NormalVelocity,
    OMEGA_SCOPE(LocBackVisc, BackVisc);
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
+   OMEGA_SCOPE(NVertLayers, VCoord->NVertLayers);
 
    /// First, initialize VertDiff and VertVisc to background values
    parallelForOuter(

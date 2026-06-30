@@ -841,6 +841,7 @@ void testTotalVertMix() {
 
    OMEGA_SCOPE(VertDiffP, TestVertMix->VertDiff);
    OMEGA_SCOPE(VertViscP, TestVertMix->VertVisc);
+   OMEGA_SCOPE(GradRichNumSmoothed, TestVertMix->GradRichNumSmoothed);
 
    /// Check all VertDiff array values against expected value
    int NumMismatches = 0;

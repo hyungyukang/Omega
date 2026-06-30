@@ -137,6 +137,26 @@ Omega:
       Contents:
         - State
         - Base
+    Forcing:
+      UsePointerFile: false
+      Filename: forcing.nc
+      Mode: read
+      Precision: double
+      Freq: 1
+      FreqUnits: OnStartup
+      UseStartEnd: false
+      Contents:
+        - WindStressZonal
+        - WindStressMeridional
+        - LatentHeatFlux
+        - SensibleHeatFlux
+        - ShortWaveHeatFlux
+        - EvaporationFlux
+        - RainFlux
+        - RiverRunoffFlux
+        - IceRunoffFlux
+        - SubglacialRunoffFlux
+        - IcebergFreshWaterFlux
     # Restarts are used to initialize for all job submissions after the very
     # first startup job. We use UseStartEnd with a start time just after the
     # simulation start time so that omega does not attempt to use a restart

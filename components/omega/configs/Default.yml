@@ -22,21 +22,17 @@ Omega:
     IODefaultFormat: pnetcdf
   State:
     NTimeLevels: 2
-    PrescribeThicknessType: None
-    PrescribeVelocityType: None
   Advection:
-    Coef3rdOrder: 0.25
     FluxThicknessType: Center
     HorzTracerFluxOrder: 2
     VerticalTracerFluxLimiterEnable: true
     VerticalTracerFluxOrder: 3
   SfcStress:
+    FluxTracerType: Center
     InterpType: Isotropic
-  SurfaceRestoring:
-    TracersToRestore: [Temperature, Salinity]
-    PistonVelocity: 1.585e-5
-  PressureGrad:
-    PressureGradType: Centered
+  VertCoord:
+    Density0: 1026.0
+    MovementWeightType: Uniform
   Tendencies:
     ThicknessFluxTendencyEnable: true
     PVTendencyEnable: true
@@ -57,6 +53,8 @@ Omega:
     EddyDiff2: 10.0
     TracerHyperDiffTendencyEnable: true
     EddyDiff4: 0.0
+    TracerVertMixTendencyEnable: true
+    TracerNonLocalFluxTendencyEnable: true
     UseCustomTendency: false
     ManufacturedSolutionTendency: false
     ThicknessVertAdvTendencyEnable: true
@@ -92,6 +90,18 @@ Omega:
       RiCrit: 0.7
       Exponent: 3.0
       RiSmoothLoops: 2
+    KPP:
+      Enable: true
+      UseNonLocalFlux: true
+      CriticalBulkRichardsonNumber: 0.25
+      MatchTechnique: SimpleShapes
+      InterpType2: LMD94
+      UseEnhancedDiffusion: true
+      BoundaryLayerDepthScheme: SimpleShapes
+      IceFractionThresholdForLangmuir: 0.05
+      IceFractionThresholdForMinimumOBL: 0.15
+      MinimumOBLUnderSeaIce: 5.0
+      DebugDiagnostics: false
   IOStreams:
     HorzMeshIn:
       UsePointerFile: false
@@ -168,6 +178,12 @@ Omega:
         - Tracers
         - State
         - SshCell
+        # Use explicit vertical-mixing outputs so KPP diagnostics are included
+        # and gradient-Richardson diagnostics are omitted.
+        - VertDiff
+        - VertVisc
+        - BulkRichardsonNumber
+        - VertNonLocalFlux
     Highfreq:
       UsePointerFile: false
       Filename: ocn.hifreq.$Y-$M

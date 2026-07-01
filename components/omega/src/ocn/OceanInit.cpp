@@ -398,13 +398,9 @@ int initUpdateHaloAndHostArrays() {
       ABORT_ERROR("Error updating tracer halo");
    }
 
-
    DefStepper->initializeStateFromInput(DefState, ReadRestart);
    DefState->exchangeHalo(CurTimeLevel);
    DefState->copyToHost(CurTimeLevel);
-
-   AuxiliaryState *DefAuxState = AuxiliaryState::getDefault();
-   DefAuxState->exchangeHalo();
 
    Tracers::copyToHost(CurTimeLevel);
 

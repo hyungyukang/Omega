@@ -214,9 +214,6 @@ int ocnInit(MPI_Comm Comm ///< [in] ocean MPI communicator
    DefState->exchangeHalo(CurTimeLevel);
    DefState->copyToHost(CurTimeLevel);
 
-   AuxiliaryState *DefAuxState = AuxiliaryState::getDefault();
-   DefAuxState->exchangeHalo();
-
    Tracers::copyToHost(CurTimeLevel);
 
    return Err;

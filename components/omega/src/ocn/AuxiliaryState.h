@@ -76,8 +76,8 @@ class AuxiliaryState {
 
    // Compute auxiliary variables for vertical dynamics
    void computeMomVertAux(const OceanState *State,
-                          const Array3DReal &TracerArray,
-                          int ThickTimeLevel) const;
+                          const Array3DReal &TracerArray, int ThickTimeLevel
+                          ) const;
 
    // Compute all auxiliary variables needed for momentum equation
    void computeMomAux(const OceanState *State, const Array3DReal &TracerArray,

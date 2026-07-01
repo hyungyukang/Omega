@@ -62,7 +62,8 @@ AuxiliaryState::~AuxiliaryState() {
 // Compute auxiliary variables for vertical dynamics
 void AuxiliaryState::computeMomVertAux(const OceanState *State,
                                        const Array3DReal &TracerArray,
-                                       int ThickTimeLevel) const {
+                                       int ThickTimeLevel)
+                                       const {
 
    Pacer::start("AuxState:computeMomVertAux", 2);
 

@@ -339,7 +339,7 @@ void SplitExplicitRK2Stepper::computeBarotropicForcing(
                    : 0._Real;
 
            Kokkos::single(PerTeam(Team), INNER_LAMBDA() {
-               BtrForcing(IEdge) = Forcing;
+                  BtrForcing(IEdge) = Forcing;
                });
 
            parallelForInner(

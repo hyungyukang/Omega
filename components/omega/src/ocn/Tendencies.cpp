@@ -768,8 +768,11 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
    OMEGA_SCOPE(LocSSHGrad, SSHGrad);
    OMEGA_SCOPE(LocVelocityDiffusion, VelocityDiffusion);
    OMEGA_SCOPE(LocVelocityHyperDiff, VelocityHyperDiff);
+   OMEGA_SCOPE(LocSfcStressForcing, SfcStressForcing);
+   OMEGA_SCOPE(LocBottomDrag, BottomDrag);
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+   OMEGA_SCOPE(LocSshCell, VCoord->SshCell);
 
    Pacer::start("Tend:computeBaroclinicVelocityTendenciesOnly", 1);
 
@@ -869,6 +872,28 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
                                  FluxPseudoThickEdge);
    Pacer::stop("Tend:computeBaroclinicVelocityVAdvTend", 2);
 
+   // Compute surface stress forcing
+   const auto *ForcingState = Forcing::getDefault();
+   const auto &NormalStressEdge =
+       ForcingState->SfcStressForcing.NormalStressEdge;
+   const auto &MeanPseudoThickEdge =
+       AuxState->PseudoThicknessAux.MeanPseudoThickEdge;
+   if (LocSfcStressForcing.Enabled) {
+      Pacer::start("Tend:sfcStressForcing", 2);
+      parallelForOuter(
+          {Mesh->NEdgesAll}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+             const int KMin   = MinLayerEdgeBot(IEdge);
+             const int KMax   = MaxLayerEdgeTop(IEdge);
+             const int KRange = vertRangeChunked(KMin, KMax);
+             parallelForInner(
+                 Team, KRange, INNER_LAMBDA(int KChunk) {
+                    LocSfcStressForcing(LocNormalVelocityTend, IEdge, KChunk,
+                                        NormalStressEdge, MeanPseudoThickEdge);
+                 });
+          });
+      Pacer::stop("Tend:sfcStressForcing", 2);
+   }
+
    // Compute pressure gradient
    if (PGrad->Enabled) {
 
@@ -904,6 +929,24 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
           });
       Pacer::stop("Tend:BclBtrPressureGrad", 2);
    }
+
+   // Compute bottom drag
+   if (LocBottomDrag.Enabled) {
+      Pacer::start("Tend:bottomDrag", 2);
+      parallelFor(
+          {Mesh->NEdgesAll}, KOKKOS_LAMBDA(int IEdge) {
+             LocBottomDrag(LocNormalVelocityTend, IEdge, NormVelEdge, KECell,
+                           MeanPseudoThickEdge);
+          });
+      Pacer::stop("Tend:bottomDrag", 2);
+   }
+
+//   if (CustomVelocityTend) {
+//      Pacer::start("Tend:customVelocityTend", 2);
+//      CustomVelocityTend(LocNormalVelocityTend, State, AuxState, ThickTimeLevel,
+//                         VelTimeLevel, Time);
+//      Pacer::stop("Tend:customVelocityTend", 2);
+//   }
 
    Pacer::stop("Tend:computeBaroclinicVelocityTendenciesOnly", 1);
 

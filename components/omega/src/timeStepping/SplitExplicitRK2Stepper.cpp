@@ -48,7 +48,9 @@ void SplitExplicitRK2Stepper::initializeStateFromInput(OceanState *State,
    constexpr I4 CurLevel  = 0;
    constexpr I4 NextLevel = 1;
    Array3DReal CurTracerArray = Tracers::getAll(CurLevel);
+
    AuxState->computeMomVertAux(State, CurTracerArray, CurLevel);
+
    SplitExplicitInit::initializeBarotropicPressure(SEScratch, State, Mesh,
                                                    VCoord, CurLevel);
 
@@ -407,15 +409,8 @@ void SplitExplicitRK2Stepper::initializeNextState(
 }
 
 //------------------------------------------------------------------------------
-void SplitExplicitRK2Stepper::reconstructNormalVelocity(OceanState *State,
-                                                        I4 TimeLevel) const {
-
-   SplitExplicitInit::combineVelocitySplit(State, Mesh, VCoord, TimeLevel);
-}
-
-//------------------------------------------------------------------------------
-void SplitExplicitRK2Stepper::reconstructFinalNormalVelocity(
-    OceanState *State, I4 CurLevel, I4 NextLevel) const {
+void SplitExplicitRK2Stepper::reconstructNormalVelocity(
+    OceanState *State, I4 CurLevel, I4 NextLevel, bool FinalIteration) const {
 
    Array2DReal NormalVelNext = State->getNormalVelocity(NextLevel);
    Array2DReal NormalBclVelCur =
@@ -428,28 +423,49 @@ void SplitExplicitRK2Stepper::reconstructFinalNormalVelocity(
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
 
-   parallelForOuter(
-       "reconstructFinalNormalVelocity", {Mesh->NEdgesAll},
-       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
-          const int KMin = MinLayerEdgeBot(IEdge);
-          const int KMax = MaxLayerEdgeTop(IEdge);
+   if ( FinalIteration ) {
 
-          // Reconstruct NormalBclVel at n+1
-          parallelForInner(
-              Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
-                 NormalBclVelNext(IEdge, K) =
-                     2._Real * NormalBclVelNext(IEdge, K) -
-                     NormalBclVelCur(IEdge, K);
-              });
+      parallelForOuter(
+          "reconstructFinalNormalVelocity", {Mesh->NEdgesAll},
+          KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+             const int KMin = MinLayerEdgeBot(IEdge);
+             const int KMax = MaxLayerEdgeTop(IEdge);
 
-          // Reconstruct NormalVel at n+1
-          parallelForInner(
-              Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
-                 NormalVelNext(IEdge, K) =
-                     NormalBtrVelNext(IEdge) +
-                     NormalBclVelNext(IEdge, K);
-              });
-       });
+             // Reconstruct NormalBclVel at n+1
+             parallelForInner(
+                 Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+                    NormalBclVelNext(IEdge, K) =
+                        2._Real * NormalBclVelNext(IEdge, K) -
+                        NormalBclVelCur(IEdge, K);
+                 });
+
+             // Reconstruct NormalVel at n+1
+             parallelForInner(
+                 Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+                    NormalVelNext(IEdge, K) =
+                        NormalBtrVelNext(IEdge) +
+                        NormalBclVelNext(IEdge, K);
+                 });
+          });
+
+   } else {
+
+      parallelForOuter(
+          "reconstructFinalNormalVelocity", {Mesh->NEdgesAll},
+          KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+             const int KMin = MinLayerEdgeBot(IEdge);
+             const int KMax = MaxLayerEdgeTop(IEdge);
+
+             // Reconstruct NormalVel at n+1
+             parallelForInner(
+                 Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+                    NormalVelNext(IEdge, K) =
+                        NormalBtrVelNext(IEdge) +
+                        NormalBclVelNext(IEdge, K);
+                 });
+          });
+
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -460,11 +476,10 @@ void SplitExplicitRK2Stepper::finalizeTimeStepIterationState(
 
     Pacer::start("SE-RK2:finalizeTimeStepIterationState", 2);
 
-    if (FinalIteration) {
-       // Reconstruct the final normal velocity at n+1 for output and
-       // diagnostics.
-       reconstructFinalNormalVelocity(State, CurLevel, NextLevel);
-    }
+    // Reconstruct the final normal velocity at n+1 for output and
+    // diagnostics.
+    reconstructNormalVelocity(State, CurLevel, NextLevel,
+                              FinalIteration);
 
     if ( LocSplitFactor == 0._Real ) return;
 

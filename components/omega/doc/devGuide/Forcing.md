@@ -62,7 +62,7 @@ the surface layer pseudo-thickness.
    - `SeaIceSaltFlux`
 2. `Forcing` stores the flux fields in `TracerForcingVars`
 3. The tendency term `SfcTracerForcingOnCell` converts the summed external heat fluxes to a conservative-temperature tendency,
-  and applies the external sea-ice salt flux to salinity (g/kg) in the surface layer. [under discussion: in the latest implementation, if the thickness tendencies are turned off, the temperature tendency does not include the enthalpy associated with explicit mass fluxes]
+  and applies the external sea-ice salt flux to salinity (g/kg) in the surface layer.
 
 ### Surface flux forcing key classes/components
 
@@ -74,13 +74,11 @@ the surface layer pseudo-thickness.
   - Computes freshwater flux contribution: $\sum (\text{SnowFlux} + \text{RainFlux} + \text{EvaporationFlux} + \text{SeaIceFreshWaterFlux} + \text{IceRunoffFlux} + \text{RiverRunoffFlux} + \text{SeaIceSaltFlux}) / \rho_{sw}$
   - Applied only at surface layer (top active layer) using `MinLayerCell`
 - `SfcTracerForcingOnCell` tendency term
-  - For temperature: computes
-    $Q_{\text{direct}} = Q_{\text{latent}} + Q_{\text{sensible}} + Q_{\text{lw,up}} + Q_{\text{lw,down}} + Q_{\text{ice}} + Q_{\text{sw}}$
+  - For temperature: adds the direct heat fluxes
+    $Q_{\text{latent}} + Q_{\text{sensible}} + Q_{\text{lw,up}} + Q_{\text{lw,down}} + Q_{\text{ice}} + Q_{\text{sw}}$
+, the phase change and enthalpy of added mass $(\text{RainFlux} + \text{RiverRunoffFlux}) c^0_{p,sw} C_T^{\text{top}} + (\text{SnowFlux} + \text{IceRunoffFlux})(c^0_{p,sw} C_T^{\text{frz}} - L_{\text{ice}})$,
+    (where $C_T^{\text{frz}}$ is from EOS at top-layer salinity and pressure),
     and scales by $H_{\text{FluxFac}}$.
-  - For temperature: when `SfcThicknessForcing` is enabled, also adds
-    mass-flux enthalpy
-    $(\text{RainFlux} + \text{RiverRunoffFlux}) c^0_{p,sw} C_T^{\text{top}} + (\text{SnowFlux} + \text{IceRunoffFlux})(c^0_{p,sw} C_T^{\text{frz}} - L_{\text{ice}})$,
-    where $C_T^{\text{frz}}$ is from EOS at top-layer salinity and pressure.
   - For salinity: applies salt flux with unit conversion: $\text{SeaIceSaltFlux} \times S_{\text{FluxFac}}$
   - Applied only at surface layer using `MinLayerCell`
   - Uses tracer index validation to apply to specific tracers only
@@ -95,8 +93,6 @@ the surface layer pseudo-thickness.
 - `Omega.Tendencies.SfcThicknessForcingTendencyEnable`
   - gates execution of coupled flux thickness kernel
   - controls freshwater and salt flux forcing on sea surface height
-  - also gates whether mass-flux enthalpy terms are added in tracer
-    temperature forcing
 - `Omega.Tendencies.SfcTracerForcingTendencyEnable`
   - gates execution of coupled flux tracer kernel
   - controls direct heat flux forcing on temperature and salt flux forcing on salinity

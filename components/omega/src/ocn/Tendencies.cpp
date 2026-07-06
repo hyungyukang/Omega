@@ -949,17 +949,15 @@ void Tendencies::computeTracerTendenciesOnly(
           ForcingState->TracerForcing.RiverRunoffFluxCell;
       const auto &SeaIceSaltFlux =
           ForcingState->TracerForcing.SeaIceSaltFluxCell;
-      const auto &PressureMid    = VCoord->PressureMid;
-      const bool UseMassFluxHeat = SfcThicknessForcing.Enabled;
+      const auto &PressureMid = VCoord->PressureMid;
 
       parallelFor(
           {Mesh->NCellsAll}, KOKKOS_LAMBDA(int ICell) {
-             LocSfcTracerForcing(LocTracerTend, ICell, TracerArray, PressureMid,
-                                 LatentHeatFlux, SensibleHeatFlux,
-                                 LongWaveHeatFluxUp, LongWaveHeatFluxDown,
-                                 SeaIceHeatFlux, ShortWaveHeatFlux, SnowFlux,
-                                 RainFlux, IceRunoffFlux, RiverRunoffFlux,
-                                 SeaIceSaltFlux, UseMassFluxHeat);
+             LocSfcTracerForcing(
+                 LocTracerTend, ICell, TracerArray, PressureMid, LatentHeatFlux,
+                 SensibleHeatFlux, LongWaveHeatFluxUp, LongWaveHeatFluxDown,
+                 SeaIceHeatFlux, ShortWaveHeatFlux, SnowFlux, RainFlux,
+                 IceRunoffFlux, RiverRunoffFlux, SeaIceSaltFlux);
           });
       Pacer::stop("Tend:sfcTracerForcing", 2);
    }

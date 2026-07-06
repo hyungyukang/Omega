@@ -60,10 +60,6 @@ Omega:
 - `Tendencies.SfcThicknessForcingTendencyEnable`: enables coupled freshwater and salt flux forcing on thickness
 - `Tendencies.SfcTracerForcingTendencyEnable`: enables coupled heat and salt flux forcing on tracers
 
-When `Tendencies.SfcTracerForcingTendencyEnable` is enabled, direct surface heat
-flux terms are always applied to temperature. Additional mass-flux enthalpy
-terms (rain/river and snow/ice runoff) are applied only when
-`Tendencies.SfcThicknessForcingTendencyEnable` is also enabled.
 
 ### Required input fields
 
@@ -98,19 +94,10 @@ by the equivalent `ocn_comp_mct.F`.
 - Coupled fluxes are applied only at the surface layer (top active layer) for each cell.
 - Pseudo-thickness tendency is computed from the (six) freshwater mass fluxes and the salt mass flux
   `SeaIceSaltFlux`, converted to a pseudo-thickness change.
-- Temperature tendency is computed from direct heat flux plus optional
+- Temperature tendency is computed from direct heat flux plus
   mass-flux enthalpy terms, converted to conservative-temperature tendency via
   $H_{\text{FluxFac}} = 1.0 / (\rho_{sw} c^0_{p,sw})$ where $c^0_{p,sw}$ is the reference
-  specific heat of seawater defined by TEOS-10.
-  The direct heat part is
-  $Q_{\text{direct}} = Q_{\text{latent}} + Q_{\text{sensible}} + Q_{\text{lw,up}} + Q_{\text{lw,down}} + Q_{\text{ice}} + Q_{\text{sw}}$.
-  The mass-flux enthalpy part is
-  $Q_{\text{mass}} = (\text{RainFlux} + \text{RiverRunoffFlux}) c^0_{p,sw} C_T^{\text{top}} + (\text{SnowFlux} + \text{IceRunoffFlux})(c^0_{p,sw} C_T^{\text{frz}} - L_{\text{ice}})$,
-  where $C_T^{\text{frz}}$ is computed from EOS at top-layer salinity and pressure.
-  The applied heat flux is
-  $Q_{\text{direct}} + Q_{\text{mass}}$ when
-  `Tendencies.SfcThicknessForcingTendencyEnable` is true, and
-  $Q_{\text{direct}}$ otherwise.
+  specific heat of seawater defined by TEOS-10. The enthalpy associated with mass fluxes is currently hard-coded to SST for liquid fluxes and the freezing temperature for solid fluxes (which are melted using a constant latent heat of fusion). Note that the enthalpy of liquid meltwater from sea ice is already included in `SeaIceHeatFlux`.
 - Salinity tendency from `SeaIceSaltFlux` is scaled by
   $S_{\text{FluxFac}} = 1.0e3 / \rho_{sw}$ to account for unit conversion from
   kg/(m²·s) to salinity units (g/kg).

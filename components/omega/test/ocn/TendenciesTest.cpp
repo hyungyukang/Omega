@@ -494,71 +494,11 @@ int testSfcTracerForcing() {
    // Now enable SfcTracerForcing and compute again
    DefTendencies->SfcTracerForcing.Enabled = true;
 
-   // First pass: thickness forcing disabled, so only direct heat flux should
-   // contribute to temperature tendency.
-   DefTendencies->SfcThicknessForcing.Enabled = false;
    DefTendencies->computeAllTendencies(State, AuxState, TracerArray,
                                        ThickTimeLevel, VelTimeLevel,
                                        TracerTimeLevel, Time, Interval);
 
-   HostArray3DReal TracerTendNoMassH =
-       createHostMirrorCopy(DefTendencies->TracerTend);
-   deepCopy(TracerTendNoMassH, DefTendencies->TracerTend);
-   const Real ComputedTempTendNoMass =
-       TracerTendNoMassH(TempIndex, ICellTest, KTop) - BaselineTempTend;
-   const Real ComputedSaltTendNoMass =
-       TracerTendNoMassH(SaltIndex, ICellTest, KTop) - BaselineSaltTend;
-
-   // With thickness forcing disabled, only direct heat flux terms are applied.
-   const Real ExpectedTempTendNoMass = TestSensibleHeat * HFluxFac;
-
-   // SaltTend = SeaIceSaltFlux * SFluxFac
-   const Real ExpectedSaltTend = TestSeaIceSaltFlux * SFluxFac;
-
-   constexpr Real RelTol = 1.0e-10_Real;
-   constexpr Real AbsTol = 1.0e-12_Real; // flux precision is ~e-15
-
-   if (!isApprox(ComputedTempTendNoMass, ExpectedTempTendNoMass, RelTol,
-                 AbsTol)) {
-      Err++;
-      LOG_ERROR("TendenciesTest: SfcTracerForcing temp tendency FAIL with "
-                "SfcThicknessForcing disabled");
-      LOG_ERROR("  Expected (direct only): {},  Computed: {}, Diff: {}",
-                ExpectedTempTendNoMass, ComputedTempTendNoMass,
-                Kokkos::abs(ComputedTempTendNoMass - ExpectedTempTendNoMass));
-   } else {
-      LOG_INFO("TendenciesTest: SfcTracerForcing temp tendency PASS with "
-               "SfcThicknessForcing disabled");
-   }
-
-   if (!isApprox(ComputedSaltTendNoMass, ExpectedSaltTend, RelTol, AbsTol)) {
-      Err++;
-      LOG_ERROR("TendenciesTest: SfcTracerForcing salt tendency FAIL with "
-                "SfcThicknessForcing disabled");
-      LOG_ERROR("  Expected: {},  Computed: {}, Diff: {}", ExpectedSaltTend,
-                ComputedSaltTendNoMass,
-                Kokkos::abs(ComputedSaltTendNoMass - ExpectedSaltTend));
-   } else {
-      LOG_INFO("TendenciesTest: SfcTracerForcing salt tendency PASS with "
-               "SfcThicknessForcing disabled");
-   }
-
-   // Second pass: thickness forcing enabled, so mass-flux enthalpy terms are
-   // also included in temperature tendency.
-   DefTendencies->SfcThicknessForcing.Enabled = true;
-   DefTendencies->computeAllTendencies(State, AuxState, TracerArray,
-                                       ThickTimeLevel, VelTimeLevel,
-                                       TracerTimeLevel, Time, Interval);
-
-   HostArray3DReal TracerTendMassH =
-       createHostMirrorCopy(DefTendencies->TracerTend);
-   deepCopy(TracerTendMassH, DefTendencies->TracerTend);
-   const Real ComputedTempTendMass =
-       TracerTendMassH(TempIndex, ICellTest, KTop) - BaselineTempTend;
-   const Real ComputedSaltTendMass =
-       TracerTendMassH(SaltIndex, ICellTest, KTop) - BaselineSaltTend;
-
-   // Build two reference expectations for the mass-on case:
+   // Build two reference expectations for temperature tendency:
    // 1) fixed estimate (expected to fail under strict tolerance),
    // 2) TEOS-10 freezing CT (expected to pass under strict tolerance).
    const Real CtFrzEstimate = -2.0_Real;
@@ -576,31 +516,28 @@ int testSfcTracerForcing() {
         TestSnow * (Cp0Sw * CtFrzTeos - LatIce)) *
        HFluxFac;
 
-   // Expected-fail check: no-mass expectation should fail when mass-flux
-   // terms are enabled.
-   if (!isApprox(ComputedTempTendMass, ExpectedTempTendNoMass, RelTol,
-                 AbsTol)) {
-      LOG_INFO(
-          "TendenciesTest: expected tempTend fail because mass-flux heat is "
-          "enabled but compared against direct-only reference - PASS");
-      LOG_INFO("tempTend Expected: {},  Computed: {}, Diff: {}",
-               ExpectedTempTendNoMass, ComputedTempTendMass,
-               Kokkos::abs(ComputedTempTendMass - ExpectedTempTendNoMass));
-   } else {
-      Err++;
-      LOG_ERROR("TendenciesTest: mass-flux-enabled run unexpectedly matched "
-                "direct-only reference - FAIL");
-   }
+   // SaltTend = SeaIceSaltFlux * SFluxFac
+   const Real ExpectedSaltTend = TestSeaIceSaltFlux * SFluxFac;
+
+   HostArray3DReal TracerTendH =
+       createHostMirrorCopy(DefTendencies->TracerTend);
+   deepCopy(TracerTendH, DefTendencies->TracerTend);
+   const Real ComputedTempTend =
+       TracerTendH(TempIndex, ICellTest, KTop) - BaselineTempTend;
+   const Real ComputedSaltTend =
+       TracerTendH(SaltIndex, ICellTest, KTop) - BaselineSaltTend;
+
+   constexpr Real RelTol = 1.0e-10_Real;
+   constexpr Real AbsTol = 1.0e-12_Real; // flux precision is ~e-15
 
    // Expected-fail check with fixed CtFrz estimate.
-   if (!isApprox(ComputedTempTendMass, ExpectedTempTendEstimate, RelTol,
-                 AbsTol)) {
+   if (!isApprox(ComputedTempTend, ExpectedTempTendEstimate, RelTol, AbsTol)) {
       LOG_INFO(
           "TendenciesTest: expected tempTend fail because CtFrzEstimate != EOS "
           "CtFrz - PASS");
       LOG_INFO("tempTend Expected: {},  Computed: {}, Diff: {}",
-               ExpectedTempTendEstimate, ComputedTempTendMass,
-               Kokkos::abs(ComputedTempTendMass - ExpectedTempTendEstimate));
+               ExpectedTempTendEstimate, ComputedTempTend,
+               Kokkos::abs(ComputedTempTend - ExpectedTempTendEstimate));
    } else {
       Err++;
       LOG_ERROR("TendenciesTest: CtFrz estimate unexpectedly matched strict "
@@ -608,41 +545,25 @@ int testSfcTracerForcing() {
    }
 
    // Expected-pass check with TEOS freezing CT reference.
-   if (!isApprox(ComputedTempTendMass, ExpectedTempTendTeos, RelTol, AbsTol)) {
+   if (!isApprox(ComputedTempTend, ExpectedTempTendTeos, RelTol, AbsTol)) {
       Err++;
       LOG_ERROR("TendenciesTest: SfcTracerForcing temp tendency FAIL");
       LOG_ERROR("  with TEOS-CtFrz Expected: {},  Computed: {}, Diff: {}",
-                ExpectedTempTendTeos, ComputedTempTendMass,
-                Kokkos::abs(ComputedTempTendMass - ExpectedTempTendTeos));
+                ExpectedTempTendTeos, ComputedTempTend,
+                Kokkos::abs(ComputedTempTend - ExpectedTempTendTeos));
    } else {
-      LOG_INFO("TendenciesTest: SfcTracerForcing temp tendency PASSwith "
-               "SfcThicknessForcing enabled");
+      LOG_INFO("TendenciesTest: SfcTracerForcing temp tendency PASS");
    }
 
-   // Check salinity tendency for mass-on pass
-   if (!isApprox(ComputedSaltTendMass, ExpectedSaltTend, RelTol, AbsTol)) {
+   // Check salinity tendency
+   if (!isApprox(ComputedSaltTend, ExpectedSaltTend, RelTol, AbsTol)) {
       Err++;
-      LOG_ERROR("TendenciesTest: SfcTracerForcing salt tendency FAIL with "
-                "SfcThicknessForcing enabled");
+      LOG_ERROR("TendenciesTest: SfcTracerForcing salt tendency FAIL");
       LOG_ERROR("  Expected: {},  Computed: {}, Diff: {}", ExpectedSaltTend,
-                ComputedSaltTendMass,
-                Kokkos::abs(ComputedSaltTendMass - ExpectedSaltTend));
+                ComputedSaltTend,
+                Kokkos::abs(ComputedSaltTend - ExpectedSaltTend));
    } else {
-      LOG_INFO("TendenciesTest: SfcTracerForcing salt tendency PASS with "
-               "SfcThicknessForcing enabled");
-   }
-
-   if (!isApprox(ComputedSaltTendNoMass, ComputedSaltTendMass, RelTol,
-                 AbsTol)) {
-      Err++;
-      LOG_ERROR("TendenciesTest: SfcTracerForcing salt tendency changed with "
-                "SfcThicknessForcing toggle - FAIL");
-      LOG_ERROR("  Off: {},  On: {}, Diff: {}", ComputedSaltTendNoMass,
-                ComputedSaltTendMass,
-                Kokkos::abs(ComputedSaltTendNoMass - ComputedSaltTendMass));
-   } else {
-      LOG_INFO("TendenciesTest: SfcTracerForcing salt tendency invariant under "
-               "SfcThicknessForcing toggle PASS");
+      LOG_INFO("TendenciesTest: SfcTracerForcing salt tendency PASS");
    }
 
    DefTendencies->SfcStressForcing.Enabled       = OrigSfcStressEnabled;

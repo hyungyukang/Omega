@@ -416,16 +416,17 @@ class SfcTracerForcingOnCell {
                           I4 TempTracerIndex, I4 SaltTracerIndex,
                           const Eos *EosInst);
 
-   KOKKOS_FUNCTION void operator()(
-       const Array3DReal &Tend, I4 ICell, const Array3DReal &TracerCell,
-       const Array2DReal &PressureMid, const Array1DReal &LatentHeatFlux,
-       const Array1DReal &SensibleHeatFlux,
-       const Array1DReal &LongWaveHeatFluxUp,
-       const Array1DReal &LongWaveHeatFluxDown,
-       const Array1DReal &SeaIceHeatFlux, const Array1DReal &ShortWaveHeatFlux,
-       const Array1DReal &SnowFlux, const Array1DReal &RainFlux,
-       const Array1DReal &IceRunoffFlux, const Array1DReal &RiverRunoffFlux,
-       const Array1DReal &SeaIceSaltFlux, const bool UseMassFluxHeat) const {
+   KOKKOS_FUNCTION void
+   operator()(const Array3DReal &Tend, I4 ICell, const Array3DReal &TracerCell,
+              const Array2DReal &PressureMid, const Array1DReal &LatentHeatFlux,
+              const Array1DReal &SensibleHeatFlux,
+              const Array1DReal &LongWaveHeatFluxUp,
+              const Array1DReal &LongWaveHeatFluxDown,
+              const Array1DReal &SeaIceHeatFlux,
+              const Array1DReal &ShortWaveHeatFlux, const Array1DReal &SnowFlux,
+              const Array1DReal &RainFlux, const Array1DReal &IceRunoffFlux,
+              const Array1DReal &RiverRunoffFlux,
+              const Array1DReal &SeaIceSaltFlux) const {
 
       const I4 KTop = MinLayerCell(ICell);
       if (KTop > MaxLayerCell(ICell)) {
@@ -440,29 +441,20 @@ class SfcTracerForcingOnCell {
          const Real CtFrz = EosImpl.calcCtFreezing(SaTop, PTop, 0.0_Real);
          const Real CtTop = TracerCell(TempIndex, ICell, KTop);
 
-         // Always include direct surface heat fluxes.
-         const Real DirectHeatFlux =
-             LatentHeatFlux(ICell) + SensibleHeatFlux(ICell) +
-             LongWaveHeatFluxUp(ICell) + LongWaveHeatFluxDown(ICell) +
-             SeaIceHeatFlux(ICell) + ShortWaveHeatFlux(ICell);
-
-         // Apply enthalpy of mass fluxes only when thickness forcing is
-         // enabled.
-         const Real MassFluxHeat =
-             (RainFlux(ICell) + RiverRunoffFlux(ICell)) * Cp0Sw * CtTop +
-             (SnowFlux(ICell) + IceRunoffFlux(ICell)) *
-                 (Cp0Sw * CtFrz - LatIce);
-         // Note: the enthalpy of liquid water above is assumed to be:
+         // Heat tendencies are due to direct heat fluxes + enthalpy fluxes
+         // The enthalpy of liquid water is assumed to be:
          // - local SST for liquid mass fluxes (rain, rivers)
          // - local freezing point for solid --> liq mass fluxes (snow, frozen
          // runoff)
          // - solid mass fluxes are locally melted by the ocean (constant Lat
          // heat of fusion)
-         // - meltwater enthalpy from sea ice is already included in
-         // SeaIceHeatFlux
-
          const Real HeatFlux =
-             DirectHeatFlux + (UseMassFluxHeat ? MassFluxHeat : 0.0_Real);
+             LatentHeatFlux(ICell) + SensibleHeatFlux(ICell) +
+             LongWaveHeatFluxUp(ICell) + LongWaveHeatFluxDown(ICell) +
+             SeaIceHeatFlux(ICell) + ShortWaveHeatFlux(ICell) +
+             (RainFlux(ICell) + RiverRunoffFlux(ICell)) * Cp0Sw * CtTop +
+             (SnowFlux(ICell) + IceRunoffFlux(ICell)) *
+                 (Cp0Sw * CtFrz - LatIce);
 
          Tend(TempIndex, ICell, KTop) += HeatFlux * HFluxFac;
       }

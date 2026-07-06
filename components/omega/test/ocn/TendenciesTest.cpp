@@ -309,10 +309,12 @@ int testTendencies() {
    DefTendencies->SfcStressForcing.Enabled = OrigSfcStressEnabled;
 
    // Test surface tracer forcing with enthalpy terms
-   Err += testSfcTracerForcing();
+   const int TracerForcingErr = testSfcTracerForcing();
+   Err += TracerForcingErr;
 
    // Test surface thickness forcing with freshwater terms
-   Err += testSfcThicknessForcing();
+   const int ThicknessForcingErr = testSfcThicknessForcing();
+   Err += ThicknessForcingErr;
 
    // check that everything got computed correctly
    int NCellsOwned = Mesh->NCellsOwned;
@@ -344,7 +346,6 @@ int testTendencies() {
    }
 
    Tendencies::clear();
-
    return Err;
 }
 
@@ -491,6 +492,7 @@ int testSfcTracerForcing() {
    deepCopy(TracerTendBaseH, DefTendencies->TracerTend);
    const Real BaselineTempTend = TracerTendBaseH(TempIndex, ICellTest, KTop);
    const Real BaselineSaltTend = TracerTendBaseH(SaltIndex, ICellTest, KTop);
+
    // Now enable SfcTracerForcing and compute again
    DefTendencies->SfcTracerForcing.Enabled = true;
 
@@ -498,19 +500,13 @@ int testSfcTracerForcing() {
                                        ThickTimeLevel, VelTimeLevel,
                                        TracerTimeLevel, Time, Interval);
 
-   // Build two reference expectations for temperature tendency:
-   // 1) fixed estimate (expected to fail under strict tolerance),
-   // 2) TEOS-10 freezing CT (expected to pass under strict tolerance).
-   const Real CtFrzEstimate = -2.0_Real;
-   const Real ExpectedTempTendEstimate =
-       (TestSensibleHeat + TestRain * Cp0Sw * CtTopValue +
-        TestSnow * (Cp0Sw * CtFrzEstimate - LatIce)) *
-       HFluxFac;
+   // Build a reference expectations for temperature tendency:
+   // using TEOS-10 freezing CT (expected to pass under strict tolerance).
 
    HostArray2DReal PressureMidH = createHostMirrorCopy(VCoord->PressureMid);
    deepCopy(PressureMidH, VCoord->PressureMid);
-   const Real PTop      = PressureMidH(ICellTest, KTop);
-   const Real CtFrzTeos = EosInst->calcCtFreezing(SaTopValue, PTop, 0.0_Real);
+   const Real PTopDb    = PressureMidH(ICellTest, KTop) * Pa2Db;
+   const Real CtFrzTeos = EosInst->calcCtFreezing(SaTopValue, PTopDb, 0.0_Real);
    const Real ExpectedTempTendTeos =
        (TestSensibleHeat + TestRain * Cp0Sw * CtTopValue +
         TestSnow * (Cp0Sw * CtFrzTeos - LatIce)) *
@@ -530,20 +526,6 @@ int testSfcTracerForcing() {
    constexpr Real RelTol = 1.0e-10_Real;
    constexpr Real AbsTol = 1.0e-12_Real; // flux precision is ~e-15
 
-   // Expected-fail check with fixed CtFrz estimate.
-   if (!isApprox(ComputedTempTend, ExpectedTempTendEstimate, RelTol, AbsTol)) {
-      LOG_INFO(
-          "TendenciesTest: expected tempTend fail because CtFrzEstimate != EOS "
-          "CtFrz - PASS");
-      LOG_INFO("tempTend Expected: {},  Computed: {}, Diff: {}",
-               ExpectedTempTendEstimate, ComputedTempTend,
-               Kokkos::abs(ComputedTempTend - ExpectedTempTendEstimate));
-   } else {
-      Err++;
-      LOG_ERROR("TendenciesTest: CtFrz estimate unexpectedly matched strict "
-                "reference - FAIL");
-   }
-
    // Expected-pass check with TEOS freezing CT reference.
    if (!isApprox(ComputedTempTend, ExpectedTempTendTeos, RelTol, AbsTol)) {
       Err++;
@@ -559,9 +541,9 @@ int testSfcTracerForcing() {
    if (!isApprox(ComputedSaltTend, ExpectedSaltTend, RelTol, AbsTol)) {
       Err++;
       LOG_ERROR("TendenciesTest: SfcTracerForcing salt tendency FAIL");
-      LOG_ERROR("  Expected: {},  Computed: {}, Diff: {}", ExpectedSaltTend,
-                ComputedSaltTend,
-                Kokkos::abs(ComputedSaltTend - ExpectedSaltTend));
+      LOG_INFO("  Expected: {},  Computed: {}, Diff: {}", ExpectedSaltTend,
+               ComputedSaltTend,
+               Kokkos::abs(ComputedSaltTend - ExpectedSaltTend));
    } else {
       LOG_INFO("TendenciesTest: SfcTracerForcing salt tendency PASS");
    }
@@ -651,7 +633,6 @@ int testSfcThicknessForcing() {
           LocSeaIceFreshWater(ICellTest) = TestSeaIceFreshWater;
           LocSeaIceSaltFlux(ICellTest)   = TestSeaIceSaltFlux;
        });
-
    DefForcing->computeAll();
 
    const bool OrigSfcStressEnabled = DefTendencies->SfcStressForcing.Enabled;
@@ -721,9 +702,9 @@ int testSfcThicknessForcing() {
    if (!isApprox(ComputedThickTend, ExpectedThickTend, RelTol, AbsTol)) {
       Err++;
       LOG_ERROR("TendenciesTest: SfcThicknessForcing thickness tendency FAIL");
-      LOG_ERROR("  Expected: {},  Computed: {}, Diff: {}", ExpectedThickTend,
-                ComputedThickTend,
-                Kokkos::abs(ComputedThickTend - ExpectedThickTend));
+      LOG_INFO("  Expected: {},  Computed: {}, Diff: {}", ExpectedThickTend,
+               ComputedThickTend,
+               Kokkos::abs(ComputedThickTend - ExpectedThickTend));
    } else {
       LOG_INFO("TendenciesTest: SfcThicknessForcing thickness tendency PASS");
    }

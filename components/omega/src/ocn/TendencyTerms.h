@@ -434,12 +434,12 @@ class SfcTracerForcingOnCell {
       }
 
       if (TempIndex >= 0) {
-         const Real PTop  = PressureMid(ICell, KTop);
-         const Real SaTop = SaltIndex >= 0
-                                ? TracerCell(SaltIndex, ICell, KTop)
-                                : 0.0_Real; // not sure we want zero here?
-         const Real CtFrz = EosImpl.calcCtFreezing(SaTop, PTop, 0.0_Real);
-         const Real CtTop = TracerCell(TempIndex, ICell, KTop);
+         const Real PTopDb = PressureMid(ICell, KTop) * Pa2Db;
+         const Real SaTop  = SaltIndex >= 0
+                                 ? TracerCell(SaltIndex, ICell, KTop)
+                                 : 0.0_Real; // not sure we want zero here?
+         const Real CtFrz  = EosImpl.calcCtFreezing(SaTop, PTopDb, 0.0_Real);
+         const Real CtTop  = TracerCell(TempIndex, ICell, KTop);
 
          // Heat tendencies are due to direct heat fluxes + enthalpy fluxes
          // The enthalpy of liquid water is assumed to be:

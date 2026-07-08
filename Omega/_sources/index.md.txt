@@ -108,13 +108,16 @@ devGuide/Forcing
 
 design/OmegaV0ShallowWater
 design/OmegaV1GoverningEqns
+design/Analysis
 design/Broadcast
 design/Config
+design/Coupling
 design/DataTypes
 design/Decomp
 design/Driver
 design/EOS
 design/Error
+design/FillValues
 design/Halo
 design/HorzMeshClass
 design/Logging

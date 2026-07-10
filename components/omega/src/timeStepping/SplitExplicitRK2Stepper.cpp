@@ -58,7 +58,7 @@ void SplitExplicitRK2Stepper::initializeStateFromInput(OceanState *State,
       SplitExplicitInit::computeVelocitySplit(State, Mesh, VCoord, CurLevel);
    }
 
-   initializeNextState(State, CurLevel, NextLevel);
+   initializeNextState(State, CurLevel, NextLevel, SEConfig.SplitFactor);
 }
 
 //------------------------------------------------------------------------------
@@ -195,40 +195,43 @@ void SplitExplicitRK2Stepper::computeTransportVelocity(OceanState *State,
        KOKKOS_LAMBDA(I4 IEdge, const TeamMember &Team) {
           const I4 KMin = MinLayerEdgeBot(IEdge);
           const I4 KMax = MaxLayerEdgeTop(IEdge);
+          Real VelCorrection = 0._Real;
 
           if (KMax < KMin) {
              return;
           }
 
-          const I4 Cell0 = CellsOnEdge(IEdge, 0);
-          const I4 Cell1 = CellsOnEdge(IEdge, 1);
+          if ( LocSplitFactor != 0._Real )  {
 
-          Real ThicknessSum = 0._Real;
-          parallelReduceInner(
-              Team, Range{KMin, KMax},
-              INNER_LAMBDA(I4 K, Real &Accum) {
-                 Accum += 0.5_Real * (PseudoThickCell(Cell0, K) +
-                                      PseudoThickCell(Cell1, K));
-              },
-              ThicknessSum);
+             const I4 Cell0 = CellsOnEdge(IEdge, 0);
+             const I4 Cell1 = CellsOnEdge(IEdge, 1);
 
-          Real TransportSum = 0._Real;
-          parallelReduceInner(
-              Team, Range{KMin, KMax},
-              INNER_LAMBDA(I4 K, Real &Accum) {
-                 const Real TransportVel =
-                     NormalBtrVel(IEdge) + NormalBclVel(IEdge, K);
-                 const Real EdgeThickness =
-                     0.5_Real * (PseudoThickCell(Cell0, K) +
-                                 PseudoThickCell(Cell1, K));
-                 Accum += EdgeThickness * TransportVel;
-              },
-              TransportSum);
+             Real ThicknessSum = 0._Real;
+             parallelReduceInner(
+                 Team, Range{KMin, KMax},
+                 INNER_LAMBDA(I4 K, Real &Accum) {
+                    Accum += 0.5_Real * (PseudoThickCell(Cell0, K) +
+                                         PseudoThickCell(Cell1, K));
+                 },
+                 ThicknessSum);
 
-          const Real VelCorrection =
-              LocSplitFactor != 0._Real && ThicknessSum > 0._Real
-                  ? (BtrFlux(IEdge) / RhoGravity - TransportSum) / ThicknessSum
-                  : 0._Real;
+             Real TransportSum = 0._Real;
+             parallelReduceInner(
+                 Team, Range{KMin, KMax},
+                 INNER_LAMBDA(I4 K, Real &Accum) {
+                    const Real TransportVel =
+                        NormalBtrVel(IEdge) + NormalBclVel(IEdge, K);
+                    const Real EdgeThickness =
+                        0.5_Real * (PseudoThickCell(Cell0, K) +
+                                    PseudoThickCell(Cell1, K));
+                    Accum += EdgeThickness * TransportVel;
+                 },
+                 TransportSum);
+
+             VelCorrection =
+                     (BtrFlux(IEdge) / RhoGravity - TransportSum) / ThicknessSum;
+
+          } // if SplitFactor
 
           parallelForInner(
               Team, Range{KMin, KMax}, INNER_LAMBDA(I4 K) {
@@ -384,38 +387,54 @@ void SplitExplicitRK2Stepper::updateBaroclinicVelocityByTend(
 
 //------------------------------------------------------------------------------
 void SplitExplicitRK2Stepper::initializeNextState(
-    OceanState *State, I4 CurLevel, I4 NextLevel) const {
+    OceanState *State, I4 CurLevel, I4 NextLevel, I4 SplitFactor) const {
 
-   Array2DReal PseudoThickCur  = State->getPseudoThickness(CurLevel);
-   Array2DReal PseudoThickNext = State->getPseudoThickness(NextLevel);
-   Array2DReal NormalVelCur   = State->getNormalVelocity(CurLevel);
-   Array2DReal NormalVelNext  = State->getNormalVelocity(NextLevel);
+   Array2DReal PseudoThickCur   = State->getPseudoThickness(CurLevel);
+   Array2DReal PseudoThickNext  = State->getPseudoThickness(NextLevel);
+   Array2DReal NormalVelCur     = State->getNormalVelocity(CurLevel);
+   Array2DReal NormalVelNext    = State->getNormalVelocity(NextLevel);
    Array2DReal NormalBclVelCur  = State->getNormalBaroclinicVelocity(CurLevel);
    Array2DReal NormalBclVelNext = State->getNormalBaroclinicVelocity(NextLevel);
    Array1DReal NormalBtrVelCur  = State->getNormalBarotropicVelocity(CurLevel);
    Array1DReal NormalBtrVelNext = State->getNormalBarotropicVelocity(NextLevel);
-   Array1DReal BtrPressAnomalyCur =
-       State->getBarotropicPressureAnomaly(CurLevel);
-   Array1DReal BtrPressAnomalyNext =
-       State->getBarotropicPressureAnomaly(NextLevel);
 
+   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
+   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+
+   // Initialize normal baroclinic velocity
+   parallelForOuter(
+       "reconstructFinalNormalVelocity", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          const int KMin = MinLayerEdgeBot(IEdge);
+          const int KMax = MaxLayerEdgeTop(IEdge);
+
+          // Reconstruct NormalBclVel at n+1
+          parallelForInner(
+              Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+                 NormalBclVelCur(IEdge, K) =
+                               NormalVelCur(IEdge, K) -
+                               NormalBtrVelCur(IEdge);
+              });
+       });
+
+   deepCopy(NormalBclVelNext, NormalBclVelCur);
    deepCopy(PseudoThickNext, PseudoThickCur);
    deepCopy(NormalVelNext, NormalVelCur);
-   deepCopy(NormalBclVelNext, NormalBclVelCur);
-   deepCopy(NormalBtrVelNext, NormalBtrVelCur);
-   deepCopy(BtrPressAnomalyNext, BtrPressAnomalyCur);
+
+   if ( SplitFactor == 0 ) {
+      Array1DReal BtrPressAnomalyCur =
+          State->getBarotropicPressureAnomaly(CurLevel);
+      Array1DReal BtrPressAnomalyNext =
+          State->getBarotropicPressureAnomaly(NextLevel);
+      deepCopy(NormalBtrVelNext, NormalBtrVelCur);
+      deepCopy(BtrPressAnomalyNext, BtrPressAnomalyCur);
+   }
+
 }
 
 //------------------------------------------------------------------------------
-void SplitExplicitRK2Stepper::reconstructNormalVelocity(OceanState *State,
-                                                        I4 TimeLevel) const {
-
-   SplitExplicitInit::combineVelocitySplit(State, Mesh, VCoord, TimeLevel);
-}
-
-//------------------------------------------------------------------------------
-void SplitExplicitRK2Stepper::reconstructFinalNormalVelocity(
-    OceanState *State, I4 CurLevel, I4 NextLevel) const {
+void SplitExplicitRK2Stepper::reconstructNormalVelocity(
+    OceanState *State, I4 CurLevel, I4 NextLevel, bool FinalIteration) const {
 
    Array2DReal NormalVelNext = State->getNormalVelocity(NextLevel);
    Array2DReal NormalBclVelCur =
@@ -428,28 +447,43 @@ void SplitExplicitRK2Stepper::reconstructFinalNormalVelocity(
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
 
+   if ( FinalIteration ) {
+
+      parallelForOuter(
+          "reconstructFinalNormalVelocity", {Mesh->NEdgesAll},
+          KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+             const int KMin = MinLayerEdgeBot(IEdge);
+             const int KMax = MaxLayerEdgeTop(IEdge);
+
+             // Reconstruct NormalBclVel at n+1
+             parallelForInner(
+                 Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+                    NormalVelNext(IEdge, K) =
+                        2._Real * NormalBclVelNext(IEdge, K) -
+                                  NormalBclVelCur(IEdge, K) +
+                                  NormalBtrVelNext(IEdge);
+                 });
+          });
+
+   } else {
+
    parallelForOuter(
        "reconstructFinalNormalVelocity", {Mesh->NEdgesAll},
        KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
           const int KMin = MinLayerEdgeBot(IEdge);
           const int KMax = MaxLayerEdgeTop(IEdge);
 
-          // Reconstruct NormalBclVel at n+1
-          parallelForInner(
-              Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
-                 NormalBclVelNext(IEdge, K) =
-                     2._Real * NormalBclVelNext(IEdge, K) -
-                     NormalBclVelCur(IEdge, K);
-              });
-
           // Reconstruct NormalVel at n+1
           parallelForInner(
               Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
                  NormalVelNext(IEdge, K) =
-                     NormalBtrVelNext(IEdge) +
-                     NormalBclVelNext(IEdge, K);
+                     NormalBclVelNext(IEdge, K) +
+                     NormalBtrVelNext(IEdge);
               });
        });
+
+   } // FinalIteration
+
 }
 
 //------------------------------------------------------------------------------
@@ -460,11 +494,7 @@ void SplitExplicitRK2Stepper::finalizeTimeStepIterationState(
 
     Pacer::start("SE-RK2:finalizeTimeStepIterationState", 2);
 
-    if (FinalIteration) {
-       // Reconstruct the final normal velocity at n+1 for output and
-       // diagnostics.
-       reconstructFinalNormalVelocity(State, CurLevel, NextLevel);
-    }
+    reconstructNormalVelocity(State, CurLevel, NextLevel, FinalIteration);
 
     if ( LocSplitFactor == 0._Real ) return;
 
@@ -543,7 +573,7 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
 
    // Initialize NextLevel from CurLevel
    // TODO: This can be optimized in the future.
-   initializeNextState(State, CurLevel, NextLevel);
+   initializeNextState(State, CurLevel, NextLevel, SEConfig.SplitFactor);
    deepCopy(NextTracerArray, CurTracerArray);
 
    const TimeInstant StageTime = SimTime;

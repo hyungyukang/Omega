@@ -459,7 +459,6 @@ void Eos::defineFields() {
                      "",                                 // CF-ish Name
                      0.0,                                // Min valid value
                      std::numeric_limits<Real>::max(),   // Max valid value
-                     FillValue, // Scalar used for undefined entries
                      NDims,     // Number of dimensions
                      DimNames   // Dimension names
        );
@@ -470,7 +469,6 @@ void Eos::defineFields() {
                      "",                               // CF-ish Name
                      0.0,                              // Min valid value
                      std::numeric_limits<Real>::max(), // Max valid value
-                     FillValue, // Scalar used for undefined entries
                      NDims,     // Number of dimensions
                      DimNames   // Dimension names
        );

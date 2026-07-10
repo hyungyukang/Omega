@@ -907,7 +907,7 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
    }
 
    Pacer::start("Tend:computeBaroclinicVelocityVAdvTend", 2);
-   VAdv->computeVelocityVAdvTend(NormalVelocityTend, NormVelEdge,
+   VAdv->computeVelocityVAdvTend(LocNormalVelocityTend, NormVelEdge,
                                  FluxPseudoThickEdge);
    Pacer::stop("Tend:computeBaroclinicVelocityVAdvTend", 2);
 

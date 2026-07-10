@@ -185,7 +185,7 @@ class CoriolisAccelerationOnEdge {
 
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const I4 K = KStart + KVec;
-         Tend(IEdge, K) -= AccelTmp[KVec];
+         Tend(IEdge, K) += AccelTmp[KVec];
       }
    }
 
@@ -203,7 +203,7 @@ class CoriolisAccelerationOnEdge {
              WeightsOnEdge(IEdge, J) * NormalVelEdge(JEdge) * FEdge(JEdge);
       }
 
-      Tend(IEdge) -= AccelTmp;
+      Tend(IEdge) += AccelTmp;
    }
 
  private:

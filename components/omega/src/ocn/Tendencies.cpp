@@ -456,19 +456,6 @@ Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
                  TimeStepIn, Options, CustomTendencyType{},
                  CustomTendencyType{}) {}
 
-Tendencies::Tendencies(const std::string &Name_, ///< [in] Name for tendencies
-                       const HorzMesh *Mesh,     ///< [in] Horizontal mesh
-                       VertCoord *VCoord,        ///< [in] Vertical coordinate
-                       VertAdv *VAdv,            ///< [in] Vertical advection
-                       PressureGrad *PGrad,      ///< [in] Pressure gradient
-                       Eos *EqState,             ///< [in] Equation of state
-                       int NTracersIn,           ///< [in] Number of tracers
-                       TimeInterval TimeStepIn,  ///< [in] Time step
-                       Config *Options)          ///< [in] Configuration options
-    : Tendencies(Name_, Mesh, VCoord, VAdv, PGrad, EqState,
-                 VertMix::getInstance(), NTracersIn, TimeStepIn, Options,
-                 CustomTendencyType{}, CustomTendencyType{}) {}
-
 //------------------------------------------------------------------------------
 // Accumulate f times tangential velocity reconstruction for edge-centered 2D
 // fields

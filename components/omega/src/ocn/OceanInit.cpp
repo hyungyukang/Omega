@@ -107,44 +107,6 @@ int ocnInit(MPI_Comm Comm ///< [in] ocean MPI communicator
    TimeStepper *DefStepper = TimeStepper::getDefault();
    Clock *ModelClock       = DefStepper->getClock();
 
-   // Initialize IOStreams - this does not yet validate the contents
-   // of each file, only creates streams from Config
-   IOStream::init(ModelClock);
-
-   IO::init(Comm);
-   Field::init(ModelClock);
-   Decomp::init();
-
-   Err = Halo::init();
-   if (Err != 0) {
-      ABORT_ERROR("ocnInit: Error initializing default halo");
-   }
-
-   HorzMesh::init();
-   VertCoord::init();
-   Tracers::init();
-   VertAdv::init();
-   AuxiliaryState::init();
-   Eos::init();
-   PressureGrad::init();
-   VertMix::init();
-   Tendencies::init();
-
-   // Validate SurfaceTracerRestoring configuration
-   Tendencies *DefTend = Tendencies::getDefault();
-   if (DefTend->SurfaceTracerRestoring.Enabled &&
-       DefTend->SurfaceTracerRestoring.NTracersToRestore == 0) {
-      ABORT_ERROR("OceanInit: SurfaceTracerRestoring is enabled but "
-                  "TracersToRestore is empty");
-   }
-
-   TimeStepper::init2();
-
-   Err = OceanState::init();
-   if (Err != 0) {
-      ABORT_ERROR("ocnInit: Error initializing default state");
-   }
-
    // Now that all fields have been defined, validate all the streams
    // contents
    bool StreamsValid = IOStream::validateAll();
@@ -177,8 +139,7 @@ int ocnInit(MPI_Comm Comm ///< [in] ocean MPI communicator
    }
 
    // If reading from restart, reset the current time to the input time
-   const bool ReadRestart = SimTimeStr != " ";
-   if (ReadRestart) {
+   if (SimTimeStr != " ") {
       TimeInstant NewCurrentTime(SimTimeStr);
       ModelClock->setCurrentTime(NewCurrentTime);
    }
@@ -209,11 +170,6 @@ int ocnInit(MPI_Comm Comm ///< [in] ocean MPI communicator
    if (Err != 0) {
       ABORT_ERROR("Error updating tracer halo after restart");
    }
-
-   DefStepper->initializeStateFromInput(DefState, ReadRestart);
-   DefState->exchangeHalo(CurTimeLevel);
-   DefState->copyToHost(CurTimeLevel);
-
    Tracers::copyToHost(CurTimeLevel);
 
    return Err;

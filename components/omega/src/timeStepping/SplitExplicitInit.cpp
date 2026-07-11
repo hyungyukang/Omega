@@ -134,13 +134,23 @@ void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
        Array2DReal("NormalTransportVelocity" + Name, Mesh->NEdgesSize,
                    VCoord->NVertLayers);
 
-   deepCopy(Scratch.NormalBarotropicVelocitySubcycleCur, 0.);
-   deepCopy(Scratch.NormalBarotropicVelocitySubcycleNew, 0.);
-   deepCopy(Scratch.BarotropicPressureAnomalySubcycleCur, 0.);
-   deepCopy(Scratch.BarotropicPressureAnomalySubcycleNew, 0.);
-   deepCopy(Scratch.BarotropicPressure, 0.);
-   deepCopy(Scratch.BarotropicForcing, 0.);
-   deepCopy(Scratch.BarotropicFlux, 0.);
+   parallelFor(
+       "initializeCell1D", {Mesh->NCellsAll},
+       KOKKOS_LAMBDA(I4 ICell) {
+          Scratch.BarotropicPressureAnomalySubcycleCur(ICell) = 0._Real;
+          Scratch.BarotropicPressureAnomalySubcycleNew(ICell) = 0._Real;
+          Scratch.BarotropicPressure(ICell) = 0._Real;
+       });
+
+   parallelFor(
+       "initializeCell1D", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(I4 IEdge) {
+          Scratch.NormalBarotropicVelocitySubcycleCur(IEdge) = 0._Real;
+          Scratch.NormalBarotropicVelocitySubcycleNew(IEdge) = 0._Real;
+          Scratch.BarotropicForcing(IEdge) = 0._Real;
+          Scratch.BarotropicFlux(IEdge) = 0._Real;
+       });
+
    deepCopy(Scratch.BaseVelocityTend, 0.);
    deepCopy(Scratch.NormalTransportVelocity, 0.);
 }
@@ -199,19 +209,49 @@ void SplitExplicitInit::computeVelocitySplit(OceanState *State,
 
 //------------------------------------------------------------------------------
 void SplitExplicitInit::computeUnsplitVelocitySplit(OceanState *State,
-                                                    I4 TimeLevel) {
+                                                    const HorzMesh *Mesh,
+                                                    const VertCoord *VCoord,
+                                                    I4 CurLevel, I4 NextLevel) {
 
    if (!State)
       LOG_CRITICAL("Invalid State");
 
-   Array2DReal NormalVelocity = State->getNormalVelocity(TimeLevel);
-   Array2DReal NormalBaroclinicVelocity =
-       State->getNormalBaroclinicVelocity(TimeLevel);
-   Array1DReal NormalBarotropicVelocity =
-       State->getNormalBarotropicVelocity(TimeLevel);
+   Array2DReal NormalVelocityCur = State->getNormalVelocity(CurLevel);
+   Array2DReal NormalVelocityNew = State->getNormalVelocity(NextLevel);
+   Array2DReal NormalBaroclinicVelocityCur =
+       State->getNormalBaroclinicVelocity(CurLevel);
+   Array2DReal NormalBaroclinicVelocityNew =
+       State->getNormalBaroclinicVelocity(NextLevel);
+   Array1DReal NormalBarotropicVelocityCur =
+       State->getNormalBarotropicVelocity(CurLevel);
+   Array1DReal NormalBarotropicVelocityNew =
+       State->getNormalBarotropicVelocity(NextLevel);
 
-   deepCopy(NormalBaroclinicVelocity, NormalVelocity);
-   deepCopy(NormalBarotropicVelocity, 0.);
+   deepCopy(NormalBaroclinicVelocityCur, 0.);
+   deepCopy(NormalBaroclinicVelocityNew, 0.);
+
+   deepCopy(NormalBarotropicVelocityCur, 0.);
+   deepCopy(NormalBarotropicVelocityNew, 0.);
+
+   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
+   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+
+   parallelForOuter(
+       "UnsplitVelocity", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(I4 IEdge, const TeamMember &Team) {
+
+          const I4 KMin = MinLayerEdgeBot(IEdge);
+          const I4 KMax = MaxLayerEdgeTop(IEdge);
+
+          parallelForInner(
+              Team, Range{KMin, KMax}, INNER_LAMBDA(I4 K) {
+                  NormalBaroclinicVelocityCur(IEdge, K) =
+                  NormalVelocityCur(IEdge, K);
+                  NormalBaroclinicVelocityNew(IEdge, K) =
+                  NormalVelocityNew(IEdge, K);
+              });
+       });
+
 }
 
 //------------------------------------------------------------------------------
@@ -244,10 +284,10 @@ void SplitExplicitInit::initializeBarotropicPressure(
               PressureInterface(ICell, KMax + 1) - SurfacePressure(ICell);
           BtrPressure(ICell)     = Pressure;
           BtrPressAnomaly(ICell) = Pressure - RhoSw * Gravity * BottomGeomDepth(ICell);
+          Scratch.BarotropicPressureAnomalySubcycleCur(ICell) = BtrPressAnomaly(ICell);
+          Scratch.BarotropicPressureAnomalySubcycleNew(ICell) = BtrPressAnomaly(ICell);
        });
 
-   deepCopy(Scratch.BarotropicPressureAnomalySubcycleCur, BtrPressAnomaly);
-   deepCopy(Scratch.BarotropicPressureAnomalySubcycleNew, BtrPressAnomaly);
 }
 
 //------------------------------------------------------------------------------

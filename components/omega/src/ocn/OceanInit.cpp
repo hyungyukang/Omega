@@ -170,6 +170,34 @@ int ocnInit(MPI_Comm Comm ///< [in] ocean MPI communicator
    if (Err != 0) {
       ABORT_ERROR("Error updating tracer halo after restart");
    }
+
+
+   //---------------------------------------------------------------
+   // For the split time stepper
+
+   // Obtain time stepper
+   Config TimeIntConfig("TimeIntegration");
+   Error ErrTS = OmegaConfig->get(TimeIntConfig);
+   std::string TimeStepperName;
+   ErrTS = TimeIntConfig.get("TimeStepper", TimeStepperName);
+
+   // If reading from restart, reset the current time to the input time
+   const bool ReadRestart = SimTimeStr != " ";
+   if (ReadRestart) {
+      TimeInstant NewCurrentTime(SimTimeStr);
+      ModelClock->setCurrentTime(NewCurrentTime);
+   }
+
+   // SplitExplicitRK2 also covers UnsplitRK2, since both config strings map to
+   // TimeStepperType::SplitExplicitRK2.
+   if (DefStepper->getType() == TimeStepperType::SplitExplicitRK2) {
+      DefStepper->initializeStateFromInput(DefState, ReadRestart);
+      DefState->exchangeHalo(CurTimeLevel);
+      DefState->copyToHost(CurTimeLevel);
+   }
+
+   //---------------------------------------------------------------
+
    Tracers::copyToHost(CurTimeLevel);
 
    return Err;

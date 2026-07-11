@@ -53,7 +53,7 @@ void SplitExplicitRK2Stepper::initializeStateFromInput(OceanState *State,
                                                    VCoord, CurLevel);
 
    if (SEConfig.SplitFactor == 0._Real) {
-      SplitExplicitInit::computeUnsplitVelocitySplit(State, CurLevel);
+      SplitExplicitInit::computeUnsplitVelocitySplit(State, Mesh, VCoord, CurLevel, NextLevel);
    } else if (!ReadRestart) {
       SplitExplicitInit::computeVelocitySplit(State, Mesh, VCoord, CurLevel);
    }
@@ -196,10 +196,6 @@ void SplitExplicitRK2Stepper::computeTransportVelocity(OceanState *State,
           const I4 KMin = MinLayerEdgeBot(IEdge);
           const I4 KMax = MaxLayerEdgeTop(IEdge);
           Real VelCorrection = 0._Real;
-
-          if (KMax < KMin) {
-             return;
-          }
 
           if ( LocSplitFactor != 0._Real )  {
 
@@ -421,7 +417,7 @@ void SplitExplicitRK2Stepper::initializeNextState(
    deepCopy(PseudoThickNext, PseudoThickCur);
    deepCopy(NormalVelNext, NormalVelCur);
 
-   if ( SplitFactor == 0 ) {
+   if ( SplitFactor == 0._Real ) {
       Array1DReal BtrPressAnomalyCur =
           State->getBarotropicPressureAnomaly(CurLevel);
       Array1DReal BtrPressAnomalyNext =

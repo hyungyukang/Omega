@@ -36,7 +36,10 @@ class SplitExplicitInit {
 
    static void computeUnsplitVelocitySplit(
        OceanState *State, ///< [inout] ocean state
-       I4 TimeLevel       ///< [in] state time level to initialize
+       const HorzMesh *Mesh,    ///< [in] horizontal mesh
+       const VertCoord *VCoord, ///< [in] vertical coordinate
+       I4 CurLevel,      ///< [in] state current level to initialize
+       I4 NextLevel      ///< [in] state next level to initialize
    );
 
    static void initializeBarotropicPressure(

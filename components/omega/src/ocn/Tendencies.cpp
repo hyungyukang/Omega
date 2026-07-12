@@ -799,6 +799,7 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
    OMEGA_SCOPE(LocBottomDrag, BottomDrag);
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+   OMEGA_SCOPE(LocSshCell, VCoord->SshCell);
 
    Pacer::start("Tend:computeBaroclinicVelocityTendenciesOnly", 1);
 

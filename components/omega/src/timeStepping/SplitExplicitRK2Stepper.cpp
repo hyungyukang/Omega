@@ -11,6 +11,7 @@
 #include "Pacer.h"
 #include "SplitExplicitInit.h"
 #include "VertAdv.h"
+#include "VertMix.h"
 
 namespace OMEGA {
 
@@ -47,6 +48,7 @@ void SplitExplicitRK2Stepper::initializeStateFromInput(OceanState *State,
 
    constexpr I4 CurLevel  = 0;
    constexpr I4 NextLevel = 1;
+
    Array3DReal CurTracerArray = Tracers::getAll(CurLevel);
    AuxState->computeMomVertAux(State, CurTracerArray, CurLevel);
    SplitExplicitInit::initializeBarotropicPressure(SEScratch, State, Mesh,
@@ -94,8 +96,7 @@ void SplitExplicitRK2Stepper::doSplitStage1(
    // first half of the stage time step.
    Tend->computeBaroclinicVelocityTendencies(
        State, AuxState, TendencyTracerArray, NextLevel, NextLevel, NextLevel,
-       NextLevel, SEConfig.SplitFactor,
-       0.5 * StageTimeStep);
+       NextLevel, SEConfig.SplitFactor, StageTimeStep);
 
    // Save the baroclinic velocity tendencies before the baroclinic velocity update
    // TODO: this can be optimized in the future.
@@ -131,12 +132,12 @@ void SplitExplicitRK2Stepper::doSplitStage3(
    // Compute thickness auxiliary variables at the new time level
    AuxState->computePseudoThicknessTracerAux(State, NextTracerArray, NextLevel,
                                        NormalTransportVelocity,
-                                       UpdateTimeStep);
+                                       StageTimeStep);
 
    // Compute vertical velocity at the new time level for the vertical
    // advection term in thickness and tracer tendencies
    computeVerticalPseudoVelocity(State, NextLevel, NormalTransportVelocity,
-                           0.5 * StageTimeStep);
+                                 StageTimeStep);
 
    // Compute thickness and tracer tendencies at the new time level
    Tend->computePseudoThicknessTendenciesOnly(
@@ -145,7 +146,7 @@ void SplitExplicitRK2Stepper::doSplitStage3(
    Tend->computeTracerTendenciesOnly(State, AuxState, NextTracerArray,
                                      NextLevel, NormalTransportVelocity,
                                      StageTime + 0.5 * StageTimeStep,
-                                     UpdateTimeStep);
+                                     StageTimeStep);
 
    // Update thickness and tracers at n+1/2 during the first iteration and at
    // n+1 during the final iteration.
@@ -233,6 +234,7 @@ void SplitExplicitRK2Stepper::computeTransportVelocity(OceanState *State,
               Team, Range{KMin, KMax}, INNER_LAMBDA(I4 K) {
                  const Real TotalVel =
                      NormalBtrVel(IEdge) + NormalBclVel(IEdge, K);
+
                  NormalVel(IEdge, K) = TotalVel;
                  NormalTransportVel(IEdge, K) = TotalVel + VelCorrection;
               });
@@ -350,7 +352,6 @@ void SplitExplicitRK2Stepper::computeBarotropicForcing(
     Pacer::stop("SE-RK2:barotropicForcing", 2);
 }
 
-
 //------------------------------------------------------------------------------
 void SplitExplicitRK2Stepper::updateBaroclinicVelocityByTend(
     OceanState *State1, I4 TimeLevel1, OceanState *State2, I4 TimeLevel2,
@@ -451,7 +452,7 @@ void SplitExplicitRK2Stepper::reconstructNormalVelocity(
              const int KMin = MinLayerEdgeBot(IEdge);
              const int KMax = MaxLayerEdgeTop(IEdge);
 
-             // Reconstruct NormalBclVel at n+1
+             // Reconstruct NormalBclVel at n+1 if FinalIteration
              parallelForInner(
                  Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
                     NormalVelNext(IEdge, K) =
@@ -469,7 +470,7 @@ void SplitExplicitRK2Stepper::reconstructNormalVelocity(
           const int KMin = MinLayerEdgeBot(IEdge);
           const int KMax = MaxLayerEdgeTop(IEdge);
 
-          // Reconstruct NormalVel at n+1
+          // Reconstruct NormalVel at n+0.5
           parallelForInner(
               Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
                  NormalVelNext(IEdge, K) =
@@ -490,6 +491,7 @@ void SplitExplicitRK2Stepper::finalizeTimeStepIterationState(
 
     Pacer::start("SE-RK2:finalizeTimeStepIterationState", 2);
 
+    // Reconstruction of NormalVelocity Next
     reconstructNormalVelocity(State, CurLevel, NextLevel, FinalIteration);
 
     if ( LocSplitFactor == 0._Real ) return;
@@ -559,13 +561,17 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
    if (!State)
       LOG_CRITICAL("Invalid State");
 
+   const MPI_Comm Comm = MeshHalo->getComm();
+
    const int CurLevel  = 0;
    const int NextLevel = 1;
+   int NTracers        = Tracers::getNumTracers();
 
-   const MPI_Comm Comm = MeshHalo->getComm();
 
    Array3DReal CurTracerArray  = Tracers::getAll(CurLevel);
    Array3DReal NextTracerArray = Tracers::getAll(NextLevel);
+
+   VertMix *VMix = VertMix::getInstance();
 
    // Initialize NextLevel from CurLevel
    // TODO: This can be optimized in the future.
@@ -613,12 +619,24 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
       }
    }
 
+   // Update time levels (New -> Old) of prognostic variables with halo
+   // exchanges
    Pacer::timingBarrier("SE-RK2:haloExchBarrier", 3, Comm);
    Pacer::start("SE-RK2:haloExch", 3);
    State->updateTimeLevels();
    Tracers::updateTimeLevels();
    Pacer::stop("SE-RK2:haloExch", 3);
 
+   // Apply implicit vertical mixing
+   CurTracerArray = Tracers::getAll(CurLevel);
+   if (VMix->VelVertMixSetup.Enabled or VMix->TracerVertMixSetup.Enabled) {
+      VMix->VertMixImplicit(State, AuxState, CurTracerArray, NTracers,
+                            State->CurTimeIndex);
+   }
+
+   validateOceanState(State, AuxState, VertCoord::getDefault(), CurLevel);
+
+   // Advance the clock and update the simulation time
    StepClock->advance();
    SimTime = StepClock->getCurrentTime();
 }

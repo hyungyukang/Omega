@@ -166,40 +166,14 @@ void Forcing::computeSfcStressForcingOnEdge() const {
    Pacer::stop("Forcing:edge1", 2);
 }
 
-// Exchange halo for surface stress cell fields.
+// Exchange halo for surface stress cell fields. Only needed for variables that
+// need information beyond cell-centered values.
 I4 Forcing::exchangeHalo() const {
    I4 Err = 0;
 
    Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.ZonalStressCell,
                                           OnCell);
    Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.MeridStressCell,
-                                          OnCell);
-
-   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.SnowFluxCell, OnCell);
-   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.RainFluxCell, OnCell);
-   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.EvaporationFluxCell,
-                                          OnCell);
-   Err += MeshHalo->exchangeFullArrayHalo(
-       TracerForcing.SeaIceFreshWaterFluxCell, OnCell);
-   Err +=
-       MeshHalo->exchangeFullArrayHalo(TracerForcing.IceRunoffFluxCell, OnCell);
-   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.RiverRunoffFluxCell,
-                                          OnCell);
-   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.LatentHeatFluxCell,
-                                          OnCell);
-   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.SensibleHeatFluxCell,
-                                          OnCell);
-   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.LongWaveHeatFluxUpCell,
-                                          OnCell);
-   Err += MeshHalo->exchangeFullArrayHalo(
-       TracerForcing.LongWaveHeatFluxDownCell, OnCell);
-   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.SeaIceHeatFluxCell,
-                                          OnCell);
-   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.ShortWaveHeatFluxCell,
-                                          OnCell);
-   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.SeaIceSaltFluxCell,
-                                          OnCell);
-   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.SurfInsituTemperature,
                                           OnCell);
 
    return Err;

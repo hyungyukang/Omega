@@ -6,7 +6,7 @@ This page describes design and implementation details for forcing-related
 pathways in Omega, currently this includes:
 
 - Surface stress forcing (e.g. wind stress)
-- Surface flux forcing (actively coupled or data-forced)
+- Surface thickness and tracer flux forcing (actively coupled or data-forced)
 - Surface tracer restoring (soon to be ported)
 
 ## Surface stress forcing design
@@ -38,9 +38,9 @@ pathways in Omega, currently this includes:
 - `Omega.Tendencies.SfcStressForcingTendencyEnable`
   - gates execution of surface stress forcing tendency kernel
 
-## Surface flux forcing design
+## Surface thickness and tracer flux forcing design
 
-### Surface flux forcing data flow
+### Surface thickness and tracer flux forcing data flow
 
 **Thickness equation pathway:**
 
@@ -62,16 +62,16 @@ the surface layer pseudo-thickness.
    - `SeaIceSaltFlux`
 2. `Forcing` stores the flux fields in `TracerForcingVars`
 3. The tendency term `SfcTracerForcingOnCell` converts the summed external heat fluxes to a conservative-temperature tendency,
-  and applies the external sea-ice salt flux to salinity (g/kg) in the surface layer.
+  and applies the external sea-ice salt flux to the top layer salt content thus impacting salinity.
 
-### Surface flux forcing key classes/components
+### Surface thickness and tracer flux forcing key classes/components
 
 - `TracerForcingVars`
   - Stores 13 coupled flux cell-centered fields: 6 freshwater fluxes, 6 heat
     fluxes, and 1 salt flux component
   - Fields initialized to zero and registered in `Forcing` field group
 - `SfcThicknessForcingOnCell` tendency term
-  - Computes freshwater flux contribution: $\sum (\text{SnowFlux} + \text{RainFlux} + \text{EvaporationFlux} + \text{SeaIceFreshWaterFlux} + \text{IceRunoffFlux} + \text{RiverRunoffFlux} + \text{SeaIceSaltFlux}) / \rho_{sw}$
+  - Computes the layer mass contribution (converted to pseudo-thickness): $\sum (\text{SnowFlux} + \text{RainFlux} + \text{EvaporationFlux} + \text{SeaIceFreshWaterFlux} + \text{IceRunoffFlux} + \text{RiverRunoffFlux} + \text{SeaIceSaltFlux}) / \rho_{sw}$
   - Applied only at surface layer (top active layer) using `MinLayerCell`
 - `SfcTracerForcingOnCell` tendency term
   - For temperature: adds the direct heat fluxes
@@ -88,7 +88,7 @@ the surface layer pseudo-thickness.
   - Calls `SfcThicknessForcingOnCell` in `computePseudoThicknessTendenciesOnly`
   - Calls `SfcTracerForcingOnCell` in `computeTracerTendenciesOnly` after surface tracer restoring
 
-### Surface flux forcing config coupling
+### Surface thickness and tracer flux forcing config coupling
 
 - `Omega.Tendencies.SfcThicknessForcingTendencyEnable`
   - gates execution of coupled flux thickness kernel

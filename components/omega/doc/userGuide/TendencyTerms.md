@@ -147,5 +147,5 @@ Tracer higer order convergence example of a cosine bell advected on a sphere sho
 ## See Also
 
 Additional information on forcing, including surface stress forcing,
-surface flux forcing, and surface tracer restoring, is detailed in
+surface thickness and tracer flux forcing, and surface tracer restoring, is detailed in
 [](omega-user-forcing).

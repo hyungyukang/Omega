@@ -5,7 +5,7 @@
 This page documents the user-facing configuration and behavior for current forcing in Omega:
 
 - Surface stress forcing (e.g. wind stress)
-- Coupled flux forcing
+- Coupled tracer flux forcing (mass, energy and salt)
 - Surface tracer restoring
 
 ## Surface stress forcing
@@ -40,15 +40,15 @@ Surface stress forcing uses surface stress input fields:
 These are stored in forcing variables and used to form edge-normal stress
 (`NormalStressEdge`) that enters momentum tendencies.
 
-## Surface flux forcing
+## Surface thickness and tracer flux forcing
 
-Surface flux forcing applies ocean-atmosphere and ocean-sea ice fluxes from the other model
+Surface thickness and tracer flux forcing applies ocean-atmosphere and ocean-sea ice fluxes from the other model
 components (atmosphere, sea ice) to the thickness and tracer equations. This enables
 the ocean to respond to heat, freshwater, and salt exchanges at the surface. These fluxes can be from data or (active) coupled components.
 
-### Surface flux forcing configuration
+### Surface thickness and tracer flux forcing configuration
 
-Surface flux forcing is controlled by two configuration flags:
+Surface thickness and tracer flux forcing is controlled by two configuration flags:
 
 ```yaml
 Omega:
@@ -63,13 +63,13 @@ Omega:
 
 ### Required input fields
 
-Coupled flux forcing uses 13 auxiliary fields organized by type:
+Coupled tracer flux forcing uses 13 auxiliary fields organized by type:
 
 **Freshwater mass fluxes (kg m⁻² s⁻¹):**
 - `SnowFlux`: precipitation from snow
 - `RainFlux`: precipitation from rain
 - `EvaporationFlux`: evaporative water loss
-- `SeaIceFreshWaterFlux`: freshwater input from sea-ice melt or formation
+- `SeaIceFreshWaterFlux`: freshwater mass flux from sea-ice melt or formation
 - `IceRunoffFlux`: runoff from land ice
 - `RiverRunoffFlux`: runoff from rivers
 
@@ -78,7 +78,7 @@ Coupled flux forcing uses 13 auxiliary fields organized by type:
 - `SensibleHeatFlux`: sensible heat transfer
 - `LongWaveHeatFluxUp`: upward longwave radiation
 - `LongWaveHeatFluxDown`: downward longwave radiation
-- `SeaIceHeatFlux`: heat from sea-ice interaction
+- `SeaIceHeatFlux`: heat/energy from sea-ice interaction (incl. enthalpy of meltwater)
 - `ShortWaveHeatFlux`: shortwave (solar) radiation
 
 **Salt mass flux (kg m⁻² s⁻¹):**

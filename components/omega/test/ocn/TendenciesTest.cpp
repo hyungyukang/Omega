@@ -373,9 +373,9 @@ int testSfcTracerForcing() {
 
    // Set up single test cell at top layer
    const I4 ICellTest = 0;
-   const I4 KTop      = VCoord->MinLayerCell(ICellTest);
+   const I4 KTop      = VCoord->MinLayerCellH(ICellTest);
 
-   if (KTop > VCoord->MaxLayerCell(ICellTest)) {
+   if (KTop > VCoord->MaxLayerCellH(ICellTest)) {
       LOG_ERROR("TendenciesTest: Test cell has no layers");
       return -1;
    }
@@ -579,9 +579,9 @@ int testSfcThicknessForcing() {
 
    // Set up single test cell at top layer
    const I4 ICellTest = 0;
-   const I4 KTop      = VCoord->MinLayerCell(ICellTest);
+   const I4 KTop      = VCoord->MinLayerCellH(ICellTest);
 
-   if (KTop > VCoord->MaxLayerCell(ICellTest)) {
+   if (KTop > VCoord->MaxLayerCellH(ICellTest)) {
       LOG_ERROR("TendenciesTest: Test cell has no layers for thickness test");
       return -1;
    }

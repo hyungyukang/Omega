@@ -330,14 +330,6 @@ void Eos::computeBruntVaisalaFreqSq(const Array2DReal &ConservTemp,
    }
 }
 
-Real Eos::calcPtFromCt(const Real &Sa, const Real &Ct) const {
-   if (EosChoice == EosType::Teos10Eos) {
-      return ComputeSpecVolTeos10.calcPtFromCt(Sa, Ct);
-   }
-
-   return Ct;
-}
-
 Real Eos::calcCtFromPt(const Real &Sa, const Real &Pt) const {
    if (EosChoice == EosType::Teos10Eos) {
       return ComputeSpecVolTeos10.calcCtFromPt(Sa, Pt);

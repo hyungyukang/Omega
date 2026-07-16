@@ -1022,7 +1022,12 @@ class Eos {
                                   const Array2DReal &SpecVol);
 
    /// Convert Conservative Temperature to potential temperature
-   Real calcPtFromCt(const Real &Sa, const Real &Ct) const;
+   KOKKOS_FUNCTION Real calcPtFromCt(const Real &Sa, const Real &Ct) const {
+      if (EosChoice == EosType::Teos10Eos) {
+         return ComputeSpecVolTeos10.calcPtFromCt(Sa, Ct);
+      }
+      return Ct;
+   }
 
    /// Convert potential temperature to Conservative Temperature
    Real calcCtFromPt(const Real &Sa, const Real &Pt) const;

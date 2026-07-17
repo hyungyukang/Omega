@@ -916,6 +916,7 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
 
    // Compute the barotropic pressure anomaly gradient term
    if (LocSSHGrad.Enabled && SplitFactor != 0._Real) {
+   //if (SplitFactor != 0._Real) {
       const Array1DReal &BtrPressAnomaly =
           State->getBarotropicPressureAnomaly(BarotropicPressureTimeLevel);
       const Array1DReal &DepthMeanSpecVol = EqState->DepthMeanSpecificVolume;

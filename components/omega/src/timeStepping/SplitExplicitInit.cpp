@@ -174,37 +174,55 @@ void SplitExplicitInit::computeVelocitySplit(OceanState *State,
    OMEGA_SCOPE(CellsOnEdge, Mesh->CellsOnEdge);
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+   OMEGA_SCOPE(EdgeMask, VCoord->EdgeMask);
 
    deepCopy(NormalBaroclinicVelocity, 0.);
    deepCopy(NormalBarotropicVelocity, 0.);
 
-   parallelFor(
-       "computeSplitExplicitVelocity", {Mesh->NEdgesAll},
-       KOKKOS_LAMBDA(int IEdge) {
+   parallelForOuter(
+       "SplitVelocity", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(I4 IEdge, const TeamMember &Team) {
+
           const I4 KMin = MinLayerEdgeBot(IEdge);
           const I4 KMax = MaxLayerEdgeTop(IEdge);
 
-          const I4 Cell0 = CellsOnEdge(IEdge, 0);
-          const I4 Cell1 = CellsOnEdge(IEdge, 1);
+          Real BarotropicVelocity = 0._Real;
 
-          Real ThicknessSum = 0._Real;
-          Real FluxSum      = 0._Real;
-          for (I4 K = KMin; K <= KMax; ++K) {
-             const Real EdgeThickness = 0.5_Real * (PseudoThickness(Cell0, K) +
-                                                    PseudoThickness(Cell1, K));
-             ThicknessSum += EdgeThickness;
-             FluxSum += EdgeThickness * NormalVelocity(IEdge, K);
+          if ( KMax >= KMin ) {
+             const I4 Cell0 = CellsOnEdge(IEdge, 0);
+             const I4 Cell1 = CellsOnEdge(IEdge, 1);
+
+             Real ThicknessSum = 0._Real;
+             Real FluxSum      = 0._Real;
+
+             parallelReduceInner(
+                Team, Range{KMin, KMax},
+                INNER_LAMBDA(const int K, Real &ThickAccum, Real &FluxAccum) {
+                   const Real ThickEdge = 0.5_Real * (PseudoThickness(Cell0, K) +
+                                                      PseudoThickness(Cell1, K));
+
+                   ThickAccum += ThickEdge;
+                   FluxAccum += ThickEdge * NormalVelocity(IEdge, K);
+                },
+                ThicknessSum, FluxSum);
+
+             Real BarotropicVelocity = FluxSum / ThicknessSum;
+
+             NormalBarotropicVelocity(IEdge) = BarotropicVelocity * EdgeMask(IEdge,0);
+
+          } else {
+
+             NormalBarotropicVelocity(IEdge) = 0._Real;
+
           }
 
-          const Real BarotropicVelocity =
-              ThicknessSum > 0._Real ? FluxSum / ThicknessSum : 0._Real;
-          NormalBarotropicVelocity(IEdge) = BarotropicVelocity;
-
-          for (I4 K = KMin; K <= KMax; ++K) {
-             NormalBaroclinicVelocity(IEdge, K) =
-                 NormalVelocity(IEdge, K) - BarotropicVelocity;
-          }
+          parallelForInner(
+              Team, Range{KMin, KMax}, INNER_LAMBDA(I4 K) {
+                  NormalBaroclinicVelocity(IEdge, K) =
+                      NormalVelocity(IEdge, K) - BarotropicVelocity;
+              });
        });
+
 }
 
 //------------------------------------------------------------------------------
@@ -271,13 +289,11 @@ void SplitExplicitInit::initializeBarotropicPressure(
    Array1DReal SurfacePressure    = VCoord->SurfacePressure;
    Array2DReal PressureInterface  = VCoord->PressureInterface;
    Array1DReal BottomGeomDepth    = VCoord->BottomGeomDepth;
-   Array1DI4 MinLayerCell         = VCoord->MinLayerCell;
-   Array1DI4 MaxLayerCell         = VCoord->MaxLayerCell;
+   OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
 
    parallelFor(
        "initializeBarotropicPressure", {Mesh->NCellsAll},
        KOKKOS_LAMBDA(int ICell) {
-          const I4 KMin = MinLayerCell(ICell);
           const I4 KMax = MaxLayerCell(ICell);
 
           const Real Pressure =
@@ -287,7 +303,6 @@ void SplitExplicitInit::initializeBarotropicPressure(
           Scratch.BarotropicPressureAnomalySubcycleCur(ICell) = BtrPressAnomaly(ICell);
           Scratch.BarotropicPressureAnomalySubcycleNew(ICell) = BtrPressAnomaly(ICell);
        });
-
 }
 
 //------------------------------------------------------------------------------

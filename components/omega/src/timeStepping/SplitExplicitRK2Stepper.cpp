@@ -51,12 +51,12 @@ void SplitExplicitRK2Stepper::initializeStateFromInput(OceanState *State,
 
    Array3DReal CurTracerArray = Tracers::getAll(CurLevel);
    AuxState->computeMomVertAux(State, CurTracerArray, CurLevel);
-   SplitExplicitInit::initializeBarotropicPressure(SEScratch, State, Mesh,
-                                                   VCoord, CurLevel);
 
    if (SEConfig.SplitFactor == 0._Real) {
       SplitExplicitInit::computeUnsplitVelocitySplit(State, Mesh, VCoord, CurLevel, NextLevel);
    } else if (!ReadRestart) {
+      SplitExplicitInit::initializeBarotropicPressure(SEScratch, State, Mesh,
+                                                      VCoord, CurLevel);
       SplitExplicitInit::computeVelocitySplit(State, Mesh, VCoord, CurLevel);
    }
 
@@ -143,6 +143,7 @@ void SplitExplicitRK2Stepper::doSplitStage3(
    Tend->computePseudoThicknessTendenciesOnly(
        State, AuxState, NextLevel, NextLevel, NormalTransportVelocity,
        StageTime + 0.5 * StageTimeStep);
+
    Tend->computeTracerTendenciesOnly(State, AuxState, NextTracerArray,
                                      NextLevel, NormalTransportVelocity,
                                      StageTime + 0.5 * StageTimeStep,
@@ -200,33 +201,29 @@ void SplitExplicitRK2Stepper::computeTransportVelocity(OceanState *State,
 
           if ( LocSplitFactor != 0._Real )  {
 
-             const I4 Cell0 = CellsOnEdge(IEdge, 0);
-             const I4 Cell1 = CellsOnEdge(IEdge, 1);
+             if ( KMax >= KMin ) {
+                const I4 Cell0 = CellsOnEdge(IEdge, 0);
+                const I4 Cell1 = CellsOnEdge(IEdge, 1);
 
-             Real ThicknessSum = 0._Real;
-             parallelReduceInner(
-                 Team, Range{KMin, KMax},
-                 INNER_LAMBDA(I4 K, Real &Accum) {
-                    Accum += 0.5_Real * (PseudoThickCell(Cell0, K) +
-                                         PseudoThickCell(Cell1, K));
-                 },
-                 ThicknessSum);
+                Real ThickSum = 0._Real;
+                Real TransportSum = 0._Real;
 
-             Real TransportSum = 0._Real;
-             parallelReduceInner(
-                 Team, Range{KMin, KMax},
-                 INNER_LAMBDA(I4 K, Real &Accum) {
-                    const Real TransportVel =
-                        NormalBtrVel(IEdge) + NormalBclVel(IEdge, K);
-                    const Real EdgeThickness =
-                        0.5_Real * (PseudoThickCell(Cell0, K) +
-                                    PseudoThickCell(Cell1, K));
-                    Accum += EdgeThickness * TransportVel;
-                 },
-                 TransportSum);
+                parallelReduceInner(
+                    Team, Range{KMin, KMax},
+                    INNER_LAMBDA(I4 K, Real &ThickAccum, Real &FluxAccum) {
+                       const Real TransportVel =
+                           NormalBtrVel(IEdge) + NormalBclVel(IEdge, K);
+                       const Real ThickEdge =
+                           0.5_Real * (PseudoThickCell(Cell0, K) +
+                                       PseudoThickCell(Cell1, K));
+                       ThickAccum += ThickEdge;
+                       FluxAccum += ThickEdge * TransportVel;
+                    },
+                    ThickSum, TransportSum);
 
-             VelCorrection =
-                     (BtrFlux(IEdge) / RhoGravity - TransportSum) / ThicknessSum;
+                VelCorrection =
+                        (BtrFlux(IEdge) / RhoGravity - TransportSum) / ThickSum;
+             }
 
           } // if SplitFactor
 
@@ -308,45 +305,55 @@ void SplitExplicitRK2Stepper::computeBarotropicForcing(
            const I4 KMin = MinLayerEdgeBot(IEdge);
            const I4 KMax = MaxLayerEdgeTop(IEdge);
 
-           const I4 Cell0 = CellsOnEdge(IEdge, 0);
-           const I4 Cell1 = CellsOnEdge(IEdge, 1);
+           if ( KMax >= KMin ) {
 
-           Real ThicknessSum = 0._Real;
-           parallelReduceInner(
-               Team, Range{KMin, KMax},
-               INNER_LAMBDA(I4 K, Real &Accum) {
-                  Accum += 0.5_Real * (PseudoThickCell(Cell0, K) +
-                                       PseudoThickCell(Cell1, K));
-               },
-               ThicknessSum);
+              const I4 Cell0 = CellsOnEdge(IEdge, 0);
+              const I4 Cell1 = CellsOnEdge(IEdge, 1);
 
-           Real NormalThicknessFluxSum = 0._Real;
-           parallelReduceInner(
-               Team, Range{KMin, KMax},
-               INNER_LAMBDA(I4 K, Real &Accum) {
-                  const Real ProvisionalBclVel =
-                      NormalBclVelCur(IEdge, K) +
-                      DtSeconds * NormalVelTend(IEdge, K);
-                  Accum += 0.5_Real * (PseudoThickCell(Cell0, K) +
-                                       PseudoThickCell(Cell1, K)) *
-                           ProvisionalBclVel;
-               },
-               NormalThicknessFluxSum);
+              Real ThicknessSum = 0._Real;
+              parallelReduceInner(
+                  Team, Range{KMin, KMax},
+                  INNER_LAMBDA(I4 K, Real &ThickAccum) {
+                     const Real ThickEdge = 0.5_Real * (PseudoThickCell(Cell0, K) +
+                                                        PseudoThickCell(Cell1, K));
 
-           const Real Forcing =
-               ThicknessSum > 0._Real
-                   ? LocSplitFactor * NormalThicknessFluxSum /
-                         ThicknessSum * InvDtSeconds
-                   : 0._Real;
+                     ThickAccum += ThickEdge;
+                  },
+                  ThicknessSum);
 
-           Kokkos::single(PerTeam(Team), INNER_LAMBDA() {
-                  BtrForcing(IEdge) = Forcing;
-               });
+              Real NormalThicknessFluxSum = 0._Real;
+              parallelReduceInner(
+                  Team, Range{KMin, KMax},
+                  INNER_LAMBDA(I4 K, Real &FluxAccum) {
+                     const Real ProvisionalBclVel =
+                         NormalBclVelCur(IEdge, K) +
+                         DtSeconds * NormalVelTend(IEdge, K);
 
-           parallelForInner(
-               Team, Range{KMin, KMax}, INNER_LAMBDA(I4 K) {
-                  NormalVelTend(IEdge, K) -= Forcing;
-               });
+                     const Real ThickEdge = 0.5_Real * (PseudoThickCell(Cell0, K) +
+                                                        PseudoThickCell(Cell1, K));
+
+                     FluxAccum += (ThickEdge/ThicknessSum) * ProvisionalBclVel;
+                  },
+                  NormalThicknessFluxSum);
+
+              const Real Forcing =
+                      LocSplitFactor * NormalThicknessFluxSum * InvDtSeconds;
+
+//              Kokkos::single(PerTeam(Team), INNER_LAMBDA() {
+//                     BtrForcing(IEdge) = Forcing;
+//                  });
+              BtrForcing(IEdge) = Forcing;
+
+              parallelForInner(
+                  Team, Range{KMin, KMax}, INNER_LAMBDA(I4 K) {
+                     NormalVelTend(IEdge, K) -= Forcing;
+                  });
+
+           } else {
+
+              BtrForcing(IEdge) = 0._Real;
+
+           }
         });
 
     Pacer::stop("SE-RK2:barotropicForcing", 2);
@@ -384,7 +391,7 @@ void SplitExplicitRK2Stepper::updateBaroclinicVelocityByTend(
 
 //------------------------------------------------------------------------------
 void SplitExplicitRK2Stepper::initializeNextState(
-    OceanState *State, I4 CurLevel, I4 NextLevel, I4 SplitFactor) const {
+    OceanState *State, I4 CurLevel, I4 NextLevel, Real SplitFactor) const {
 
    Array2DReal PseudoThickCur   = State->getPseudoThickness(CurLevel);
    Array2DReal PseudoThickNext  = State->getPseudoThickness(NextLevel);
@@ -405,7 +412,7 @@ void SplitExplicitRK2Stepper::initializeNextState(
           const int KMin = MinLayerEdgeBot(IEdge);
           const int KMax = MaxLayerEdgeTop(IEdge);
 
-          // Reconstruct NormalBclVel at n+1
+          // Reconstruct NormalBclVel at n
           parallelForInner(
               Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
                  NormalBclVelCur(IEdge, K) =
@@ -418,7 +425,7 @@ void SplitExplicitRK2Stepper::initializeNextState(
    deepCopy(PseudoThickNext, PseudoThickCur);
    deepCopy(NormalVelNext, NormalVelCur);
 
-   if ( SplitFactor == 0._Real ) {
+   if ( SplitFactor != 0._Real ) {
       Array1DReal BtrPressAnomalyCur =
           State->getBarotropicPressureAnomaly(CurLevel);
       Array1DReal BtrPressAnomalyNext =
@@ -478,7 +485,6 @@ void SplitExplicitRK2Stepper::reconstructNormalVelocity(
                      NormalBtrVelNext(IEdge);
               });
        });
-
    } // FinalIteration
 
 }
@@ -487,35 +493,40 @@ void SplitExplicitRK2Stepper::reconstructNormalVelocity(
 void SplitExplicitRK2Stepper::finalizeTimeStepIterationState(
     OceanState *State, I4 CurLevel, I4 NextLevel, bool FinalIteration) const {
 
-    const Real LocSplitFactor = SEConfig.SplitFactor;
-
     Pacer::start("SE-RK2:finalizeTimeStepIterationState", 2);
 
     // Reconstruction of NormalVelocity Next
     reconstructNormalVelocity(State, CurLevel, NextLevel, FinalIteration);
 
-    if ( LocSplitFactor == 0._Real ) return;
+    if ( SEConfig.SplitFactor == 0._Real ) {
 
-    // Keep the barotropic pressure anomaly consistent with the most recently
-    // updated column pseudo-thickness.
-    Array2DReal PseudoThickNext = State->getPseudoThickness(NextLevel);
-    VCoord->computeTotalPseudoThickness(PseudoThickNext);
+       Pacer::stop("SE-RK2:finalizeTimeStepIterationState", 2);
+       return;
 
-    Array1DReal BtrPressAnomalyNext =
-        State->getBarotropicPressureAnomaly(NextLevel);
-    constexpr Real RhoGravity = RhoSw * Gravity;
+    } else {
 
-    OMEGA_SCOPE(TotalPseudoThickness, VCoord->TotalPseudoThickness);
-    OMEGA_SCOPE(BottomGeomDepth, VCoord->BottomGeomDepth);
+       // Keep the barotropic pressure anomaly consistent with the most recently
+       // updated column pseudo-thickness.
+       Array2DReal PseudoThickNext = State->getPseudoThickness(NextLevel);
+       VCoord->computeTotalPseudoThickness(PseudoThickNext);
 
-    parallelFor(
-        "resetBarotropicPressureAnomaly", {Mesh->NCellsAll},
-        KOKKOS_LAMBDA(I4 ICell) {
-           BtrPressAnomalyNext(ICell) =
-               RhoGravity * (TotalPseudoThickness(ICell) - BottomGeomDepth(ICell));
-        });
+       Array1DReal BtrPressAnomalyNext =
+           State->getBarotropicPressureAnomaly(NextLevel);
+       constexpr Real RhoGravity = RhoSw * Gravity;
 
-    Pacer::stop("SE-RK2:finalizeTimeStepIterationState", 2);
+       OMEGA_SCOPE(TotalPseudoThickness, VCoord->TotalPseudoThickness);
+       OMEGA_SCOPE(BottomGeomDepth, VCoord->BottomGeomDepth);
+
+       parallelFor(
+           "resetBarotropicPressureAnomaly", {Mesh->NCellsAll},
+           KOKKOS_LAMBDA(I4 ICell) {
+              BtrPressAnomalyNext(ICell) =
+                  RhoGravity * (TotalPseudoThickness(ICell) - BottomGeomDepth(ICell));
+           });
+
+       Pacer::stop("SE-RK2:finalizeTimeStepIterationState", 2);
+
+    }
 }
 
 //------------------------------------------------------------------------------

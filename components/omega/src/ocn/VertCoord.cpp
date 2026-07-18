@@ -314,7 +314,6 @@ void VertCoord::defineFields() {
        DimNames                             // dimension names
    );
 
-<<<<<<< HEAD
    auto SurfacePressureField = Field::create(
        SurfacePressureFldName, // field name
        "Pressure at the top of the ocean column relative to reference "
@@ -342,18 +341,6 @@ void VertCoord::defineFields() {
        NDims,         // number of dimensions
        DimNames       // dimension names
    );
-=======
-   auto TotalPseudoThicknessField =
-       Field::create(TotalPseudoThickFldName,                      // field name
-                     "Total pseudo thickness in each cell column", // long name
-                     "m",                                          // units
-                     "",                               // CF standard Name
-                     0.0,                              // min valid value
-                     std::numeric_limits<Real>::max(), // max valid value
-                     NDims,         // number of dimensions
-                     DimNames       // dimension names
-       );
->>>>>>> 4d01838560 (Fix compile issues after rebasing)
 
    auto TotalGeometricThicknessField = Field::create(
        TotalGeomThickFldName,                           // field name
@@ -361,11 +348,7 @@ void VertCoord::defineFields() {
        "m",                                             // units
        "",                                              // CF standard Name
        0.0,                                             // min valid value
-<<<<<<< HEAD
        9.99E+10,  // max valid value
-=======
-       std::numeric_limits<Real>::max(),                // max valid value
->>>>>>> 4d01838560 (Fix compile issues after rebasing)
        NDims,         // number of dimensions
        DimNames       // dimension names
    );

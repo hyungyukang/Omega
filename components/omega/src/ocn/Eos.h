@@ -1022,6 +1022,9 @@ class Eos {
                                   const Array2DReal &SpecVol);
 
    /// Convert Conservative Temperature to potential temperature
+   /// For TEOS-10, uses the TEOS-10 polynomial
+   /// For other EOS choices, conservative temperature is equal to potential
+   /// temperature
    KOKKOS_FUNCTION Real calcPtFromCt(const Real &Sa, const Real &Ct) const {
       if (EosChoice == EosType::Teos10Eos) {
          return ComputeSpecVolTeos10.calcPtFromCt(Sa, Ct);
@@ -1029,14 +1032,37 @@ class Eos {
       return Ct;
    }
 
-   /// Convert potential temperature to Conservative Temperature
-   Real calcCtFromPt(const Real &Sa, const Real &Pt) const;
+   /// Convert potential temperature to Conservative Temperature.
+   /// For TEOS-10, uses the TEOS-10 polynomial
+   /// For other EOS choices, potential temperature equals conservative
+   /// temperature
+   KOKKOS_FUNCTION Real calcCtFromPt(const Real &Sa, const Real &Pt) const {
+      if (EosChoice == EosType::Teos10Eos) {
+         return ComputeSpecVolTeos10.calcCtFromPt(Sa, Pt);
+      }
+      return Pt;
+   }
 
-   /// Calculate freezing Conservative Temperature for TEOS-10.
-   /// Aborts if EOS is not TEOS-10: CT freezing is not yet implemented
-   /// for other equation-of-state choices.
-   Real calcCtFreezing(const Real Sa, const Real P,
-                       const Real SaturationFract) const;
+   /// Calculate freezing Conservative Temperature.
+   /// For TEOS-10, uses the Roquet et al. 75-term polynomial.
+   /// For LinearEos, uses a simple linear salinity-dependent approximation
+   /// consistent with the linear EOS philosophy (Sa in g/kg converted to PSU).
+   /// For ConstantEos, returns a constant approximate ocean freezing point.
+   KOKKOS_FUNCTION Real calcCtFreezing(const Real Sa, const Real P,
+                                       const Real SaturationFract) const {
+      if (EosChoice == EosType::Teos10Eos) {
+         return ComputeSpecVolTeos10.calcCtFreezing(Sa, P, SaturationFract);
+      }
+      if (EosChoice == EosType::LinearEos) {
+         // Linear salinity-dependent freezing point; coefficient -0.054
+         // degC/PSU with absolute-to-practical salinity conversion (g/kg ->
+         // PSU).
+         constexpr Real Coeff = -0.054_Real;
+         return Coeff * Sa / Psu2Gpkg;
+      }
+      // ConstantEos: constant approximate ocean freezing point (degC)
+      return -1.9_Real;
+   }
 
    /// Initialize EOS from config and mesh
    static void init();

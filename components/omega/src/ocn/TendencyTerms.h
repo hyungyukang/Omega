@@ -438,7 +438,7 @@ class SfcTracerForcingOnCell {
          const Real SaTop  = SaltIndex >= 0
                                  ? TracerCell(SaltIndex, ICell, KTop)
                                  : 0.0_Real; // not sure we want zero here?
-         const Real CtFrz  = EosImpl.calcCtFreezing(SaTop, PTopDb, 0.0_Real);
+         const Real CtFrz  = EosImpl->calcCtFreezing(SaTop, PTopDb, 0.0_Real);
          const Real CtTop  = TracerCell(TempIndex, ICell, KTop);
 
          // Heat tendencies are due to direct heat fluxes + enthalpy fluxes
@@ -469,7 +469,7 @@ class SfcTracerForcingOnCell {
    I4 SaltIndex;
    Array1DI4 MinLayerCell;
    Array1DI4 MaxLayerCell;
-   Teos10Eos EosImpl;
+   const Eos *EosImpl;
 };
 
 // Tracer horizontal advection term

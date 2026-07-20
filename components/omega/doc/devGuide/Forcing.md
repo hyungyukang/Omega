@@ -97,6 +97,10 @@ the surface layer pseudo-thickness.
   - gates execution of coupled flux tracer kernel
   - controls direct heat flux forcing on temperature and salt flux forcing on salinity
 
+## Notes
+
+- Currently all forcing is applied to the surface layer only. In the future, vertical spreading of river runoff contributions will be needed.
+
 ## Surface tracer restoring design
 
 ### Surface tracer restoring data flow

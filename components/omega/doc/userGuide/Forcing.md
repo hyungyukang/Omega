@@ -91,7 +91,7 @@ by the equivalent `ocn_comp_mct.F`.
 
 ### Notes
 
-- Coupled fluxes are applied only at the surface layer (top active layer) for each cell.
+- Coupled fluxes are applied only at the surface layer (top active layer) for each cell. In the future, vertical spreading of contributions from river runoff will be needed.
 - Pseudo-thickness tendency is computed from the (six) freshwater mass fluxes and the salt mass flux
   `SeaIceSaltFlux`, converted to a pseudo-thickness change.
 - Temperature tendency is computed from direct heat flux plus

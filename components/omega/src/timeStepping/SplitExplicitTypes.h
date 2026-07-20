@@ -33,6 +33,7 @@ struct SplitExplicitScratch {
    Array1DReal BarotropicPressure;
    Array1DReal BarotropicForcing;
    Array1DReal BarotropicFlux;
+   Array1DReal BaroclinicPseudoThicknessEdge;
    Array2DReal BaseVelocityTend;
    Array2DReal NormalTransportVelocity;
 };

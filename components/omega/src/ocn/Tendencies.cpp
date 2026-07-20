@@ -914,9 +914,11 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
       Pacer::stop("Tend:bclPressureGradTerm", 2);
    }
 
-   // Compute the barotropic pressure anomaly gradient term
-   if (LocSSHGrad.Enabled && SplitFactor != 0._Real) {
-   //if (SplitFactor != 0._Real) {
+   // Compute the barotropic pressure anomaly gradient term for split-explicit
+   // integration. This term is required to cancel the barotropic contribution
+   // in the full pressure gradient and must not depend on the legacy shallow-
+   // water SSH tendency switch.
+   if (SplitFactor != 0._Real) {
       const Array1DReal &BtrPressAnomaly =
           State->getBarotropicPressureAnomaly(BarotropicPressureTimeLevel);
       const Array1DReal &DepthMeanSpecVol = EqState->DepthMeanSpecificVolume;

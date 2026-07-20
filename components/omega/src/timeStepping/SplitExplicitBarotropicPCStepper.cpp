@@ -6,6 +6,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "SplitExplicitBarotropicPCStepper.h"
+#include "AuxiliaryState.h"
 #include "Eos.h"
 #include "GlobalConstants.h"
 #include "Logging.h"
@@ -18,7 +19,8 @@ namespace OMEGA {
 
 //------------------------------------------------------------------------------
 void SplitExplicitBarotropicPCStepper::doSplitStage2(
-    OceanState *State, SplitExplicitScratch &Scratch,
+    OceanState *State, const AuxiliaryState *AuxState,
+    SplitExplicitScratch &Scratch,
     const SplitExplicitConfig &SEConfig, const HorzMesh *Mesh,
     Halo *MeshHalo, const VertCoord *VCoord, I4 CurLevel, I4 NextLevel,
     const TimeInstant &StageTime, const TimeInterval &StageTimeStep) const {
@@ -27,6 +29,8 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
       LOG_CRITICAL("Invalid split-explicit barotropic subcycle count");
    if (!MeshHalo)
       LOG_CRITICAL("Invalid MeshHalo");
+   if (!AuxState)
+      LOG_CRITICAL("Invalid auxiliary state");
 
    // Keep the arguments live in this framework implementation. The barotropic
    // tendency terms will use them once the full split-explicit equations land.
@@ -64,6 +68,13 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
        Scratch.BarotropicPressureAnomalySubcycleNew;
    Array1DReal BtrForcing = Scratch.BarotropicForcing;
    Array1DReal BtrFlux    = Scratch.BarotropicFlux;
+   Array1DReal BaroclinicPseudoThicknessEdge =
+       Scratch.BaroclinicPseudoThicknessEdge;
+   const Array2DReal FluxPseudoThickEdge =
+       AuxState->PseudoThicknessAux.FluxPseudoThickEdge;
+   const bool UpwindFluxThickness =
+       AuxState->PseudoThicknessAux.FluxThickEdgeChoice ==
+       FluxThickEdgeOption::Upwind;
 
    OMEGA_SCOPE(CellsOnEdge, Mesh->CellsOnEdge);
    OMEGA_SCOPE(NEdgesOnCell, Mesh->NEdgesOnCell);
@@ -76,7 +87,8 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
    OMEGA_SCOPE(DvEdge, Mesh->DvEdge);
    OMEGA_SCOPE(AreaCell, Mesh->AreaCell);
    OMEGA_SCOPE(FEdge, Mesh->FEdge);
-   OMEGA_SCOPE(BottomGeomDepth, VCoord->BottomGeomDepth);
+   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
+   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
    OMEGA_SCOPE(EdgeMask, VCoord->EdgeMask);
    OMEGA_SCOPE(DepthMeanSpecVol, EqState->DepthMeanSpecificVolume);
 
@@ -86,11 +98,40 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
    deepCopy(NormalBtrVelNext, NormalBtrVelSubcycleCur);
    deepCopy(BtrFlux, 0._Real);
 
+   // MPAS-O's baroclinicThickness is the vertical sum of the provisional
+   // layer thickness used for fluxes. Reuse Omega's corresponding edge
+   // pseudo-thickness so that partial bottom cells contribute only over the
+   // vertical range shared by both cells on an edge.
+   parallelForOuter(
+       "computeBtrBaroclinicPseudoThicknessEdge", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(I4 IEdge, const TeamMember &Team) {
+          const I4 KMin = MinLayerEdgeBot(IEdge);
+          const I4 KMax = MaxLayerEdgeTop(IEdge);
+
+          Real PseudoThicknessSum = 0._Real;
+          parallelReduceInner(
+              Team, Range{KMin, KMax},
+              INNER_LAMBDA(I4 K, Real &Sum) {
+                 Sum += FluxPseudoThickEdge(IEdge, K);
+              },
+              PseudoThicknessSum);
+
+          Kokkos::single(
+              PerTeam(Team), INNER_LAMBDA() {
+                 BaroclinicPseudoThicknessEdge(IEdge) = PseudoThicknessSum;
+              });
+       });
+
    for (I4 Subcycle = 0; Subcycle < NBtrSubcycles; ++Subcycle) {
 
       // Barotropic velocity predictor
       parallelFor(
           "btrVelocityPredictor", {Mesh->NEdgesOwned}, KOKKOS_LAMBDA(I4 IEdge) {
+             if (MaxLayerEdgeTop(IEdge) < MinLayerEdgeBot(IEdge)) {
+                NormalBtrVelSubcycleNew(IEdge) = 0._Real;
+                return;
+             }
+
              const I4 Cell0 = CellsOnEdge(IEdge, 0);
              const I4 Cell1 = CellsOnEdge(IEdge, 1);
 
@@ -126,16 +167,38 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
 
              for (I4 J = 0; J < NEdgesOnCell(ICell); ++J) {
                 const I4 JEdge = EdgesOnCell(ICell, J);
+                if (MaxLayerEdgeTop(JEdge) < MinLayerEdgeBot(JEdge))
+                   continue;
+
                 const I4 Cell0 = CellsOnEdge(JEdge, 0);
                 const I4 Cell1 = CellsOnEdge(JEdge, 1);
-                const Real BtrPressureEdge =
-                    0.5_Real * (BtrPressAnomalySubcycleCur(Cell0) +
-                                RhoGravity * BottomGeomDepth(Cell0) +
-                                BtrPressAnomalySubcycleCur(Cell1) +
-                                RhoGravity * BottomGeomDepth(Cell1));
                 const Real NormalBtrVelEdge =
                     (1._Real - Gamma1) * NormalBtrVelSubcycleCur(JEdge) +
                     Gamma1 * NormalBtrVelSubcycleNew(JEdge);
+
+                const Real DeltaBtrPressure0 =
+                    BtrPressAnomalySubcycleCur(Cell0) -
+                    BtrPressAnomalyNext(Cell0);
+                const Real DeltaBtrPressure1 =
+                    BtrPressAnomalySubcycleCur(Cell1) -
+                    BtrPressAnomalyNext(Cell1);
+                Real DeltaBtrPressureEdge =
+                    0.5_Real * (DeltaBtrPressure0 + DeltaBtrPressure1);
+                if (UpwindFluxThickness) {
+                   if (NormalBtrVelEdge > 0._Real)
+                      DeltaBtrPressureEdge = DeltaBtrPressure0;
+                   else if (NormalBtrVelEdge < 0._Real)
+                      DeltaBtrPressureEdge = DeltaBtrPressure1;
+                   else
+                      DeltaBtrPressureEdge =
+                          Kokkos::max(DeltaBtrPressure0, DeltaBtrPressure1);
+                }
+
+                // This is rho0*g*wctEdge. The pressure-anomaly difference is
+                // rho0*g times MPAS-O's deltaSSH.
+                const Real BtrPressureEdge =
+                    RhoGravity * BaroclinicPseudoThicknessEdge(JEdge) +
+                    DeltaBtrPressureEdge;
                 const Real PredictorBtrFlux =
                     BtrPressureEdge * NormalBtrVelEdge;
 
@@ -155,6 +218,11 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
       // Barotropic velocity corrector
       parallelFor(
           "btrVelocityCorrector", {Mesh->NEdgesOwned}, KOKKOS_LAMBDA(I4 IEdge) {
+             if (MaxLayerEdgeTop(IEdge) < MinLayerEdgeBot(IEdge)) {
+                NormalBtrVelSubcycleNew(IEdge) = 0._Real;
+                return;
+             }
+
              const Real Mask = EdgeMask(IEdge, 0);
              const I4 Cell0  = CellsOnEdge(IEdge, 0);
              const I4 Cell1  = CellsOnEdge(IEdge, 1);
@@ -197,6 +265,9 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
 
              for (I4 J = 0; J < NEdgesOnCell(ICell); ++J) {
                 const I4 JEdge = EdgesOnCell(ICell, J);
+                if (MaxLayerEdgeTop(JEdge) < MinLayerEdgeBot(JEdge))
+                   continue;
+
                 const I4 Cell0 = CellsOnEdge(JEdge, 0);
                 const I4 Cell1 = CellsOnEdge(JEdge, 1);
 
@@ -208,13 +279,29 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
                     (1._Real - Gamma2) * BtrPressAnomalySubcycleCur(Cell1) +
                     Gamma2 * BtrPressAnomalySubcycleNew(Cell1);
 
-                const Real BtrPressureEdge =
-                    0.5_Real * (BtrPressure0 + RhoGravity * BottomGeomDepth(Cell0) +
-                                BtrPressure1 + RhoGravity * BottomGeomDepth(Cell1));
-
                 const Real NormalBtrVelEdge =
                     (1._Real - Gamma3) * NormalBtrVelSubcycleCur(JEdge) +
                     Gamma3 * NormalBtrVelSubcycleNew(JEdge);
+
+                const Real DeltaBtrPressure0 =
+                    BtrPressure0 - BtrPressAnomalyNext(Cell0);
+                const Real DeltaBtrPressure1 =
+                    BtrPressure1 - BtrPressAnomalyNext(Cell1);
+                Real DeltaBtrPressureEdge =
+                    0.5_Real * (DeltaBtrPressure0 + DeltaBtrPressure1);
+                if (UpwindFluxThickness) {
+                   if (NormalBtrVelEdge > 0._Real)
+                      DeltaBtrPressureEdge = DeltaBtrPressure0;
+                   else if (NormalBtrVelEdge < 0._Real)
+                      DeltaBtrPressureEdge = DeltaBtrPressure1;
+                   else
+                      DeltaBtrPressureEdge =
+                          Kokkos::max(DeltaBtrPressure0, DeltaBtrPressure1);
+                }
+
+                const Real BtrPressureEdge =
+                    RhoGravity * BaroclinicPseudoThicknessEdge(JEdge) +
+                    DeltaBtrPressureEdge;
 
                 const Real CorrectorBtrFlux =
                     BtrPressureEdge * NormalBtrVelEdge;
@@ -234,6 +321,9 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
       // transport used by the barotropic-baroclinic velocity correction.
       parallelFor(
           "btrFluxCorrector", {Mesh->NEdgesOwned}, KOKKOS_LAMBDA(I4 IEdge) {
+             if (MaxLayerEdgeTop(IEdge) < MinLayerEdgeBot(IEdge))
+                return;
+
              const I4 Cell0 = CellsOnEdge(IEdge, 0);
              const I4 Cell1 = CellsOnEdge(IEdge, 1);
 
@@ -245,13 +335,29 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
                  (1._Real - Gamma2) * BtrPressAnomalySubcycleCur(Cell1) +
                  Gamma2 * BtrPressAnomalySubcycleNew(Cell1);
 
-             const Real BtrPressureEdge =
-                 0.5_Real * (BtrPressure0 + RhoGravity * BottomGeomDepth(Cell0) +
-                             BtrPressure1 + RhoGravity * BottomGeomDepth(Cell1));
-
              const Real NormalBtrVelEdge =
                  (1._Real - Gamma3) * NormalBtrVelSubcycleCur(IEdge) +
                  Gamma3 * NormalBtrVelSubcycleNew(IEdge);
+
+             const Real DeltaBtrPressure0 =
+                 BtrPressure0 - BtrPressAnomalyNext(Cell0);
+             const Real DeltaBtrPressure1 =
+                 BtrPressure1 - BtrPressAnomalyNext(Cell1);
+             Real DeltaBtrPressureEdge =
+                 0.5_Real * (DeltaBtrPressure0 + DeltaBtrPressure1);
+             if (UpwindFluxThickness) {
+                if (NormalBtrVelEdge > 0._Real)
+                   DeltaBtrPressureEdge = DeltaBtrPressure0;
+                else if (NormalBtrVelEdge < 0._Real)
+                   DeltaBtrPressureEdge = DeltaBtrPressure1;
+                else
+                   DeltaBtrPressureEdge =
+                       Kokkos::max(DeltaBtrPressure0, DeltaBtrPressure1);
+             }
+
+             const Real BtrPressureEdge =
+                 RhoGravity * BaroclinicPseudoThicknessEdge(IEdge) +
+                 DeltaBtrPressureEdge;
 
              BtrFlux(IEdge) += BtrPressureEdge * NormalBtrVelEdge;
           });

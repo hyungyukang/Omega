@@ -16,10 +16,13 @@
 
 namespace OMEGA {
 
+class AuxiliaryState;
+
 class SplitExplicitBarotropicPCStepper {
  public:
    void doSplitStage2(
        OceanState *State,             ///< [inout] model state
+       const AuxiliaryState *AuxState, ///< [in] provisional auxiliary state
        SplitExplicitScratch &Scratch, ///< [inout] split-explicit scratch data
        const SplitExplicitConfig &Config, ///< [in] split-explicit options
        const HorzMesh *Mesh,              ///< [in] horizontal mesh

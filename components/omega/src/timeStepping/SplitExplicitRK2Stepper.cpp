@@ -71,9 +71,9 @@ void SplitExplicitRK2Stepper::initBarotropicStepper() {
       BarotropicStage2 = [this](OceanState *State, I4 CurLevel, I4 NextLevel,
                                 const TimeInstant &StageTime,
                                 const TimeInterval &StageTimeStep) {
-         BarotropicPCStepper.doSplitStage2(State, SEScratch, SEConfig, Mesh,
-                                           MeshHalo, VCoord, CurLevel, NextLevel,
-                                           StageTime, StageTimeStep);
+         BarotropicPCStepper.doSplitStage2(
+             State, AuxState, SEScratch, SEConfig, Mesh, MeshHalo, VCoord,
+             CurLevel, NextLevel, StageTime, StageTimeStep);
       };
       return;
    }
@@ -644,6 +644,25 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
       VMix->VertMixImplicit(State, AuxState, CurTracerArray, NTracers,
                             State->CurTimeIndex);
    }
+
+   // Refresh kinetic diagnostics from the completed n+dt velocity before
+   // validation and history output.
+   const Array2DReal NormalVelCur = State->getNormalVelocity(CurLevel);
+   OMEGA_SCOPE(LocKineticAux, AuxState->KineticAux);
+   OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
+   OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
+   parallelForOuter(
+       "refreshFinalKineticAux", {Mesh->NCellsAll},
+       KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
+          const int KMin   = MinLayerCell(ICell);
+          const int KMax   = MaxLayerCell(ICell);
+          const int KRange = vertRangeChunked(KMin, KMax);
+
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 LocKineticAux.computeVarsOnCell(ICell, KChunk, NormalVelCur);
+              });
+       });
 
    validateOceanState(State, AuxState, VertCoord::getDefault(), CurLevel);
 

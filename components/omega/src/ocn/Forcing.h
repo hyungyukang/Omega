@@ -71,6 +71,9 @@ class Forcing {
    /// Read forcing fields from input stream at startup
    void readStreamIntoArrays();
 
+   /// Reset all forcing arrays to zero before reading optional fields
+   void resetArrays();
+
    /// Compute all forcing variables
    void computeAll() const;
 

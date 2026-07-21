@@ -152,7 +152,32 @@ void Forcing::readConfigOptions(Config *OmegaConfig) {
 }
 
 // Compute all forcing variables (dispatches to specific computations).
-void Forcing::computeAll() const { computeSfcStressForcingOnEdge(); }
+void Forcing::computeAll() const {
+   exchangeHalo();
+   computeSfcStressForcingOnEdge();
+}
+
+// Reset forcing arrays so omitted optional fields remain zero after read.
+void Forcing::resetArrays() {
+   deepCopy(SfcStressForcing.NormalStressEdge, 0.0_Real);
+   deepCopy(SfcStressForcing.ZonalStressCell, 0.0_Real);
+   deepCopy(SfcStressForcing.MeridStressCell, 0.0_Real);
+
+   deepCopy(TracerForcing.SnowFluxCell, 0.0_Real);
+   deepCopy(TracerForcing.RainFluxCell, 0.0_Real);
+   deepCopy(TracerForcing.EvaporationFluxCell, 0.0_Real);
+   deepCopy(TracerForcing.SeaIceFreshWaterFluxCell, 0.0_Real);
+   deepCopy(TracerForcing.IceRunoffFluxCell, 0.0_Real);
+   deepCopy(TracerForcing.RiverRunoffFluxCell, 0.0_Real);
+   deepCopy(TracerForcing.LatentHeatFluxCell, 0.0_Real);
+   deepCopy(TracerForcing.SensibleHeatFluxCell, 0.0_Real);
+   deepCopy(TracerForcing.LongWaveHeatFluxUpCell, 0.0_Real);
+   deepCopy(TracerForcing.LongWaveHeatFluxDownCell, 0.0_Real);
+   deepCopy(TracerForcing.SeaIceHeatFluxCell, 0.0_Real);
+   deepCopy(TracerForcing.ShortWaveHeatFluxCell, 0.0_Real);
+   deepCopy(TracerForcing.SeaIceSaltFluxCell, 0.0_Real);
+   deepCopy(TracerForcing.SurfInsituTemperature, 0.0_Real);
+}
 
 // Compute edge-normal stress from cell-center zonal and meridional components.
 void Forcing::computeSfcStressForcingOnEdge() const {
@@ -175,6 +200,30 @@ I4 Forcing::exchangeHalo() const {
                                           OnCell);
    Err += MeshHalo->exchangeFullArrayHalo(SfcStressForcing.MeridStressCell,
                                           OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.SnowFluxCell, OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.RainFluxCell, OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.EvaporationFluxCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(
+       TracerForcing.SeaIceFreshWaterFluxCell, OnCell);
+   Err +=
+       MeshHalo->exchangeFullArrayHalo(TracerForcing.IceRunoffFluxCell, OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.RiverRunoffFluxCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.LatentHeatFluxCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.SensibleHeatFluxCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.LongWaveHeatFluxUpCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(
+       TracerForcing.LongWaveHeatFluxDownCell, OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.SeaIceHeatFluxCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.ShortWaveHeatFluxCell,
+                                          OnCell);
+   Err += MeshHalo->exchangeFullArrayHalo(TracerForcing.SeaIceSaltFluxCell,
+                                          OnCell);
 
    return Err;
 }
@@ -186,13 +235,14 @@ void Forcing::readStreamIntoArrays() {
 
    std::string StreamName = "Forcing";
 
+   resetArrays();
+
    // Attempt to read stream; if unavailable, log and fall back to zero forcing.
    Err = IOStream::read(StreamName);
    if (Err.isFail()) {
       LOG_INFO("Forcing: Error while reading {} stream, using zero forcing",
                StreamName);
-      deepCopy(SfcStressForcing.ZonalStressCell, 0._Real);
-      deepCopy(SfcStressForcing.MeridStressCell, 0._Real);
+      resetArrays();
    }
 
    I4 HaloErr = exchangeHalo();

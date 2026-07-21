@@ -119,10 +119,15 @@ int main(int argc, char *argv[]) {
       PGradConfig.set("PressureGradType", std::string("HighOrder1"));
       PressureGrad *TestPGrad =
           PressureGrad::create("HighOrderTest", DefMesh, VCoord, OmegaConfig);
+      PGradConfig.set("PressureGradType", std::string("CenteredNew"));
+      PressureGrad *CenteredNewPGrad = PressureGrad::create(
+          "CenteredNewTest", DefMesh, VCoord, OmegaConfig);
       PGradConfig.set("PressureGradType", OriginalPGradType);
 
       // create arrays: Tend on edges, Pressure/Geopotential/SpecVol on cells
       Array2DReal Tend("Tend", DefMesh->NEdgesSize, VCoord->NVertLayers);
+      Array2DReal TendCenteredNew("TendCenteredNew", DefMesh->NEdgesSize,
+                                  VCoord->NVertLayers);
       Array2DReal SpecVolOld("SpecVolOld", DefMesh->NCellsSize,
                              VCoord->NVertLayers);
       Array2DReal PressureMidOld("PressureMidOld", DefMesh->NCellsSize,
@@ -280,8 +285,8 @@ int main(int argc, char *argv[]) {
          // compute z levels
          VCoord->computeGeomZHeight(PseudoThick, SpecVol);
 
-         if (!TestPGrad) {
-            LOG_INFO("PGrad: high-order test instance not created");
+         if (!TestPGrad || !CenteredNewPGrad) {
+            ABORT_ERROR("PGrad: test pressure-gradient instance not created");
          }
 
          // compute pressure gradient
@@ -315,6 +320,28 @@ int main(int argc, char *argv[]) {
          LOG_INFO("refinement level {}: max |Tend| = {}, average Tend = {}",
                   Refinement, MaxValue, RmseVal);
 
+         // Exercise the common-geometric-level centered implementation and
+         // check that it produces finite tendencies on the sloping layers.
+         deepCopy(TendCenteredNew, 0._Real);
+         CenteredNewPGrad->computePressureGrad(
+             TendCenteredNew, PressureMid, PressureInterface, SpecVol,
+             GeomZMid, Temp, Salinity, DefEos->EosChoice);
+         Real MaxCenteredNew = 0._Real;
+         parallelReduce(
+             {NEdgesAll, NVertLayers - 2},
+             KOKKOS_LAMBDA(int i, int k, Real &max) {
+                const Real Val = Kokkos::abs(TendCenteredNew(i, k + 1));
+                if (Val > max) {
+                   max = Val;
+                }
+             },
+             Kokkos::Max<Real>(MaxCenteredNew));
+         if (!std::isfinite(MaxCenteredNew)) {
+            RetVal = 1;
+         }
+         LOG_INFO("refinement level {}: CenteredNew max |Tend| = {}",
+                  Refinement, MaxCenteredNew);
+
          // coarsen for next iteration
          DC          = DC * 2.0_Real;
          NVertLayers = NVertLayers / 2;
@@ -323,9 +350,9 @@ int main(int argc, char *argv[]) {
 
       // Test for second order convergence
       // resolution (dC) increases in refimenent loop
-      if (Rmse(0) < Rmse(NRefinements - 1) / pow(4.0_Real, NRefinements - 1)) {
-         RetVal = 0;
-      } else {
+      if (!(Rmse(0) <
+            Rmse(NRefinements - 1) /
+                pow(4.0_Real, NRefinements - 1))) {
          RetVal = 1;
       }
 

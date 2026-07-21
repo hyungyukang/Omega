@@ -46,6 +46,18 @@ PressureGrad:
 - Suitable for global ocean simulations without ice shelf cavities
 - Default option
 
+**Common-Level Centered** (`'CenteredNew'`, `'centeredNew'`, or
+`'CenteredPGradNew'`)
+- Reconstructs pressure, temperature, and salinity from both cells to a shared
+  geometric height within the common wet interval of the two columns
+- Searches each column independently for the layer containing that height,
+  allowing different vertical indices across steep topography
+- Evaluates TEOS-10 specific volume from that common-level edge state
+- Differences pressure at constant geometric height, so it does not require a
+  separate geometric-height-gradient cancellation
+- Falls back to the original centered formula only when the columns have no
+  common wet height
+
 **High-Order** (`'HighOrder1'`)
 - Uses monotonic piecewise-linear temperature and salinity reconstruction with
   three-point Gauss-Legendre integration through each layer and across each

@@ -101,7 +101,24 @@ Other equations of state use $\alpha_{e,k}=[\alpha_k]_e$.
 This avoids the additional cancellation introduced by separately evaluating
 the Montgomery-potential gradient and specific-volume correction.
 
-### 3.2 High-order Pressure Gradient
+### 3.2 Common-level Centered Pressure Gradient
+
+`CenteredNew` selects a shared geometric height $z_e$ within the common wet
+interval of the two cells. Each column independently locates the layer that
+contains $z_e$ and reconstructs pressure, Conservative Temperature, and
+Absolute Salinity to that height. The TEOS-10 edge specific volume is evaluated
+from those reconstructed states, and the pressure-gradient tendency is
+
+$$
+ T^p_{e,k} = -\alpha_e(z_e)
+ \frac{p_1(z_e)-p_0(z_e)}{d_e}
+ - \nabla(\phi_{TP} + \phi_{SAL}).
+$$
+
+Because the pressure difference is evaluated at constant geometric height,
+this form does not include a separate $g\nabla z$ correction.
+
+### 3.3 High-order Pressure Gradient
 The high order pressure gradient will be based on the {ref}`full volume integral form <omega-v1-vh-momentum-reynolds2>` of the geopotential and pressure terms:
 $$
 T^p &= - \int_A \int_{\tilde{z}_k^{\text{bot}}}^{\tilde{z}_k^{\text{top}}} \rho_0 \, \left( \nabla \left<\Phi\right> \right) \, d\tilde{z} \, dA \\
@@ -179,6 +196,7 @@ class PressureGrad{
 
         // Instances of functors
         PressureGradCentered CenteredPGrad;
+        PressureGradCenteredNew CenteredPGradNew;
         PressureGradHighOrder HighOrderPGrad;
 
         // Pressure gradient choice from config
@@ -204,6 +222,7 @@ An `enum class` will be used to specify options for the pressure gradient used f
 ```c++
 enum class PressureGradType{
    Centered,
+   CenteredNew,
    HighOrder1,
    HighOrder2
 }

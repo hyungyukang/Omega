@@ -1,7 +1,7 @@
 //===-- ocn/PGrad.cpp - Pressure Gradient Term -----------------*- C++ -*-===//
 //
-// Implements the PGrad manager and two discretizations: Centered and
-// HighOrder.
+// Implements the PGrad manager and centered, common-level centered, and
+// high-order discretizations.
 //
 //===----------------------------------------------------------------------===//
 
@@ -78,7 +78,7 @@ PressureGrad::PressureGrad(
     Config *Options)         ///< [in] Configuration options
     : MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop), CenteredPGrad(Mesh, VCoord),
-      HighOrderPGrad(Mesh, VCoord) {
+      CenteredPGradNew(Mesh, VCoord), HighOrderPGrad(Mesh, VCoord) {
 
    // store mesh sizes
    NEdgesAll     = Mesh->NEdgesAll;
@@ -99,6 +99,11 @@ PressureGrad::PressureGrad(
    if (PGradTypeStr == "centered" || PGradTypeStr == "Centered") {
       PressureGradChoice          = PressureGradType::Centered;
       this->CenteredPGrad.Enabled = true;
+   } else if (PGradTypeStr == "CenteredNew" ||
+              PGradTypeStr == "centeredNew" ||
+              PGradTypeStr == "CenteredPGradNew") {
+      PressureGradChoice             = PressureGradType::CenteredNew;
+      this->CenteredPGradNew.Enabled = true;
    } else if (PGradTypeStr == "HighOrder1") {
       PressureGradChoice           = PressureGradType::HighOrder1;
       this->HighOrderPGrad.Enabled = true;
@@ -170,6 +175,7 @@ void PressureGrad::computePressureGrad(Array2DReal &Tend,
                                        EosType EosChoice) const {
 
    OMEGA_SCOPE(LocCenteredPGrad, CenteredPGrad);
+   OMEGA_SCOPE(LocCenteredPGradNew, CenteredPGradNew);
    OMEGA_SCOPE(LocHighOrderPGrad, HighOrderPGrad);
    OMEGA_SCOPE(LocMinLayerEdgeBot, MinLayerEdgeBot);
    OMEGA_SCOPE(LocMaxLayerEdgeTop, MaxLayerEdgeTop);
@@ -192,6 +198,24 @@ void PressureGrad::computePressureGrad(Array2DReal &Tend,
                                      SpecVol, GeomZMid, ConservTemp,
                                      AbsSalinity, LocTidalPotential,
                                      LocSelfAttractionLoading, EosChoice);
+                 });
+          });
+
+   } else if (PressureGradChoice == PressureGradType::CenteredNew) {
+
+      parallelForOuter(
+          "pgrad-centered-new", {NEdgesAll},
+          KOKKOS_LAMBDA(I4 IEdge, const TeamMember &Team) {
+             const int KMin   = LocMinLayerEdgeBot(IEdge);
+             const int KMax   = LocMaxLayerEdgeTop(IEdge);
+             const int KRange = vertRangeChunked(KMin, KMax);
+
+             parallelForInner(
+                 Team, KRange, INNER_LAMBDA(int KChunk) {
+                    LocCenteredPGradNew(
+                        Tend, IEdge, KChunk, PressureMid, PressureInterface,
+                        SpecVol, GeomZMid, ConservTemp, AbsSalinity,
+                        LocTidalPotential, LocSelfAttractionLoading, EosChoice);
                  });
           });
 
@@ -228,6 +252,19 @@ PressureGradCentered::PressureGradCentered(
     : Enabled(false), CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
       EdgeMask(VCoord->EdgeMask), MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop), Teos10(VCoord) {}
+
+//------------------------------------------------------------------------------
+// Constructor for common-geometric-level centered pressure gradient functor
+PressureGradCenteredNew::PressureGradCenteredNew(
+    const HorzMesh *Mesh,   ///< [in] Horizontal mesh
+    const VertCoord *VCoord ///< [in] Vertical coordinate
+    )
+    : Enabled(false), CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
+      EdgeMask(VCoord->EdgeMask), MinLayerCell(VCoord->MinLayerCell),
+      MaxLayerCell(VCoord->MaxLayerCell),
+      MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
+      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop),
+      GeomZInterface(VCoord->GeomZInterface), Teos10(VCoord) {}
 
 //------------------------------------------------------------------------------
 // Constructor for high order pressure gradient functor

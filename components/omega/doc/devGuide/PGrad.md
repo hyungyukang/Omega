@@ -4,15 +4,16 @@
 
 Omega includes a `PressureGrad` class that computes horizontal pressure gradient
 tendencies for the non-Boussinesq momentum equation. The implementation supports
-the default centered difference scheme and a reconstructed quadrature scheme for
-TEOS-10. The class follows the same factory pattern used by other Omega modules.
+the default centered difference scheme, a common-geometric-level centered
+scheme, and a reconstructed quadrature scheme for TEOS-10. The class follows
+the same factory pattern used by other Omega modules.
 
 ## PressureGradType enum
 
 An enumeration of the available pressure gradient schemes is defined in `PGrad.h`:
 
 ```c++
-enum class PressureGradType { Centered, HighOrder1, HighOrder2 };
+enum class PressureGradType { Centered, CenteredNew, HighOrder1, HighOrder2 };
 ```
 
 This is used to select which pressure gradient method is applied at runtime.
@@ -132,6 +133,30 @@ KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
                                 EosType EosChoice) const;
 ```
 
+### PressureGradCenteredNew
+
+This functor retains a centered horizontal difference but evaluates it on a
+common geometric level. For each edge and layer, it selects the edge-average
+midpoint height clipped to the common wet interval of the two columns. Each
+column searches for the layer containing that height, so different vertical
+indices can be used across steep topography. Pressure is linearly reconstructed
+between layer interfaces, while Conservative Temperature, Absolute Salinity,
+and non-TEOS specific volume use monotonic piecewise-linear reconstruction in
+geometric height.
+
+For TEOS-10, edge specific volume is evaluated from the reconstructed tracers
+and pressure. Because both pressures are evaluated at the same geometric
+height, the tendency is
+
+```
+Tend(IEdge, K) += EdgeMask(IEdge, K) *
+    (-SpecVolEdge * GradPressureAtCommonZ - GradGeoPot)
+```
+
+and does not include a separate `Gravity * GradGeomZ` term. If the two columns
+have no common wet height, the functor falls back to the original
+layer-coordinate centered formula rather than extrapolating through topography.
+
 ### PressureGradHighOrder
 
 This functor uses a monotonic piecewise-linear reconstruction of Conservative
@@ -158,6 +183,8 @@ PressureGrad:
 
 Valid options for `PressureGradType` are:
 - `'centered'` or `'Centered'`: centered difference approximation (default)
+- `'CenteredNew'`, `'centeredNew'`, or `'CenteredPGradNew'`:
+  common-geometric-level centered method
 - `'HighOrder1'`: reconstructed three-point quadrature method
 
 If an unrecognized value is provided, the implementation falls back to the centered
@@ -177,6 +204,7 @@ The `PressureGrad` class stores the following key data:
 | `TidalPotential` | `Array1DReal` | Tidal potential (placeholder, currently zero) |
 | `SelfAttractionLoading` | `Array1DReal` | Self-attraction and loading term (placeholder, currently zero) |
 | `CenteredPGrad` | `PressureGradCentered` | Centered pressure gradient functor |
+| `CenteredPGradNew` | `PressureGradCenteredNew` | Common-level centered functor |
 | `HighOrderPGrad` | `PressureGradHighOrder` | High-order pressure gradient functor |
 | `PressureGradChoice` | `PressureGradType` | Selected pressure gradient method |
 

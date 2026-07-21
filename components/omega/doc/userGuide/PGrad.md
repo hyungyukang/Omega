@@ -10,7 +10,11 @@ ocean circulation, including both barotropic and baroclinic motions.
 ## Physical Background
 
 In the layered non-Boussinesq momentum equation solved in Omega, the pressure
-gradient tendency for each edge and layer includes three contributions:
+gradient tendency combines pressure, geometric geopotential, and external
+geopotential forcing. The exact discretization depends on the configured method.
+
+The centered method expresses the pressure and geometric geopotential terms as
+the following contributions:
 
 1. **Montgomery potential gradient**: The horizontal gradient of the Montgomery
    potential ($\alpha p + g z$), averaged across the top and bottom interfaces of
@@ -37,18 +41,33 @@ The pressure gradient method is configured in the input YAML file under the
 
 ```yaml
 PressureGrad:
-   PressureGradType: 'centered'
+   PressureGradType: Centered
 ```
 
 ### Available Methods
 
-**Centered Difference** (`'centered'` or `'Centered'`)
+**Centered Difference** (`Centered` or `centered`)
+
 - Computes the pressure gradient using a centered finite-difference approximation
   of the Montgomery potential gradient and specific volume correction
 - Suitable for global ocean simulations without ice shelf cavities
-- Default and currently the only fully implemented option
+- Default option
 
-**High-Order** (`'HighOrder1'`)
+**Pressure-Integrated** (`Integrated` or `integrated`)
+
+- Averages conservative temperature and absolute salinity from the two cells
+  adjacent to each edge to construct one thermodynamic state per layer at the edge
+- Analytically integrates the TEOS-10 75-term specific-volume polynomial between
+  the two cell pressures at both the top and bottom layer interfaces
+- Combines each pressure integral with the corresponding geometric geopotential
+  difference before averaging the two interfaces
+- Avoids separately discretizing the large $\alpha\nabla p$ and $\nabla\Phi$
+  terms
+- Requires the `Temperature` and `Salinity` tracers, interpreted as conservative
+  temperature and absolute salinity, respectively
+
+**High-Order** (`HighOrder1`)
+
 - Placeholder for a future high-order pressure gradient method based on volume
   integral formulations
 - Intended for simulations with ice shelf cavities and steep bathymetry where the
@@ -66,3 +85,5 @@ initialized first:
   mid-points and interfaces, geometric interface heights ($z$), and geopotential
 - [**Equation of State**](omega-user-eos): provides the specific volume field
 - [**Ocean State**](omega-user-state): provides the current pseudo-thicknesses
+- **Tracers**: provides conservative temperature and absolute salinity to the
+  pressure-integrated method

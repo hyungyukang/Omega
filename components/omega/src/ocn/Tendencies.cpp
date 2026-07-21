@@ -701,14 +701,11 @@ void Tendencies::computeVelocityTendenciesOnly(
    if (PGrad->Enabled) {
 
       Pacer::start("Tend:pressureGradTerm", 2);
-      Array2DReal PseudoThick       = State->getPseudoThickness(ThickTimeLevel);
-      const auto &PressureMid       = VCoord->PressureMid;
-      const auto &PressureInterface = VCoord->PressureInterface;
-      const auto &SpecVol           = EqState->SpecVol;
-      const auto &GeomZInterface    = VCoord->GeomZInterface;
-      PGrad->computePressureGrad(LocNormalVelocityTend, PressureMid,
-                                 PressureInterface, SpecVol, GeomZInterface,
-                                 PseudoThick);
+      const auto &PressureMid = VCoord->PressureMid;
+      const auto &SpecVol     = EqState->SpecVol;
+      const auto &GeomZMid    = VCoord->GeomZMid;
+      PGrad->computePressureGrad(LocNormalVelocityTend, PressureMid, SpecVol,
+                                 GeomZMid);
       Pacer::stop("Tend:pressureGradTerm", 2);
    }
 

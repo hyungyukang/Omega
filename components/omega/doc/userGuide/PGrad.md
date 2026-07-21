@@ -12,17 +12,12 @@ ocean circulation, including both barotropic and baroclinic motions.
 In the layered non-Boussinesq momentum equation solved in Omega, the pressure
 gradient tendency for each edge and layer includes three contributions:
 
-1. **Montgomery potential gradient**: The horizontal gradient of the Montgomery
-   potential ($\alpha p + g z$), averaged across the top and bottom interfaces of
-   each layer. The Montgomery potential combines the pressure gradient and the
-   geopotential, and its gradient along coordinate surfaces accounts for both the
-   direct pressure force and the effect of tilted layer interfaces that arise when
-   using a general vertical coordinate.
+1. **Pressure gradient**: The centered horizontal gradient of layer-midpoint
+   pressure multiplied by the edge-averaged specific volume.
 
-2. **Specific volume correction**: A correction term proportional to the gradient
-   of specific volume (inverse density) at each edge. This term ensures that
-   horizontal density variations between the two cells sharing an edge are properly
-   represented in the pressure gradient force.
+2. **Geometric-height gradient**: The centered horizontal gradient of
+   layer-midpoint geometric height multiplied by gravity. This accounts for
+   tilted layers in a general vertical coordinate.
 
 3. **External geopotential forcing**: Contributions from the tidal potential and
    the self-attraction and loading (SAL) terms. These represent gravitational
@@ -44,7 +39,7 @@ PressureGrad:
 
 **Centered Difference** (`'centered'` or `'Centered'`)
 - Computes the pressure gradient using a centered finite-difference approximation
-  of the Montgomery potential gradient and specific volume correction
+  of the pressure and layer-midpoint geometric-height gradients
 - Suitable for global ocean simulations without ice shelf cavities
 - Default and currently the only fully implemented option
 
@@ -63,6 +58,5 @@ initialized first:
 - [**Horizontal Mesh**](omega-user-horz-mesh): provides mesh geometry including
   distances between cell centers and edge connectivity
 - [**Vertical Coordinate**](omega-user-vert-coord): provides pressure at layer
-  mid-points and interfaces, geometric interface heights ($z$), and geopotential
+  midpoints and geometric midpoint heights ($z$)
 - [**Equation of State**](omega-user-eos): provides the specific volume field
-- [**Ocean State**](omega-user-state): provides the current pseudo-thicknesses

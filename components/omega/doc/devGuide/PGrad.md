@@ -66,17 +66,15 @@ to zero.
 To compute pressure gradient tendencies and accumulate them into a tendency array:
 
 ```c++
-PGrad->computePressureGrad(Tend, State, VCoord, EqState, TimeLevel);
+PGrad->computePressureGrad(Tend, PressureMid, SpecVol, GeomZMid);
 ```
 
 where:
 - `Tend` is a 2D array `(NEdgesAll × NVertLayers)` that the pressure gradient
   tendency is accumulated into
-- `State` is the current `OceanState`, from which pseudo-thickness is extracted
-  at the given `TimeLevel`
-- `VCoord` provides pressure, interface height, and geopotential fields
-- `EqState` provides the specific volume field
-- `TimeLevel` selects which time level of the state to use
+- `PressureMid` is pressure at layer midpoints
+- `SpecVol` is specific volume at layer midpoints
+- `GeomZMid` is geometric height at layer midpoints
 
 The method uses hierarchical Kokkos parallelism: an outer `parallelForOuter` loop
 iterates over edges, and an inner `parallelForInner` loop iterates over vertical
@@ -96,16 +94,11 @@ GradGeoPot = grad(TidalPotential) + grad(SelfAttractionLoading)
 
 Then, for each vertical layer `K`, it computes three terms:
 
-1. **Montgomery potential gradient**: The average of the horizontal gradients of the
-   Montgomery potential ($\alpha p + g z$) at the top (interface `K`) and bottom
-   (interface `K+1`) of the layer. This compactly represents the combined effect
-   of the pressure gradient and the geopotential contribution from tilted coordinate
-   surfaces.
+1. **Pressure gradient**: The horizontal difference of `PressureMid`, multiplied
+   by the arithmetic edge average of `SpecVol`.
 
-2. **Specific volume correction**: A correction term equal to the edge-averaged
-   pressure at mid-layer multiplied by the horizontal gradient of specific volume.
-   This accounts for horizontal density variations that are not captured by the
-   Montgomery potential form.
+2. **Geometric-height gradient**: The horizontal difference of `GeomZMid`,
+   multiplied by gravity.
 
 3. **Tidal and geopotential forcing** (`GradGeoPot`): The external geopotential
    contribution from tidal forcing and self-attraction/loading, applied uniformly
@@ -114,7 +107,8 @@ Then, for each vertical layer `K`, it computes three terms:
 The tendency update for each layer is:
 
 ```
-Tend(IEdge, K) += EdgeMask(IEdge, K) * (-GradMontPot + PGradAlpha - GradGeoPot)
+Tend(IEdge, K) += EdgeMask(IEdge, K) *
+    (-SpecVolEdge * GradPressure - Gravity * GradGeomZ - GradGeoPot)
 ```
 
 where `EdgeMask` is applied to enforce land boundary conditions. The functor operator
@@ -123,11 +117,10 @@ signature is:
 ```c++
 KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
                                 const Array2DReal &PressureMid,
-                                const Array2DReal &PressureInterface,
-                                const Array2DReal &GeomZInterface,
+                                const Array2DReal &SpecVol,
+                                const Array2DReal &GeomZMid,
                                 const Array1DReal &TidalPotential,
-                                const Array1DReal &SelfAttractionLoading,
-                                const Array2DReal &SpecVol) const;
+                                const Array1DReal &SelfAttractionLoading) const;
 ```
 
 ### PressureGradHighOrder

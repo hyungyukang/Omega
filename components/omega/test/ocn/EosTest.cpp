@@ -469,6 +469,14 @@ void testEosTeos10() {
    /// Compute specific volume
    TestEos->computeSpecVol(TArray, SArray, PArray);
 
+   /// Check the scalar evaluator used by pressure-gradient quadrature.
+   Teos10Eos TeosEvaluator(VCoord);
+   const Real ScalarSpecVol = TeosEvaluator.evaluate(Ct, Sa, P);
+   if (!isApprox(ScalarSpecVol, TeosSVExpValue, RTol)) {
+      ABORT_ERROR("EosTest: scalar TEOS specific volume = {}; Expected {}",
+                  ScalarSpecVol, TeosSVExpValue);
+   }
+
    const auto &MinLayerCell = VCoord->MinLayerCell;
    const auto &MaxLayerCell = VCoord->MaxLayerCell;
 

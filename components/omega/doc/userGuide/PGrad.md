@@ -41,14 +41,16 @@ PressureGrad:
 - Computes the pressure gradient using a centered finite-difference approximation
   of the pressure and layer-midpoint geometric-height gradients
 - Suitable for global ocean simulations without ice shelf cavities
-- Default and currently the only fully implemented option
+- Default option
 
 **High-Order** (`'HighOrder1'`)
-- Placeholder for a future high-order pressure gradient method based on volume
-  integral formulations
+- Uses monotonic piecewise-linear temperature and salinity reconstruction with
+  three-point Gauss-Legendre integration through each layer and across each
+  edge
+- Evaluates TEOS-10 specific volume at the quadrature pressure and reconstructs
+  geometric height with the same hydrostatic quadrature
 - Intended for simulations with ice shelf cavities and steep bathymetry where the
   centered scheme may be inaccurate
-- Not yet implemented; selecting this option produces zero pressure gradient tendency
 
 ## Dependencies
 
@@ -58,5 +60,7 @@ initialized first:
 - [**Horizontal Mesh**](omega-user-horz-mesh): provides mesh geometry including
   distances between cell centers and edge connectivity
 - [**Vertical Coordinate**](omega-user-vert-coord): provides pressure at layer
-  midpoints and geometric midpoint heights ($z$)
+  midpoints and interfaces and geometric midpoint heights ($z$)
 - [**Equation of State**](omega-user-eos): provides the specific volume field
+- [**Tracers**](omega-user-tracers): provides Conservative Temperature and
+  Absolute Salinity

@@ -701,11 +701,23 @@ void Tendencies::computeVelocityTendenciesOnly(
    if (PGrad->Enabled) {
 
       Pacer::start("Tend:pressureGradTerm", 2);
-      const auto &PressureMid = VCoord->PressureMid;
-      const auto &SpecVol     = EqState->SpecVol;
-      const auto &GeomZMid    = VCoord->GeomZMid;
-      PGrad->computePressureGrad(LocNormalVelocityTend, PressureMid, SpecVol,
-                                 GeomZMid);
+      const auto &PressureMid       = VCoord->PressureMid;
+      const auto &PressureInterface = VCoord->PressureInterface;
+      const auto &SpecVol           = EqState->SpecVol;
+      const auto &GeomZMid          = VCoord->GeomZMid;
+
+      I4 ConservTempIdx;
+      I4 AbsSalinityIdx;
+      Tracers::getIndex(ConservTempIdx, "Temperature");
+      Tracers::getIndex(AbsSalinityIdx, "Salinity");
+      const auto ConservTemp = Kokkos::subview(
+          TracerArray, ConservTempIdx, Kokkos::ALL, Kokkos::ALL);
+      const auto AbsSalinity = Kokkos::subview(
+          TracerArray, AbsSalinityIdx, Kokkos::ALL, Kokkos::ALL);
+
+      PGrad->computePressureGrad(
+          LocNormalVelocityTend, PressureMid, PressureInterface, SpecVol,
+          GeomZMid, ConservTemp, AbsSalinity, EqState->EosChoice);
       Pacer::stop("Tend:pressureGradTerm", 2);
    }
 

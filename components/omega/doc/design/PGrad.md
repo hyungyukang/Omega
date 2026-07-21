@@ -114,8 +114,13 @@ T^p &= - \int_A \int_{\tilde{z}_k^{\text{bot}}}^{\tilde{z}_k^{\text{top}}} \rho_
 & - \int_A \rho_0 \left[ \alpha \left<p \nabla \tilde{z}_k^{\text{top}} \right> \right]_{\tilde{z} = \tilde{z}_k^{\text{top}}} \, dA \\
 & + \int_A \rho_0 \left[ \alpha \left<p \nabla \tilde{z}_k^{\text{bot}} \right> \right]_{\tilde{z} = \tilde{z}_k^{\text{bot}}} \, dA.
 $$
-These volume and area integrals will be computed using quadrature to account for the variability of $\alpha$ with the reconstructed values of temperature, salinity, and pressure at the quadrature points.
-The complete details for the high-order pressure gradient will be the subject of a future design document.
+`HighOrder1` uses a tensor product of three-point Gauss-Legendre quadrature in
+pseudo-height and along the edge-normal path to account for the variability of
+$\alpha$. Conservative Temperature and Absolute Salinity use monotonic
+piecewise-linear reconstruction, pressure is linear between interfaces, and
+TEOS-10 specific volume is evaluated at each quadrature pressure. Geometric
+height at the vertical quadrature nodes is obtained by integrating the same
+specific-volume representation upward from bathymetry.
 
 %### 3.3 Barotropic Pressure Gradient
 %
@@ -172,8 +177,7 @@ class PressureGrad{
 
         // Instances of functors
         PressureGradCentered CenteredPGrad;
-        PressureGradHighOrder HighOrderPGrad1; // To be implemented later
-        PressureGradHighOrder HighOrderPGrad2; // Multiple high order options are likely in the future
+        PressureGradHighOrder HighOrderPGrad;
 
         // Pressure gradient choice from config
         PressureGradType PressureGradChoice;

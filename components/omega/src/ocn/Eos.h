@@ -78,6 +78,17 @@ class Teos10Eos {
       }
    }
 
+   /// Evaluate TEOS-10 specific volume for scalar temperature, salinity, and
+   /// pressure inputs. Pressure is relative pressure in Pa.
+   KOKKOS_FUNCTION Real evaluate(const Real ConservTemp, const Real AbsSalinity,
+                                 const Real Pressure) const {
+      Real SpecVolPCoeffs[6 * VecLength];
+      calcPCoeffs(SpecVolPCoeffs, 0, ConservTemp, AbsSalinity);
+      const Real PressureDb = Pressure * Pa2Db;
+      return calcRefProfile(PressureDb) +
+             calcDelta(SpecVolPCoeffs, 0, PressureDb);
+   }
+
    /// TEOS-10 helpers
    /// Calculate pressure polynomial coefficients for TEOS-10
    KOKKOS_FUNCTION void calcPCoeffs(Real (&SpecVolPCoeffs)[6 * VecLength],

@@ -109,6 +109,18 @@ int main(int argc, char *argv[]) {
       OceanState *DefState = OceanState::getDefault();
       Eos *DefEos          = Eos::getInstance();
 
+      // Exercise the high-order quadrature implementation explicitly while
+      // leaving the default centered instance available to other tests.
+      Config *OmegaConfig = Config::getOmegaConfig();
+      Config PGradConfig("PressureGrad");
+      OmegaConfig->get(PGradConfig);
+      std::string OriginalPGradType;
+      PGradConfig.get("PressureGradType", OriginalPGradType);
+      PGradConfig.set("PressureGradType", std::string("HighOrder1"));
+      PressureGrad *TestPGrad =
+          PressureGrad::create("HighOrderTest", DefMesh, VCoord, OmegaConfig);
+      PGradConfig.set("PressureGradType", OriginalPGradType);
+
       // create arrays: Tend on edges, Pressure/Geopotential/SpecVol on cells
       Array2DReal Tend("Tend", DefMesh->NEdgesSize, VCoord->NVertLayers);
       Array2DReal SpecVolOld("SpecVolOld", DefMesh->NCellsSize,
@@ -268,16 +280,17 @@ int main(int argc, char *argv[]) {
          // compute z levels
          VCoord->computeGeomZHeight(PseudoThick, SpecVol);
 
-         // get PressureGrad instance
-         PressureGrad *DefPGrad = PressureGrad::getDefault();
-         if (!DefPGrad) {
-            LOG_INFO("PGrad: default instance not created by init");
+         if (!TestPGrad) {
+            LOG_INFO("PGrad: high-order test instance not created");
          }
 
          // compute pressure gradient
          deepCopy(Tend, 0.0_Real);
 
-         DefPGrad->computePressureGrad(Tend, PressureMid, SpecVol, GeomZMid);
+         const auto &PressureInterface = VCoord->PressureInterface;
+         TestPGrad->computePressureGrad(Tend, PressureMid, PressureInterface,
+                                        SpecVol, GeomZMid, Temp, Salinity,
+                                        DefEos->EosChoice);
 
          // compute errors
          Real MaxValue = 0.0_Real;

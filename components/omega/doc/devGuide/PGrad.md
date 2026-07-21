@@ -3,9 +3,9 @@
 # Pressure Gradient (PGrad)
 
 Omega includes a `PressureGrad` class that computes horizontal pressure gradient
-tendencies for the non-Boussinesq momentum equation. The implementation supports a
-centered difference scheme as the default, with a placeholder for future high-order
-methods. The class follows the same factory pattern used by other Omega modules.
+tendencies for the non-Boussinesq momentum equation. The implementation supports
+the default centered difference scheme and a reconstructed quadrature scheme for
+TEOS-10. The class follows the same factory pattern used by other Omega modules.
 
 ## PressureGradType enum
 
@@ -66,15 +66,19 @@ to zero.
 To compute pressure gradient tendencies and accumulate them into a tendency array:
 
 ```c++
-PGrad->computePressureGrad(Tend, PressureMid, SpecVol, GeomZMid);
+PGrad->computePressureGrad(Tend, PressureMid, PressureInterface, SpecVol,
+                           GeomZMid, ConservTemp, AbsSalinity, EosChoice);
 ```
 
 where:
 - `Tend` is a 2D array `(NEdgesAll × NVertLayers)` that the pressure gradient
   tendency is accumulated into
 - `PressureMid` is pressure at layer midpoints
+- `PressureInterface` is pressure at layer interfaces
 - `SpecVol` is specific volume at layer midpoints
 - `GeomZMid` is geometric height at layer midpoints
+- `ConservTemp` and `AbsSalinity` are the active thermodynamic tracers
+- `EosChoice` selects the equation of state for quadrature evaluation
 
 The method uses hierarchical Kokkos parallelism: an outer `parallelForOuter` loop
 iterates over edges, and an inner `parallelForInner` loop iterates over vertical
@@ -125,9 +129,18 @@ KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
 
 ### PressureGradHighOrder
 
-This functor is a placeholder for a future high-order pressure gradient implementation
-suitable for ice shelf cavities and complex bathymetry. Currently it performs no
-computation (a no-op).
+This functor uses a monotonic piecewise-linear reconstruction of Conservative
+Temperature and Absolute Salinity and three-point Gauss-Legendre quadrature in
+each layer and across each edge. For TEOS-10, specific volume is evaluated at
+the reconstructed tracers and pressure at all points of this tensor-product
+quadrature. Before computing the edge tendency, the vertical quadrature
+integrates hydrostatic balance upward from bathymetry to obtain consistent
+geometric heights at all quadrature nodes.
+
+At each quadrature node, the method evaluates
+`-SpecVolEdge * GradPressure - Gravity * GradGeomZ`. The weighted sum is the
+layer-mean pressure-gradient tendency. Non-TEOS equations of state use the same
+quadrature with reconstructed midpoint specific volume.
 
 ## Configuration
 
@@ -140,7 +153,7 @@ PressureGrad:
 
 Valid options for `PressureGradType` are:
 - `'centered'` or `'Centered'`: centered difference approximation (default)
-- `'HighOrder1'`: first high-order method (placeholder, future implementation)
+- `'HighOrder1'`: reconstructed three-point quadrature method
 
 If an unrecognized value is provided, the implementation falls back to the centered
 scheme and logs an informational message.
@@ -152,7 +165,6 @@ The `PressureGrad` class stores the following key data:
 | Member | Type | Description |
 | ------ | ---- | ----------- |
 | `NEdgesAll` | `I4` | Total number of edges including halo |
-| `NChunks` | `I4` | Number of vertical chunks for vectorization |
 | `NVertLayers` | `I4` | Number of vertical layers |
 | `NVertLayersP1` | `I4` | Number of vertical layers plus one |
 | `MinLayerEdgeBot` | `Array1DI4` | Minimum active layer index for each edge |

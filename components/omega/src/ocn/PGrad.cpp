@@ -162,8 +162,12 @@ PressureGrad *PressureGrad::get(const std::string &Name ///< [in] Name of
 // Compute pressure gradient tendencies and add into Tend array
 void PressureGrad::computePressureGrad(Array2DReal &Tend,
                                        const Array2DReal &PressureMid,
+                                       const Array2DReal &PressureInterface,
                                        const Array2DReal &SpecVol,
-                                       const Array2DReal &GeomZMid) const {
+                                       const Array2DReal &GeomZMid,
+                                       const Array2DReal &ConservTemp,
+                                       const Array2DReal &AbsSalinity,
+                                       EosType EosChoice) const {
 
    OMEGA_SCOPE(LocCenteredPGrad, CenteredPGrad);
    OMEGA_SCOPE(LocHighOrderPGrad, HighOrderPGrad);
@@ -192,6 +196,9 @@ void PressureGrad::computePressureGrad(Array2DReal &Tend,
 
    } else {
 
+      LocHighOrderPGrad.computeGeometry(PressureInterface, ConservTemp,
+                                        AbsSalinity, SpecVol, EosChoice);
+
       // computes high-order geopotential and pressure gradient tendency
       parallelForOuter(
           "pgrad-highorder", {NEdgesAll},
@@ -202,9 +209,10 @@ void PressureGrad::computePressureGrad(Array2DReal &Tend,
 
              parallelForInner(
                  Team, KRange, INNER_LAMBDA(int KChunk) {
-                    LocHighOrderPGrad(Tend, IEdge, KChunk, PressureMid,
-                                      SpecVol, GeomZMid, LocTidalPotential,
-                                      LocSelfAttractionLoading);
+                    LocHighOrderPGrad(Tend, IEdge, KChunk, PressureInterface,
+                                      SpecVol, ConservTemp, AbsSalinity,
+                                      LocTidalPotential,
+                                      LocSelfAttractionLoading, EosChoice);
                  });
           });
    }
@@ -216,7 +224,7 @@ PressureGradCentered::PressureGradCentered(
     const HorzMesh *Mesh,   ///< [in] Horizontal mesh
     const VertCoord *VCoord ///< [in] Vertical coordinate
     )
-    : CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
+    : Enabled(false), CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
       EdgeMask(VCoord->EdgeMask), MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
 
@@ -226,8 +234,75 @@ PressureGradHighOrder::PressureGradHighOrder(
     const HorzMesh *Mesh,   ///< [in] Horizontal mesh
     const VertCoord *VCoord ///< [in] Vertical coordinate
     )
-    : CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
-      EdgeMask(VCoord->EdgeMask), MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
-      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
+    : Enabled(false), NCellsAll(Mesh->NCellsAll),
+      CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
+      EdgeMask(VCoord->EdgeMask), MinLayerCell(VCoord->MinLayerCell),
+      MaxLayerCell(VCoord->MaxLayerCell),
+      MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
+      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop),
+      BottomGeomDepth(VCoord->BottomGeomDepth),
+      GeomZQuadrature("PGradGeomZQuadrature", Mesh->NCellsSize,
+                      VCoord->NVertLayers, NQuad),
+      Teos10(VCoord) {}
+
+//------------------------------------------------------------------------------
+// Reconstruct hydrostatically consistent geometric height at three-point
+// Gauss-Legendre quadrature nodes in each active layer. Specific volume is
+// represented by the quadratic interpolant through the three quadrature
+// evaluations, so its full- and partial-layer pressure integrals are
+// consistent with one another.
+void PressureGradHighOrder::computeGeometry(
+    const Array2DReal &PressureInterface,
+    const Array2DReal &ConservTemp,
+    const Array2DReal &AbsSalinity,
+    const Array2DReal &SpecVol,
+    EosType EosChoice) const {
+
+   OMEGA_SCOPE(LocMinLayerCell, MinLayerCell);
+   OMEGA_SCOPE(LocMaxLayerCell, MaxLayerCell);
+   OMEGA_SCOPE(LocBottomGeomDepth, BottomGeomDepth);
+   OMEGA_SCOPE(LocGeomZQuadrature, GeomZQuadrature);
+   OMEGA_SCOPE(LocThis, *this);
+
+   parallelFor(
+       "pgrad-highorder-geometry", {NCellsAll}, KOKKOS_LAMBDA(I4 ICell) {
+          const I4 KMin = LocMinLayerCell(ICell);
+          const I4 KMax = LocMaxLayerCell(ICell);
+          if (KMax < KMin) {
+             return;
+          }
+
+          Real ZBottom = -LocBottomGeomDepth(ICell);
+          for (I4 K = KMax; K >= KMin; --K) {
+             const Real PressureTop = PressureInterface(ICell, K);
+             const Real DeltaPressure =
+                 PressureInterface(ICell, K + 1) - PressureTop;
+
+             Real Alpha[NQuad];
+             Real FullIntegral = 0._Real;
+             for (I4 Q = 0; Q < NQuad; ++Q) {
+                const Real Sigma = LocThis.quadraturePoint(Q);
+                const Real Pressure = PressureTop + Sigma * DeltaPressure;
+                Alpha[Q] = LocThis.evaluateSpecVol(
+                    ConservTemp, AbsSalinity, SpecVol, ICell, K, Sigma,
+                    Pressure, EosChoice);
+                FullIntegral += LocThis.quadratureWeight(Q) * Alpha[Q];
+             }
+
+             for (I4 Q = 0; Q < NQuad; ++Q) {
+                const Real Sigma = LocThis.quadraturePoint(Q);
+                Real PartialIntegral = 0._Real;
+                for (I4 I = 0; I < NQuad; ++I) {
+                   PartialIntegral +=
+                       Alpha[I] * LocThis.integratedBasis(I, Sigma);
+                }
+                LocGeomZQuadrature(ICell, K, Q) =
+                    ZBottom + DeltaPressure * PartialIntegral / Gravity;
+             }
+
+             ZBottom += DeltaPressure * FullIntegral / Gravity;
+          }
+       });
+}
 
 } // namespace OMEGA

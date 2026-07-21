@@ -279,7 +279,8 @@ int main(int argc, char *argv[]) {
 
          const auto &PressureInterface = VCoord->PressureInterface;
          DefPGrad->computePressureGrad(Tend, PressureMid, PressureInterface,
-                                       SpecVol, GeomZInterface, PseudoThick);
+                                       SpecVol, GeomZInterface, PseudoThick,
+                                       Temp, Salinity);
 
          // compute errors
          Real MaxValue = 0.0_Real;

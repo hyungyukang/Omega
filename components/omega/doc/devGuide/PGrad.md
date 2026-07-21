@@ -3,16 +3,22 @@
 # Pressure Gradient (PGrad)
 
 Omega includes a `PressureGrad` class that computes horizontal pressure gradient
-tendencies for the non-Boussinesq momentum equation. The implementation supports a
-centered difference scheme as the default, with a placeholder for future high-order
-methods. The class follows the same factory pattern used by other Omega modules.
+tendencies for the non-Boussinesq momentum equation. The implementation supports
+centered and TEOS-10 pressure-integrated schemes, with a placeholder for future
+high-order methods. The class follows the same factory pattern used by other Omega
+modules.
 
 ## PressureGradType enum
 
 An enumeration of the available pressure gradient schemes is defined in `PGrad.h`:
 
 ```c++
-enum class PressureGradType { Centered, HighOrder1, HighOrder2 };
+enum class PressureGradType {
+   Centered,
+   Integrated,
+   HighOrder1,
+   HighOrder2
+};
 ```
 
 This is used to select which pressure gradient method is applied at runtime.
@@ -66,17 +72,22 @@ to zero.
 To compute pressure gradient tendencies and accumulate them into a tendency array:
 
 ```c++
-PGrad->computePressureGrad(Tend, State, VCoord, EqState, TimeLevel);
+PGrad->computePressureGrad(Tend, PressureMid, PressureInterface, SpecVol,
+                           GeomZInterface, PseudoThick, ConservTemp,
+                           AbsSalinity);
 ```
 
 where:
+
 - `Tend` is a 2D array `(NEdgesAll × NVertLayers)` that the pressure gradient
   tendency is accumulated into
-- `State` is the current `OceanState`, from which pseudo-thickness is extracted
-  at the given `TimeLevel`
-- `VCoord` provides pressure, interface height, and geopotential fields
-- `EqState` provides the specific volume field
-- `TimeLevel` selects which time level of the state to use
+- `PressureMid` and `PressureInterface` contain gauge pressure at cell midpoints
+  and interfaces
+- `SpecVol` contains layer-centered specific volume
+- `GeomZInterface` contains geometric height at layer interfaces
+- `PseudoThick` contains layer pseudo-thickness
+- `ConservTemp` and `AbsSalinity` contain conservative temperature and absolute
+  salinity; the integrated functor uses both arrays directly
 
 The method uses hierarchical Kokkos parallelism: an outer `parallelForOuter` loop
 iterates over edges, and an inner `parallelForInner` loop iterates over vertical
@@ -130,6 +141,46 @@ KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
                                 const Array2DReal &SpecVol) const;
 ```
 
+### PressureGradIntegrated
+
+This functor reconstructs one thermodynamic state per edge and layer by
+arithmetic averaging:
+
+```text
+CtEdge = 0.5 * (ConservTemp(ICell0, K) + ConservTemp(ICell1, K))
+SaEdge = 0.5 * (AbsSalinity(ICell0, K) + AbsSalinity(ICell1, K))
+```
+
+At each layer interface, it evaluates
+
+```text
+Residual = integral(alpha(SaEdge, CtEdge, p), pCell0, pCell1)
+           + Gravity * (zCell1 - zCell0)
+```
+
+where `alpha` is the TEOS-10 75-term specific-volume polynomial. The pressure
+integral is evaluated analytically in normalized pressure, rather than by
+numerical quadrature. The top and bottom interface residuals are averaged and
+converted to an edge-normal acceleration:
+
+```text
+PGrad = -0.5 * (ResidualTop + ResidualBot) / DcEdge
+Tend(IEdge, K) += EdgeMask(IEdge, K) * (PGrad - GradGeoPot)
+```
+
+Its functor operator signature is:
+
+```c++
+KOKKOS_FUNCTION void operator()(
+    const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+    const Array2DReal &PressureInterface,
+    const Array2DReal &GeomZInterface,
+    const Array1DReal &TidalPotential,
+    const Array1DReal &SelfAttractionLoading,
+    const Array2DReal &ConservTemp,
+    const Array2DReal &AbsSalinity) const;
+```
+
 ### PressureGradHighOrder
 
 This functor is a placeholder for a future high-order pressure gradient implementation
@@ -142,12 +193,14 @@ The pressure gradient type is selected in the input YAML file:
 
 ```yaml
 PressureGrad:
-   PressureGradType: 'centered'
+   PressureGradType: Centered
 ```
 
 Valid options for `PressureGradType` are:
-- `'centered'` or `'Centered'`: centered difference approximation (default)
-- `'HighOrder1'`: first high-order method (placeholder, future implementation)
+
+- `Centered` or `centered`: centered difference approximation (default)
+- `Integrated` or `integrated`: analytic TEOS-10 pressure-integrated method
+- `HighOrder1`: first high-order method (placeholder, future implementation)
 
 If an unrecognized value is provided, the implementation falls back to the centered
 scheme and logs an informational message.
@@ -159,7 +212,6 @@ The `PressureGrad` class stores the following key data:
 | Member | Type | Description |
 | ------ | ---- | ----------- |
 | `NEdgesAll` | `I4` | Total number of edges including halo |
-| `NChunks` | `I4` | Number of vertical chunks for vectorization |
 | `NVertLayers` | `I4` | Number of vertical layers |
 | `NVertLayersP1` | `I4` | Number of vertical layers plus one |
 | `MinLayerEdgeBot` | `Array1DI4` | Minimum active layer index for each edge |
@@ -167,6 +219,7 @@ The `PressureGrad` class stores the following key data:
 | `TidalPotential` | `Array1DReal` | Tidal potential (placeholder, currently zero) |
 | `SelfAttractionLoading` | `Array1DReal` | Self-attraction and loading term (placeholder, currently zero) |
 | `CenteredPGrad` | `PressureGradCentered` | Centered pressure gradient functor |
+| `IntegratedPGrad` | `PressureGradIntegrated` | TEOS-10 pressure-integrated functor |
 | `HighOrderPGrad` | `PressureGradHighOrder` | High-order pressure gradient functor |
 | `PressureGradChoice` | `PressureGradType` | Selected pressure gradient method |
 

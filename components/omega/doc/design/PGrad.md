@@ -89,13 +89,15 @@ $$
  T^p_{e,k} = \frac{1}{2d_e}\left(\sum_{i\in CE(e)} -n_{e,i} M_{i,k+1/2} + \sum_{i\in CE(e)} -n_{e,i} M_{i,k-1/2}\right) + \frac{1}{2}\left(\sum_{i\in CE(e)} p_{i,k}\right)  \frac{1}{d_e} \sum_{i\in CE(e)} -n_{e,i}\alpha_{i,k} + \frac{1}{d_e} \sum_{i\in CE(e)} -n_{e,i} (\phi_{TP,i} + \phi_{SAL,i}).
 $$
 
-With piecewise-constant specific volume in a layer and midpoint pressure and
-height defined as interface averages, the implementation evaluates the
-algebraically equivalent form directly:
+With midpoint pressure and height defined as interface averages, the
+implementation evaluates the algebraically equivalent form directly:
 $$
- T^p_{e,k} = [\alpha_k]_e \nabla p_k + g\nabla z_k
+ T^p_{e,k} = \alpha_{e,k} \nabla p_k + g\nabla z_k
  + \nabla(\phi_{TP} + \phi_{SAL}).
 $$
+For TEOS-10, $\alpha_{e,k}$ is evaluated at the arithmetic edge averages of
+Conservative Temperature, Absolute Salinity, and in-situ midpoint pressure.
+Other equations of state use $\alpha_{e,k}=[\alpha_k]_e$.
 This avoids the additional cancellation introduced by separately evaluating
 the Montgomery-potential gradient and specific-volume correction.
 

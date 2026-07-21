@@ -13,7 +13,8 @@ In the layered non-Boussinesq momentum equation solved in Omega, the pressure
 gradient tendency for each edge and layer includes three contributions:
 
 1. **Pressure gradient**: The centered horizontal gradient of layer-midpoint
-   pressure multiplied by the edge-averaged specific volume.
+   pressure multiplied by edge specific volume. For TEOS-10, the latter is
+   evaluated at edge-interpolated thermodynamic state and pressure.
 
 2. **Geometric-height gradient**: The centered horizontal gradient of
    layer-midpoint geometric height multiplied by gravity. This accounts for
@@ -40,6 +41,8 @@ PressureGrad:
 **Centered Difference** (`'centered'` or `'Centered'`)
 - Computes the pressure gradient using a centered finite-difference approximation
   of the pressure and layer-midpoint geometric-height gradients
+- With TEOS-10, evaluates specific volume from the edge-interpolated
+  temperature, salinity, and in-situ midpoint pressure
 - Suitable for global ocean simulations without ice shelf cavities
 - Default option
 

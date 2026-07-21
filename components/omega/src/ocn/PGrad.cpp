@@ -189,8 +189,9 @@ void PressureGrad::computePressureGrad(Array2DReal &Tend,
              parallelForInner(
                  Team, KRange, INNER_LAMBDA(int KChunk) {
                     LocCenteredPGrad(Tend, IEdge, KChunk, PressureMid,
-                                     SpecVol, GeomZMid, LocTidalPotential,
-                                     LocSelfAttractionLoading);
+                                     SpecVol, GeomZMid, ConservTemp,
+                                     AbsSalinity, LocTidalPotential,
+                                     LocSelfAttractionLoading, EosChoice);
                  });
           });
 
@@ -226,7 +227,7 @@ PressureGradCentered::PressureGradCentered(
     )
     : Enabled(false), CellsOnEdge(Mesh->CellsOnEdge), DcEdge(Mesh->DcEdge),
       EdgeMask(VCoord->EdgeMask), MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
-      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
+      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop), Teos10(VCoord) {}
 
 //------------------------------------------------------------------------------
 // Constructor for high order pressure gradient functor

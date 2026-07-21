@@ -37,8 +37,11 @@ class PressureGradCentered {
                                    const Array2DReal &PressureMid,
                                    const Array2DReal &SpecVol,
                                    const Array2DReal &GeomZMid,
+                                   const Array2DReal &ConservTemp,
+                                   const Array2DReal &AbsSalinity,
                                    const Array1DReal &TidalPotential,
-                                   const Array1DReal &SelfAttractionLoading) const {
+                                   const Array1DReal &SelfAttractionLoading,
+                                   EosType EosChoice) const {
 
       const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
       const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
@@ -54,8 +57,23 @@ class PressureGradCentered {
 
       for (int KVec = 0; KVec < KLen; ++KVec) {
          const I4 K = KStart + KVec;
-         const Real SpecVolEdge =
-             0.5_Real * (SpecVol(ICell0, K) + SpecVol(ICell1, K));
+         Real SpecVolEdge;
+         if (EosChoice == EosType::Teos10Eos) {
+            const Real ConservTempEdge =
+                0.5_Real *
+                (ConservTemp(ICell0, K) + ConservTemp(ICell1, K));
+            const Real AbsSalinityEdge =
+                0.5_Real *
+                (AbsSalinity(ICell0, K) + AbsSalinity(ICell1, K));
+            const Real PressureEdge =
+                0.5_Real *
+                (PressureMid(ICell0, K) + PressureMid(ICell1, K));
+            SpecVolEdge =
+                Teos10.evaluate(ConservTempEdge, AbsSalinityEdge, PressureEdge);
+         } else {
+            SpecVolEdge =
+                0.5_Real * (SpecVol(ICell0, K) + SpecVol(ICell1, K));
+         }
          const Real GradPressure =
              (PressureMid(ICell1, K) - PressureMid(ICell0, K)) * InvDcEdge;
          const Real GradGeomZ =
@@ -73,6 +91,7 @@ class PressureGradCentered {
    Array2DReal EdgeMask;
    Array1DI4 MinLayerEdgeBot;
    Array1DI4 MaxLayerEdgeTop;
+   Teos10Eos Teos10;
 };
 
 // High-order pressure gradient functor

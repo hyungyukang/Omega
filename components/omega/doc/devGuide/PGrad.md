@@ -98,8 +98,10 @@ GradGeoPot = grad(TidalPotential) + grad(SelfAttractionLoading)
 
 Then, for each vertical layer `K`, it computes three terms:
 
-1. **Pressure gradient**: The horizontal difference of `PressureMid`, multiplied
-   by the arithmetic edge average of `SpecVol`.
+1. **Pressure gradient**: The horizontal difference of `PressureMid`. With
+   TEOS-10, `SpecVolEdge` is evaluated from the arithmetic edge averages of
+   Conservative Temperature, Absolute Salinity, and in-situ midpoint pressure.
+   Other equations of state use the arithmetic edge average of `SpecVol`.
 
 2. **Geometric-height gradient**: The horizontal difference of `GeomZMid`,
    multiplied by gravity.
@@ -123,8 +125,11 @@ KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
                                 const Array2DReal &PressureMid,
                                 const Array2DReal &SpecVol,
                                 const Array2DReal &GeomZMid,
+                                const Array2DReal &ConservTemp,
+                                const Array2DReal &AbsSalinity,
                                 const Array1DReal &TidalPotential,
-                                const Array1DReal &SelfAttractionLoading) const;
+                                const Array1DReal &SelfAttractionLoading,
+                                EosType EosChoice) const;
 ```
 
 ### PressureGradHighOrder

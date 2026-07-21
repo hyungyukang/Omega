@@ -1,6 +1,6 @@
 //===-- ocn/PGrad.cpp - Pressure Gradient Term -----------------*- C++ -*-===//
 //
-// Implements the PGrad manager and two discretizations: Centered and
+// Implements the PGrad manager and centered, pressure-integrated, and
 // HighOrder.
 //
 //===----------------------------------------------------------------------===//
@@ -78,7 +78,7 @@ PressureGrad::PressureGrad(
     Config *Options)         ///< [in] Configuration options
     : MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop), CenteredPGrad(Mesh, VCoord),
-      HighOrderPGrad(Mesh, VCoord) {
+      IntegratedPGrad(Mesh, VCoord), HighOrderPGrad(Mesh, VCoord) {
 
    // store mesh sizes
    NEdgesAll     = Mesh->NEdgesAll;
@@ -99,12 +99,18 @@ PressureGrad::PressureGrad(
    if (PGradTypeStr == "centered" || PGradTypeStr == "Centered") {
       PressureGradChoice          = PressureGradType::Centered;
       this->CenteredPGrad.Enabled = true;
+   } else if (PGradTypeStr == "Integrated" ||
+              PGradTypeStr == "integrated") {
+      PressureGradChoice          = PressureGradType::Integrated;
+      this->IntegratedPGrad.Enabled = true;
    } else if (PGradTypeStr == "HighOrder1") {
       PressureGradChoice           = PressureGradType::HighOrder1;
       this->HighOrderPGrad.Enabled = true;
    } else {
       LOG_INFO(
           "PGrad: Unknown PressureGradType in config, defaulting to centered");
+      PressureGradChoice          = PressureGradType::Centered;
+      this->CenteredPGrad.Enabled = true;
    }
 
    // Temporary: initialization of tidal potential and SAL
@@ -160,14 +166,14 @@ PressureGrad *PressureGrad::get(const std::string &Name ///< [in] Name of
 
 //------------------------------------------------------------------------------
 // Compute pressure gradient tendencies and add into Tend array
-void PressureGrad::computePressureGrad(Array2DReal &Tend,
-                                       const Array2DReal &PressureMid,
-                                       const Array2DReal &PressureInterface,
-                                       const Array2DReal &SpecVol,
-                                       const Array2DReal &GeomZInterface,
-                                       const Array2DReal &PseudoThick) const {
+void PressureGrad::computePressureGrad(
+    Array2DReal &Tend, const Array2DReal &PressureMid,
+    const Array2DReal &PressureInterface, const Array2DReal &SpecVol,
+    const Array2DReal &GeomZInterface, const Array2DReal &PseudoThick,
+    const Array2DReal &ConservTemp, const Array2DReal &AbsSalinity) const {
 
    OMEGA_SCOPE(LocCenteredPGrad, CenteredPGrad);
+   OMEGA_SCOPE(LocIntegratedPGrad, IntegratedPGrad);
    OMEGA_SCOPE(LocHighOrderPGrad, HighOrderPGrad);
    OMEGA_SCOPE(LocMinLayerEdgeBot, MinLayerEdgeBot);
    OMEGA_SCOPE(LocMaxLayerEdgeTop, MaxLayerEdgeTop);
@@ -186,10 +192,28 @@ void PressureGrad::computePressureGrad(Array2DReal &Tend,
 
              parallelForInner(
                  Team, KRange, INNER_LAMBDA(int KChunk) {
-                    LocCenteredPGrad(Tend, IEdge, KChunk, PressureMid,
-                                     PressureInterface, GeomZInterface,
-                                     LocTidalPotential,
-                                     LocSelfAttractionLoading, SpecVol);
+                    LocCenteredPGrad(
+                        Tend, IEdge, KChunk, PressureMid, PressureInterface,
+                        GeomZInterface, LocTidalPotential,
+                        LocSelfAttractionLoading, SpecVol);
+                 });
+          });
+
+   } else if (PressureGradChoice == PressureGradType::Integrated) {
+
+      parallelForOuter(
+          "pgrad-pressure-integrated", {NEdgesAll},
+          KOKKOS_LAMBDA(I4 IEdge, const TeamMember &Team) {
+             const int KMin   = LocMinLayerEdgeBot(IEdge);
+             const int KMax   = LocMaxLayerEdgeTop(IEdge);
+             const int KRange = vertRangeChunked(KMin, KMax);
+
+             parallelForInner(
+                 Team, KRange, INNER_LAMBDA(int KChunk) {
+                    LocIntegratedPGrad(
+                        Tend, IEdge, KChunk, PressureInterface,
+                        GeomZInterface, LocTidalPotential,
+                        LocSelfAttractionLoading, ConservTemp, AbsSalinity);
                  });
           });
 
@@ -225,6 +249,18 @@ PressureGradCentered::PressureGradCentered(
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
 
 //------------------------------------------------------------------------------
+// Constructor for the integrated  pressure gradient functor
+PressureGradIntegrated::PressureGradIntegrated(
+    const HorzMesh *Mesh,   ///< [in] Horizontal mesh
+    const VertCoord *VCoord ///< [in] Vertical coordinate
+    )
+    : Teos10Evaluator(VCoord), CellsOnEdge(Mesh->CellsOnEdge),
+      DcEdge(Mesh->DcEdge), EdgeMask(VCoord->EdgeMask),
+      MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
+      MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
+
+//------------------------------------------------------------------------------
+
 // Constructor for high order pressure gradient functor
 PressureGradHighOrder::PressureGradHighOrder(
     const HorzMesh *Mesh,   ///< [in] Horizontal mesh

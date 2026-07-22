@@ -148,12 +148,17 @@ class PressureGradIntegrated {
          const Real SaEdge =
              0.5_Real * (AbsSalinity(ICell0, K) + AbsSalinity(ICell1, K));
 
+         // The thermodynamic state is the same for the top and bottom
+         // pressure paths, so construct the TEOS-10 pressure polynomial once.
+         Real SpecVolPressureCoeffs[7];
+         calcSpecVolPressureCoeffs(SaEdge, CtEdge, SpecVolPressureCoeffs);
+
          const Real IntAlphaDpTop = calcSpecVolPressureIntegral(
-             SaEdge, CtEdge, PressureInterface(ICell0, K),
+             SpecVolPressureCoeffs, PressureInterface(ICell0, K),
              PressureInterface(ICell1, K));
 
          const Real IntAlphaDpBot = calcSpecVolPressureIntegral(
-             SaEdge, CtEdge, PressureInterface(ICell0, K + 1),
+             SpecVolPressureCoeffs, PressureInterface(ICell0, K + 1),
              PressureInterface(ICell1, K + 1));
 
          const Real DeltaPhiTop =
@@ -175,13 +180,11 @@ class PressureGradIntegrated {
    }
 
  private:
-   /// Analytic integral of the Omega TEOS-10 75-term specific-volume
-   /// polynomial with respect to gauge pressure in Pa.
-   ///
-   /// Return units: J kg^-1 = m^2 s^-2.
-   KOKKOS_FUNCTION Real
-   calcSpecVolPressureIntegral(const Real Sa, const Real Ct,
-                               const Real P0Pa, const Real P1Pa) const {
+   /// Construct the complete Omega TEOS-10 specific-volume pressure
+   /// polynomial at fixed salinity and Conservative Temperature.
+   KOKKOS_FUNCTION void
+   calcSpecVolPressureCoeffs(const Real Sa, const Real Ct,
+                             Real (&A)[7]) const {
 
       Real SpecVolPCoeffs[6 * VecLength];
       Teos10Evaluator.calcPCoeffs(SpecVolPCoeffs, 0, Ct, Sa);
@@ -197,7 +200,6 @@ class PressureGradIntegrated {
       constexpr Real V05 =  1.9613503930e-09;
 
       // alpha(X) = A0 + A1*X + ... + A6*X^6.
-      Real A[7];
       A[0] = SpecVolPCoeffs[0];
       A[1] = SpecVolPCoeffs[1] + V00;
       A[2] = SpecVolPCoeffs[2] + V01;
@@ -205,6 +207,15 @@ class PressureGradIntegrated {
       A[4] = SpecVolPCoeffs[4] + V03;
       A[5] = SpecVolPCoeffs[5] + V04;
       A[6] = V05;
+   }
+
+   /// Analytic integral of the Omega TEOS-10 75-term specific-volume
+   /// polynomial with respect to gauge pressure in Pa.
+   ///
+   /// Return units: J kg^-1 = m^2 s^-2.
+   KOKKOS_FUNCTION Real
+   calcSpecVolPressureIntegral(const Real (&A)[7],
+                               const Real P0Pa, const Real P1Pa) const {
 
       constexpr Real PaToNormalizedPressure = 1.0e-8;
       constexpr Real NormalizedPressureToPa = 1.0e8;

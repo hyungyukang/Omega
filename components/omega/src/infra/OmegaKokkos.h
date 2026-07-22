@@ -202,6 +202,15 @@ bool arraysEqual(const ArrayTypeA &A, const ArrayTypeB &B) {
    return Equal;
 }
 
+// Works the same as Kokkos::subview, but returns an unmanaged view
+// This is safe when we know that the subview won't outlive the input view
+// and can be slightly faster
+template <class View, class... Args>
+KOKKOS_FUNCTION auto subviewUnmanaged(const View &A, Args &&...args) {
+   return Kokkos::subview(View(A.data(), A.layout()),
+                          std::forward<Args>(args)...);
+}
+
 // Takes a functor that uses multidimensional indexing
 // and converts it into one that also accepts linear index
 template <class F, int Rank> struct LinearIdxWrapper : F {

@@ -419,7 +419,7 @@ class TracerHorzAdvOnCell {
       ScratchArray1DReal FlxTmp(teamScratch(Team), NVertLayers);
 
       const auto LTracerCell =
-          Kokkos::subview(TracerCell, L, Kokkos::ALL, Kokkos::ALL);
+          subviewUnmanaged(TracerCell, L, Kokkos::ALL, Kokkos::ALL);
 
       const int KMin = MinLayerEdgeBot(IEdge);
       const int KMax = MaxLayerEdgeTop(IEdge);
@@ -461,7 +461,7 @@ class TracerHorzAdvOnCell {
       }
 
       const auto LHighOrderFlxHorz =
-          Kokkos::subview(HighOrderFlxHorz, L, Kokkos::ALL, Kokkos::ALL);
+          subviewUnmanaged(HighOrderFlxHorz, L, Kokkos::ALL, Kokkos::ALL);
 
       parallelForInner(
           Team, Range{KMin, KMax},
@@ -472,9 +472,9 @@ class TracerHorzAdvOnCell {
                                    const Array3DReal &Tend, const I4 L,
                                    const I4 ICell) const {
 
-      const auto LTend = Kokkos::subview(Tend, L, Kokkos::ALL, Kokkos::ALL);
+      const auto LTend = subviewUnmanaged(Tend, L, Kokkos::ALL, Kokkos::ALL);
       const auto LHighOrderFlxHorz =
-          Kokkos::subview(HighOrderFlxHorz, L, Kokkos::ALL, Kokkos::ALL);
+          subviewUnmanaged(HighOrderFlxHorz, L, Kokkos::ALL, Kokkos::ALL);
 
       const Real InvAreaCell = 1._Real / AreaCell(ICell);
 
@@ -537,9 +537,9 @@ class TracerDiffOnCell {
               const Array3DReal &TracerCell,
               const Array2DReal &MeanPseudoThickEdge) const {
 
-      const auto LTend = Kokkos::subview(Tend, L, Kokkos::ALL, Kokkos::ALL);
+      const auto LTend = subviewUnmanaged(Tend, L, Kokkos::ALL, Kokkos::ALL);
       const auto LTracerCell =
-          Kokkos::subview(TracerCell, L, Kokkos::ALL, Kokkos::ALL);
+          subviewUnmanaged(TracerCell, L, Kokkos::ALL, Kokkos::ALL);
 
       const Real InvAreaCell = 1._Real / AreaCell(ICell);
 
@@ -608,9 +608,9 @@ class TracerHyperDiffOnCell {
                                    const Array3DReal &Tend, I4 L, I4 ICell,
                                    const Array3DReal &TrDel2Cell) const {
 
-      const auto LTend = Kokkos::subview(Tend, L, Kokkos::ALL, Kokkos::ALL);
+      const auto LTend = subviewUnmanaged(Tend, L, Kokkos::ALL, Kokkos::ALL);
       const auto LTrDel2Cell =
-          Kokkos::subview(TrDel2Cell, L, Kokkos::ALL, Kokkos::ALL);
+          subviewUnmanaged(TrDel2Cell, L, Kokkos::ALL, Kokkos::ALL);
 
       const Real InvAreaCell = 1._Real / AreaCell(ICell);
 

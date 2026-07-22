@@ -23,9 +23,10 @@ class TracerAuxVars {
                       const Array2DReal &MeanPseudoThickEdge,
                       const Array3DReal &TrCell) const {
 
-      const auto LTrCell = Kokkos::subview(TrCell, L, Kokkos::ALL, Kokkos::ALL);
+      const auto LTrCell =
+          subviewUnmanaged(TrCell, L, Kokkos::ALL, Kokkos::ALL);
       const auto LDel2TracersCell =
-          Kokkos::subview(Del2TracersCell, L, Kokkos::ALL, Kokkos::ALL);
+          subviewUnmanaged(Del2TracersCell, L, Kokkos::ALL, Kokkos::ALL);
 
       const Real InvAreaCell = 1._Real / AreaCell(ICell);
 

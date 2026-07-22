@@ -7,7 +7,7 @@ pathways in Omega, currently this includes:
 
 - Surface stress forcing (e.g. wind stress)
 - Surface thickness and tracer flux forcing (actively coupled or data-forced)
-- Surface tracer restoring (soon to be ported)
+- Surface tracer restoring (soon to be ported as a field originating from the coupler)
 
 ## Surface stress forcing design
 

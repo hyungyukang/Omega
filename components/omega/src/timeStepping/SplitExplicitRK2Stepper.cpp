@@ -688,7 +688,7 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
    CurTracerArray = Tracers::getAll(CurLevel);
    if (VMix->VelVertMixSetup.Enabled or VMix->TracerVertMixSetup.Enabled) {
       VMix->VertMixImplicit(State, AuxState, CurTracerArray, NTracers,
-                            State->CurTimeIndex);
+                            CurLevel);
    }
 
    // Refresh kinetic diagnostics from the completed n+dt velocity before

@@ -432,8 +432,8 @@ void VertMix::defineFields() {
 void VertMix::applyVelVertMixImplicit(
     OceanState *State,              ///< [in] State variables
     const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
-    int ThickTimeLevel,             ///< [in] Time level
-    int VelTimeLevel                ///< [in] Time level
+    int ThickTimeLevel,             ///< [in] Logical thickness time level
+    int VelTimeLevel                ///< [in] Logical velocity time level
 ) {
 
    OMEGA_SCOPE(LocNEdgesAll, Mesh->NEdgesAll);
@@ -441,8 +441,9 @@ void VertMix::applyVelVertMixImplicit(
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
 
-   const Array2DReal &NormalVelEdge   = State->NormalVelocity[VelTimeLevel];
-   const Array2DReal &PseudoThickCell = State->PseudoThickness[ThickTimeLevel];
+   const Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
+   const Array2DReal PseudoThickCell =
+       State->getPseudoThickness(ThickTimeLevel);
 
    // Compute velocity vertical mixing
    if (LocVelVertMixSetup.Enabled) {
@@ -537,8 +538,8 @@ void VertMix::applyTracerVertMixImplicit(
     const AuxiliaryState *AuxState, ///< [in] Auxilary state variables
     Array3DReal &TracerArray,       ///< [in] Tracer array
     int NTracers,                   ///< [in] Number of tracers
-    int ThickTimeLevel,             ///< [in] Time level
-    int VelTimeLevel                ///< [in] Time level
+    int ThickTimeLevel,             ///< [in] Logical thickness time level
+    int VelTimeLevel                ///< [in] Logical velocity time level
 ) {
 
    OMEGA_SCOPE(LocNCellsAll, Mesh->NCellsAll);
@@ -546,7 +547,8 @@ void VertMix::applyTracerVertMixImplicit(
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
 
-   const Array2DReal &PseudoThickCell = State->PseudoThickness[ThickTimeLevel];
+   const Array2DReal PseudoThickCell =
+       State->getPseudoThickness(ThickTimeLevel);
 
    if (LocTracerVertMixSetup.Enabled) {
       Pacer::start("Tend:tracerVertMix", 1);

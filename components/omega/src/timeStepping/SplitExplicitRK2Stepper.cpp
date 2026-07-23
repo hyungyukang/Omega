@@ -131,9 +131,10 @@ void SplitExplicitRK2Stepper::doSplitStage3(
                                        NormalTransportVelocity,
                                        StageTimeStep);
 
-   // Compute vertical velocity at the new time level for the vertical
-   // advection term in thickness and tracer tendencies
-   computeVerticalPseudoVelocity(State, NextLevel, NormalTransportVelocity,
+   // Match MPAS-O's split-explicit Stage 3: retain the most recently computed
+   // edge-flux thickness from the provisional state, but use the time-n cell
+   // thickness in the ALE vertical-transport correction.
+   computeVerticalPseudoVelocity(State, CurLevel, NormalTransportVelocity,
                                  StageTimeStep);
 
    // Compute thickness and tracer tendencies at the new time level

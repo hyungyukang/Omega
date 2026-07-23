@@ -139,8 +139,8 @@ struct TestSetupPlane {
       return 2. + std::cos(TwoPi * X / Lx) * std::cos(TwoPi * Y / Ly);
    }
 
-   KOKKOS_FUNCTION Real tracerDiff(Real X, Real Y) const {
-      return -TwoPi * TwoPi * std::sin(TwoPi * Y / Ly) *
+   KOKKOS_FUNCTION Real tracerDiff(Real X, Real Y, Real EddyDiff2) const {
+      return -EddyDiff2 * TwoPi * TwoPi * std::sin(TwoPi * Y / Ly) *
              (2 * (1 / Lx / Lx + 1 / Ly / Ly) * std::cos(TwoPi * X / Lx) +
               (1 / Ly / Ly +
                (1 / Lx / Lx + 1 / Ly / Ly) * std::cos(2 * TwoPi * X / Lx)) *
@@ -152,8 +152,8 @@ struct TestSetupPlane {
              std::pow(std::sin(TwoPi * Y / Ly), 2);
    }
 
-   KOKKOS_FUNCTION Real tracerHyperDiff(Real X, Real Y) const {
-      return -2 * TwoPi * TwoPi *
+   KOKKOS_FUNCTION Real tracerHyperDiff(Real X, Real Y, Real EddyDiff4) const {
+      return -EddyDiff4 * 2 * TwoPi * TwoPi *
              (std::cos(2 * TwoPi * X / Lx) / Lx / Lx +
               std::cos(2 * TwoPi * Y / Ly) / Ly / Ly);
    }
@@ -282,8 +282,9 @@ struct TestSetupSphere {
       return 2. + std::cos(Lon) * std::sin(Lat);
    }
 
-   KOKKOS_FUNCTION Real tracerDiff(Real Lon, Real Lat) const {
-      return (4 * std::pow(std::cos(Lon), 2) -
+   KOKKOS_FUNCTION Real tracerDiff(Real Lon, Real Lat, Real EddyDiff2) const {
+      return EddyDiff2 *
+             (4 * std::pow(std::cos(Lon), 2) -
               2 * (1. + 3 * std::cos(2 * Lat)) * std::pow(std::sin(Lon), 2) +
               2 * std::pow(std::cos(Lon), 3) * std::sin(Lat) -
               8 * std::cos(Lon) * std::pow(std::cos(Lat), 2) *
@@ -296,8 +297,10 @@ struct TestSetupSphere {
              std::cos(Lon);
    }
 
-   KOKKOS_FUNCTION Real tracerHyperDiff(Real Lon, Real Lat) const {
-      return std::sqrt(3. / 2. / Pi) * std::cos(Lat) * std::cos(Lon) / Radius;
+   KOKKOS_FUNCTION Real tracerHyperDiff(Real Lon, Real Lat,
+                                        Real EddyDiff4) const {
+      return EddyDiff4 * std::sqrt(3. / 2. / Pi) * std::cos(Lat) *
+             std::cos(Lon) / Radius;
    }
 
    KOKKOS_FUNCTION Real sfcStressForcingX(Real Lon, Real Lat) const {
@@ -1149,12 +1152,16 @@ int testTracerDiffOnCell(int NVertLayers, int NTracers, Real RTol) {
    const auto Mesh   = HorzMesh::getDefault();
    const auto VCoord = VertCoord::getDefault();
 
+   const Real EddyDiff2 = 0.84_Real;
+
    // Compute exact result
    Array3DReal ExactTracerDiff("ExactTracerDiff", NTracers, Mesh->NCellsOwned,
                                NVertLayers);
 
    Err += setScalar(
-       KOKKOS_LAMBDA(Real X, Real Y) { return Setup.tracerDiff(X, Y); },
+       KOKKOS_LAMBDA(Real X, Real Y) {
+          return Setup.tracerDiff(X, Y, EddyDiff2);
+       },
        ExactTracerDiff, Geom, Mesh, OnCell, ExchangeHalos::No);
 
    // Set input arrays
@@ -1176,7 +1183,7 @@ int testTracerDiffOnCell(int NVertLayers, int NTracers, Real RTol) {
    Array3DReal NumTracerDiff("NumTracerDiff", NTracers, Mesh->NCellsOwned,
                              NVertLayers);
    TracerDiffOnCell TrDiffOnC(Mesh, VCoord);
-   TrDiffOnC.EddyDiff2 = 1._Real;
+   TrDiffOnC.EddyDiff2 = EddyDiff2;
 
    parallelFor(
        {NTracers, Mesh->NCellsOwned, NVertLayers},
@@ -1207,12 +1214,16 @@ int testTracerHyperDiffOnCell(int NVertLayers, int NTracers, Real RTol) {
    const auto Mesh   = HorzMesh::getDefault();
    const auto VCoord = VertCoord::getDefault();
 
+   const Real EddyDiff4 = 1.23_Real;
+
    // Compute exact result
    Array3DReal ExactTracerHyperDiff("ExactTracerHyperDiff", NTracers,
                                     Mesh->NCellsOwned, NVertLayers);
 
    Err += setScalar(
-       KOKKOS_LAMBDA(Real X, Real Y) { return -Setup.tracerHyperDiff(X, Y); },
+       KOKKOS_LAMBDA(Real X, Real Y) {
+          return -Setup.tracerHyperDiff(X, Y, EddyDiff4);
+       },
        ExactTracerHyperDiff, Geom, Mesh, OnCell, ExchangeHalos::No);
 
    // Set input arrays
@@ -1227,7 +1238,7 @@ int testTracerHyperDiffOnCell(int NVertLayers, int NTracers, Real RTol) {
    Array3DReal NumTracerHyperDiff("NumTracerHyperDiff", NTracers,
                                   Mesh->NCellsOwned, NVertLayers);
    TracerHyperDiffOnCell TrHypDiffOnC(Mesh, VCoord);
-   TrHypDiffOnC.EddyDiff4 = 1._Real;
+   TrHypDiffOnC.EddyDiff4 = EddyDiff4;
    parallelFor(
        {NTracers, Mesh->NCellsOwned, NVertLayers},
        KOKKOS_LAMBDA(int L, int ICell, int KLayer) {

@@ -118,6 +118,8 @@ void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
        "NormalBarotropicVelocitySubcycleCur" + Name, Mesh->NEdgesSize);
    Scratch.NormalBarotropicVelocitySubcycleNew = Array1DReal(
        "NormalBarotropicVelocitySubcycleNew" + Name, Mesh->NEdgesSize);
+   Scratch.NormalBarotropicVelocityNew =
+       Array1DReal("NormalBarotropicVelocityNew" + Name, Mesh->NEdgesSize);
    Scratch.BarotropicPressureAnomalySubcycleCur = Array1DReal(
        "BarotropicPressureAnomalySubcycleCur" + Name, Mesh->NCellsSize);
    Scratch.BarotropicPressureAnomalySubcycleNew = Array1DReal(
@@ -149,6 +151,7 @@ void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
        KOKKOS_LAMBDA(I4 IEdge) {
           Scratch.NormalBarotropicVelocitySubcycleCur(IEdge) = 0._Real;
           Scratch.NormalBarotropicVelocitySubcycleNew(IEdge) = 0._Real;
+          Scratch.NormalBarotropicVelocityNew(IEdge) = 0._Real;
           Scratch.BarotropicForcing(IEdge) = 0._Real;
           Scratch.BarotropicFlux(IEdge) = 0._Real;
           Scratch.BaroclinicPseudoThicknessEdge(IEdge) = 0._Real;

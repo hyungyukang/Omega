@@ -62,6 +62,7 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
        Scratch.NormalBarotropicVelocitySubcycleCur;
    Array1DReal NormalBtrVelSubcycleNew =
        Scratch.NormalBarotropicVelocitySubcycleNew;
+   Array1DReal NormalBtrVelNew = Scratch.NormalBarotropicVelocityNew;
    Array1DReal BtrPressAnomalySubcycleCur =
        Scratch.BarotropicPressureAnomalySubcycleCur;
    Array1DReal BtrPressAnomalySubcycleNew =
@@ -376,12 +377,20 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
 
    parallelFor(
        "btrSubcycleAverage", {Mesh->NEdgesOwned}, KOKKOS_LAMBDA(I4 IEdge) {
-          NormalBtrVelNext(IEdge) *= InvBtrVelAvgCount;
+          // The subcycle average is the n+1 barotropic-velocity estimate.
+          // Preserve it for finalization, while placing the prognostic state at
+          // n+1/2 for the remaining RK2 stages.
+          NormalBtrVelNew(IEdge) =
+              NormalBtrVelNext(IEdge) * InvBtrVelAvgCount;
+          NormalBtrVelNext(IEdge) =
+              0.5_Real *
+              (NormalBtrVelCur(IEdge) + NormalBtrVelNew(IEdge));
           BtrFlux(IEdge) *= InvBtrFluxAvgCount;
        });
 
    deepCopy(BtrPressAnomalyNext, BtrPressAnomalySubcycleCur);
    MeshHalo->exchangeFullArrayHalo(NormalBtrVelNext, OnEdge);
+   MeshHalo->exchangeFullArrayHalo(NormalBtrVelNew, OnEdge);
    MeshHalo->exchangeFullArrayHalo(BtrFlux, OnEdge);
    MeshHalo->exchangeFullArrayHalo(BtrPressAnomalyNext, OnCell);
 

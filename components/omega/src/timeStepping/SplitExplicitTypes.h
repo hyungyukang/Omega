@@ -28,6 +28,7 @@ struct SplitExplicitConfig {
 struct SplitExplicitScratch {
    Array1DReal NormalBarotropicVelocitySubcycleCur;
    Array1DReal NormalBarotropicVelocitySubcycleNew;
+   Array1DReal NormalBarotropicVelocityNew;
    Array1DReal BarotropicPressureAnomalySubcycleCur;
    Array1DReal BarotropicPressureAnomalySubcycleNew;
    Array1DReal BarotropicPressure;

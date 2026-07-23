@@ -541,6 +541,15 @@ void SplitExplicitRK2Stepper::finalizeTimeStepIterationState(
 
     Pacer::start("SE-RK2:finalizeTimeStepIterationState", 2);
 
+    if (FinalIteration && SEConfig.SplitFactor != 0._Real) {
+       // Stage 2 leaves the state barotropic velocity at n+1/2 so that the
+       // remaining RK2 calculations use a time-centered velocity. Restore the
+       // preserved n+1 estimate before reconstructing the final total velocity.
+       Array1DReal NormalBtrVelNext =
+           State->getNormalBarotropicVelocity(NextLevel);
+       deepCopy(NormalBtrVelNext, SEScratch.NormalBarotropicVelocityNew);
+    }
+
     // Reconstruction of NormalVelocity Next
     reconstructNormalVelocity(State, CurLevel, NextLevel, FinalIteration);
 

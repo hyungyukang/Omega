@@ -97,6 +97,14 @@ class SplitExplicitRK2Stepper : public TimeStepper {
        TimeInterval Coeff  ///< [in] time-related coeff for tendency
    ) const;
 
+   void updateTracersToMidpoint(
+       const Array3DReal &MidpointTracers, ///< [out] midpoint tracers
+       const Array3DReal &CurTracers,      ///< [in] current tracers
+       OceanState *State,                  ///< [in] model state
+       I4 CurLevel,                        ///< [in] current state time level
+       const TimeInterval &StageTimeStep   ///< [in] full stage time step
+   ) const;
+
    void
    initializeNextState(OceanState *State, ///< [inout] model state
                        I4 CurLevel,       ///< [in] current time level

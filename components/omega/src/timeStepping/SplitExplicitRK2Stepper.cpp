@@ -126,9 +126,6 @@ void SplitExplicitRK2Stepper::doSplitStage3(
    // computeTransportVelocity before this stage.
    const Array2DReal NormalTransportVelocity =
        SEScratch.NormalTransportVelocity;
-   const TimeInterval UpdateTimeStep =
-       FinalIteration ? StageTimeStep : 0.5 * StageTimeStep;
-
    // Compute thickness auxiliary variables at the new time level
    AuxState->computePseudoThicknessTracerAux(State, NextTracerArray, NextLevel,
                                        NormalTransportVelocity,
@@ -149,11 +146,20 @@ void SplitExplicitRK2Stepper::doSplitStage3(
                                      StageTime + 0.5 * StageTimeStep,
                                      StageTimeStep);
 
-   // Update thickness and tracers at n+1/2 during the first iteration and at
-   // n+1 during the final iteration.
-   updateThicknessByTend(State, NextLevel, State, CurLevel, UpdateTimeStep);
-   updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel, State,
-                       CurLevel, UpdateTimeStep);
+   if (FinalIteration) {
+      // Retain the full-step conservative update on the final iteration.
+      updateThicknessByTend(State, NextLevel, State, CurLevel, StageTimeStep);
+      updateTracersByTend(NextTracerArray, CurTracerArray, State, NextLevel,
+                          State, CurLevel, StageTimeStep);
+   } else {
+      // Construct the RK2 midpoint state. Tracer concentration is the average
+      // of its old and provisional full-step values, rather than a conservative
+      // update over half a time step.
+      updateThicknessByTend(State, NextLevel, State, CurLevel,
+                            0.5 * StageTimeStep);
+      updateTracersToMidpoint(NextTracerArray, CurTracerArray, State, CurLevel,
+                              StageTimeStep);
+   }
 
    finalizeTimeStepIterationState(State, CurLevel, NextLevel, FinalIteration);
 
@@ -339,10 +345,8 @@ void SplitExplicitRK2Stepper::computeBarotropicForcing(
               const Real Forcing =
                       LocSplitFactor * NormalThicknessFluxSum * InvDtSeconds;
 
-//              Kokkos::single(PerTeam(Team), INNER_LAMBDA() {
-//                     BtrForcing(IEdge) = Forcing;
-//                  });
-              BtrForcing(IEdge) = Forcing;
+              Kokkos::single(PerTeam(Team),
+                             INNER_LAMBDA() { BtrForcing(IEdge) = Forcing; });
 
               parallelForInner(
                   Team, Range{KMin, KMax}, INNER_LAMBDA(I4 K) {
@@ -351,7 +355,9 @@ void SplitExplicitRK2Stepper::computeBarotropicForcing(
 
            } else {
 
-              BtrForcing(IEdge) = 0._Real;
+              Kokkos::single(
+                  PerTeam(Team),
+                  INNER_LAMBDA() { BtrForcing(IEdge) = 0._Real; });
 
            }
         });
@@ -385,6 +391,46 @@ void SplitExplicitRK2Stepper::updateBaroclinicVelocityByTend(
                  NormalBclVel1(IEdge, K) =
                      NormalBclVel2(IEdge, K) +
                      CoeffSeconds * NormalVelTend(IEdge, K);
+              });
+       });
+}
+
+//------------------------------------------------------------------------------
+void SplitExplicitRK2Stepper::updateTracersToMidpoint(
+    const Array3DReal &MidpointTracers, const Array3DReal &CurTracers,
+    OceanState *State, I4 CurLevel,
+    const TimeInterval &StageTimeStep) const {
+
+   const Array2DReal CurPseudoThickness =
+       State->getPseudoThickness(CurLevel);
+
+   R8 DtSeconds;
+   StageTimeStep.get(DtSeconds, TimeUnits::Seconds);
+
+   OMEGA_SCOPE(PseudoThicknessTend, Tend->PseudoThicknessTend);
+   OMEGA_SCOPE(TracerTend, Tend->TracerTend);
+   OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
+   OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
+
+   const I4 NTracers = TracerTend.extent_int(0);
+   parallelForOuter(
+       "updateTracersToMidpoint", {NTracers, Mesh->NCellsAll},
+       KOKKOS_LAMBDA(I4 L, I4 ICell, const TeamMember &Team) {
+          const I4 KMin = MinLayerCell(ICell);
+          const I4 KMax = MaxLayerCell(ICell);
+
+          parallelForInner(
+              Team, Range{KMin, KMax}, INNER_LAMBDA(I4 K) {
+                 const Real CurThickness = CurPseudoThickness(ICell, K);
+                 const Real EndThickness =
+                     CurThickness + DtSeconds * PseudoThicknessTend(ICell, K);
+                 const Real EndTracer =
+                     (CurTracers(L, ICell, K) * CurThickness +
+                      DtSeconds * TracerTend(L, ICell, K)) /
+                     EndThickness;
+
+                 MidpointTracers(L, ICell, K) =
+                     0.5_Real * (CurTracers(L, ICell, K) + EndTracer);
               });
        });
 }

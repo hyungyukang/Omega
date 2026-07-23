@@ -209,9 +209,10 @@ void SplitExplicitInit::computeVelocitySplit(OceanState *State,
                 },
                 ThicknessSum, FluxSum);
 
-             Real BarotropicVelocity = FluxSum / ThicknessSum;
+             BarotropicVelocity = FluxSum / ThicknessSum;
 
-             NormalBarotropicVelocity(IEdge) = BarotropicVelocity * EdgeMask(IEdge,0);
+             NormalBarotropicVelocity(IEdge) =
+                 BarotropicVelocity * EdgeMask(IEdge, KMin);
 
           } else {
 

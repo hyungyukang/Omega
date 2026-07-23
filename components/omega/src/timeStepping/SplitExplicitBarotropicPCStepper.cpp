@@ -127,7 +127,8 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
       // Barotropic velocity predictor
       parallelFor(
           "btrVelocityPredictor", {Mesh->NEdgesOwned}, KOKKOS_LAMBDA(I4 IEdge) {
-             if (MaxLayerEdgeTop(IEdge) < MinLayerEdgeBot(IEdge)) {
+             const I4 KMin = MinLayerEdgeBot(IEdge);
+             if (MaxLayerEdgeTop(IEdge) < KMin) {
                 NormalBtrVelSubcycleNew(IEdge) = 0._Real;
                 return;
              }
@@ -135,7 +136,7 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
              const I4 Cell0 = CellsOnEdge(IEdge, 0);
              const I4 Cell1 = CellsOnEdge(IEdge, 1);
 
-             const Real Mask = EdgeMask(IEdge, 0);
+             const Real Mask = EdgeMask(IEdge, KMin);
 
              Real CoriolisTend = 0._Real;
              for (I4 J = 0; J < NEdgesOnEdge(IEdge); ++J) {
@@ -218,12 +219,13 @@ void SplitExplicitBarotropicPCStepper::doSplitStage2(
       // Barotropic velocity corrector
       parallelFor(
           "btrVelocityCorrector", {Mesh->NEdgesOwned}, KOKKOS_LAMBDA(I4 IEdge) {
-             if (MaxLayerEdgeTop(IEdge) < MinLayerEdgeBot(IEdge)) {
+             const I4 KMin = MinLayerEdgeBot(IEdge);
+             if (MaxLayerEdgeTop(IEdge) < KMin) {
                 NormalBtrVelSubcycleNew(IEdge) = 0._Real;
                 return;
              }
 
-             const Real Mask = EdgeMask(IEdge, 0);
+             const Real Mask = EdgeMask(IEdge, KMin);
              const I4 Cell0  = CellsOnEdge(IEdge, 0);
              const I4 Cell1  = CellsOnEdge(IEdge, 1);
 

@@ -24,9 +24,7 @@ TracerForcingVars::TracerForcingVars(const std::string &Suffix,
                                Mesh->NCellsSize),
       SeaIceHeatFluxCell("SeaIceHeatFlux" + Suffix, Mesh->NCellsSize),
       ShortWaveHeatFluxCell("ShortWaveHeatFlux" + Suffix, Mesh->NCellsSize),
-      SeaIceSaltFluxCell("SeaIceSaltFlux" + Suffix, Mesh->NCellsSize),
-      SurfInsituTemperature("SurfInsituTemperature" + Suffix,
-                            Mesh->NCellsSize) {
+      SeaIceSaltFluxCell("SeaIceSaltFlux" + Suffix, Mesh->NCellsSize) {
    deepCopy(SnowFluxCell, 0.0_Real);
    deepCopy(RainFluxCell, 0.0_Real);
    deepCopy(EvaporationFluxCell, 0.0_Real);
@@ -40,7 +38,6 @@ TracerForcingVars::TracerForcingVars(const std::string &Suffix,
    deepCopy(SeaIceHeatFluxCell, 0.0_Real);
    deepCopy(ShortWaveHeatFluxCell, 0.0_Real);
    deepCopy(SeaIceSaltFluxCell, 0.0_Real);
-   deepCopy(SurfInsituTemperature, 0.0_Real);
 }
 
 void TracerForcingVars::registerFields(const std::string &MeshName) const {
@@ -111,12 +108,6 @@ void TracerForcingVars::registerFields(const std::string &MeshName) const {
                      "kg m^-2 s^-1", "", std::numeric_limits<Real>::lowest(),
                      std::numeric_limits<Real>::max(), NDims, DimNames);
 
-   auto SurfInsituTemperatureField =
-       Field::create(SurfInsituTemperature.label(),
-                     "insitu (potential) temperature at surface layer",
-                     "degrees Celsius", "", std::numeric_limits<Real>::lowest(),
-                     std::numeric_limits<Real>::max(), NDims, DimNames);
-
    FieldGroup::addFieldToGroup(SnowFluxCell.label(), "Forcing");
    FieldGroup::addFieldToGroup(RainFluxCell.label(), "Forcing");
    FieldGroup::addFieldToGroup(EvaporationFluxCell.label(), "Forcing");
@@ -143,7 +134,6 @@ void TracerForcingVars::registerFields(const std::string &MeshName) const {
    LongWaveHeatFluxDownField->attachData<Array1DReal>(LongWaveHeatFluxDownCell);
    SeaIceHeatFluxField->attachData<Array1DReal>(SeaIceHeatFluxCell);
    ShortWaveHeatFluxField->attachData<Array1DReal>(ShortWaveHeatFluxCell);
-   SurfInsituTemperatureField->attachData<Array1DReal>(SurfInsituTemperature);
    SeaIceSaltFluxField->attachData<Array1DReal>(SeaIceSaltFluxCell);
 }
 
@@ -161,42 +151,5 @@ void TracerForcingVars::unregisterFields() const {
    Field::destroy(SeaIceHeatFluxCell.label());
    Field::destroy(ShortWaveHeatFluxCell.label());
    Field::destroy(SeaIceSaltFluxCell.label());
-   Field::destroy(SurfInsituTemperature.label());
-}
-
-void TracerForcingVars::computeSurfInsituTemp(const Array3DReal &TracerArray,
-                                              const VertCoord *VCoord,
-                                              const Eos *EosInst) const {
-   const int IndxTemp = Tracers::IndxTemp;
-   const int IndxSalt = Tracers::IndxSalt;
-
-   // Skip computation if temperature or salinity tracers are not defined
-   if (IndxTemp < 0 || IndxSalt < 0) {
-      return;
-   }
-
-   OMEGA_SCOPE(LocMinLayerCell, VCoord->MinLayerCell);
-   OMEGA_SCOPE(LocMaxLayerCell, VCoord->MaxLayerCell);
-   OMEGA_SCOPE(LocSurfInsituTemp, SurfInsituTemperature);
-
-   int NCellsOwned = SurfInsituTemperature.extent_int(0);
-
-   parallelFor(
-       "TracerForcing:computeSurfInsituTemp", {NCellsOwned},
-       KOKKOS_LAMBDA(int ICell) {
-          const int KMin = LocMinLayerCell(ICell);
-          const int KMax = LocMaxLayerCell(ICell);
-
-          // Only compute for valid ocean cells
-          if (KMin <= KMax) {
-             const Real ConservTemp = TracerArray(IndxTemp, ICell, KMin);
-             const Real AbsSalinity = TracerArray(IndxSalt, ICell, KMin);
-
-             // Call EOS function to compute potential temperature from
-             // conservative temperature at surface (reference pressure = 0)
-             LocSurfInsituTemp(ICell) =
-                 EosInst->calcPtFromCt(AbsSalinity, ConservTemp);
-          }
-       });
 }
 } // namespace OMEGA

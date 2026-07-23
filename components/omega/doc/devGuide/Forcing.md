@@ -100,6 +100,7 @@ the surface layer pseudo-thickness.
 ## Notes
 
 - Currently all forcing is applied to the surface layer only. In the future, vertical spreading of river runoff contributions will be needed.
+- `SeaIceFreshWaterFlux` is the pure freshwater mass from sea ice. The full mass flux from sea ice is `SeaIceFreshWaterFlux + SeaIceSaltFlux`
 
 ## Surface tracer restoring design
 

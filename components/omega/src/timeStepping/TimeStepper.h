@@ -28,6 +28,8 @@
 ///    BtrTimeStep: 0000_00:00:30
 ///    NTimeStepIteration: 1
 ///    NBclCoriolisIteration: 2
+///    # Recompute the velocity split from NormalVelocity at every slow step
+///    ReinitializeVelocitySplitEachTimeStep: false
 ///    # Start time of full simulation (YYYY-MM-DD_hh:mm:ss)
 ///    StartTime: 0001-01-01_00:00:00
 ///    # Either stop time or run duration must be supplied with Duration

@@ -22,6 +22,7 @@ struct SplitExplicitConfig {
    I4 NBtrSubcycles         = 1;
    I4 NTimeStepIteration    = 1;
    I4 NBclCoriolisIteration = 2;
+   bool ReinitializeVelocitySplitEachTimeStep = false;
    Real SplitFactor         = 1._Real;
 };
 

@@ -65,6 +65,9 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep) {
       SEConfig.NBclCoriolisIteration = 1;
    }
 
+   TimeIntConfig.get("ReinitializeVelocitySplitEachTimeStep",
+                     SEConfig.ReinitializeVelocitySplitEachTimeStep);
+
    if (!IsUnsplit) {
       SEConfig.NBtrSubcycles =
           computeSubcycleCount(TimeStep, SEConfig.BtrTimeStep);

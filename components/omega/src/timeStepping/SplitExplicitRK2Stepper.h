@@ -109,7 +109,9 @@ class SplitExplicitRK2Stepper : public TimeStepper {
    initializeNextState(OceanState *State, ///< [inout] model state
                        I4 CurLevel,       ///< [in] current time level
                        I4 NextLevel,      ///< [in] next time level
-                       Real SplitFactor   ///< [in] split factor
+                       Real SplitFactor,  ///< [in] split factor
+                       bool ReinitializeVelocitySplit ///< [in] whether to
+                                                      ///< recompute the split
    ) const;
 
    void reconstructNormalVelocity(

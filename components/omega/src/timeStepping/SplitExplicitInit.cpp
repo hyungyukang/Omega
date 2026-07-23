@@ -211,12 +211,18 @@ void SplitExplicitInit::computeVelocitySplit(OceanState *State,
 
              BarotropicVelocity = FluxSum / ThicknessSum;
 
-             NormalBarotropicVelocity(IEdge) =
-                 BarotropicVelocity * EdgeMask(IEdge, KMin);
+             Kokkos::single(
+                 PerTeam(Team), INNER_LAMBDA() {
+                    NormalBarotropicVelocity(IEdge) =
+                        BarotropicVelocity * EdgeMask(IEdge, KMin);
+                 });
 
           } else {
 
-             NormalBarotropicVelocity(IEdge) = 0._Real;
+             Kokkos::single(
+                 PerTeam(Team), INNER_LAMBDA() {
+                    NormalBarotropicVelocity(IEdge) = 0._Real;
+                 });
 
           }
 

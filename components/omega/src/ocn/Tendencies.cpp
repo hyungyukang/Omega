@@ -836,6 +836,7 @@ void Tendencies::computeVelocityTendenciesOnly(
 void Tendencies::computeBaroclinicVelocityTendenciesOnly(
     const OceanState *State,         ///< [in] State variables
     const AuxiliaryState *AuxState,  ///< [in] Auxilary state variables
+    const Array3DReal &TracerArray, ///< [in] Tracer array
     int ThickTimeLevel,              ///< [in] Time level
     int VelTimeLevel,                ///< [in] Time level
     int BarotropicVelocityTimeLevel, ///< [in] Barotropic velocity time level
@@ -961,9 +962,19 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
       const auto &PressureInterface = VCoord->PressureInterface;
       const auto &SpecVol           = EqState->SpecVol;
       const auto &GeomZInterface    = VCoord->GeomZInterface;
+
+      I4 ConservTempIdx;
+      I4 AbsSalinityIdx;
+      Tracers::getIndex(ConservTempIdx, "Temperature");
+      Tracers::getIndex(AbsSalinityIdx, "Salinity");
+      const auto ConservTemp = Kokkos::subview(
+          TracerArray, ConservTempIdx, Kokkos::ALL, Kokkos::ALL);
+      const auto AbsSalinity = Kokkos::subview(
+          TracerArray, AbsSalinityIdx, Kokkos::ALL, Kokkos::ALL);
+
       PGrad->computePressureGrad(LocNormalVelocityTend, PressureMid,
                                  PressureInterface, SpecVol, GeomZInterface,
-                                 PseudoThick);
+                                 PseudoThick, ConservTemp, AbsSalinity);
       Pacer::stop("Tend:bclPressureGradTerm", 2);
    }
 
@@ -1054,7 +1065,7 @@ void Tendencies::computeBaroclinicVelocityTendencies(
    AuxState->computeMomAux(State, TracerArray, ThickTimeLevel, VelTimeLevel,
                            ProjDt);
    computeBaroclinicVelocityTendenciesOnly(
-       State, AuxState, ThickTimeLevel, VelTimeLevel,
+       State, AuxState, TracerArray, ThickTimeLevel, VelTimeLevel,
        BarotropicVelocityTimeLevel, BarotropicPressureTimeLevel, SplitFactor);
 
    Pacer::stop("Tend:computeBaroclinicVelocityTendencies", 1);

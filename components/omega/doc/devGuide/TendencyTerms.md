@@ -47,5 +47,5 @@ implemented:
 
 ## See Also
 
-Additional information on forcing (surface stress, surface flux forcing, and
+Additional information on forcing (surface stress, surface mass and tracer flux forcing, and
 surface tracer restoring) is detailed in [](omega-dev-forcing).

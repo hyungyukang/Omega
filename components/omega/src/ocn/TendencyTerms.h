@@ -564,9 +564,9 @@ class TracerDiffOnCell {
                 const Real TracerGrad =
                     (LTracerCell(JCell1, K) - LTracerCell(JCell0, K));
 
-                DiffTmp(K) -= EddyDiff2 * EdgeMask(JEdge, K) *
-                              EdgeSignOnCell(ICell, J) * RTemp *
-                              MeanPseudoThickEdge(JEdge, K) * TracerGrad;
+                DiffTmp(K) -= EdgeMask(JEdge, K) * EdgeSignOnCell(ICell, J) *
+                              RTemp * MeanPseudoThickEdge(JEdge, K) *
+                              TracerGrad;
              });
       }
       const int MinLyrCell = MinLayerCell(ICell);

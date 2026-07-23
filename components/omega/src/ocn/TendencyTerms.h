@@ -482,20 +482,24 @@ class TracerHorzAdvOnCell {
       parallelForInner(
           Team, NVertLayers, INNER_LAMBDA(int K) { TendTmp(K) = 0; });
 
-      const int KMin = MinLayerCell(ICell);
-      const int KMax = MaxLayerCell(ICell);
-
       for (int I = 0; I < NEdgesOnCell(ICell); ++I) {
          const I4 IEdge = EdgesOnCell(ICell, I);
+
+         const int MinLyrEdgeBot = MinLayerEdgeBot(IEdge);
+         const int MaxLyrEdgeTop = MaxLayerEdgeTop(IEdge);
+
          parallelForInner(
-             Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+             Team, Range{MinLyrEdgeBot, MaxLyrEdgeTop}, INNER_LAMBDA(int K) {
                 TendTmp(K) += EdgeSignOnCell(ICell, I) *
                               LHighOrderFlxHorz(IEdge, K) * InvAreaCell;
              });
       }
 
+      const int MinLyrCell = MinLayerCell(ICell);
+      const int MaxLyrCell = MaxLayerCell(ICell);
+
       parallelForInner(
-          Team, Range{KMin, KMax},
+          Team, Range{MinLyrCell, MaxLyrCell},
           INNER_LAMBDA(int K) { LTend(ICell, K) += TendTmp(K); });
    }
 

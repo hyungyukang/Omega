@@ -31,17 +31,10 @@ class TracerForcingVars {
 
    Array1DReal SeaIceSaltFluxCell;
 
-   Array1DReal SurfInsituTemperature;
-
    TracerForcingVars(const std::string &Suffix, const HorzMesh *Mesh);
 
    void registerFields(const std::string &MeshName) const;
    void unregisterFields() const;
-
-   /// Compute surface insitu temperature from conservative temperature
-   void computeSurfInsituTemp(const Array3DReal &TracerArray,
-                              const VertCoord *VCoord,
-                              const Eos *EosInst) const;
 };
 
 } // namespace OMEGA

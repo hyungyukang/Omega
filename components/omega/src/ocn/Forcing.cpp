@@ -176,7 +176,6 @@ void Forcing::resetArrays() {
    deepCopy(TracerForcing.SeaIceHeatFluxCell, 0.0_Real);
    deepCopy(TracerForcing.ShortWaveHeatFluxCell, 0.0_Real);
    deepCopy(TracerForcing.SeaIceSaltFluxCell, 0.0_Real);
-   deepCopy(TracerForcing.SurfInsituTemperature, 0.0_Real);
 }
 
 // Compute edge-normal stress from cell-center zonal and meridional components.

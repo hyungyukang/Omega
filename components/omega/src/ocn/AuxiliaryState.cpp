@@ -243,7 +243,8 @@ void AuxiliaryState::computeAll(const OceanState *State,
 
    Pacer::start("AuxState:cellAuxState3", 2);
    parallelForOuter(
-       "cellAuxState3", {Mesh->NCellsAll},
+       "cellAuxState3",
+       LaunchConfig({Mesh->NCellsAll}, TeamScratch<Real>(VCoord->NVertLayers)),
        KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
           LocPseudoThicknessAux.computeVarsOnCells(
               Team, ICell, PseudoThickCell, NormalVelEdge, TimeStepSeconds);

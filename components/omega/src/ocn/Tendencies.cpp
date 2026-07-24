@@ -850,7 +850,7 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
    OMEGA_SCOPE(LocVelocityDiffusion, VelocityDiffusion);
    OMEGA_SCOPE(LocVelocityHyperDiff, VelocityHyperDiff);
    OMEGA_SCOPE(LocSfcStressForcing, SfcStressForcing);
-   OMEGA_SCOPE(LocBottomDrag, BottomDrag);
+   OMEGA_SCOPE(LocExplicitBottomDrag, ExplicitBottomDrag);
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
    OMEGA_SCOPE(LocSshCell, VCoord->SshCell);
@@ -1026,14 +1026,14 @@ void Tendencies::computeBaroclinicVelocityTendenciesOnly(
 
 
    // Compute bottom drag
-   if (LocBottomDrag.Enabled) {
-      Pacer::start("Tend:bottomDrag", 2);
+   if (LocExplicitBottomDrag.Enabled) {
+      Pacer::start("Tend:explicitBottomDrag", 2);
       parallelFor(
           {Mesh->NEdgesAll}, KOKKOS_LAMBDA(int IEdge) {
-             LocBottomDrag(LocNormalVelocityTend, IEdge, NormVelEdge, KECell,
-                           MeanPseudoThickEdge);
+             LocExplicitBottomDrag(LocNormalVelocityTend, IEdge, NormVelEdge, KECell,
+                                   MeanPseudoThickEdge);
           });
-      Pacer::stop("Tend:bottomDrag", 2);
+      Pacer::stop("Tend:explicitBottomDrag", 2);
    }
 
 //   if (CustomVelocityTend) {

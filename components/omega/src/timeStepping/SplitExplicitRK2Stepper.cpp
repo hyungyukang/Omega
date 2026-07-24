@@ -134,7 +134,7 @@ void SplitExplicitRK2Stepper::doSplitStage3(
    // Match MPAS-O's split-explicit Stage 3: retain the most recently computed
    // edge-flux thickness from the provisional state, but use the time-n cell
    // thickness in the ALE vertical-transport correction.
-   computeVerticalPseudoVelocity(State, CurLevel, NormalTransportVelocity,
+   computeVerticalPseudoVelocity(State, NextLevel, NormalTransportVelocity,
                                  StageTimeStep);
 
    // Compute thickness and tracer tendencies at the new time level

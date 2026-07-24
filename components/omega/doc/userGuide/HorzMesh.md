@@ -62,6 +62,29 @@ variables. These include ``OnSphere`` (or ``on_a_sphere`` for backcompatibility)
 OnSphere and IsPeriodic are stored as YES/NO strings in the metadata but as
 boolean flags in the code.
 
+### Horizontal mixing mesh scaling
+
+The `Hmix` configuration controls whether Laplacian and biharmonic mixing
+coefficients vary with horizontal mesh size:
+
+```yaml
+  Hmix:
+    HmixScaleWithMesh: false
+    MaxMeshDensity: -1.0
+    HmixUseRefWidth: false
+    HmixRefWidth: 30.0e3
+```
+
+When `HmixScaleWithMesh` is false, both scaling coefficients are one. When it
+is true and `HmixUseRefWidth` is true, Omega computes the effective cell width
+at each edge from the areas of its two adjacent cells. The Laplacian scaling
+is the ratio of this width to `HmixRefWidth`, and the biharmonic scaling is the
+cube of that ratio.
+
+When `HmixUseRefWidth` is false, Omega uses the legacy MPAS-Ocean scaling based
+on `MeshDensity`. A negative `MaxMeshDensity` requests that Omega compute its
+global value from the mesh during initialization.
+
 In the future, the Mesh class will optionally compute the mesh variables that
 are dependent on the Cartesian mesh coordinates internally.
 This includes the various areas, lengths, angles, and weights needed for the

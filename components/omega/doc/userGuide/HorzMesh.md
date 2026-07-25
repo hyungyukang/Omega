@@ -36,7 +36,28 @@ These are all read using the input [IOStream](#omega-user-iostreams) HorzMeshIn
 Only the Filename should be changed by the user to point to the relevant input
 mesh file. The mesh Filename is sometimes overridden by the driver routine in
 the case of unit tests using an optional argument to the
-[decomposition](#omega-dev-decomp).
+[decomposition](#omega-dev-decomp). The input contents are defined by the
+HorzMeshIn [FieldGroup](#omega-dev-field) that currently includes the following
+variables:
+
+| Variable Name | Description | Units |
+| ------------- | ----------- | ----- |
+| XCell, YCell, ZCell | Cartesian coordinates of cell centers | m |
+| XEdge, YEdge, ZEdge | Cartesian coordinates of edge centers | m |
+| XVertex, YVertex, ZVertex | Cartesian coordinates of vertices | m |
+| FCell, FEdge, FVertex | Coriolis parameter at cell centers/edges/vertices | radians/s |
+| LonCell, LatCell | Longitude/latitude coordinates of cell centers | radians |
+| LonEdge, LatEdge | Longitude/latitude coordinates of edge centers | radians |
+| LonVertex, LatVertex | Longitude/latitude coordinates of vertices | radians |
+| AreaCell | Area of each cell | m^2 |
+| AreaTriangle | Area of each triangle in the dual grid | m^2 |
+| KiteAreasOnVertex | Area of the portions of each dual cell that are part of each cellsOnVertex | m^2 |
+| DvEdge | Length of each edge, computed as the distance between verticesOnEdge | m |
+| DcEdge | Length of each edge, computed as the distance between CellsOnEdge | m |
+| AngleEdge | Angle the edge normal makes with local eastward direction | radians |
+| MeshDensity | Value of density function used to generate a particular mesh at cell centers | - |
+| WeightsOnEdge | Reconstruction weights associated with each of the edgesOnEdge | - |
+| ReconstructWeightsCell | Least-squares weights for reconstructing an edge-normal vector field at cell centers; spherical meshes only | - |
 
 In addition, some mesh metadata are read from the file and stored as mesh
 variables. These include ``OnSphere`` (or ``on_a_sphere`` for backcompatibility),

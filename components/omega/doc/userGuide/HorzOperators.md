@@ -19,7 +19,7 @@ The following operators are currently implemented:
 - `GradientOnEdge`
 - `CurlOnVertex`
 - `TangentialReconOnEdge`
-- `InterpCellToEdge`
+- `VectorReconstructOnCell`
 
 There are no user-configurable options; the method for `InterpCellToEdge` is located in {ref}`Surface Stress Forcing <omega-user-forcing-sfc-stress>`.
 

@@ -330,29 +330,6 @@ void Eos::computeBruntVaisalaFreqSq(const Array2DReal &ConservTemp,
    }
 }
 
-Real Eos::calcCtFreezing(const Real Sa, const Real P,
-                         const Real SaturationFract) const {
-   if (EosChoice == EosType::Teos10Eos) {
-      return ComputeSpecVolTeos10.calcCtFreezing(Sa, P, SaturationFract);
-   }
-   if (EosChoice == EosType::LinearEos) {
-      // Linear salinity-dependent freezing point; coefficient -0.054
-      // degC/PSU with absolute-to-practical salinity conversion (g/kg ->
-      // PSU).
-      constexpr Real Coeff = -0.054_Real;
-      return Coeff * Sa / Psu2Gpkg;
-   }
-   if (EosChoice == EosType::ConstantEos) {
-      // Constant approximate ocean freezing point (degC)
-      return -1.9_Real;
-   }
-   ABORT_ERROR(
-       "Eos::calcCtFreezing: CT freezing temperature is only "
-       "implemented for TEOS-10, Linear, and Constant EOS types. "
-       "Support for the current EOS choice has not yet been developed.");
-   return 0;
-}
-
 /// Define IO fields and metadata for output
 void Eos::defineFields() {
 

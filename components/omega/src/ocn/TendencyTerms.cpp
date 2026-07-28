@@ -83,7 +83,7 @@ SfcTracerForcingOnCell::SfcTracerForcingOnCell(const HorzMesh *Mesh,
                                                const Eos *EosInst)
     : TempIndex(TempTracerIndex), SaltIndex(SaltTracerIndex),
       MinLayerCell(VCoord->MinLayerCell), MaxLayerCell(VCoord->MaxLayerCell),
-      EosImpl(VCoord) {}
+      EosImpl(EosInst) {}
 
 TracerHorzAdvOnCell::TracerHorzAdvOnCell(const HorzMesh *Mesh,
                                          const VertCoord *VCoord)

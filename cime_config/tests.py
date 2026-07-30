@@ -398,6 +398,7 @@ _TESTS = {
         "tests"   : (
             "SMS_Vmct_D_Ln3.TL319_EC30to60E2r2_wQU225EC30to60E2r2.GMPAS-JRA1p5-WW3.ww3-jra_1958",
             "SMS_D_Ln3.TL319_IcoswISC30E3r5_wQU225Icos30E3r5.GMPAS-JRA1p5-WW3.ww3-jra_1958",
+            "SMS_Vmct_D_Ln3.TL319_IcoswISC30E3r5_wQU225Icos30E3r5.GMPAS-JRA1p5-WW3.ww3-jra_1958",
             )
         },
 
@@ -437,7 +438,7 @@ _TESTS = {
             "SMS_Ld1.ne30pg2_r05_IcoswISC30E3r5.WCYCLSSP370.allactive-wcprodssp",
             "SMS_Ld1.ne30pg2_r05_IcoswISC30E3r5.WCYCLSSP585.allactive-wcprodssp",
             "SMS_Ld1_P512.northamericax4v1pg2_r025_IcoswISC30E3r5.WCYCL1850.allactive-wcprodrrm_1850",
-            "SMS_D_Ld1.TL319_IcoswISC30E3r5_wQU225Icos30E3r5.GMPAS-JRA1p5-WW3.ww3-jra_1958",
+            "SMS_Vmct_D_Ld1.TL319_IcoswISC30E3r5_wQU225Icos30E3r5.GMPAS-JRA1p5-WW3.ww3-jra_1958",
             "SMS_D_Ld1.ne30pg2_r05_IcoswISC30E3r5.CRYO1850",
             "SMS_D_Ld1.ne30pg2_r05_IcoswISC30E3r5.CRYO1850-CMIP7",
             )

@@ -706,6 +706,42 @@ void testBruntVaisalaFreqSqTeos10() {
    return;
 }
 
+/// Test all Eos::calcCtFreezing pathways (Teos10, Linear, Constant)
+void testCalcCtFreezing() {
+   const Real RTol = 1e-10;
+
+   constexpr Real SaturationFrac = 0.0;
+   constexpr Real PDb            = 500.0; // pressure in dbar for GSW pathway
+   constexpr Real SaLocal        = 32.0;
+
+   const Real CtTeosExpected =
+       gsw_ct_freezing_poly(SaLocal, PDb, SaturationFrac);
+   const Real CtTeos =
+       Eos::calcCtFreezing(EosType::Teos10Eos, SaLocal, PDb, SaturationFrac);
+   if (!isApprox(CtTeos, CtTeosExpected, RTol)) {
+      ABORT_ERROR("testCalcCtFreezing: Teos10 FAIL, expected {}, got {}",
+                  CtTeosExpected, CtTeos);
+   }
+
+   const Real CtLinearExpected = -0.054_Real * SaLocal / Psu2Gpkg;
+   const Real CtLinear =
+       Eos::calcCtFreezing(EosType::LinearEos, SaLocal, PDb, SaturationFrac);
+   if (!isApprox(CtLinear, CtLinearExpected, RTol)) {
+      ABORT_ERROR("testCalcCtFreezing: Linear FAIL, expected {}, got {}",
+                  CtLinearExpected, CtLinear);
+   }
+
+   const Real CtConstExpected = -1.9_Real;
+   const Real CtConst =
+       Eos::calcCtFreezing(EosType::ConstantEos, SaLocal, PDb, SaturationFrac);
+   if (!isApprox(CtConst, CtConstExpected, RTol)) {
+      ABORT_ERROR("testCalcCtFreezing: Constant FAIL, expected {}, got {}",
+                  CtConstExpected, CtConst);
+   }
+
+   return;
+}
+
 /// Finalize and clean up all test infrastructure
 void finalizeEosTest() {
    Eos::destroyInstance();
@@ -767,22 +803,22 @@ void checkValueGswcN2() {
 }
 
 /// Test that the calcCtFreezing function returns the expected value
-void checkValueCtFreezing() {
+void checkValueGswcCtFreezing() {
    const Real RTol = 1e-10;
 
-   Teos10Eos TestEos(VertCoord::getDefault());
    constexpr Real SaturationFrac = 0.0;
    constexpr Real P              = 500.0 * Db2Pa; // Convert dbar to Pa
    constexpr Real Sa             = 32.0;
 
    /// Get freezing temperature from GSW-C library
    double CtFreezGswc = gsw_ct_freezing_poly(Sa, P * Pa2Db, SaturationFrac);
-   double CtFreez     = TestEos.calcCtFreezing(Sa, P * Pa2Db, SaturationFrac);
+   double CtFreez =
+       Teos10Eos::calcCtFreezingTeos10(Sa, P * Pa2Db, SaturationFrac);
 
    /// Check the value against the GSW-C value
    bool Check = isApprox(CtFreezGswc, CtFreez, RTol);
    if (!Check) {
-      ABORT_ERROR("checkValueCtFreezing: CtFreez FAIL, expected {}, got {}",
+      ABORT_ERROR("checkValueGswcCtFreezing: CtFreez FAIL, expected {}, got {}",
                   CtFreezGswc, CtFreez);
    }
    return;
@@ -837,7 +873,7 @@ void eosTest(const std::string &MeshFile = "OmegaMesh.nc") {
 
    checkValueGswcSpecVol();
    checkValueGswcN2();
-   checkValueCtFreezing();
+   checkValueGswcCtFreezing();
    checkValueGswcCtFromPt();
    checkValueGswcPtFromCt();
 
@@ -848,6 +884,7 @@ void eosTest(const std::string &MeshFile = "OmegaMesh.nc") {
    testEosTeos10();
    testEosTeos10Displaced();
    testBruntVaisalaFreqSqTeos10();
+   testCalcCtFreezing();
 
    finalizeEosTest();
 

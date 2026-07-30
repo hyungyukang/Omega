@@ -54,8 +54,7 @@ struct TestSetup {
 constexpr Geometry Geom   = Geometry::Spherical;
 constexpr int NVertLayers = 60;
 
-int testSfcTracerForcingTeos10();
-int testSfcTracerForcingLinear();
+int testSfcTracerForcing();
 int testSfcThicknessForcing();
 
 int initState() {
@@ -307,15 +306,19 @@ int testTendencies() {
                 "NormalVelocityTend");
    }
 
+   const Real NormVelTendSum =
+       sum(DefTendencies->NormalVelocityTend, Mesh->NEdgesOwned,
+           VCoord->MinLayerEdgeBot, VCoord->MaxLayerEdgeTop);
+   if (!Kokkos::isfinite(NormVelTendSum) || NormVelTendSum == 0) {
+      Err++;
+      LOG_ERROR("TendenciesTest: NormVelTendSum FAIL");
+   }
+
    DefTendencies->SfcStressForcing.Enabled = OrigSfcStressEnabled;
 
    // Test surface tracer forcing with enthalpy terms (TEOS-10 CtFrz path)
-   const int TracerForcingTeos10Err = testSfcTracerForcingTeos10();
-   Err += TracerForcingTeos10Err;
-
-   // Test surface tracer forcing with LinearEos (linear CtFrz path)
-   const int TracerForcingLinearErr = testSfcTracerForcingLinear();
-   Err += TracerForcingLinearErr;
+   const int TracerForcingErr = testSfcTracerForcing();
+   Err += TracerForcingErr;
 
    // Test surface thickness forcing with freshwater terms
    const int ThicknessForcingErr = testSfcThicknessForcing();
@@ -323,7 +326,6 @@ int testTendencies() {
 
    // check that everything got computed correctly
    int NCellsOwned = Mesh->NCellsOwned;
-   int NEdgesOwned = Mesh->NEdgesOwned;
    int NTracers    = Tracers::getNumTracers();
 
    const Real PseudoThickTendSum =
@@ -332,14 +334,6 @@ int testTendencies() {
    if (!Kokkos::isfinite(PseudoThickTendSum) || PseudoThickTendSum == 0) {
       Err++;
       LOG_ERROR("TendenciesTest: PseudoThickTend FAIL");
-   }
-
-   const Real NormVelTendSum =
-       sum(DefTendencies->NormalVelocityTend, NEdgesOwned,
-           VCoord->MinLayerEdgeBot, VCoord->MaxLayerEdgeTop);
-   if (!Kokkos::isfinite(NormVelTendSum) || NormVelTendSum == 0) {
-      Err++;
-      LOG_ERROR("TendenciesTest: NormVelTendSum FAIL");
    }
 
    const Real TraceTendSum =
@@ -354,7 +348,7 @@ int testTendencies() {
    return Err;
 }
 
-int testSfcTracerForcingTeos10() {
+int testSfcTracerForcing() {
    int Err = 0;
 
    auto *VCoord        = VertCoord::getDefault();
@@ -370,8 +364,7 @@ int testSfcTracerForcingTeos10() {
    const I4 SaltIndex = Tracers::IndxSalt;
 
    if (TempIndex < 0 || SaltIndex < 0) {
-      LOG_ERROR(
-          "TendenciesTest: Invalid tracer indices for SfcTracerForcingTeos10");
+      LOG_ERROR("TendenciesTest: Invalid tracer indices for SfcTracerForcing");
       return -1;
    }
 
@@ -511,11 +504,12 @@ int testSfcTracerForcingTeos10() {
 
    HostArray2DReal PressureMidH = createHostMirrorCopy(VCoord->PressureMid);
    deepCopy(PressureMidH, VCoord->PressureMid);
-   const Real PTopDb    = PressureMidH(ICellTest, KTop) * Pa2Db;
-   const Real CtFrzTeos = EosInst->calcCtFreezing(SaTopValue, PTopDb, 0.0_Real);
-   const Real ExpectedTempTendTeos =
+   const Real PTopDb = PressureMidH(ICellTest, KTop) * Pa2Db;
+   const Real CtFrz =
+       Eos::calcCtFreezing(EosInst->EosChoice, SaTopValue, PTopDb, 0.0_Real);
+   const Real ExpectedTempTend =
        (TestSensibleHeat + TestRain * Cp0Sw * CtTopValue +
-        TestSnow * (Cp0Sw * CtFrzTeos - LatIce)) *
+        TestSnow * (Cp0Sw * CtFrz - LatIce)) *
        HFluxFac;
 
    // SaltTend = SeaIceSaltFlux * SFluxFac
@@ -533,209 +527,27 @@ int testSfcTracerForcingTeos10() {
    constexpr Real AbsTol = 1.0e-12_Real; // flux precision is ~e-15
 
    // Expected-pass check with TEOS freezing CT reference.
-   if (!isApprox(ComputedTempTend, ExpectedTempTendTeos, RelTol, AbsTol)) {
+   if (!isApprox(ComputedTempTend, ExpectedTempTend, RelTol, AbsTol)) {
       Err++;
-      LOG_ERROR("TendenciesTest: SfcTracerForcingTeos10 temp tendency FAIL");
+      LOG_ERROR("TendenciesTest: SfcTracerForcing temp tendency FAIL");
       LOG_ERROR("  with TEOS-CtFrz Expected: {},  Computed: {}, Diff: {}",
-                ExpectedTempTendTeos, ComputedTempTend,
-                Kokkos::abs(ComputedTempTend - ExpectedTempTendTeos));
+                ExpectedTempTend, ComputedTempTend,
+                Kokkos::abs(ComputedTempTend - ExpectedTempTend));
    } else {
-      LOG_INFO("TendenciesTest: SfcTracerForcingTeos10 temp tendency PASS");
+      LOG_INFO("TendenciesTest: SfcTracerForcing temp tendency PASS");
    }
 
    // Check salinity tendency
    if (!isApprox(ComputedSaltTend, ExpectedSaltTend, RelTol, AbsTol)) {
       Err++;
-      LOG_ERROR("TendenciesTest: SfcTracerForcingTeos10 salt tendency FAIL");
+      LOG_ERROR("TendenciesTest: SfcTracerForcing salt tendency FAIL");
       LOG_INFO("  Expected: {},  Computed: {}, Diff: {}", ExpectedSaltTend,
                ComputedSaltTend,
                Kokkos::abs(ComputedSaltTend - ExpectedSaltTend));
    } else {
-      LOG_INFO("TendenciesTest: SfcTracerForcingTeos10 salt tendency PASS");
+      LOG_INFO("TendenciesTest: SfcTracerForcing salt tendency PASS");
    }
 
-   DefTendencies->SfcStressForcing.Enabled       = OrigSfcStressEnabled;
-   DefTendencies->SfcThicknessForcing.Enabled    = OrigSfcThicknessEnabled;
-   DefTendencies->SfcTracerForcing.Enabled       = OrigSfcTracerEnabled;
-   DefTendencies->PseudoThicknessFluxDiv.Enabled = OrigPseudoThicknessDiv;
-   DefTendencies->PotentialVortHAdv.Enabled      = OrigPotentialVortHAdv;
-   DefTendencies->KEGrad.Enabled                 = OrigKEGrad;
-   DefTendencies->VelocityDiffusion.Enabled      = OrigVelocityDiffusion;
-   DefTendencies->VelocityHyperDiff.Enabled      = OrigVelocityHyperDiff;
-   DefTendencies->TracerHorzAdv.Enabled          = OrigTracerHorzAdv;
-   DefTendencies->TracerDiffusion.Enabled        = OrigTracerDiffusion;
-   DefTendencies->TracerHyperDiff.Enabled        = OrigTracerHyperDiff;
-   DefTendencies->SurfaceTracerRestoring.Enabled = OrigSurfaceTracerRestoring;
-
-   return Err;
-}
-
-// Tests the SfcTracerForcing path using LinearEos. The EosChoice is
-// temporarily set to LinearEos so that calcCtFreezing uses the linear
-// salinity-dependent approximation instead of the TEOS-10 polynomial.
-// Snow flux is applied so the CtFrz term is exercised.
-int testSfcTracerForcingLinear() {
-   int Err = 0;
-
-   auto *VCoord        = VertCoord::getDefault();
-   auto *DefTendencies = Tendencies::getDefault();
-   auto *State         = OceanState::getDefault();
-   auto *AuxState      = AuxiliaryState::getDefault();
-   auto *DefForcing    = Forcing::getDefault();
-   auto *EosInst       = Eos::getInstance();
-
-   Array3DReal TracerArray = Tracers::getAll(0);
-
-   const I4 TempIndex = Tracers::IndxTemp;
-   const I4 SaltIndex = Tracers::IndxSalt;
-
-   if (TempIndex < 0 || SaltIndex < 0) {
-      LOG_ERROR("TendenciesTest: Invalid tracer indices for "
-                "SfcTracerForcingLinear");
-      return -1;
-   }
-
-   deepCopy(DefTendencies->TracerTend, 0._Real);
-
-   const I4 ICellTest = 0;
-   const I4 KTop      = VCoord->MinLayerCellH(ICellTest);
-
-   if (KTop > VCoord->MaxLayerCellH(ICellTest)) {
-      LOG_ERROR("TendenciesTest: Test cell has no layers");
-      return -1;
-   }
-
-   const Real CtTopValue = 10.0_Real; // conservative temperature (degC)
-   const Real SaTopValue = 34.0_Real; // absolute salinity (g/kg)
-
-   OMEGA_SCOPE(LocTracerArray, TracerArray);
-   Kokkos::parallel_for(
-       "SetTestTracersForcingNonTeos10", 1, KOKKOS_LAMBDA(int i) {
-          LocTracerArray(TempIndex, ICellTest, KTop) = CtTopValue;
-          LocTracerArray(SaltIndex, ICellTest, KTop) = SaTopValue;
-       });
-
-   auto &SensibleHeatFlux   = DefForcing->TracerForcing.SensibleHeatFluxCell;
-   auto &LatentHeatFlux     = DefForcing->TracerForcing.LatentHeatFluxCell;
-   auto &LongWaveHeatFluxUp = DefForcing->TracerForcing.LongWaveHeatFluxUpCell;
-   auto &LongWaveHeatFluxDown =
-       DefForcing->TracerForcing.LongWaveHeatFluxDownCell;
-   auto &SeaIceHeatFlux    = DefForcing->TracerForcing.SeaIceHeatFluxCell;
-   auto &ShortWaveHeatFlux = DefForcing->TracerForcing.ShortWaveHeatFluxCell;
-   auto &RainFlux          = DefForcing->TracerForcing.RainFluxCell;
-   auto &RiverRunoffFlux   = DefForcing->TracerForcing.RiverRunoffFluxCell;
-   auto &SnowFlux          = DefForcing->TracerForcing.SnowFluxCell;
-   auto &IceRunoffFlux     = DefForcing->TracerForcing.IceRunoffFluxCell;
-   auto &SeaIceSaltFlux    = DefForcing->TracerForcing.SeaIceSaltFluxCell;
-
-   deepCopy(SensibleHeatFlux, 0._Real);
-   deepCopy(LatentHeatFlux, 0._Real);
-   deepCopy(LongWaveHeatFluxUp, 0._Real);
-   deepCopy(LongWaveHeatFluxDown, 0._Real);
-   deepCopy(SeaIceHeatFlux, 0._Real);
-   deepCopy(ShortWaveHeatFlux, 0._Real);
-   deepCopy(RainFlux, 0._Real);
-   deepCopy(RiverRunoffFlux, 0._Real);
-   deepCopy(SnowFlux, 0._Real);
-   deepCopy(IceRunoffFlux, 0._Real);
-   deepCopy(SeaIceSaltFlux, 0._Real);
-
-   // Only snow flux so the expected value depends solely on CtFrz.
-   const Real TestSnow = 5.0e-9_Real; // kg/m2/s
-
-   OMEGA_SCOPE(LocSnowFlux, SnowFlux);
-   Kokkos::parallel_for(
-       "SetTestForcingNonTeos10", 1,
-       KOKKOS_LAMBDA(int i) { LocSnowFlux(ICellTest) = TestSnow; });
-
-   DefForcing->computeAll();
-
-   // Switch EOS to LinearEos so calcCtFreezing uses the linear approximation.
-   const EosType OrigEosChoice = EosInst->EosChoice;
-   EosInst->EosChoice          = EosType::LinearEos;
-
-   const bool OrigSfcStressEnabled = DefTendencies->SfcStressForcing.Enabled;
-   const bool OrigSfcThicknessEnabled =
-       DefTendencies->SfcThicknessForcing.Enabled;
-   const bool OrigSfcTracerEnabled = DefTendencies->SfcTracerForcing.Enabled;
-   const bool OrigPseudoThicknessDiv =
-       DefTendencies->PseudoThicknessFluxDiv.Enabled;
-   const bool OrigPotentialVortHAdv = DefTendencies->PotentialVortHAdv.Enabled;
-   const bool OrigKEGrad            = DefTendencies->KEGrad.Enabled;
-   const bool OrigVelocityDiffusion = DefTendencies->VelocityDiffusion.Enabled;
-   const bool OrigVelocityHyperDiff = DefTendencies->VelocityHyperDiff.Enabled;
-   const bool OrigTracerHorzAdv     = DefTendencies->TracerHorzAdv.Enabled;
-   const bool OrigTracerDiffusion   = DefTendencies->TracerDiffusion.Enabled;
-   const bool OrigTracerHyperDiff   = DefTendencies->TracerHyperDiff.Enabled;
-   const bool OrigSurfaceTracerRestoring =
-       DefTendencies->SurfaceTracerRestoring.Enabled;
-
-   DefTendencies->SfcStressForcing.Enabled       = false;
-   DefTendencies->SfcThicknessForcing.Enabled    = false;
-   DefTendencies->SfcTracerForcing.Enabled       = false;
-   DefTendencies->PseudoThicknessFluxDiv.Enabled = false;
-   DefTendencies->PotentialVortHAdv.Enabled      = false;
-   DefTendencies->KEGrad.Enabled                 = false;
-   DefTendencies->VelocityDiffusion.Enabled      = false;
-   DefTendencies->VelocityHyperDiff.Enabled      = false;
-   DefTendencies->TracerHorzAdv.Enabled          = false;
-   DefTendencies->TracerDiffusion.Enabled        = false;
-   DefTendencies->TracerHyperDiff.Enabled        = false;
-   DefTendencies->SurfaceTracerRestoring.Enabled = false;
-
-   int ThickTimeLevel  = 0;
-   int VelTimeLevel    = 0;
-   int TracerTimeLevel = 0;
-   TimeInstant Time;
-   TimeInterval Interval(1., TimeUnits::Seconds);
-
-   // Compute baseline (vertical advection always on)
-   DefTendencies->computeAllTendencies(State, AuxState, TracerArray,
-                                       ThickTimeLevel, VelTimeLevel,
-                                       TracerTimeLevel, Time, Interval);
-
-   HostArray3DReal TracerTendBaseH =
-       createHostMirrorCopy(DefTendencies->TracerTend);
-   deepCopy(TracerTendBaseH, DefTendencies->TracerTend);
-   const Real BaselineTempTend = TracerTendBaseH(TempIndex, ICellTest, KTop);
-
-   // Enable SfcTracerForcing and compute again
-   DefTendencies->SfcTracerForcing.Enabled = true;
-
-   DefTendencies->computeAllTendencies(State, AuxState, TracerArray,
-                                       ThickTimeLevel, VelTimeLevel,
-                                       TracerTimeLevel, Time, Interval);
-
-   // Expected CtFrz from LinearEos path in Eos::calcCtFreezing:
-   // Tf = -0.054 * Sa * (35.0/35.16504)  (no pressure dependence)
-   const Real CtFrzNonTeos =
-       -0.054_Real * SaTopValue * (35.0_Real / 35.16504_Real);
-
-   // HeatFlux = Snow * (Cp0Sw * CtFrz - LatIce)
-   const Real ExpectedTempTend =
-       TestSnow * (Cp0Sw * CtFrzNonTeos - LatIce) * HFluxFac;
-
-   HostArray3DReal TracerTendH =
-       createHostMirrorCopy(DefTendencies->TracerTend);
-   deepCopy(TracerTendH, DefTendencies->TracerTend);
-   const Real ComputedTempTend =
-       TracerTendH(TempIndex, ICellTest, KTop) - BaselineTempTend;
-
-   constexpr Real RelTol = 1.0e-10_Real;
-   constexpr Real AbsTol = 1.0e-12_Real;
-
-   if (!isApprox(ComputedTempTend, ExpectedTempTend, RelTol, AbsTol)) {
-      Err++;
-      LOG_ERROR("TendenciesTest: SfcTracerForcingLinear temp tendency FAIL");
-      LOG_ERROR("  Expected: {},  Computed: {}, Diff: {}", ExpectedTempTend,
-                ComputedTempTend,
-                Kokkos::abs(ComputedTempTend - ExpectedTempTend));
-   } else {
-      LOG_INFO("TendenciesTest: SfcTracerForcingLinear temp tendency PASS");
-   }
-
-   // Restore EOS choice and tendency flags
-   EosInst->EosChoice                            = OrigEosChoice;
    DefTendencies->SfcStressForcing.Enabled       = OrigSfcStressEnabled;
    DefTendencies->SfcThicknessForcing.Enabled    = OrigSfcThicknessEnabled;
    DefTendencies->SfcTracerForcing.Enabled       = OrigSfcTracerEnabled;

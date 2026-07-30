@@ -663,8 +663,8 @@ class Teos10Eos {
    /// (polynomial error in [-5e-4, 6e-4] K, from GSW package).
    /// P is relative pressure (gauge pressure in Pa, i.e., absolute pressure
    /// minus the standard atmosphere).
-   KOKKOS_FUNCTION Real calcCtFreezing(const Real Sa, const Real P,
-                                       const Real SaturationFract) const {
+   static KOKKOS_FUNCTION Real calcCtFreezingTeos10(
+       const Real Sa, const Real P, const Real SaturationFract) {
       constexpr Real Sso = 35.16504;
       constexpr Real C0  = 0.017947064327968736;
       constexpr Real C1  = -6.076099099929818;
@@ -1043,17 +1043,17 @@ class Eos {
       return Pt;
    }
 
-   /// Calculate freezing Conservative Temperature.
+   /// Calculate freezing temperature of seawater.
    /// For TEOS-10, uses the Roquet et al. 75-term polynomial.
-   /// For LinearEos, uses a simple linear salinity-dependent approximation
-   /// consistent with the linear EOS philosophy (Sa in g/kg converted to PSU).
+   /// For LinearEos, uses a simple linear salinity-dependent approximation.
    /// For ConstantEos, returns a constant approximate ocean freezing point.
-   KOKKOS_FUNCTION Real calcCtFreezing(const Real Sa, const Real P,
-                                       const Real SaturationFract) const {
-      if (EosChoice == EosType::Teos10Eos) {
-         return ComputeSpecVolTeos10.calcCtFreezing(Sa, P, SaturationFract);
+   static KOKKOS_FUNCTION Real calcCtFreezing(EosType Choice, const Real Sa,
+                                              const Real P,
+                                              const Real SaturationFract) {
+      if (Choice == EosType::Teos10Eos) {
+         return Teos10Eos::calcCtFreezingTeos10(Sa, P, SaturationFract);
       }
-      if (EosChoice == EosType::LinearEos) {
+      if (Choice == EosType::LinearEos) {
          // Linear salinity-dependent freezing point; coefficient -0.054
          // degC/PSU with absolute-to-practical salinity conversion (g/kg ->
          // PSU).

@@ -91,6 +91,8 @@ class Forcing {
 
    const HorzMesh *Mesh;
    Halo *MeshHalo;
+   bool SfcStressFieldsEnabled     = false;
+   bool TracerForcingFieldsEnabled = false;
 
    static Forcing *DefaultForcing;
    static std::map<std::string, std::unique_ptr<Forcing>> AllForcing;

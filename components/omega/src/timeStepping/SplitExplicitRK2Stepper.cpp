@@ -634,7 +634,6 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
    const int NextLevel = 1;
    int NTracers        = Tracers::getNumTracers();
 
-
    Array3DReal CurTracerArray  = Tracers::getAll(CurLevel);
    Array3DReal NextTracerArray = Tracers::getAll(NextLevel);
 
@@ -696,13 +695,6 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
    Tracers::updateTimeLevels();
    Pacer::stop("SE-RK2:haloExch", 3);
 
-   // Apply implicit vertical mixing
-   CurTracerArray = Tracers::getAll(CurLevel);
-   if (VMix->VelVertMixSetup.Enabled or VMix->TracerVertMixSetup.Enabled) {
-      VMix->VertMixImplicit(State, AuxState, CurTracerArray, NTracers,
-                            State->CurTimeIndex);
-   }
-
    // Refresh kinetic diagnostics from the completed n+dt velocity before
    // validation and history output.
    const Array2DReal NormalVelCur = State->getNormalVelocity(CurLevel);
@@ -721,6 +713,13 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
                  LocKineticAux.computeVarsOnCell(ICell, KChunk, NormalVelCur);
               });
        });
+
+   // Apply implicit vertical mixing
+   CurTracerArray = Tracers::getAll(CurLevel);
+   if (VMix->VelVertMixSetup.Enabled or VMix->TracerVertMixSetup.Enabled) {
+      VMix->VertMixImplicit(State, AuxState, CurTracerArray, NTracers,
+                            State->CurTimeIndex);
+   }
 
    validateOceanState(State, AuxState, VertCoord::getDefault(), CurLevel);
 

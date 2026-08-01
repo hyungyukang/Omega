@@ -456,41 +456,33 @@ edge.
 
 - `cellsOnVertex` and `edgesOnVertex` must proceed counter-clockwise around a
   vertex.
-- Edges must lead cells as they proceed around a vertex. For every valid $n$,
-  the vector
+- Cells and edges alternate around a vertex, with
+  `cellsOnVertex(n, iVertex)` lying counter-clockwise of
+  `edgesOnVertex(n, iVertex)` and clockwise of `edgesOnVertex(n+1, iVertex)`.
+  For every valid $n$, the vector
 
   $$
-  \left(\mathbf{x}_{\mathrm{cellsOnVertex}(n,\mathrm{iVertex})}
+  \left(\mathbf{x}_{\mathrm{edgesOnVertex}(n,\mathrm{iVertex})}
   - \mathbf{x}_{\mathrm{iVertex}}\right)
   \times
-  \left(\mathbf{x}_{\mathrm{edgesOnVertex}(n,\mathrm{iVertex})}
+  \left(\mathbf{x}_{\mathrm{cellsOnVertex}(n,\mathrm{iVertex})}
   - \mathbf{x}_{\mathrm{iVertex}}\right)
   $$
 
   must point in the local outward-normal direction. The indices in this
   expression represent their corresponding Cartesian position vectors.
 
-  ```{caution}
-  The handedness of this requirement is unverified. The requirement above
-  states that edge $n$ lies counter-clockwise of cell $n$ around the vertex.
-  However, `MpasMeshConverter.x` constructs the kite associated with
-  `cellsOnVertex(n, iVertex)` from `edgesOnVertex(n, iVertex)` and
-  `edgesOnVertex(n+1, iVertex)`, which places cell $n$ *between* those two
-  edges and therefore implies the opposite ordering, in which cells lead
-  edges.
-
-  Either this requirement should be stated with the two operands of the cross
-  product exchanged, or the kite indexing in the converter is offset by one.
-  Until this discrepancy is resolved against an actual mesh file, do not rely
-  on the sign of this cross product when validating or generating a mesh.
-  Instead, verify the relative ordering of `cellsOnVertex` and
-  `edgesOnVertex` empirically against a mesh produced by
-  `MpasMeshConverter.x`.
-  ```
+  This has the same sense as the corresponding requirement relative to cells
+  below, where `verticesOnCell(n, iCell)` likewise lies counter-clockwise of
+  `edgesOnCell(n, iCell)`.
 
 - `kiteAreasOnVertex(n, iVertex)` is the intersection of
   `areaTriangle(iVertex)` with
-  `areaCell(cellsOnVertex(n, iVertex))`.
+  `areaCell(cellsOnVertex(n, iVertex))`. It follows from the ordering above
+  that this kite is the quadrilateral bounded by `iVertex`,
+  `edgesOnVertex(n, iVertex)`, `cellsOnVertex(n, iVertex)`, and
+  `edgesOnVertex(n+1, iVertex)`, where the edge index wraps back to 1 for the
+  last kite.
 
 ```{figure} images/dualMesh_kiteAreas.png
 :name: fig-vertex-elements

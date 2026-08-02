@@ -1,0 +1,20 @@
+meshes:
+  oQU240:
+    inputs:
+      - file: ocean.QU.240km.151209.teos10.260720.nc
+        streams: [HorzMeshIn, InitialVertCoord, InitialState]
+
+  EC30to60E2r2:
+    inputs:
+      - file: ocean.EC30to60E2r2.200908.teos10.260720.nc
+        streams: [HorzMeshIn, InitialVertCoord, InitialState]
+
+# experiments:
+#   spunup_g_case:
+#     when:
+#       mesh: oQU240
+#       compset: SOME_G_CASE
+#
+#     inputs:
+#       - file: ocean.oQU240.Gcase-spinup.0101-01-01.nc
+#         streams: [InitialState]

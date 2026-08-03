@@ -45,6 +45,27 @@ OVERRIDES_KEYS = frozenset({"coupled", "meshes"})
 #: so they need their own validation.
 OPEN_SECTIONS = frozenset({"IOStreams"})
 
+#: IOStreams wholly controlled by CIME and the coupler. The required streams
+#: are staged through ``omega.input_data_list``, the restart streams are named
+#: and scheduled by the coupler, and forcing is provided by the coupler.
+BLOCKED_STREAMS = frozenset(
+    REQUIRED_STREAMS | {"Forcing", "RestartRead", "RestartWrite"}
+)
+
+#: Config options set by CIME, which a user is not permitted to override.
+#: Matched as prefixes, so naming a section blocks everything below it.
+BLOCKED_OPTIONS = frozenset(
+    {f"IOStreams.{stream}" for stream in BLOCKED_STREAMS} |
+    {
+        # start, stop, and duration are provided by the coupler at runtime
+        "TimeIntegration.StartTime",
+        "TimeIntegration.StopTime",
+        "TimeIntegration.RunDuration",
+        # calendar must agree with the CIME ``CALENDAR`` setting
+        "TimeIntegration.CalendarType",
+    }
+)
+
 
 def validate_input_files_config(
     input_files: YamlMapping, mesh_name: Optional[str] = None
@@ -190,6 +211,47 @@ def validate_config_overrides(
     _raise(errors, OVERRIDES_PATH)
 
     return config_overrides
+
+
+def validate_user_overrides(
+    user_overrides: YamlMapping, defaults: YamlMapping
+) -> YamlMapping:
+    """
+    Validate the contents of a case's ``user_nl_omega`` file.
+
+    All problems found are collected and reported together, rather than
+    raising on the first one encountered.
+
+    An empty ``user_nl_omega`` is not an error, it just means the user has
+    not overridden anything.
+
+    Parameters:
+    -----------
+    user_overrides : dict[str, Any]
+        Parsed content of the case's ``user_nl_omega``.
+    defaults : dict[str, Any]
+        Default configuration values, loaded from configs/Default.yml.
+
+    Returns:
+    --------
+    dict[str, Any]
+        The validated user overrides.
+
+    Raises:
+    -------
+    ValueError
+        If any unknown or blocked options are set.
+    """
+    if not isinstance(user_overrides, dict):
+        err_msg = "`user_nl_omega` is not a mapping."
+        raise ValueError(err_msg)
+
+    errors = validate_overrides(user_overrides, defaults, "user overrides")
+    errors.extend(validate_blocked_options(user_overrides, "user overrides"))
+
+    _raise(errors, "user_nl_omega")
+
+    return user_overrides
 
 
 def _raise(errors: list[str], config_path: str) -> None:
@@ -425,6 +487,40 @@ def validate_overrides(
     ]
 
 
+def validate_blocked_options(
+    overrides: YamlMapping, source: str
+) -> list[str]:
+    """
+    Validate that overrides do not set options controlled by CIME.
+
+    Options listed in ``BLOCKED_OPTIONS`` are set from the case configuration,
+    or by the coupler at runtime, so overriding them would either be silently
+    discarded or leave the run inconsistent with the rest of the case.
+
+    Parameters:
+    -----------
+    overrides : dict[str, Any]
+        Override options to validate.
+    source : str
+        Description of where the overrides came from, used in error messages.
+
+    Returns:
+    --------
+    list[str]
+        Error messages describing any problems found. Empty when the overrides
+        are valid.
+    """
+    blocked_options = _blocked_override_options(overrides)
+
+    if not blocked_options:
+        return []
+
+    return [
+        f"Option(s) {', '.join(blocked_options)} in {source} are set by CIME "
+        f"and cannot be overridden."
+    ]
+
+
 def _unknown_override_options(
     overrides: YamlMapping, defaults: YamlMapping, prefix: str = ""
 ) -> list[str]:
@@ -468,6 +564,43 @@ def _unknown_override_options(
             )
 
     return unknown_options
+
+
+def _blocked_override_options(
+    overrides: YamlMapping, prefix: str = ""
+) -> list[str]:
+    """
+    Find override options that are controlled by CIME.
+
+    Every level of the override tree is checked on the way down, so listing a
+    section in ``BLOCKED_OPTIONS`` blocks all the options below it.
+
+    Parameters:
+    -----------
+    overrides : dict[str, Any]
+        Override options to validate.
+    prefix : str, optional
+        Dotted path of the parent section, used when recursing.
+
+    Returns:
+    --------
+    list[str]
+        Dotted paths of any options that are controlled by CIME.
+    """
+    blocked_options: list[str] = []
+
+    for key, value in overrides.items():
+
+        option = f"{prefix}{key}"
+
+        if option in BLOCKED_OPTIONS:
+            blocked_options.append(option)
+        elif isinstance(value, dict):
+            blocked_options.extend(
+                _blocked_override_options(value, f"{option}.")
+            )
+
+    return blocked_options
 
 
 def validate_known_streams(defaults: YamlMapping) -> None:

@@ -11,6 +11,7 @@ def build_omega_config(
     coupled_overrides: YamlMapping,
     mesh_overrides: YamlMapping,
     runtime_overrides: YamlMapping,
+    user_overrides: YamlMapping,
 ) -> YamlMapping:
     """
     Build the Omega configuration dictionary.
@@ -25,6 +26,8 @@ def build_omega_config(
         Mesh specific overrides, loaded from cime_config/mesh_overrides.yaml
     runtime_overrides : dict[str, Any]
         Runtime specific overrides, based on CIME case configuration.
+    user_overrides : dict[str, Any]
+        User specified overrides, loaded from user_nl_omega.
 
     Returns:
     --------
@@ -35,10 +38,10 @@ def build_omega_config(
         defaults = defaults["Omega"]
 
     config = deepcopy(defaults)
-
     config = _deep_merge(config, coupled_overrides)
     config = _deep_merge(config, mesh_overrides)
     config = _deep_merge(config, runtime_overrides)
+    config = _deep_merge(config, user_overrides)
 
     return {"Omega": config}
 

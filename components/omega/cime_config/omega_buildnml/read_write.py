@@ -9,6 +9,7 @@ from .validate import (
     validate_config_overrides,
     validate_input_files_config,
     validate_known_streams,
+    validate_user_overrides,
 )
 
 #: Path to Omega's default configuration file, relative to this package
@@ -99,6 +100,47 @@ def read_config_overrides(mesh_name: Optional[str] = None) -> YamlMapping:
     )
 
 
+def read_user_overrides(path: PathLike) -> YamlMapping:
+    """
+    Read a case's user_nl_omega file.
+
+    The overrides are expected to be a YAML snippet mirroring the structure
+    of Omega's default configuration. An empty file is not an error, it just
+    means the user has not overridden anything.
+
+    Parameters:
+    -----------
+    path : PathLike
+        Path to the case's ``user_nl_omega`` file.
+
+    Returns:
+    --------
+    dict[str, Any]
+        The read overrides as a dictionary.
+    """
+    path = Path(path)
+
+    if not path.is_file():
+        err_msg = f"{path} does not exist or is not a file"
+        raise FileNotFoundError(err_msg)
+
+    with path.open("r", encoding="utf-8") as f:
+        user_overrides = _read_yaml_file(f)
+
+    # a user_nl_omega with no overrides in it parses as ``None``
+    if user_overrides is None:
+        return {}
+
+    if not isinstance(user_overrides, dict):
+        err_msg = f"{path} is not a mapping."
+        raise ValueError(err_msg)
+
+    user_overrides = _unwrap_omega_section(user_overrides)
+    defaults = read_default_config(DEFAULT_CONFIG_PATH)
+
+    return validate_user_overrides(user_overrides, defaults)
+
+
 def write_yaml_mapping(
     mapping: YamlMapping, file_path: PathLike
 ) -> None:
@@ -179,6 +221,46 @@ class _UniqueKeyLoader(yaml.SafeLoader):
             keys.add(key)
 
         return super().construct_mapping(node, deep=deep)
+
+
+def _unwrap_omega_section(config: YamlMapping) -> YamlMapping:
+    """
+    Return the ``Omega`` section of a config, if one is present.
+
+    Users are expected to wrap their overrides in a top-level ``Omega`` key,
+    matching Omega's default configuration, but the key is optional. When it
+    is present it must be the only top-level key, otherwise under indented
+    sections would be silently dropped.
+
+    Parameters
+    ----------
+    config : dict[str, Any]
+        Parsed content of a YAML file.
+
+    Returns:
+    --------
+    dict[str, Any]
+        The ``Omega`` section, or the config itself when there isn't one.
+    """
+    if "Omega" not in config:
+        return config
+
+    siblings = sorted(set(config) - {"Omega"})
+    if siblings:
+        err_msg = (
+            f"`Omega` must be the only top-level key. Found "
+            f"{', '.join(siblings)} alongside it, please check the "
+            f"indentation of your overrides."
+        )
+        raise ValueError(err_msg)
+
+    omega_section: YamlMapping = config["Omega"]
+
+    # an ``Omega`` key with nothing under it parses as ``None``
+    if omega_section is None:
+        return {}
+
+    return omega_section
 
 
 def _read_yaml_file(f: IO[str]) -> YamlMapping:

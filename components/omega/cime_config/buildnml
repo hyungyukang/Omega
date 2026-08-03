@@ -16,6 +16,7 @@ from omega_buildnml import (
     read_config_overrides,
     read_default_config,
     read_input_files_config,
+    read_user_overrides,
     resolve_streams_files,
     write_input_data_list,
     write_yaml_mapping,
@@ -73,12 +74,16 @@ def buildnml(case, caseroot, compname):
     # read coupled simulation and mesh-specific Omega config snippets
     config_overrides = read_config_overrides(mesh_name=mesh_name)
 
+    # read user_nl_omega for any user-specified overrides
+    user_overrides = read_user_overrides(case_root / "user_nl_omega")
+
     # Using the defaults and overrides, build the final Omega config dictionary
     config = build_omega_config(
         defaults=defaults,
         coupled_overrides=config_overrides["coupled"],
         mesh_overrides=config_overrides.get("meshes", {}).get(mesh_name, {}),
-        runtime_overrides=runtime_overrides
+        runtime_overrides=runtime_overrides,
+        user_overrides=user_overrides,
     )
 
     # write files within SharedArea context so correct file permissions are set

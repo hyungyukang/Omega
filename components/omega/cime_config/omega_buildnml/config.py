@@ -1,10 +1,9 @@
 from collections.abc import Mapping
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
-YamlMapping = dict[str, Any]
-PathLike = Union[str, Path]
+from ._types import PathLike, YamlMapping
 
 
 def build_omega_config(

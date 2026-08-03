@@ -76,8 +76,8 @@ def buildnml(case, caseroot, compname):
     # Using the defaults and overrides, build the final Omega config dictionary
     config = build_omega_config(
         defaults=defaults,
-        coupled_overrides=config_overrides.get("coupled"),
-        mesh_overrides=config_overrides.get("meshes").get(mesh_name),
+        coupled_overrides=config_overrides["coupled"],
+        mesh_overrides=config_overrides.get("meshes", {}).get(mesh_name, {}),
         runtime_overrides=runtime_overrides
     )
 

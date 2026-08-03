@@ -7,6 +7,9 @@ import yaml
 from ._types import PathLike, YamlMapping
 from .validate import validate_config_overrides, validate_input_files_config
 
+#: Path to Omega's default configuration file, relative to this package
+DEFAULT_CONFIG_PATH = Path(__file__).parents[2] / "configs" / "Default.yml"
+
 
 def read_default_config(path: PathLike) -> YamlMapping:
     """
@@ -76,9 +79,10 @@ def read_config_overrides(mesh_name: Optional[str] = None) -> YamlMapping:
     """
     config_overrides = _read_packaged_yaml_file("config_overrides.yaml")
     input_files = read_input_files_config(mesh_name=mesh_name)
+    defaults = read_default_config(DEFAULT_CONFIG_PATH)
 
     return validate_config_overrides(
-        config_overrides, input_files, mesh_name=mesh_name
+        config_overrides, input_files, defaults, mesh_name=mesh_name
     )
 
 

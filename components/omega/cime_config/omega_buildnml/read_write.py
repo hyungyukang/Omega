@@ -1,11 +1,10 @@
 from importlib import resources
 from pathlib import Path
-from typing import IO, Any, Union
+from typing import IO
 
 import yaml
 
-YamlMapping = dict[str, Any]
-PathLike = Union[str, Path]
+from ._types import PathLike, YamlMapping
 
 
 def read_default_config(path: PathLike) -> YamlMapping:

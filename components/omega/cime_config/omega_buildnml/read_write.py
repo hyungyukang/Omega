@@ -1,10 +1,11 @@
 from importlib import resources
 from pathlib import Path
-from typing import IO
+from typing import IO, Optional
 
 import yaml
 
 from ._types import PathLike, YamlMapping
+from .validate import validate_config_overrides, validate_input_files_config
 
 
 def read_default_config(path: PathLike) -> YamlMapping:
@@ -38,28 +39,47 @@ def read_default_config(path: PathLike) -> YamlMapping:
     return config["Omega"]
 
 
-def read_input_files_config() -> YamlMapping:
+def read_input_files_config(mesh_name: Optional[str] = None) -> YamlMapping:
     """
     Read the input_files.yaml configuration file from the package resources.
 
+    Parameters:
+    -----------
+    mesh_name : str, optional
+        The name of the mesh to validate. If not provided, all mesh entries
+        will be validated.
+
     Returns:
     --------
     dict[str, Any]
         The read configuration as a dictionary.
     """
-    return _read_packaged_yaml_file("input_files.yaml")
+    input_files = _read_packaged_yaml_file("input_files.yaml")
+
+    return validate_input_files_config(input_files, mesh_name=mesh_name)
 
 
-def read_config_overrides() -> YamlMapping:
+def read_config_overrides(mesh_name: Optional[str] = None) -> YamlMapping:
     """
     Read config_overrides.yaml configuration file from the package resources.
 
+    Parameters:
+    -----------
+    mesh_name : str, optional
+        The name of the mesh to validate. If not provided, all mesh entries
+        will be validated.
+
     Returns:
     --------
     dict[str, Any]
         The read configuration as a dictionary.
     """
-    return _read_packaged_yaml_file("config_overrides.yaml")
+    config_overrides = _read_packaged_yaml_file("config_overrides.yaml")
+    input_files = read_input_files_config(mesh_name=mesh_name)
+
+    return validate_config_overrides(
+        config_overrides, input_files, mesh_name=mesh_name
+    )
 
 
 def write_yaml_mapping(

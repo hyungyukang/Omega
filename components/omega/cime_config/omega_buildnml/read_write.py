@@ -1,6 +1,6 @@
 from importlib import resources
 from pathlib import Path
-from typing import IO, Optional
+from typing import IO, Any, Hashable, Optional
 
 import yaml
 
@@ -153,6 +153,34 @@ def write_input_data_list(
             f.write(f"{input_file}\n")
 
 
+class _UniqueKeyLoader(yaml.SafeLoader):
+    """
+    YAML loader that rejects mappings containing duplicate keys.
+
+    ``yaml.SafeLoader`` silently keeps the last value when a key is repeated,
+    so a copy/pasted or misspelled entry would quietly override an earlier
+    one instead of being reported.
+    """
+
+    def construct_mapping(
+        self, node: yaml.MappingNode, deep: bool = False
+    ) -> dict[Hashable, Any]:
+        keys = set()
+
+        for key_node, _ in node.value:
+            key = self.construct_object(key_node, deep=deep)
+
+            if key in keys:
+                err_msg = (
+                    f"Duplicate key {key!r} found:\n{key_node.start_mark}"
+                )
+                raise ValueError(err_msg)
+
+            keys.add(key)
+
+        return super().construct_mapping(node, deep=deep)
+
+
 def _read_yaml_file(f: IO[str]) -> YamlMapping:
     """
     Read a YAML mapping from a file.
@@ -167,8 +195,7 @@ def _read_yaml_file(f: IO[str]) -> YamlMapping:
         Read YAML mapping.
     """
 
-    # TODO: Reject duplicate key mappings
-    return yaml.safe_load(f)
+    return yaml.load(f, Loader=_UniqueKeyLoader)
 
 
 def _read_packaged_yaml_file(file_name: str) -> YamlMapping:

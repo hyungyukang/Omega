@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from ._types import PathLike, YamlMapping
+from .validate import validate_input_files_config
 
 
 def build_omega_config(
@@ -66,76 +67,19 @@ def resolve_streams_files(
     dict[str, str]
         Mapping of Omega IOStream names to resolved input filenames.
     """
+    meshes: YamlMapping = input_files["meshes"]
 
-    # NOTE: This function has **very** pedantic error checking as a way of
-    # ensuring the entries in input_files.yaml are correct and complete
-
-    err_suffix = (
-        "Please check your setting in `components/omega/cime_config/"
-        "input_files.yaml`"
-    )
-    meshes: YamlMapping = input_files.get("meshes", {})
-
-    if mesh_name not in meshes:
-        err_msg = (
-            f"Unsupported OCN_GRID for Omega: {mesh_name}. \n" + err_suffix
-        )
-        raise ValueError(err_msg)
-
-    mesh_definition: YamlMapping = meshes[mesh_name]
-
-    inputs = mesh_definition.get("inputs")
-    if not inputs:
-        err_msg = (
-            f"No input files defined for: {mesh_name}. \n" + err_suffix
-        )
-        raise ValueError(err_msg)
+    # Validate the input_files configuration for the specified mesh
+    input_files = validate_input_files_config(input_files, mesh_name=mesh_name)
 
     mesh_dir = Path(din_loc_root) / "ocn" / "omega" / mesh_name
     streams_files = {}
 
-    for index, input_group in enumerate(inputs):
+    for input_group in meshes[mesh_name]["inputs"]:
 
-        err_msg = (
-            "Missing {key} in input group {index} for mesh: {mesh_name}. \n" +
-            err_suffix
-        )
-        if 'file' not in input_group:
-            _err_msg = err_msg.format(
-                key='file', index=index, mesh_name=mesh_name
-            )
-            raise ValueError(err_msg)
-        if 'streams' not in input_group:
-            _err_msg = err_msg.format(
-                key='streams', index=index, mesh_name=mesh_name
-            )
-            raise ValueError(err_msg)
+        resolved_file_path = mesh_dir / input_group['file']
 
-        file_name = input_group['file']
-        streams = input_group['streams']
-
-        if not isinstance(file_name, str) or not file_name:
-            _err_msg = err_msg.format(
-                key='file', index=index, mesh_name=mesh_name
-            )
-            raise ValueError(_err_msg)
-
-        if not isinstance(streams, list) or not streams:
-            _err_msg = err_msg.format(
-                key='streams', index=index, mesh_name=mesh_name
-            )
-            raise ValueError(_err_msg)
-
-        resolved_file_path = mesh_dir / file_name
-
-        for stream in streams:
-            if stream in streams_files:
-                err_msg = (
-                    f"Stream '{stream}' is assigned more than once for mesh: "
-                    f"{mesh_name}. \n" + err_suffix
-                )
-                raise ValueError(err_msg)
-
+        for stream in input_group['streams']:
             streams_files[stream] = str(resolved_file_path)
 
     return streams_files
@@ -166,14 +110,6 @@ def build_runtime_overrides(
     dict[str, Any]
         Runtime overrides dictionary.
     """
-    required_streams = {"HorzMeshIn", "InitialVertCoord", "InitialState"}
-
-    missing_streams = required_streams - set(streams_files)
-    if missing_streams:
-        raise ValueError(
-            f"Missing required input streams: {', '.join(missing_streams)}"
-        )
-
     io_overrides = {
         stream_name: {"Filename": filename}
         for stream_name, filename in streams_files.items()

@@ -8,6 +8,10 @@ INPUT_FILES_PATH = f"{DATA_PATH}/input_files.yaml"
 
 OVERRIDES_PATH = f"{DATA_PATH}/config_overrides.yaml"
 
+DEFAULTS_PATH = "components/omega/configs/Default.yml"
+
+VALIDATE_PATH = "components/omega/cime_config/omega_buildnml/validate.py"
+
 #: IOStreams defined in ``components/omega/configs/Default.yml``
 KNOWN_STREAMS = frozenset(
     {
@@ -464,3 +468,49 @@ def _unknown_override_options(
             )
 
     return unknown_options
+
+
+def validate_known_streams(defaults: YamlMapping) -> None:
+    """
+    Validate that KNOWN_STREAMS matches the IOStreams Omega defines.
+
+    ``KNOWN_STREAMS`` is hardcoded, so it can drift from the IOStreams defined
+    in Omega's default configuration. This check is intended to be run in CI,
+    rather than as part of a case build.
+
+    Parameters:
+    -----------
+    defaults : dict[str, Any]
+        Default configuration values, loaded from configs/Default.yml.
+
+    Raises:
+    -------
+    ValueError
+        If KNOWN_STREAMS does not match the IOStreams in the defaults.
+    """
+    io_streams: YamlMapping = defaults.get("IOStreams", {})
+
+    if not isinstance(io_streams, dict) or not io_streams:
+        err_msg = (
+            f"`IOStreams` is missing, empty, or is not a mapping. \n"
+            f"Please check your setting in `{DEFAULTS_PATH}`"
+        )
+        raise ValueError(err_msg)
+
+    errors: list[str] = []
+
+    missing_streams = set(io_streams) - KNOWN_STREAMS
+    if missing_streams:
+        errors.append(
+            f"IOStream(s) {', '.join(sorted(missing_streams))} are defined in "
+            f"`{DEFAULTS_PATH}` but are missing from KNOWN_STREAMS."
+        )
+
+    unknown_streams = KNOWN_STREAMS - set(io_streams)
+    if unknown_streams:
+        errors.append(
+            f"IOStream(s) {', '.join(sorted(unknown_streams))} are in "
+            f"KNOWN_STREAMS but are not defined in `{DEFAULTS_PATH}`."
+        )
+
+    _raise(errors, VALIDATE_PATH)

@@ -36,6 +36,11 @@ INPUT_GROUP_KEYS = frozenset({"file", "streams"})
 #: Keys allowed at the top level of ``config_overrides.yaml``
 OVERRIDES_KEYS = frozenset({"coupled", "meshes"})
 
+#: Sections not strictly validated against the defaults. IOStreams entries may
+#: define new streams, and have requirements that depend on the values passed,
+#: so they need their own validation.
+OPEN_SECTIONS = frozenset({"IOStreams"})
+
 
 def validate_input_files_config(
     input_files: YamlMapping, mesh_name: Optional[str] = None
@@ -105,6 +110,7 @@ def validate_input_files_config(
 def validate_config_overrides(
     config_overrides: YamlMapping,
     input_files: YamlMapping,
+    defaults: YamlMapping,
     mesh_name: Optional[str] = None,
 ) -> YamlMapping:
     """
@@ -124,6 +130,8 @@ def validate_config_overrides(
     input_files : dict[str, Any]
         Parsed content of ``cime_config/omega_buildnml/data/input_files.yaml``,
         which defines the meshes Omega supports.
+    defaults : dict[str, Any]
+        Default configuration values, loaded from configs/Default.yml.
     mesh_name : str, optional
         The name of the mesh to validate. If not provided, all mesh entries
         will be validated.
@@ -151,6 +159,10 @@ def validate_config_overrides(
     coupled = config_overrides.get("coupled")
     if not isinstance(coupled, dict) or not coupled:
         errors.append("`coupled` is missing, empty, or is not a mapping.")
+    else:
+        errors.extend(
+            validate_overrides(coupled, defaults, "coupled overrides")
+        )
 
     meshes: YamlMapping = config_overrides.get("meshes", {})
     if not isinstance(meshes, dict):
@@ -161,13 +173,13 @@ def validate_config_overrides(
         for name in meshes:
             errors.extend(
                 _validate_config_overrides_entry(
-                    config_overrides, input_files, name
+                    config_overrides, input_files, defaults, name
                 )
             )
     elif mesh_name in meshes:
         errors.extend(
             _validate_config_overrides_entry(
-                config_overrides, input_files, mesh_name
+                config_overrides, input_files, defaults, mesh_name
             )
         )
 
@@ -323,7 +335,10 @@ def _validate_input_files_entry(
 
 
 def _validate_config_overrides_entry(
-    config_overrides: YamlMapping, input_files: YamlMapping, mesh_name: str
+    config_overrides: YamlMapping,
+    input_files: YamlMapping,
+    defaults: YamlMapping,
+    mesh_name: str,
 ) -> list[str]:
     """
     Validate the overrides of a single mesh in config_overrides.
@@ -336,6 +351,8 @@ def _validate_config_overrides_entry(
     input_files : dict[str, Any]
         Parsed content of ``cime_config/omega_buildnml/data/input_files.yaml``,
         which defines the meshes Omega supports.
+    defaults : dict[str, Any]
+        Default configuration values, loaded from configs/Default.yml.
     mesh_name : str
         The name of the mesh to validate.
 
@@ -353,6 +370,12 @@ def _validate_config_overrides_entry(
 
     if not isinstance(overrides, dict) or not overrides:
         errors.append(f"Mesh: {mesh_name} is empty or is not a mapping.")
+    else:
+        errors.extend(
+            validate_overrides(
+                overrides, defaults, f"overrides for mesh: {mesh_name}"
+            )
+        )
 
     if mesh_name not in supported_meshes:
         errors.append(
@@ -361,3 +384,83 @@ def _validate_config_overrides_entry(
         )
 
     return errors
+
+
+def validate_overrides(
+    overrides: YamlMapping, defaults: YamlMapping, source: str
+) -> list[str]:
+    """
+    Validate that overrides only set options defined in Omega's defaults.
+
+    Overrides that do not appear in the defaults would silently add new
+    options, rather than overriding an existing one. Sections listed in
+    ``OPEN_SECTIONS`` are not checked.
+
+    Parameters:
+    -----------
+    overrides : dict[str, Any]
+        Override options to validate.
+    defaults : dict[str, Any]
+        Default configuration values, loaded from configs/Default.yml.
+    source : str
+        Description of where the overrides came from, used in error messages.
+
+    Returns:
+    --------
+    list[str]
+        Error messages describing any problems found. Empty when the overrides
+        are valid.
+    """
+    unknown_options = _unknown_override_options(overrides, defaults)
+
+    if not unknown_options:
+        return []
+
+    return [
+        f"Unknown option(s) {', '.join(unknown_options)} in {source}."
+    ]
+
+
+def _unknown_override_options(
+    overrides: YamlMapping, defaults: YamlMapping, prefix: str = ""
+) -> list[str]:
+    """
+    Find override options that are not defined in Omega's defaults.
+
+    Parameters:
+    -----------
+    overrides : dict[str, Any]
+        Override options to validate.
+    defaults : dict[str, Any]
+        Default configuration values, loaded from configs/Default.yml.
+    prefix : str, optional
+        Dotted path of the parent section, used when recursing.
+
+    Returns:
+    --------
+    list[str]
+        Dotted paths of any options not defined in the defaults.
+    """
+    unknown_options: list[str] = []
+
+    for key, value in overrides.items():
+
+        option = f"{prefix}{key}"
+
+        if option in OPEN_SECTIONS:
+            continue
+
+        if key not in defaults:
+            unknown_options.append(option)
+            continue
+
+        default_value = defaults[key]
+
+        if isinstance(value, dict) != isinstance(default_value, dict):
+            unknown_options.append(option)
+        elif isinstance(value, dict):
+            unknown_options.extend(
+                _unknown_override_options(value, default_value, f"{option}.")
+            )
+
+    return unknown_options

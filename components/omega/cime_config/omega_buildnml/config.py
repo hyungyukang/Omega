@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 from ._types import PathLike, YamlMapping
-from .validate import validate_input_files_config
 
 
 def build_omega_config(
@@ -68,9 +67,6 @@ def resolve_streams_files(
         Mapping of Omega IOStream names to resolved input filenames.
     """
     meshes: YamlMapping = input_files["meshes"]
-
-    # Validate the input_files configuration for the specified mesh
-    input_files = validate_input_files_config(input_files, mesh_name=mesh_name)
 
     mesh_dir = Path(din_loc_root) / "ocn" / "omega" / mesh_name
     streams_files = {}

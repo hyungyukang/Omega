@@ -52,7 +52,7 @@ def buildnml(case, caseroot, compname):
     continue_run = case.get_value("CONTINUE_RUN")
 
     # read input_files.yaml and find input files needed for this mesh
-    input_files = read_input_files_config()
+    input_files = read_input_files_config(mesh_name=mesh_name)
     streams_files = resolve_streams_files(
         input_files=input_files,
         mesh_name=mesh_name,
@@ -71,7 +71,7 @@ def buildnml(case, caseroot, compname):
     defaults = read_default_config(omega_root / "configs/Default.yml")
 
     # read coupled simulation and mesh-specific Omega config snippets
-    config_overrides = read_config_overrides()
+    config_overrides = read_config_overrides(mesh_name=mesh_name)
 
     # Using the defaults and overrides, build the final Omega config dictionary
     config = build_omega_config(

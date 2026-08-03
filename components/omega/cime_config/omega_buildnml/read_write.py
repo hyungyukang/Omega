@@ -5,13 +5,19 @@ from typing import IO, Optional
 import yaml
 
 from ._types import PathLike, YamlMapping
-from .validate import validate_config_overrides, validate_input_files_config
+from .validate import (
+    validate_config_overrides,
+    validate_input_files_config,
+    validate_known_streams,
+)
 
 #: Path to Omega's default configuration file, relative to this package
 DEFAULT_CONFIG_PATH = Path(__file__).parents[2] / "configs" / "Default.yml"
 
 
-def read_default_config(path: PathLike) -> YamlMapping:
+def read_default_config(
+    path: PathLike, check_streams: bool = False
+) -> YamlMapping:
     """
     Read the default configuration file from the package resources.
 
@@ -19,6 +25,10 @@ def read_default_config(path: PathLike) -> YamlMapping:
     -----------
     path : PathLike
         Path to default config file (i.e. components/omega/config/Defaults.yml)
+    check_streams : bool, optional
+        Whether to check that KNOWN_STREAMS matches the IOStreams defined in
+        the default configuration. Intended to be used in CI, rather than as
+        part of a case build.
 
     Returns:
     --------
@@ -37,6 +47,9 @@ def read_default_config(path: PathLike) -> YamlMapping:
     if "Omega" not in config:
         err_msg = f"{path} does not contain a top-level 'Omega' section"
         raise ValueError(err_msg)
+
+    if check_streams:
+        validate_known_streams(config["Omega"])
 
     # TODO: check that the config is valid (e.g., required keys are present)
     return config["Omega"]

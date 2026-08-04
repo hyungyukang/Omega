@@ -29,6 +29,7 @@ coupled:
       Contents: [Restart]
 
 meshes:
+  # Per-mesh overrides may set any option except `IOStreams`.
   oQU240:
     TimeIntegration:
       TimeStep: "0000_00:05:00"

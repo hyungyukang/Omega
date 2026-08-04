@@ -4,7 +4,6 @@ from .config import (
     resolve_streams_files,
 )
 from .read_write import (
-    DEFAULT_CONFIG_PATH,
     read_config_overrides,
     read_default_config,
     read_input_files_config,
@@ -14,7 +13,6 @@ from .read_write import (
 )
 
 __all__ = [
-    "DEFAULT_CONFIG_PATH",
     "build_omega_config",
     "build_runtime_overrides",
     "read_config_overrides",

@@ -8,7 +8,6 @@ from ._types import PathLike, YamlMapping
 from .validate import (
     validate_config_overrides,
     validate_input_files_config,
-    validate_known_streams,
     validate_user_overrides,
 )
 
@@ -16,9 +15,7 @@ from .validate import (
 DEFAULT_CONFIG_PATH = Path(__file__).parents[2] / "configs" / "Default.yml"
 
 
-def read_default_config(
-    path: PathLike, check_streams: bool = False
-) -> YamlMapping:
+def read_default_config(path: PathLike) -> YamlMapping:
     """
     Read Omega's default configuration from a YAML file on disk.
 
@@ -26,10 +23,6 @@ def read_default_config(
     -----------
     path : PathLike
         Path to default config file (i.e. components/omega/config/Defaults.yml)
-    check_streams : bool, optional
-        Whether to check that KNOWN_STREAMS matches the IOStreams defined in
-        the default configuration. Intended to be used in CI, rather than as
-        part of a case build.
 
     Returns:
     --------
@@ -48,9 +41,6 @@ def read_default_config(
     if "Omega" not in config:
         err_msg = f"{path} does not contain a top-level 'Omega' section"
         raise ValueError(err_msg)
-
-    if check_streams:
-        validate_known_streams(config["Omega"])
 
     # TODO: check that the config is valid (e.g., required keys are present)
     return config["Omega"]
@@ -72,8 +62,11 @@ def read_input_files_config(mesh_name: Optional[str] = None) -> YamlMapping:
         The read configuration as a dictionary.
     """
     input_files = _read_packaged_yaml_file("input_files.yaml")
+    defaults = read_default_config(DEFAULT_CONFIG_PATH)
 
-    return validate_input_files_config(input_files, mesh_name=mesh_name)
+    return validate_input_files_config(
+        input_files, defaults, mesh_name=mesh_name
+    )
 
 
 def read_config_overrides(mesh_name: Optional[str] = None) -> YamlMapping:

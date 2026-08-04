@@ -78,6 +78,7 @@ devGuide/Driver
 devGuide/EOS
 devGuide/Broadcast
 devGuide/CMakeBuild
+devGuide/BuildNml
 devGuide/Logging
 devGuide/Decomp
 devGuide/Dimension

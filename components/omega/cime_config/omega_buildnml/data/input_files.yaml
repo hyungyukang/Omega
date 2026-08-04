@@ -1,3 +1,6 @@
+# ``meshes`` is currently the only top-level key read by this file, keyed
+# by mesh name. This leaves other top-level keys, such as ``experiments``
+# below, free to be added once they're supported.
 meshes:
   oQU240:
     inputs:
@@ -9,12 +12,22 @@ meshes:
       - file: ocean.EC30to60E2r2.200908.teos10.260720.nc
         streams: [HorzMeshIn, InitialVertCoord, InitialState]
 
+# A mesh may list multiple ``inputs`` entries when its streams are split
+# across separate files:
+#
+# example_mesh:
+#   inputs:
+#     - file: example_mesh.horiz_mesh_and_vert_coord.nc
+#       streams: [HorzMeshIn, InitialVertCoord]
+#     - file: example_mesh.initial_condition.nc
+#       streams: [InitialState]
+
 # experiments:
-#   spunup_g_case:
+#   example_spinup:
 #     when:
-#       mesh: oQU240
-#       compset: SOME_G_CASE
+#       mesh: example_mesh
+#       compset: EXAMPLE_COMPSET
 #
 #     inputs:
-#       - file: ocean.oQU240.Gcase-spinup.0101-01-01.nc
+#       - file: example_mesh.spinup_initial_condition.nc
 #         streams: [InitialState]

@@ -19,7 +19,7 @@ def build_omega_config(
     Parameters:
     -----------
     defaults : dict[str, Any]
-        Default configuration values, loaded from config/Defaults.yaml.
+        Default configuration values, loaded from configs/Default.yml.
     coupled_overrides : dict[str, Any]
         Coupled model overrides, loaded from cime_config/config_overrides.yaml
     mesh_overrides: dict[str, Any]
@@ -62,7 +62,7 @@ def resolve_streams_files(
     mesh_name : str
         CIME ocean grid name
     din_loc_root : Path
-        Path to root of E3SM inpute data directory.
+        Path to root of E3SM input data directory.
 
     Returns:
     --------

@@ -20,7 +20,7 @@ def read_default_config(
     path: PathLike, check_streams: bool = False
 ) -> YamlMapping:
     """
-    Read the default configuration file from the package resources.
+    Read Omega's default configuration from a YAML file on disk.
 
     Parameters:
     -----------

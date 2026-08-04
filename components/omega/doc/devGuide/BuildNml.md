@@ -20,10 +20,17 @@ validation logic used by `buildnml`:
 - `data/config_overrides.yaml` holds the coupled and mesh-specific overrides.
 
 Validation runs whenever these files are read, so a bad edit fails fast at
-`case.setup` rather than surfacing as a confusing runtime error. In
-particular, `validate.py`'s `KNOWN_STREAMS` is checked against the
-`IOStreams` actually defined in `Default.yml`, since `KNOWN_STREAMS` is
-hardcoded and can otherwise drift out of sync.
+`case.setup` rather than surfacing as a confusing runtime error. Stream
+names are checked dynamically against `Default.yml` rather than a
+hardcoded list: the `coupled` section of `config_overrides.yaml` and a
+case's `user_nl_omega` are free to define brand-new `IOStreams` entries,
+but a stream referenced in `input_files.yaml` must already exist in
+`Default.yml`, since `input_files.yaml` only supplies a `Filename`
+override for an existing `IOStreams` entry. `IOStreams` is not permitted
+under a mesh entry in `config_overrides.yaml`'s `meshes` section, since
+per-mesh IOStreams overrides aren't a supported use case; put IOStreams
+that apply to every mesh under `coupled` instead. The required streams
+(`HorzMeshIn`, `InitialVertCoord`, `InitialState`) are always enforced.
 
 ## Validation and CI
 

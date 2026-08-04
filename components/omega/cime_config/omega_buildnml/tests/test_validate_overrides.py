@@ -1,10 +1,7 @@
 import pytest
-from omega_buildnml._types import YamlMapping
 from omega_buildnml.validate import (
-    KNOWN_STREAMS,
     validate_blocked_options,
     validate_config_overrides,
-    validate_known_streams,
     validate_overrides,
 )
 
@@ -140,6 +137,31 @@ def test_unknown_mesh_overrides_are_rejected(
         validate_config_overrides(config_overrides, input_files, defaults)
 
 
+def test_iostreams_under_a_mesh_entry_are_rejected(
+    config_overrides, input_files, defaults
+):
+    config_overrides["meshes"]["Icos10"]["IOStreams"] = {
+        "MyStream": {"Freq": 1}
+    }
+
+    with pytest.raises(
+        ValueError, match="`IOStreams` is not permitted under mesh: Icos10"
+    ):
+        validate_config_overrides(config_overrides, input_files, defaults)
+
+
+def test_iostreams_are_allowed_under_coupled(
+    config_overrides, input_files, defaults
+):
+    config_overrides["coupled"]["IOStreams"] = {"MyStream": {"Freq": 1}}
+
+    validated = validate_config_overrides(
+        config_overrides, input_files, defaults
+    )
+
+    assert validated == config_overrides
+
+
 def test_every_mesh_is_validated_when_no_mesh_is_given(
     config_overrides, input_files, defaults
 ):
@@ -255,33 +277,3 @@ def test_blocked_sections_are_reported_rather_than_their_options():
         "Option(s) IOStreams.RestartWrite in test are set by CIME and "
         "cannot be overridden."
     ]
-
-
-def test_known_streams_match_the_defaults():
-    defaults: YamlMapping = {
-        "IOStreams": {stream: {} for stream in KNOWN_STREAMS}
-    }
-
-    validate_known_streams(defaults)
-
-
-@pytest.mark.parametrize("io_streams", [{}, [], "History", None])
-def test_defaults_without_io_streams_are_rejected(io_streams):
-    with pytest.raises(ValueError, match="`IOStreams` is missing, empty"):
-        validate_known_streams({"IOStreams": io_streams})
-
-
-def test_streams_missing_from_known_streams_are_reported():
-    streams: YamlMapping = {stream: {} for stream in KNOWN_STREAMS}
-    streams["Diagnostics"] = {}
-
-    with pytest.raises(ValueError, match="missing from KNOWN_STREAMS"):
-        validate_known_streams({"IOStreams": streams})
-
-
-def test_streams_missing_from_the_defaults_are_reported():
-    streams: YamlMapping = {stream: {} for stream in KNOWN_STREAMS}
-    del streams["Highfreq"]
-
-    with pytest.raises(ValueError, match="are in KNOWN_STREAMS"):
-        validate_known_streams({"IOStreams": streams})

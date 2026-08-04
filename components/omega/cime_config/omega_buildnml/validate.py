@@ -10,22 +10,6 @@ OVERRIDES_PATH = f"{DATA_PATH}/config_overrides.yaml"
 
 DEFAULTS_PATH = "components/omega/configs/Default.yml"
 
-VALIDATE_PATH = "components/omega/cime_config/omega_buildnml/validate.py"
-
-#: IOStreams defined in ``components/omega/configs/Default.yml``
-KNOWN_STREAMS = frozenset(
-    {
-        "HorzMeshIn",
-        "InitialVertCoord",
-        "InitialState",
-        "Forcing",
-        "RestartRead",
-        "RestartWrite",
-        "History",
-        "Highfreq",
-    }
-)
-
 #: IOStreams that every mesh must provide an input file for
 REQUIRED_STREAMS = frozenset(
     {"HorzMeshIn", "InitialVertCoord", "InitialState"}
@@ -68,7 +52,9 @@ BLOCKED_OPTIONS = frozenset(
 
 
 def validate_input_files_config(
-    input_files: YamlMapping, mesh_name: Optional[str] = None
+    input_files: YamlMapping,
+    defaults: YamlMapping,
+    mesh_name: Optional[str] = None,
 ) -> YamlMapping:
     """
     Validate the contents of the ``input_files.yaml`` configuration.
@@ -80,6 +66,11 @@ def validate_input_files_config(
     -----------
     input_files : dict[str, Any]
         Parsed content of ``cime_config/omega_buildnml/data/input_files.yaml``
+    defaults : dict[str, Any]
+        Default configuration values, loaded from configs/Default.yml. Used
+        to check that streams assigned an input file are streams Omega
+        actually defines, since ``input_files.yaml`` only supplies a
+        ``Filename`` for an existing ``IOStreams`` entry.
     mesh_name : str, optional
         The name of the mesh to validate. If not provided, all mesh entries
         will be validated.
@@ -112,10 +103,14 @@ def validate_input_files_config(
             INPUT_FILES_PATH,
         )
 
+    known_streams = frozenset(defaults.get("IOStreams", {}))
+
     if mesh_name is None:
         errors = []
         for name in meshes:
-            errors.extend(_validate_input_files_entry(input_files, name))
+            errors.extend(
+                _validate_input_files_entry(input_files, known_streams, name)
+            )
         _raise(errors, INPUT_FILES_PATH)
         return input_files
 
@@ -127,7 +122,7 @@ def validate_input_files_config(
         raise ValueError(err_msg)
 
     _raise(
-        _validate_input_files_entry(input_files, mesh_name),
+        _validate_input_files_entry(input_files, known_streams, mesh_name),
         INPUT_FILES_PATH,
     )
 
@@ -286,7 +281,7 @@ def _raise(errors: list[str], config_path: str) -> None:
 
 
 def _validate_input_files_entry(
-    input_files: YamlMapping, mesh_name: str
+    input_files: YamlMapping, known_streams: frozenset, mesh_name: str
 ) -> list[str]:
     """
     Validate that the specified mesh has a valid configuration in input_files.
@@ -295,6 +290,8 @@ def _validate_input_files_entry(
     -----------
     input_files : dict[str, Any]
         Parsed content of ``cime_config/omega_buildnml/data/input_files.yaml``
+    known_streams : frozenset[str]
+        Names of the ``IOStreams`` Omega defines in ``configs/Default.yml``.
     mesh_name : str
         The name of the mesh to validate.
 
@@ -373,18 +370,19 @@ def _validate_input_files_entry(
                 )
                 continue
 
-            if stream not in KNOWN_STREAMS:
-                errors.append(
-                    f"Unknown IOStream '{stream}' in input group {index} for "
-                    f"mesh: {mesh_name}. Valid IOStreams are: "
-                    f"{', '.join(sorted(KNOWN_STREAMS))}."
-                )
-                continue
-
             if stream in streams_files:
                 errors.append(
                     f"Stream '{stream}' is assigned more than once for "
                     f"mesh: {mesh_name}."
+                )
+                continue
+
+            if stream not in known_streams:
+                errors.append(
+                    f"Unknown IOStream '{stream}' in input group {index} "
+                    f"for mesh: {mesh_name}. Streams referenced in "
+                    f"input_files.yaml must already be defined in "
+                    f"Default.yml."
                 )
                 continue
 
@@ -444,6 +442,12 @@ def _validate_config_overrides_entry(
                 overrides, defaults, f"overrides for mesh: {mesh_name}"
             )
         )
+        if "IOStreams" in overrides:
+            errors.append(
+                f"`IOStreams` is not permitted under mesh: {mesh_name}. "
+                f"IOStreams shared by every mesh belong under `coupled`, "
+                f"and case-specific IOStreams belong in `user_nl_omega`."
+            )
 
     if mesh_name not in supported_meshes:
         errors.append(
@@ -603,49 +607,3 @@ def _blocked_override_options(
             )
 
     return blocked_options
-
-
-def validate_known_streams(defaults: YamlMapping) -> None:
-    """
-    Validate that KNOWN_STREAMS matches the IOStreams Omega defines.
-
-    ``KNOWN_STREAMS`` is hardcoded, so it can drift from the IOStreams defined
-    in Omega's default configuration. This check is intended to be run in CI,
-    rather than as part of a case build.
-
-    Parameters:
-    -----------
-    defaults : dict[str, Any]
-        Default configuration values, loaded from configs/Default.yml.
-
-    Raises:
-    -------
-    ValueError
-        If KNOWN_STREAMS does not match the IOStreams in the defaults.
-    """
-    io_streams: YamlMapping = defaults.get("IOStreams", {})
-
-    if not isinstance(io_streams, dict) or not io_streams:
-        err_msg = (
-            f"`IOStreams` is missing, empty, or is not a mapping. \n"
-            f"Please check your setting in `{DEFAULTS_PATH}`"
-        )
-        raise ValueError(err_msg)
-
-    errors: list[str] = []
-
-    missing_streams = set(io_streams) - KNOWN_STREAMS
-    if missing_streams:
-        errors.append(
-            f"IOStream(s) {', '.join(sorted(missing_streams))} are defined in "
-            f"`{DEFAULTS_PATH}` but are missing from KNOWN_STREAMS."
-        )
-
-    unknown_streams = KNOWN_STREAMS - set(io_streams)
-    if unknown_streams:
-        errors.append(
-            f"IOStream(s) {', '.join(sorted(unknown_streams))} are in "
-            f"KNOWN_STREAMS but are not defined in `{DEFAULTS_PATH}`."
-        )
-
-    _raise(errors, VALIDATE_PATH)

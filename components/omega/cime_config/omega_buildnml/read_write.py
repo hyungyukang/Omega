@@ -145,7 +145,7 @@ def write_yaml_mapping(
     mapping: YamlMapping, file_path: PathLike
 ) -> None:
     """
-    Wite a mapping to a YAML file.
+    Write a mapping to a YAML file.
 
     Parameters:
     -----------
@@ -168,7 +168,7 @@ def write_input_data_list(
     """
     Build omega.input_data_list
 
-    Enables automatic retrival of missing input files
+    Enables automatic retrieval of missing input files
 
     Parameters
     ----------
@@ -282,7 +282,7 @@ def _read_yaml_file(f: IO[str]) -> YamlMapping:
 
 def _read_packaged_yaml_file(file_name: str) -> YamlMapping:
     """
-    Read a YAML mapping packaged within config_builder/data
+    Read a YAML mapping packaged within omega_buildnml/data
 
     Parameters
     ----------

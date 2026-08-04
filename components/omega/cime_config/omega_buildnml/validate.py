@@ -126,8 +126,10 @@ def validate_input_files_config(
         )
         raise ValueError(err_msg)
 
-    _raise(_validate_input_files_entry(input_files, mesh_name),
-           INPUT_FILES_PATH)
+    _raise(
+        _validate_input_files_entry(input_files, mesh_name),
+        INPUT_FILES_PATH,
+    )
 
     return input_files
 

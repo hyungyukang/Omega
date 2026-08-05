@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 import pytest
+
 from omega_buildnml.validate import validate_input_files_config
 
 

@@ -87,34 +87,34 @@ HorzMesh::HorzMesh(const std::string &Name, //< [in] Name for new mesh
 
    CellID = MeshDecomp->CellID;
 
-   CellsOnCellH            = MeshDecomp->CellsOnCellH;
-   EdgesOnCellH            = MeshDecomp->EdgesOnCellH;
-   NEdgesOnCellH           = MeshDecomp->NEdgesOnCellH;
-   VerticesOnCellH         = MeshDecomp->VerticesOnCellH;
-   CellsOnEdgeH            = MeshDecomp->CellsOnEdgeH;
-   EdgesOnEdgeH            = MeshDecomp->EdgesOnEdgeH;
-   NEdgesOnEdgeH           = MeshDecomp->NEdgesOnEdgeH;
-   VerticesOnEdgeH         = MeshDecomp->VerticesOnEdgeH;
-   CellsOnVertexH          = MeshDecomp->CellsOnVertexH;
-   EdgesOnVertexH          = MeshDecomp->EdgesOnVertexH;
-   NCellReconstructEdgesH  = MeshDecomp->NCellReconstructEdgesH;
-   ReconstructStencilCellH = MeshDecomp->ReconstructStencilCellH;
+   CellsOnCellH       = MeshDecomp->CellsOnCellH;
+   EdgesOnCellH       = MeshDecomp->EdgesOnCellH;
+   NEdgesOnCellH      = MeshDecomp->NEdgesOnCellH;
+   VerticesOnCellH    = MeshDecomp->VerticesOnCellH;
+   CellsOnEdgeH       = MeshDecomp->CellsOnEdgeH;
+   EdgesOnEdgeH       = MeshDecomp->EdgesOnEdgeH;
+   NEdgesOnEdgeH      = MeshDecomp->NEdgesOnEdgeH;
+   VerticesOnEdgeH    = MeshDecomp->VerticesOnEdgeH;
+   CellsOnVertexH     = MeshDecomp->CellsOnVertexH;
+   EdgesOnVertexH     = MeshDecomp->EdgesOnVertexH;
+   NEdgesReconOnCellH = MeshDecomp->NEdgesReconOnCellH;
+   ReconStencilCellH  = MeshDecomp->ReconStencilCellH;
 
-   CellsOnCell            = MeshDecomp->CellsOnCell;
-   EdgesOnCell            = MeshDecomp->EdgesOnCell;
-   NEdgesOnCell           = MeshDecomp->NEdgesOnCell;
-   VerticesOnCell         = MeshDecomp->VerticesOnCell;
-   CellsOnEdge            = MeshDecomp->CellsOnEdge;
-   EdgesOnEdge            = MeshDecomp->EdgesOnEdge;
-   NEdgesOnEdge           = MeshDecomp->NEdgesOnEdge;
-   VerticesOnEdge         = MeshDecomp->VerticesOnEdge;
-   CellsOnVertex          = MeshDecomp->CellsOnVertex;
-   EdgesOnVertex          = MeshDecomp->EdgesOnVertex;
-   NCellReconstructEdges  = MeshDecomp->NCellReconstructEdges;
-   ReconstructStencilCell = MeshDecomp->ReconstructStencilCell;
+   CellsOnCell       = MeshDecomp->CellsOnCell;
+   EdgesOnCell       = MeshDecomp->EdgesOnCell;
+   NEdgesOnCell      = MeshDecomp->NEdgesOnCell;
+   VerticesOnCell    = MeshDecomp->VerticesOnCell;
+   CellsOnEdge       = MeshDecomp->CellsOnEdge;
+   EdgesOnEdge       = MeshDecomp->EdgesOnEdge;
+   NEdgesOnEdge      = MeshDecomp->NEdgesOnEdge;
+   VerticesOnEdge    = MeshDecomp->VerticesOnEdge;
+   CellsOnVertex     = MeshDecomp->CellsOnVertex;
+   EdgesOnVertex     = MeshDecomp->EdgesOnVertex;
+   NEdgesReconOnCell = MeshDecomp->NEdgesReconOnCell;
+   ReconStencilCell  = MeshDecomp->ReconStencilCell;
 
    // OnSphere is needed early (before the mesh field definitions below)
-   // to decide whether to define the ReconstructWeightsCell field, so we
+   // to decide whether to define the ReconWeightsCell field, so we
    // use the value Decomp already read from the mesh file. It is
    // redetermined below (with the rest of the sphere/plane attributes)
    // once the full mesh stream is read, which is redundant but harmless
@@ -553,17 +553,16 @@ void HorzMesh::completeReadArrays() {
    HorzMeshHalo->exchangeFullArrayHalo(FCell, OnCell);
    HorzMeshHalo->exchangeFullArrayHalo(FEdge, OnEdge);
    HorzMeshHalo->exchangeFullArrayHalo(FVertex, OnVertex);
-   // ReconstructWeightsCell is (NCells, R3, MaxEdges2) to match the mesh
+   // ReconWeightsCell is (NCells, R3, MaxEdges2) to match the mesh
    // file's on-disk dimension order. Halo's generic 3D exchange expects
    // the mesh dimension in the middle (as in Tracers' [Tracer, Cell,
    // Vert]), so exchange each R3 component as a 2D (Cell, MaxEdges2)
    // slice instead of the full 3D array.
    if (OnSphere) {
       for (int IComp = 0; IComp < 3; ++IComp) {
-         auto ReconstructWeightsCellSlice = Kokkos::subview(
-             ReconstructWeightsCell, Kokkos::ALL, IComp, Kokkos::ALL);
-         HorzMeshHalo->exchangeFullArrayHalo(ReconstructWeightsCellSlice,
-                                             OnCell);
+         auto ReconWeightsCellSlice =
+             Kokkos::subview(ReconWeightsCell, Kokkos::ALL, IComp, Kokkos::ALL);
+         HorzMeshHalo->exchangeFullArrayHalo(ReconWeightsCellSlice, OnCell);
       }
    }
 
@@ -595,7 +594,7 @@ void HorzMesh::completeReadArrays() {
    FEdgeH             = createHostMirrorCopy(FEdge);
    FVertexH           = createHostMirrorCopy(FVertex);
    if (OnSphere) {
-      ReconstructWeightsCellH = createHostMirrorCopy(ReconstructWeightsCell);
+      ReconWeightsCellH = createHostMirrorCopy(ReconWeightsCell);
    }
 
 } // end completeReadArrays
@@ -1121,8 +1120,8 @@ void HorzMesh::defineMeshFields() {
 
    if (OnSphere) {
       // Vector Reconstruction
-      // NCellReconstructEdges/ReconstructStencilCell come from Decomp (see
-      // constructor), not read here. ReconstructWeightsCell is pure data and
+      // NEdgesReconOnCell/ReconStencilCell come from Decomp (see
+      // constructor), not read here. ReconWeightsCell is pure data and
       // is read as a normal mesh field below.
       NDims = 3;
       DimNames.resize(NDims);
@@ -1130,9 +1129,9 @@ void HorzMesh::defineMeshFields() {
       DimNames[1] = "R3";
       DimNames[2] = "MaxEdges2";
       FieldName   = "ReconstructWeightsCell";
-      ReconstructWeightsCell =
-          Array3DReal("ReconstructWeightsCell", NCellsSize, 3, MaxEdges2);
-      auto ReconstructWeightsCellField = Field::create(
+      ReconWeightsCell =
+          Array3DReal("ReconWeightsCell", NCellsSize, 3, MaxEdges2);
+      auto ReconWeightsCellField = Field::create(
           FieldName, // field name
           "weights to reconstruct Cartesian vector field from edge-"
           "normal values at cell centers",     // long name
@@ -1145,7 +1144,7 @@ void HorzMesh::defineMeshFields() {
           false                                // not time dependent
       );
       MeshGroupIn->addField(FieldName);
-      Field::attachFieldData<Array3DReal>(FieldName, ReconstructWeightsCell);
+      Field::attachFieldData<Array3DReal>(FieldName, ReconWeightsCell);
    }
 
    // The sign and scaling fields are computed internally so are allocated

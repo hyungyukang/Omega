@@ -75,10 +75,9 @@ def resolve_streams_files(
     streams_files = {}
 
     for input_group in meshes[mesh_name]["inputs"]:
+        resolved_file_path = mesh_dir / input_group["file"]
 
-        resolved_file_path = mesh_dir / input_group['file']
-
-        for stream in input_group['streams']:
+        for stream in input_group["streams"]:
             streams_files[stream] = str(resolved_file_path)
 
     return streams_files
@@ -156,9 +155,8 @@ def _deep_merge(
     for key, override_value in override.items():
         base_value = merged.get(key)
 
-        if (
-            isinstance(base_value, Mapping) and
-            isinstance(override_value, Mapping)
+        if isinstance(base_value, Mapping) and isinstance(
+            override_value, Mapping
         ):
             merged[key] = _deep_merge(base_value, override_value)
         else:
@@ -182,4 +180,5 @@ def _to_omega_calendar(calendar: str) -> str:
     elif calendar == "GREGORIAN":
         return "Gregorian"
     else:
-        raise ValueError(f"Unsupported calendar type: {calendar}")
+        msg = f"Unsupported calendar type: {calendar}"
+        raise ValueError(msg)

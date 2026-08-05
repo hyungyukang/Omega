@@ -1,4 +1,5 @@
 import pytest
+
 from omega_buildnml.config import build_omega_config
 from omega_buildnml.read_write import DEFAULT_CONFIG_PATH, read_default_config
 from omega_buildnml.validate import BLOCKED_OPTIONS, validate_user_overrides

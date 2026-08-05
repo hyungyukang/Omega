@@ -1,5 +1,6 @@
 import pytest
 import yaml
+
 from omega_buildnml.read_write import (
     _read_yaml_file,
     _unwrap_omega_section,
@@ -10,6 +11,7 @@ from omega_buildnml.read_write import (
 @pytest.fixture
 def user_nl(tmp_path):
     """Write a mapping to a user_nl_omega file, returning the path."""
+
     def _write(overrides):
         path = tmp_path / "user_nl_omega"
 
@@ -29,6 +31,7 @@ def malformed_yaml(tmp_path):
     Duplicate keys, comments, and indentation mistakes are all lost when a
     mapping is dumped, so they have to be written out as text.
     """
+
     def _write(contents):
         path = tmp_path / "sample.yaml"
         path.write_text(contents, encoding="utf-8")
@@ -57,8 +60,7 @@ def test_mappings_without_duplicates_are_read(user_nl):
 
 def test_duplicate_top_level_keys_are_rejected(malformed_yaml):
     path = malformed_yaml(
-        "TimeIntegration:\n  TimeStep: a\n"
-        "TimeIntegration:\n  TimeStep: b\n"
+        "TimeIntegration:\n  TimeStep: a\nTimeIntegration:\n  TimeStep: b\n"
     )
 
     with pytest.raises(ValueError, match="Duplicate key 'TimeIntegration'"):

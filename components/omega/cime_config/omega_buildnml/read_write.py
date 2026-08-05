@@ -134,9 +134,7 @@ def read_user_overrides(path: PathLike) -> YamlMapping:
     return validate_user_overrides(user_overrides, defaults)
 
 
-def write_yaml_mapping(
-    mapping: YamlMapping, file_path: PathLike
-) -> None:
+def write_yaml_mapping(mapping: YamlMapping, file_path: PathLike) -> None:
     """
     Write a mapping to a YAML file.
 
@@ -151,7 +149,7 @@ def write_yaml_mapping(
     --------
     None
     """
-    with Path(file_path).open("w", encoding='utf-8') as f:
+    with Path(file_path).open("w", encoding="utf-8") as f:
         yaml.safe_dump(mapping, f, sort_keys=False, default_flow_style=False)
 
 
@@ -183,7 +181,7 @@ def write_input_data_list(
     ]
 
     path = Path(casebuild) / "omega.input_data_list"
-    with path.open("w", encoding='utf-8') as f:
+    with path.open("w", encoding="utf-8") as f:
         for input_file in input_data_list:
             f.write(f"{input_file}\n")
 

@@ -1,4 +1,5 @@
 import pytest
+
 from omega_buildnml.validate import validate_user_overrides
 
 

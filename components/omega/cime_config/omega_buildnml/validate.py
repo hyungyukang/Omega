@@ -39,8 +39,8 @@ BLOCKED_STREAMS = frozenset(
 #: Config options set by CIME, which a user is not permitted to override.
 #: Matched as prefixes, so naming a section blocks everything below it.
 BLOCKED_OPTIONS = frozenset(
-    {f"IOStreams.{stream}" for stream in BLOCKED_STREAMS} |
-    {
+    {f"IOStreams.{stream}" for stream in BLOCKED_STREAMS}
+    | {
         # start, stop, and duration are provided by the coupler at runtime
         "TimeIntegration.StartTime",
         "TimeIntegration.StopTime",
@@ -313,8 +313,7 @@ def _validate_input_files_entry(
     unknown_keys = sorted(set(mesh) - MESH_KEYS)
     if unknown_keys:
         errors.append(
-            f"Unknown key(s) {', '.join(unknown_keys)} for "
-            f"mesh: {mesh_name}."
+            f"Unknown key(s) {', '.join(unknown_keys)} for mesh: {mesh_name}."
         )
 
     inputs = mesh.get("inputs")
@@ -328,11 +327,9 @@ def _validate_input_files_entry(
     missing_msg = "Missing {key} in input group {index} for mesh: {mesh_name}."
 
     for index, input_group in enumerate(inputs):
-
         if not isinstance(input_group, dict):
             errors.append(
-                f"Input group {index} is not a mapping for "
-                f"mesh: {mesh_name}."
+                f"Input group {index} is not a mapping for mesh: {mesh_name}."
             )
             continue
 
@@ -343,20 +340,20 @@ def _validate_input_files_entry(
                 f"{index} for mesh: {mesh_name}."
             )
 
-        file_name = input_group.get('file')
-        streams = input_group.get('streams')
+        file_name = input_group.get("file")
+        streams = input_group.get("streams")
 
         if not isinstance(file_name, str) or not file_name:
             errors.append(
                 missing_msg.format(
-                    key='file', index=index, mesh_name=mesh_name
+                    key="file", index=index, mesh_name=mesh_name
                 )
             )
 
         if not isinstance(streams, list) or not streams:
             errors.append(
                 missing_msg.format(
-                    key='streams', index=index, mesh_name=mesh_name
+                    key="streams", index=index, mesh_name=mesh_name
                 )
             )
             continue
@@ -488,14 +485,10 @@ def validate_overrides(
     if not unknown_options:
         return []
 
-    return [
-        f"Unknown option(s) {', '.join(unknown_options)} in {source}."
-    ]
+    return [f"Unknown option(s) {', '.join(unknown_options)} in {source}."]
 
 
-def validate_blocked_options(
-    overrides: YamlMapping, source: str
-) -> list[str]:
+def validate_blocked_options(overrides: YamlMapping, source: str) -> list[str]:
     """
     Validate that overrides do not set options controlled by CIME.
 
@@ -550,7 +543,6 @@ def _unknown_override_options(
     unknown_options: list[str] = []
 
     for key, value in overrides.items():
-
         option = f"{prefix}{key}"
 
         if option in OPEN_SECTIONS:
@@ -596,7 +588,6 @@ def _blocked_override_options(
     blocked_options: list[str] = []
 
     for key, value in overrides.items():
-
         option = f"{prefix}{key}"
 
         if option in BLOCKED_OPTIONS:

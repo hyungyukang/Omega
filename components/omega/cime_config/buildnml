@@ -55,9 +55,7 @@ def buildnml(case, caseroot, compname):
     # read input_files.yaml and find input files needed for this mesh
     input_files = read_input_files_config(mesh_name=mesh_name)
     streams_files = resolve_streams_files(
-        input_files=input_files,
-        mesh_name=mesh_name,
-        din_loc_root=din_loc_root
+        input_files=input_files, mesh_name=mesh_name, din_loc_root=din_loc_root
     )
 
     # convert CIME case configuration options to Omega config snippets
@@ -65,7 +63,7 @@ def buildnml(case, caseroot, compname):
         calendar=calendar,
         continue_run=continue_run,
         case_name=case_name,
-        streams_files=streams_files
+        streams_files=streams_files,
     )
 
     # read Omega's Defaults.yml, which serve as base configuration

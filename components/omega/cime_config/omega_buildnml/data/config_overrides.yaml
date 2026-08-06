@@ -6,7 +6,7 @@ coupled:
     RunDuration: none
 
   Tendencies:
-    SurfaceTracerRestoringEnable: true
+    SfcStressForcingTendencyEnable: true
 
   IOStreams:
     Forcing:

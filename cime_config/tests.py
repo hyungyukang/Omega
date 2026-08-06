@@ -1144,4 +1144,14 @@ _TESTS = {
             "ERS.ne30pg2_f09_oEC60to30v3.SSP245_ZATM_BGC",
             )
     },
+    "e3sm_omega_developer" : {
+        "time"  : "0:30:00",
+        "share" : True,
+        "tests" : (
+            "ERS_Vmct.T62_oQU240.COMEGA-IAF",
+            "PEM_Vmct.T62_oQU240.COMEGA-IAF",
+            "ERS_Vmct_Ln5.TL319_EC30to60E2r2.COMEGA-JRA1p5.omega-jra_1958",
+            "PEM_Vmct_Ln5.TL319_EC30to60E2r2.COMEGA-JRA1p5.omega-jra_1958",
+            )
+    },
 }

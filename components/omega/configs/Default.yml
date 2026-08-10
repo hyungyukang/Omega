@@ -73,6 +73,7 @@ Omega:
     PressureGradTendencyEnable: true
     VelVertMixTendencyEnable: true
     TracerVertMixTendencyEnable: true
+    TracerNonLocalFluxTendencyEnable: true
   HorzMesh:
     MeshScaling:
       ScaleWithMesh: false
@@ -106,6 +107,18 @@ Omega:
       RiCrit: 0.7
       Exponent: 3.0
       RiSmoothLoops: 2
+    KPP:
+      Enable: true
+      UseNonLocalFlux: true
+      UseBLDSmoothing: true
+      CriticalBulkRichardsonNumber: 0.25
+      MatchTechnique: SimpleShapes
+      InterpType2: LMD94
+      UseEnhancedDiffusion: true
+      IceFractionThresholdForLangmuir: 0.05
+      IceFractionThresholdForMinimumOBL: 0.15
+      MinimumOBLUnderSeaIce: 5.0
+      DebugDiagnostics: false
   IOStreams:
     HorzMeshIn:
       UsePointerFile: false

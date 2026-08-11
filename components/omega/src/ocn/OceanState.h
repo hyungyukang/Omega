@@ -89,10 +89,31 @@ class OceanState {
    std::vector<Array2DReal> NormalVelocity; ///< Device NormalVelocity array
    std::vector<HostArray2DReal> NormalVelocityH; ///< Host NormalVelocity array
 
+   std::vector<Array2DReal>
+       NormalBaroclinicVelocity; ///< Device baroclinic velocity array
+   std::vector<HostArray2DReal>
+       NormalBaroclinicVelocityH; ///< Host baroclinic velocity array
+
+   std::vector<Array1DReal>
+       NormalBarotropicVelocity; ///< Device barotropic velocity array
+   std::vector<HostArray1DReal>
+       NormalBarotropicVelocityH; ///< Host barotropic velocity array
+
+   std::vector<Array1DReal>
+       BarotropicPressureAnomaly; ///< Device barotropic pressure anomaly array
+   std::vector<HostArray1DReal>
+       BarotropicPressureAnomalyH; ///< Host barotropic pressure anomaly array
+
    // Field names
    // These are appended with the State name for non-Default state instances
    std::string PseudoThicknessFldName; ///< Field name for PseudoThickness
    std::string NormalVelocityFldName;  ///< Field name for NormalVelocity
+   std::string NormalBaroclinicVelocityFldName;  ///< Field name for
+                                                 ///< NormalBaroclinicVelocity
+   std::string NormalBarotropicVelocityFldName;  ///< Field name for
+                                                 ///< NormalBarotropicVelocity
+   std::string BarotropicPressureAnomalyFldName; ///< Field name for
+                                                 ///< BarotropicPressureAnomaly
    std::string StateGroupName;
 
    // Methods
@@ -125,6 +146,24 @@ class OceanState {
    /// Apply layer masks to NormalVelocity, PseudoThickness, Temperature, and
    /// Salinity after reading an IC or restart file
    void applyLayerMasks(const I4 TimeLevel);
+
+   /// Get normal baroclinic velocity device array at given time level
+   Array2DReal getNormalBaroclinicVelocity(const I4 TimeLevel) const;
+
+   /// Get normal baroclinic velocity host array at given time level
+   HostArray2DReal getNormalBaroclinicVelocityH(const I4 TimeLevel) const;
+
+   /// Get normal barotropic velocity device array at given time level
+   Array1DReal getNormalBarotropicVelocity(const I4 TimeLevel) const;
+
+   /// Get normal barotropic velocity host array at given time level
+   HostArray1DReal getNormalBarotropicVelocityH(const I4 TimeLevel) const;
+
+   /// Get barotropic pressure anomaly device array at given time level
+   Array1DReal getBarotropicPressureAnomaly(const I4 TimeLevel) const;
+
+   /// Get barotropic pressure anomaly host array at given time level
+   HostArray1DReal getBarotropicPressureAnomalyH(const I4 TimeLevel) const;
 
    /// Exchange halo
    void exchangeHalo(const I4 TimeLevel);

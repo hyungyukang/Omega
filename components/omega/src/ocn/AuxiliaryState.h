@@ -76,12 +76,15 @@ class AuxiliaryState {
 
    // Compute auxiliary variables for vertical dynamics
    void computeMomVertAux(const OceanState *State,
-                          const Array3DReal &TracerArray, int ThickTimeLevel,
-                          int VelTimeLevel) const;
+                          const Array3DReal &TracerArray,
+                          int ThickTimeLevel) const;
 
    // Compute all auxiliary variables needed for momentum equation
    void computeMomAux(const OceanState *State, const Array3DReal &TracerArray,
                       int ThickTimeLevel, int VelTimeLevel,
+                      const TimeInterval ProjDt) const;
+   void computeMomAux(const OceanState *State, const Array3DReal &TracerArray,
+                      int ThickTimeLevel, const Array2DReal &NormalVelEdge,
                       const TimeInterval ProjDt) const;
 
    /// Compute all auxiliary variables based on an ocean state at a given time
@@ -91,6 +94,17 @@ class AuxiliaryState {
                    const TimeInterval ProjDt) const;
    void computeAll(const OceanState *State, const Array3DReal &TracerArray,
                    int TimeLevel, const TimeInterval ProjDt) const;
+
+   /// Compute auxiliary variables needed for thickness and tracer tendencies.
+   void computePseudoThicknessTracerAux(const OceanState *State,
+                                        const Array3DReal &TracerArray,
+                                        int ThickTimeLevel,
+                                        int VelTimeLevel) const;
+   void computePseudoThicknessTracerAux(const OceanState *State,
+                                        const Array3DReal &TracerArray,
+                                        int ThickTimeLevel,
+                                        const Array2DReal &NormalVelEdge,
+                                        const TimeInterval ProjDt) const;
 
  private:
    AuxiliaryState(const std::string &Name, const HorzMesh *Mesh, Halo *MeshHalo,

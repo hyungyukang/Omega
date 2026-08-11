@@ -68,6 +68,7 @@ class Tendencies {
    // Instances of tendency terms
    PseudoThicknessFluxDivOnCell PseudoThicknessFluxDiv;
    PotentialVortHAdvOnEdge PotentialVortHAdv;
+   CoriolisAccelerationOnEdge CoriolisAcceleration;
    KEGradOnEdge KEGrad;
    SSHGradOnEdge SSHGrad;
    VelocityDiffusionOnEdge VelocityDiffusion;
@@ -107,16 +108,49 @@ class Tendencies {
                                              int ThickTimeLevel,
                                              int VelTimeLevel,
                                              TimeInstant Time);
+   void computePseudoThicknessTendenciesOnly(const OceanState *State,
+                                             const AuxiliaryState *AuxState,
+                                             int ThickTimeLevel,
+                                             int VelTimeLevel,
+                                             const Array2DReal &NormalVelEdge,
+                                             TimeInstant Time);
    void computeVelocityTendenciesOnly(const OceanState *State,
                                       const AuxiliaryState *AuxState,
                                       const Array3DReal &TracerArray,
                                       int ThickTimeLevel, int VelTimeLevel,
                                       int TracerTimeLevel, TimeInstant Time);
+   void computeBaroclinicVelocityTendencies(
+       const OceanState *State, const AuxiliaryState *AuxState,
+       const Array3DReal &TracerArray, int ThickTimeLevel, int VelTimeLevel,
+       int BarotropicVelocityTimeLevel, int BarotropicPressureTimeLevel,
+       Real SplitFactor, TimeInstant Time, TimeInterval ProjDt);
+   void computeBaroclinicVelocityTendenciesOnly(
+       const OceanState *State, const AuxiliaryState *AuxState,
+       const Array3DReal &TracerArray, int ThickTimeLevel, int VelTimeLevel,
+       int BarotropicVelocityTimeLevel, int BarotropicPressureTimeLevel,
+       Real SplitFactor, TimeInstant Time);
    void computeTracerTendenciesOnly(const OceanState *State,
                                     const AuxiliaryState *AuxState,
                                     const Array3DReal &TracerArray,
                                     int ThickTimeLevel, int VelTimeLevel,
                                     TimeInstant Time);
+   void computeTracerTendenciesOnly(const OceanState *State,
+                                    const AuxiliaryState *AuxState,
+                                    const Array3DReal &TracerArray,
+                                    int ThickTimeLevel,
+                                    const Array2DReal &NormalVelEdge,
+                                    TimeInstant Time,
+                                    const TimeInterval ProjDt);
+   void computeCoriolisAccelerationOnEdge(
+       const Array2DReal &Tend,          ///< [inout] velocity tendency
+       const Array2DReal &NormalVelEdge, ///< [in] normal velocity on edges
+       const Array1DReal &FEdge          ///< [in] Coriolis parameter on edges
+   ) const;
+   void computeCoriolisAccelerationOnEdge(
+       const Array1DReal &Tend, ///< [inout] barotropic velocity tendency
+       const Array1DReal &NormalVelEdge, ///< [in] normal velocity on edges
+       const Array1DReal &FEdge          ///< [in] Coriolis parameter on edges
+   ) const;
 
    // Create a non-default group of tendencies
    static Tendencies *

@@ -95,6 +95,38 @@ static void readTimingConfig(Config *OmegaConfig) {
    CHECK_ERROR_ABORT(Err, "Timing: PrintAllRanks not found in TimingConfig");
 }
 
+// Records whether the coupled init read the state from a restart file. Set in
+// ocnInit1, where the start type is known, and used in ocnInit2, which is where
+// the state is far enough along for initStateForTimeStepper
+static bool CoupledReadRestart = false;
+
+// Perform any time-stepper specific state initialization that can only be done
+// once the input has been read and the halos have been exchanged. For the
+// split-explicit stepper this separates the input velocity into its barotropic
+// and baroclinic parts. Must be called after initUpdateHaloAndHostArrays.
+static void initStateForTimeStepper(
+    bool ReadRestart ///< [in] true if restart input initialized the state
+) {
+   // Both split-explicit variants need their velocity split established
+   // before the first step.
+   TimeStepper *DefStepper           = TimeStepper::getDefault();
+   const TimeStepperType StepperType = DefStepper->getType();
+   if (StepperType != TimeStepperType::SplitExplicitRK2 &&
+       StepperType != TimeStepperType::UnsplitRK2)
+      return;
+
+   OceanState *DefState  = OceanState::getDefault();
+   const I4 CurTimeLevel = 0;
+
+   DefStepper->initializeStateFromInput(DefState, ReadRestart);
+
+   // The velocity split is computed over all edges, so halo edges whose
+   // neighboring cells lie outside the halo must be refreshed from their
+   // owners before the newly split arrays are copied to the host
+   DefState->exchangeHalo(CurTimeLevel);
+   DefState->copyToHost(CurTimeLevel);
+}
+
 int ocnInit(MPI_Comm Comm ///< [in] ocean MPI communicator
 ) {
 
@@ -157,13 +189,17 @@ int ocnInit(MPI_Comm Comm ///< [in] ocean MPI communicator
 
    // If reading from restart, reset the current time to the input time
    SimTimeStr = std::any_cast<std::string>(ReqMeta["SimulationTime"]);
-   if (SimTimeStr != " ") {
+   const bool ReadRestart = SimTimeStr != " ";
+   if (ReadRestart) {
       TimeInstant NewCurrentTime(SimTimeStr);
       ModelClock->setCurrentTime(NewCurrentTime);
    }
 
    // Update Halo/Host arrays with new state, auxiliary state, and tracer fields
    Err = initUpdateHaloAndHostArrays();
+
+   // Finish any time-stepper specific state initialization
+   initStateForTimeStepper(ReadRestart);
 
    return Err;
 } // end ocnInit
@@ -206,6 +242,7 @@ int ocnInit1(MPI_Comm Comm,                 ///< [in] ocean MPI communicator
    }
 
    Metadata ReqMeta;
+   CoupledReadRestart = StartType != StartType::StartUp;
    if (StartType == StartType::StartUp) {
       // read from initial state if this is starting a new simulation
       Error IOError = IOStream::read("InitialState", ModelClock, ReqMeta);
@@ -256,7 +293,12 @@ int ocnInit2(const Real *CplToOcnData, Real *OcnToCplData) {
    DefCoupling->importFromCoupler();
    DefCoupling->applyImportFields(Forcing::getDefault());
 
-   return initUpdateHaloAndHostArrays();
+   int Err = initUpdateHaloAndHostArrays();
+
+   // Finish any time-stepper specific state initialization
+   initStateForTimeStepper(CoupledReadRestart);
+
+   return Err;
 } // end ocnInit2
 
 // Call init routines for remaining Omega modules
@@ -362,6 +404,7 @@ int initUpdateHaloAndHostArrays() {
    if (Err != 0) {
       ABORT_ERROR("Error updating tracer halo");
    }
+
    Tracers::copyToHost(CurTimeLevel);
 
    return Err;

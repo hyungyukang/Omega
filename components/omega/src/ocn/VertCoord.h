@@ -100,6 +100,8 @@ class VertCoord {
    Array2DReal GeopotentialMid;
    Array2DReal PseudoThicknessTarget;
    Array1DReal SshCell;
+   Array1DReal TotalPseudoThickness;
+   Array1DReal TotalGeometricThickness;
 
    HostArray2DReal PressureInterfaceH;
    HostArray2DReal PressureMidH;
@@ -108,6 +110,8 @@ class VertCoord {
    HostArray2DReal GeopotentialMidH;
    HostArray2DReal PseudoThicknessTargetH;
    HostArray1DReal SshCellH;
+   HostArray1DReal TotalPseudoThicknessH;
+   HostArray1DReal TotalGeometricThicknessH;
 
    // Vertical loop bounds
    Array1DI4 MinLayerCell;
@@ -197,9 +201,13 @@ class VertCoord {
    std::string GeomZMidFldName; ///< Field name for midpoint geometric height
    std::string GeopotFldName;   ///< Field name for geopotential
    std::string
-       PseudoThicknessTargetFldName;   ///< Field name for target thickness
-   std::string SshFldName;             ///< Field name for sea surface height
-   std::string SurfacePressureFldName; ///< Field name for SurfacePressure
+       PseudoThicknessTargetFldName;    ///< Field name for target thickness
+   std::string SshFldName;              ///< Field name for sea surface height
+   std::string SurfacePressureFldName;  ///< Field name for SurfacePressure
+   std::string TotalPseudoThickFldName; ///< Field name for total pseudo
+                                        ///< thickness
+   std::string TotalGeomThickFldName;   ///< Field name for total geometric
+                                        ///< thickness
 
    // methods
 
@@ -286,11 +294,23 @@ class VertCoord {
        const Array1DReal &SurfacePressure  ///< [in] relative surface pressure
    );
 
+   /// Sum pseudo thickness vertically within each cell column
+   void computeTotalPseudoThickness(
+       const Array2DReal &PseudoThickness ///< [in] pseudo thickness
+   );
+
    /// Sum the mass thickness times specific volume from the bottom layer up,
    /// starting with the bottom elevation
    void computeGeomZHeight(
        const Array2DReal &PseudoThickness, ///< [in] pseudo-thickness
        const Array2DReal &SpecVol);        ///< [in] specific volume
+
+   /// Compute total geometric column thickness from depth-integrated specific
+   /// volume
+   void computeTotalGeometricThickness(
+       const Array1DReal
+           &DepthIntegSpecificVolume ///< [in] depth-integrated specific volume
+   );
 
    /// Sum the geometric height times g, the tidal potential, and self
    /// attraction and loading

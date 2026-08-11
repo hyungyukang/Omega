@@ -118,11 +118,98 @@ class PotentialVortHAdvOnEdge {
       }
    }
 
+   /// Relative vorticity horizontal advection without Coriolis. Used for the
+   /// split-explicit baroclinic velocity forcing term.
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+                                   const Array2DReal &NormRVortEdge,
+                                   const Array2DReal &FluxPseudoThickEdge,
+                                   const Array2DReal &NormVelEdge) const {
+
+      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
+      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+      Real VortTmp[VecLength] = {0};
+
+      for (int J = 0; J < NEdgesOnEdge(IEdge); ++J) {
+         const I4 JEdge = EdgesOnEdge(IEdge, J);
+         for (int KVec = 0; KVec < KLen; ++KVec) {
+            const I4 K = KStart + KVec;
+            const Real NormVort =
+                (NormRVortEdge(IEdge, K) + NormRVortEdge(JEdge, K)) * 0.5_Real;
+
+            VortTmp[KVec] += WeightsOnEdge(IEdge, J) *
+                             FluxPseudoThickEdge(JEdge, K) *
+                             NormVelEdge(JEdge, K) * NormVort;
+         }
+      }
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K = KStart + KVec;
+         Tend(IEdge, K) += EdgeMask(IEdge, K) * VortTmp[KVec];
+      }
+   }
+
  private:
    Array1DI4 NEdgesOnEdge;
    Array2DI4 EdgesOnEdge;
    Array2DReal WeightsOnEdge;
    Array2DReal EdgeMask;
+   Array1DI4 MinLayerEdgeBot;
+   Array1DI4 MaxLayerEdgeTop;
+};
+
+/// Coriolis acceleration on edges, f times tangential velocity reconstruction
+class CoriolisAccelerationOnEdge {
+ public:
+   /// constructor declaration
+   CoriolisAccelerationOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
+
+   /// The functor takes edge index, vertical chunk index, velocity on edges,
+   /// and Coriolis parameter on edges as inputs, updates the tendency array
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+                                   const Array2DReal &NormalVelEdge,
+                                   const Array1DReal &FEdge) const {
+
+      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
+      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+
+      Real AccelTmp[VecLength] = {0};
+
+      for (int J = 0; J < NEdgesOnEdge(IEdge); ++J) {
+         const I4 JEdge = EdgesOnEdge(IEdge, J);
+         for (int KVec = 0; KVec < KLen; ++KVec) {
+            const I4 K = KStart + KVec;
+            AccelTmp[KVec] += WeightsOnEdge(IEdge, J) *
+                              NormalVelEdge(JEdge, K) * FEdge(JEdge);
+         }
+      }
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K = KStart + KVec;
+         Tend(IEdge, K) += AccelTmp[KVec];
+      }
+   }
+
+   /// The functor takes edge index, barotropic velocity on edges, and Coriolis
+   /// parameter on edges as inputs, updates the barotropic tendency array
+   KOKKOS_FUNCTION void operator()(const Array1DReal &Tend, I4 IEdge,
+                                   const Array1DReal &NormalVelEdge,
+                                   const Array1DReal &FEdge) const {
+
+      Real AccelTmp = 0._Real;
+
+      for (int J = 0; J < NEdgesOnEdge(IEdge); ++J) {
+         const I4 JEdge = EdgesOnEdge(IEdge, J);
+         AccelTmp +=
+             WeightsOnEdge(IEdge, J) * NormalVelEdge(JEdge) * FEdge(JEdge);
+      }
+
+      Tend(IEdge) += AccelTmp;
+   }
+
+ private:
+   Array1DI4 NEdgesOnEdge;
+   Array2DI4 EdgesOnEdge;
+   Array2DReal WeightsOnEdge;
    Array1DI4 MinLayerEdgeBot;
    Array1DI4 MaxLayerEdgeTop;
 };
@@ -186,6 +273,46 @@ class SSHGradOnEdge {
          const I4 K = KStart + KVec;
          Tend(IEdge, K) -= EdgeMask(IEdge, K) * Gravity *
                            (SshCell(ICell1) - SshCell(ICell0)) * InvDcEdge;
+      }
+   }
+
+   /// Computes depth-mean specific volume times the barotropic pressure
+   /// gradient on edges.
+   KOKKOS_FUNCTION void operator()(const Array1DReal &Tend, I4 IEdge,
+                                   const Array1DReal &BtrPressAnomaly,
+                                   const Array1DReal &DepthMeanSpecVol) const {
+
+      const I4 JCell0      = CellsOnEdge(IEdge, 0);
+      const I4 JCell1      = CellsOnEdge(IEdge, 1);
+      const Real InvDcEdge = 1._Real / DcEdge(IEdge);
+      const Real MeanSpecVol =
+          0.5_Real * (DepthMeanSpecVol(JCell0) + DepthMeanSpecVol(JCell1));
+
+      Tend(IEdge) += MeanSpecVol *
+                     (BtrPressAnomaly(JCell1) - BtrPressAnomaly(JCell0)) *
+                     InvDcEdge;
+   }
+
+   /// Computes depth-mean specific volume times the barotropic pressure
+   /// gradient on edges and adds it to every active vertical layer.
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+                                   const Array1DReal &BtrPressAnomaly,
+                                   const Array1DReal &DepthMeanSpecVol) const {
+
+      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
+      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+      const I4 JCell0 = CellsOnEdge(IEdge, 0);
+      const I4 JCell1 = CellsOnEdge(IEdge, 1);
+      const Real InvDcEdge = 1._Real / DcEdge(IEdge);
+      const Real MeanSpecVol =
+          0.5_Real * (DepthMeanSpecVol(JCell0) + DepthMeanSpecVol(JCell1));
+      const Real BtrPressGradTend =
+          MeanSpecVol * (BtrPressAnomaly(JCell1) - BtrPressAnomaly(JCell0)) *
+          InvDcEdge;
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K = KStart + KVec;
+         Tend(IEdge, K) += EdgeMask(IEdge, K) * BtrPressGradTend;
       }
    }
 

@@ -64,8 +64,7 @@ AuxiliaryState::~AuxiliaryState() {
 // Compute auxiliary variables for vertical dynamics
 void AuxiliaryState::computeMomVertAux(const OceanState *State,
                                        const Array3DReal &TracerArray,
-                                       int ThickTimeLevel,
-                                       int VelTimeLevel) const {
+                                       int ThickTimeLevel) const {
 
    Pacer::start("AuxState:computeMomVertAux", 2);
 
@@ -73,8 +72,6 @@ void AuxiliaryState::computeMomVertAux(const OceanState *State,
 
    // get pseudo-thickness
    Array2DReal PseudoThickCell = State->getPseudoThickness(ThickTimeLevel);
-   // get normal velocity
-   Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
 
    // get temperature and salinity
    I4 ConservTempIdx;
@@ -94,6 +91,9 @@ void AuxiliaryState::computeMomVertAux(const OceanState *State,
    // compute specific volume
    const auto &PressureMid = VCoord->PressureMid;
    EosInstance->computeSpecVol(ConservTemp, AbsSalinity, PressureMid);
+   EosInstance->computeDepthIntegratedSpecificVolume(PseudoThickCell);
+   VCoord->computeTotalGeometricThickness(
+       EosInstance->DepthIntegSpecificVolume);
 
    // compute geometric height
    VCoord->computeGeomZHeight(PseudoThickCell, EosInstance->SpecVol);
@@ -109,9 +109,18 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
                                    const Array3DReal &TracerArray,
                                    int ThickTimeLevel, int VelTimeLevel,
                                    const TimeInterval ProjDt) const {
+
    Array2DReal PseudoThickCell = State->getPseudoThickness(ThickTimeLevel);
    Array2DReal NormalVelEdge   = State->getNormalVelocity(VelTimeLevel);
+   computeMomAux(State, TracerArray, ThickTimeLevel, NormalVelEdge, ProjDt);
+}
 
+void AuxiliaryState::computeMomAux(const OceanState *State,
+                                   const Array3DReal &TracerArray,
+                                   int ThickTimeLevel,
+                                   const Array2DReal &NormalVelEdge,
+                                   const TimeInterval ProjDt) const {
+   Array2DReal PseudoThickCell = State->getPseudoThickness(ThickTimeLevel);
    OMEGA_SCOPE(LocKineticAux, KineticAux);
    OMEGA_SCOPE(LocPseudoThicknessAux, PseudoThicknessAux);
    OMEGA_SCOPE(LocVorticityAux, VorticityAux);
@@ -137,7 +146,7 @@ void AuxiliaryState::computeMomAux(const OceanState *State,
 
    Pacer::start("AuxState:computeMomAux", 1);
 
-   computeMomVertAux(State, TracerArray, ThickTimeLevel, VelTimeLevel);
+   computeMomVertAux(State, TracerArray, ThickTimeLevel);
 
    Pacer::start("AuxState:vertexAuxState1", 2);
    parallelForOuter(
@@ -321,6 +330,91 @@ void AuxiliaryState::computeAll(const OceanState *State,
                                 const Array3DReal &TracerArray, int TimeLevel,
                                 const TimeInterval ProjDt) const {
    computeAll(State, TracerArray, TimeLevel, TimeLevel, ProjDt);
+}
+
+void AuxiliaryState::computePseudoThicknessTracerAux(
+    const OceanState *State, const Array3DReal &TracerArray, int ThickTimeLevel,
+    int VelTimeLevel) const {
+
+   Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
+   computePseudoThicknessTracerAux(State, TracerArray, ThickTimeLevel,
+                                   NormalVelEdge, TimeStep);
+}
+
+void AuxiliaryState::computePseudoThicknessTracerAux(
+    const OceanState *State, const Array3DReal &TracerArray, int ThickTimeLevel,
+    const Array2DReal &NormalVelEdge, const TimeInterval ProjDt) const {
+
+   Array2DReal PseudoThickCell = State->getPseudoThickness(ThickTimeLevel);
+
+   const int NTracers = TracerArray.extent_int(0);
+
+   OMEGA_SCOPE(LocPseudoThicknessAux, PseudoThicknessAux);
+   OMEGA_SCOPE(LocTracerAux, TracerAux);
+   OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
+   OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
+   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
+   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+
+   R8 ProjDtSeconds;
+   ProjDt.get(ProjDtSeconds, TimeUnits::Seconds);
+
+   Pacer::start("AuxState:computePseudoThicknessTracerAux", 1);
+
+   computeMomVertAux(State, TracerArray, ThickTimeLevel);
+
+   Pacer::start("AuxState:edgeThicknessTracerAux", 2);
+   parallelForOuter(
+       "edgeThicknessTracerAux", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          const int KMin   = MinLayerEdgeBot(IEdge);
+          const int KMax   = MaxLayerEdgeTop(IEdge);
+          const int KRange = vertRangeChunked(KMin, KMax);
+
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 LocPseudoThicknessAux.computeVarsOnEdge(
+                     IEdge, KChunk, PseudoThickCell, NormalVelEdge);
+              });
+       });
+   Pacer::stop("AuxState:edgeThicknessTracerAux", 2);
+
+   Pacer::start("AuxState:cellThicknessAux", 2);
+   parallelForOuter(
+       "cellThicknessAux", {Mesh->NCellsAll},
+       KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
+          const int KMin   = MinLayerCell(ICell);
+          const int KMax   = MaxLayerCell(ICell);
+          const int KRange = vertRangeChunked(KMin, KMax);
+
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 LocPseudoThicknessAux.computeVarsOnCells(
+                     ICell, KChunk, PseudoThickCell, NormalVelEdge,
+                     ProjDtSeconds);
+              });
+       });
+   Pacer::stop("AuxState:cellThicknessAux", 2);
+
+   const auto &MeanPseudoThickEdge = PseudoThicknessAux.MeanPseudoThickEdge;
+
+   Pacer::start("AuxState:cellTracerAux", 2);
+   parallelForOuter(
+       "cellTracerAux", {NTracers, Mesh->NCellsAll},
+       KOKKOS_LAMBDA(int LTracer, int ICell, const TeamMember &Team) {
+          const int KMin   = MinLayerCell(ICell);
+          const int KMax   = MaxLayerCell(ICell);
+          const int KRange = vertRangeChunked(KMin, KMax);
+
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 LocTracerAux.computeVarsOnCells(
+                     LTracer, ICell, KChunk, MeanPseudoThickEdge, TracerArray);
+              });
+       });
+   Pacer::stop("AuxState:cellTracerAux", 2);
+
+   Pacer::stop("AuxState:computePseudoThicknessTracerAux", 1);
 }
 
 // Create a non-default auxiliary state

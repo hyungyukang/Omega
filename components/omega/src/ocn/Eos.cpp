@@ -49,6 +49,15 @@ Eos::Eos(const std::string &Name, ///< [in] Name for eos object
        Array2DReal("SpecVolDisplaced", Mesh->NCellsSize, VCoord->NVertLayers);
    BruntVaisalaFreqSq = Array2DReal("BruntVaisalaFreqSq", Mesh->NCellsSize,
                                     VCoord->NVertLayersP1);
+   DepthIntegSpecificVolume =
+       Array1DReal("DepthIntegSpecificVolume", Mesh->NCellsSize);
+   DepthMeanSpecificVolume =
+       Array1DReal("DepthMeanSpecificVolume", Mesh->NCellsSize);
+
+   deepCopy(SpecVol, 1.0_Real / RhoSw);
+   deepCopy(SpecVolDisplaced, 1.0_Real / RhoSw);
+   deepCopy(DepthIntegSpecificVolume, 0._Real);
+   deepCopy(DepthMeanSpecificVolume, 1.0_Real / RhoSw);
 
    defineFields();
 }
@@ -192,6 +201,41 @@ void Eos::computeSpecVol(const Array2DReal &ConservTemp,
                  });
           });
    }
+}
+
+/// Compute depth-integrated specific volume for all cells
+void Eos::computeDepthIntegratedSpecificVolume(
+    const Array2DReal &PseudoThickness // [in] pseudo thickness
+) {
+   OMEGA_SCOPE(LocDepthIntegSpecificVolume, DepthIntegSpecificVolume);
+   OMEGA_SCOPE(LocDepthMeanSpecificVolume, DepthMeanSpecificVolume);
+   OMEGA_SCOPE(LocSpecVol, SpecVol);
+   OMEGA_SCOPE(LocTotalPseudoThickness, VCoord->TotalPseudoThickness);
+   OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
+   OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
+
+   parallelForOuter(
+       "computeDepthIntegratedSpecificVolume", {Mesh->NCellsAll},
+       KOKKOS_LAMBDA(I4 ICell, const TeamMember &Team) {
+          const int KMin = MinLayerCell(ICell);
+          const int KMax = MaxLayerCell(ICell);
+
+          Real DepthIntegSpecVol = 0._Real;
+          parallelReduceInner(
+              Team, Range{KMin, KMax},
+              INNER_LAMBDA(const int K, Real &Accum) {
+                 Accum += LocSpecVol(ICell, K) * PseudoThickness(ICell, K);
+              },
+              DepthIntegSpecVol);
+
+          Kokkos::single(
+              PerTeam(Team), INNER_LAMBDA() {
+                 LocDepthIntegSpecificVolume(ICell) = DepthIntegSpecVol;
+                 const Real ColumnThickness = LocTotalPseudoThickness(ICell);
+                 LocDepthMeanSpecificVolume(ICell) =
+                     DepthIntegSpecVol / ColumnThickness;
+              });
+       });
 }
 
 /// Compute displaced specific volume (for vertical displacement)
@@ -356,10 +400,14 @@ void Eos::defineFields() {
    SpecVolFldName            = "SpecVol";
    SpecVolDisplacedFldName   = "SpecVolDisplaced";
    BruntVaisalaFreqSqFldName = "BruntVaisalaFreqSq";
+   DepthIntegSpecVolFldName  = "DepthIntegSpecificVolume";
+   DepthMeanSpecVolFldName   = "DepthMeanSpecificVolume";
    if (Name != "Default") {
       SpecVolFldName.append(Name);
       SpecVolDisplacedFldName.append(Name);
       BruntVaisalaFreqSqFldName.append(Name);
+      DepthIntegSpecVolFldName.append(Name);
+      DepthMeanSpecVolFldName.append(Name);
    }
 
    /// Create fields for state variables
@@ -407,6 +455,30 @@ void Eos::defineFields() {
                      DimNames                          // Dimension names
        );
 
+   NDims = 1;
+   DimNames.resize(NDims);
+   DimNames[0] = "NCells";
+   auto DepthIntegSpecificVolumeField =
+       Field::create(DepthIntegSpecVolFldName,           // Field name
+                     "Depth-integrated specific volume", // Long Name
+                     "m4 kg-1",                          // Units
+                     "",                                 // CF-ish Name
+                     0.0,                                // Min valid value
+                     std::numeric_limits<Real>::max(),   // Max valid value
+                     NDims,                              // Number of dimensions
+                     DimNames                            // Dimension names
+       );
+   auto DepthMeanSpecificVolumeField =
+       Field::create(DepthMeanSpecVolFldName,          // Field name
+                     "Depth-mean specific volume",     // Long Name
+                     "m3 kg-1",                        // Units
+                     "",                               // CF-ish Name
+                     0.0,                              // Min valid value
+                     std::numeric_limits<Real>::max(), // Max valid value
+                     NDims,                            // Number of dimensions
+                     DimNames                          // Dimension names
+       );
+
    // Create a field group for the eos-specific state fields
    EosGroupName = "Eos";
    if (Name != "Default") {
@@ -418,11 +490,17 @@ void Eos::defineFields() {
    EosGroup->addField(SpecVolDisplacedFldName);
    EosGroup->addField(SpecVolFldName);
    EosGroup->addField(BruntVaisalaFreqSqFldName);
+   EosGroup->addField(DepthIntegSpecVolFldName);
+   EosGroup->addField(DepthMeanSpecVolFldName);
 
    // Attach Kokkos views to the fields
    SpecVolDisplacedField->attachData<Array2DReal>(SpecVolDisplaced);
    SpecVolField->attachData<Array2DReal>(SpecVol);
    BruntVaisalaFreqSqField->attachData<Array2DReal>(BruntVaisalaFreqSq);
+   DepthIntegSpecificVolumeField->attachData<Array1DReal>(
+       DepthIntegSpecificVolume);
+   DepthMeanSpecificVolumeField->attachData<Array1DReal>(
+       DepthMeanSpecificVolume);
 
 } // end defineIOFields
 

@@ -374,6 +374,44 @@ void testEosConstant() {
    return;
 }
 
+/// Test depth-integrated specific volume calculation
+void testDepthIntegratedSpecificVolume() {
+   const auto Mesh   = HorzMesh::getDefault();
+   const auto VCoord = VertCoord::getDefault();
+   Eos *TestEos      = Eos::getInstance();
+
+   Array2DReal LayerThickness("LayerThickness", Mesh->NCellsSize,
+                              VCoord->NVertLayers);
+
+   deepCopy(TestEos->SpecVol, 2._Real);
+   deepCopy(LayerThickness, 3._Real);
+   deepCopy(TestEos->DepthIntegSpecificVolume, 0._Real);
+
+   TestEos->computeDepthIntegratedSpecificVolume(LayerThickness);
+
+   auto DepthIntegSpecificVolumeH =
+       createHostMirrorCopy(TestEos->DepthIntegSpecificVolume);
+
+   int NumMismatches = 0;
+   for (int ICell = 0; ICell < Mesh->NCellsAll; ++ICell) {
+      const Real Expected = 6._Real * (VCoord->MaxLayerCellH(ICell) -
+                                       VCoord->MinLayerCellH(ICell) + 1);
+      if (!isApprox(DepthIntegSpecificVolumeH(ICell), Expected, RTol)) {
+         LOG_ERROR("EosTest: DepthIntegSpecificVolume Bad Value: "
+                   "DepthIntegSpecificVolume({}) = {}; Expected {}",
+                   ICell, DepthIntegSpecificVolumeH(ICell), Expected);
+         ++NumMismatches;
+      }
+   }
+
+   if (NumMismatches != 0) {
+      ABORT_ERROR("EosTest: DepthIntegSpecificVolume FAIL with {} bad values",
+                  NumMismatches);
+   }
+
+   return;
+}
+
 /// Test linear squared Brunt-Vaisala frequency calculation for all cells/layers
 void testBruntVaisalaFreqSqLinear() {
    /// Get mesh and coordinate info
@@ -1493,6 +1531,7 @@ void eosTest(const std::string &MeshFile = "OmegaMesh.nc") {
    testEosLinear();
    testEosLinearDisplaced();
    testEosConstant();
+   testDepthIntegratedSpecificVolume();
    testBruntVaisalaFreqSqLinear();
    testEosTeos10();
    testEosTeos10Displaced();

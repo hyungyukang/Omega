@@ -13,6 +13,7 @@
 #include "RungeKutta2Stepper.h"
 #include "RungeKutta4Stepper.h"
 #include "VertMix.h"
+#include "SplitExplicitRK2Stepper.h"
 
 namespace OMEGA {
 //------------------------------------------------------------------------------
@@ -41,9 +42,14 @@ TimeStepperType getTimeStepperFromStr(const std::string &InString) {
       TimeStepperChoice = TimeStepperType::RungeKutta4;
    } else if (InString == "RungeKutta2") {
       TimeStepperChoice = TimeStepperType::RungeKutta2;
+   } else if (InString == "SplitExplicitRK2") {
+      TimeStepperChoice = TimeStepperType::SplitExplicitRK2;
+   } else if (InString == "UnsplitRK2") {
+      TimeStepperChoice = TimeStepperType::UnsplitRK2;
    } else {
       ABORT_ERROR("TimeStepper should be one of 'Forward-Backward', "
-                  "'RungeKutta4' or 'RungeKutta2' but got {}:",
+                  "'RungeKutta4', 'RungeKutta2', 'SplitExplicitRK2' or "
+                  "'UnsplitRK2' but got {}:",
                   InString);
    }
 
@@ -194,6 +200,14 @@ TimeStepper *TimeStepper::create(
    case TimeStepperType::RungeKutta2:
       NewTimeStepper =
           new RungeKutta2Stepper(InName, InTimeStep, InStartTime, InStopTime);
+      break;
+   // Both share an implementation; the type selects whether the barotropic
+   // mode is split off (SplitFactor 1) or carried in the baroclinic solve
+   // (SplitFactor 0).
+   case TimeStepperType::SplitExplicitRK2:
+   case TimeStepperType::UnsplitRK2:
+      NewTimeStepper = new SplitExplicitRK2Stepper(InName, InType, InTimeStep,
+                                                   InStartTime, InStopTime);
       break;
    case TimeStepperType::Invalid:
       ABORT_ERROR("Invalid time stepping method");

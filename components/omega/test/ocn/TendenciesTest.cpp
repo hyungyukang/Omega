@@ -499,17 +499,9 @@ int testSfcTracerForcing() {
                                        ThickTimeLevel, VelTimeLevel,
                                        TracerTimeLevel, Time, Interval);
 
-   // Build a reference expectations for temperature tendency:
-   // using TEOS-10 freezing CT (expected to pass under strict tolerance).
-
-   HostArray2DReal PressureMidH = createHostMirrorCopy(VCoord->PressureMid);
-   deepCopy(PressureMidH, VCoord->PressureMid);
-   const Real PTopDb = PressureMidH(ICellTest, KTop) * Pa2Db;
-   const Real CtFrz =
-       Eos::calcCtFreezing(EosInst->EosChoice, SaTopValue, PTopDb, 0.0_Real);
+   // Build a reference expectations for temperature tendency
    const Real ExpectedTempTend =
-       (TestSensibleHeat + TestRain * Cp0Sw * CtTopValue +
-        TestSnow * (Cp0Sw * CtFrz - LatIce)) *
+       (TestSensibleHeat + TestRain * Cp0Sw * CtTopValue - TestSnow * LatIce) *
        HFluxFac;
 
    // SaltTend = SeaIceSaltFlux * SFluxFac

@@ -463,28 +463,30 @@ class SfcTracerForcingOnCell {
       }
 
       if (TempIndex >= 0) {
-         const Real PTopDb = PressureMid(ICell, KTop) * Pa2Db;
-         const Real SaTop  = SaltIndex >= 0
-                                 ? TracerCell(SaltIndex, ICell, KTop)
-                                 : 0.0_Real; // not sure we want zero here?
-         const Real CtFrz =
-             Eos::calcCtFreezing(EosChoice, SaTop, PTopDb, 0.0_Real);
+
          const Real CtTop = TracerCell(TempIndex, ICell, KTop);
 
          // Heat tendencies are due to direct heat fluxes + enthalpy fluxes
          // The enthalpy of liquid water is assumed to be:
          // - local SST for liquid mass fluxes (rain, rivers)
-         // - local freezing point for solid --> liq mass fluxes (snow, frozen
+         // - zero degrees for solid --> liq mass fluxes (snow, frozen
          // runoff)
          // - solid mass fluxes are locally melted by the ocean (constant Lat
          // heat of fusion)
+         // Technically there is an enthalpy flux associated with solid water
+         // associated with the energy needed to bring the solid water to the
+         // freezing point, captured by a Cp0Sw * CtFrz term. We make the
+         // assumption that the incoming solid fresh water from snow and ice
+         // is at 0C and that this term is 0. Thus, the enthalpy flux associated
+         // with solid water is only captured by the latent heat of fusion term,
+         // LatIce.
          const Real HeatFlux =
              LatentHeatFlux(ICell) + SensibleHeatFlux(ICell) +
              LongWaveHeatFluxUp(ICell) + LongWaveHeatFluxDown(ICell) +
              SeaIceHeatFlux(ICell) + ShortWaveHeatFlux(ICell) +
-             (RainFlux(ICell) + RiverRunoffFlux(ICell)) * Cp0Sw * CtTop +
-             (SnowFlux(ICell) + IceRunoffFlux(ICell)) *
-                 (Cp0Sw * CtFrz - LatIce);
+             (RainFlux(ICell) + RiverRunoffFlux(ICell)) * Cp0Sw *
+                 Kokkos::max(0.0_Real, CtTop) -
+             (SnowFlux(ICell) + IceRunoffFlux(ICell)) * LatIce;
 
          Tend(TempIndex, ICell, KTop) += HeatFlux * HFluxFac;
       }

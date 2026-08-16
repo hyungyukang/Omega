@@ -11,8 +11,6 @@
 #include "SplitExplicitTypes.h"
 #include "TimeStepper.h"
 
-#include <functional>
-
 namespace OMEGA {
 
 class SplitExplicitRK2Stepper : public TimeStepper {
@@ -62,41 +60,25 @@ class SplitExplicitRK2Stepper : public TimeStepper {
        bool FinalIteration ///< [in] true on the final time-step iteration
    ) const;
 
-   using BarotropicUpdateFunction = std::function<void(
-       OceanState *, I4, I4, const TimeInstant &, const TimeInterval &)>;
-
-   void initBarotropicStepper();
-
-   void doBarotropicVelocityUpdate(OceanState *State, I4 CurLevel, I4 NextLevel,
-                                   const TimeInstant &StageTime,
-                                   const TimeInterval &StageTimeStep) const;
-
    void
    computeTransportVelocity(OceanState *State, ///< [inout] model state
                             I4 TimeLevel ///< [in] time level for split velocity
    ) const;
 
    void doBaroclinicCoriolisIteration(
-       OceanState *State,                   ///< [inout] model state
-       const Array2DReal &BaseVelocityTend, ///< [in] non-Coriolis tendency
-       I4 CurLevel,                         ///< [in] current time level
-       I4 NextLevel,                        ///< [in] next time level
-       const TimeInterval &StageTimeStep    ///< [in] current stage time step
-   ) const;
-
-   void computeBarotropicForcing(
        OceanState *State,                ///< [inout] model state
        I4 CurLevel,                      ///< [in] current time level
-       I4 NewLevel,                      ///< [in] next time level
+       I4 NextLevel,                     ///< [in] next time level
        const TimeInterval &StageTimeStep ///< [in] current stage time step
    ) const;
 
-   void updateBaroclinicVelocityByTend(
-       OceanState *State1, ///< [out] updated state
-       I4 TimeLevel1,      ///< [in] time level index for new time
-       OceanState *State2, ///< [in] state for current time
-       I4 TimeLevel2,      ///< [in] time level index for current time
-       TimeInterval Coeff  ///< [in] time-related coeff for tendency
+   /// Removes the barotropic forcing from the iterated baroclinic tendency and
+   /// advances the baroclinic velocity to the stage midpoint, in one pass.
+   void updateBaroclinicVelocityWithBarotropicForcing(
+       OceanState *State,                ///< [inout] model state
+       I4 CurLevel,                      ///< [in] current time level
+       I4 NextLevel,                     ///< [in] next time level
+       const TimeInterval &StageTimeStep ///< [in] current stage time step
    ) const;
 
    void updateTracersToMidpoint(
@@ -115,11 +97,11 @@ class SplitExplicitRK2Stepper : public TimeStepper {
                                                      ///< recompute the split
    ) const;
 
-   void reconstructNormalVelocity(
-       OceanState *State,  ///< [inout] model state
-       I4 CurLevel,        ///< [in] current time level
-       I4 NextLevel,       ///< [in] next time level
-       bool FinalIteration ///< [in] true on the final time-step iteration
+   /// Extrapolates NormalVelocity from the stage midpoint to the new time
+   /// level. Only needed on the final time-step iteration.
+   void reconstructNormalVelocity(OceanState *State, ///< [inout] model state
+                                  I4 CurLevel, ///< [in] current time level
+                                  I4 NextLevel ///< [in] next time level
    ) const;
 
    void finalizeTimeStepIterationState(
@@ -130,12 +112,6 @@ class SplitExplicitRK2Stepper : public TimeStepper {
    ) const;
 
    void computeVerticalPseudoVelocity(
-       OceanState *State,         ///< [inout] model state
-       I4 ThickTimeLevel,         ///< [in] thickness time level
-       I4 VelTimeLevel,           ///< [in] reconstructed velocity time level
-       TimeInterval StageTimeStep ///< [in] current stage time step
-   ) const;
-   void computeVerticalPseudoVelocity(
        OceanState *State,                ///< [inout] model state
        I4 ThickTimeLevel,                ///< [in] thickness time level
        const Array2DReal &NormalVelEdge, ///< [in] velocity on edges
@@ -144,7 +120,6 @@ class SplitExplicitRK2Stepper : public TimeStepper {
 
    SplitExplicitConfig SEConfig;
    mutable SplitExplicitScratch SEScratch;
-   BarotropicUpdateFunction BarotropicUpdate;
    SplitExplicitBarotropicPCStepper BarotropicPCStepper;
 };
 

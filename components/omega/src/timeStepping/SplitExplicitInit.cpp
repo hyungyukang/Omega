@@ -163,16 +163,14 @@ void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
        "BarotropicPressureAnomalySubcyclePre" + Name, Mesh->NCellsSize);
    Scratch.BarotropicPressureAnomalySubcycleCor = Array1DReal(
        "BarotropicPressureAnomalySubcycleCor" + Name, Mesh->NCellsSize);
-   Scratch.BarotropicPressure =
-       Array1DReal("BarotropicPressure" + Name, Mesh->NCellsSize);
    Scratch.BarotropicForcing =
        Array1DReal("BarotropicForcing" + Name, Mesh->NEdgesSize);
    Scratch.BarotropicFlux =
        Array1DReal("BarotropicFlux" + Name, Mesh->NEdgesSize);
    Scratch.BaroclinicPseudoThicknessEdge =
        Array1DReal("BaroclinicPseudoThicknessEdge" + Name, Mesh->NEdgesSize);
-   Scratch.BaseVelocityTend = Array2DReal(
-       "BaseVelocityTend" + Name, Mesh->NEdgesSize, VCoord->NVertLayers);
+   Scratch.IterVelocityTend = Array2DReal(
+       "IterVelocityTend" + Name, Mesh->NEdgesSize, VCoord->NVertLayers);
    Scratch.NormalTransportVelocity = Array2DReal(
        "NormalTransportVelocity" + Name, Mesh->NEdgesSize, VCoord->NVertLayers);
 
@@ -181,11 +179,10 @@ void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
           Scratch.BarotropicPressureAnomalySubcycleCur(ICell) = 0._Real;
           Scratch.BarotropicPressureAnomalySubcyclePre(ICell) = 0._Real;
           Scratch.BarotropicPressureAnomalySubcycleCor(ICell) = 0._Real;
-          Scratch.BarotropicPressure(ICell)                   = 0._Real;
        });
 
    parallelFor(
-       "initializeCell1D", {Mesh->NEdgesAll}, KOKKOS_LAMBDA(I4 IEdge) {
+       "initializeEdge1D", {Mesh->NEdgesAll}, KOKKOS_LAMBDA(I4 IEdge) {
           Scratch.NormalBarotropicVelocitySubcycleCur(IEdge) = 0._Real;
           Scratch.NormalBarotropicVelocitySubcyclePre(IEdge) = 0._Real;
           Scratch.NormalBarotropicVelocitySubcycleCor(IEdge) = 0._Real;
@@ -194,7 +191,7 @@ void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
           Scratch.BaroclinicPseudoThicknessEdge(IEdge)       = 0._Real;
        });
 
-   deepCopy(Scratch.BaseVelocityTend, 0.);
+   deepCopy(Scratch.IterVelocityTend, 0.);
    deepCopy(Scratch.NormalTransportVelocity, 0.);
 }
 
@@ -329,7 +326,6 @@ void SplitExplicitInit::initializeBarotropicPressure(
    if (!VCoord)
       LOG_CRITICAL("Invalid vertical coordinate");
 
-   Array1DReal BtrPressure     = Scratch.BarotropicPressure;
    Array1DReal BtrPressAnomaly = State->getBarotropicPressureAnomaly(TimeLevel);
    Array1DReal SurfacePressure = VCoord->SurfacePressure;
    Array2DReal PressureInterface = VCoord->PressureInterface;
@@ -343,7 +339,6 @@ void SplitExplicitInit::initializeBarotropicPressure(
 
           const Real Pressure =
               PressureInterface(ICell, KMax + 1) - SurfacePressure(ICell);
-          BtrPressure(ICell) = Pressure;
           BtrPressAnomaly(ICell) =
               Pressure - RhoSw * Gravity * BottomGeomDepth(ICell);
           Scratch.BarotropicPressureAnomalySubcycleCur(ICell) =
@@ -352,38 +347,6 @@ void SplitExplicitInit::initializeBarotropicPressure(
               BtrPressAnomaly(ICell);
           Scratch.BarotropicPressureAnomalySubcycleCor(ICell) =
               BtrPressAnomaly(ICell);
-       });
-}
-
-//------------------------------------------------------------------------------
-void SplitExplicitInit::combineVelocitySplit(OceanState *State,
-                                             const HorzMesh *Mesh,
-                                             const VertCoord *VCoord,
-                                             I4 TimeLevel) {
-
-   if (!State)
-      LOG_CRITICAL("Invalid State");
-
-   Array2DReal NormalVelocity = State->getNormalVelocity(TimeLevel);
-   Array2DReal NormalBaroclinicVelocity =
-       State->getNormalBaroclinicVelocity(TimeLevel);
-   Array1DReal NormalBarotropicVelocity =
-       State->getNormalBarotropicVelocity(TimeLevel);
-
-   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
-   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
-
-   parallelFor(
-       "combineSplitExplicitVelocity", {Mesh->NEdgesAll},
-       KOKKOS_LAMBDA(int IEdge) {
-          const I4 KMin = MinLayerEdgeBot(IEdge);
-          const I4 KMax = MaxLayerEdgeTop(IEdge);
-
-          const Real BarotropicVelocity = NormalBarotropicVelocity(IEdge);
-          for (I4 K = KMin; K <= KMax; ++K) {
-             NormalVelocity(IEdge, K) =
-                 NormalBaroclinicVelocity(IEdge, K) + BarotropicVelocity;
-          }
        });
 }
 

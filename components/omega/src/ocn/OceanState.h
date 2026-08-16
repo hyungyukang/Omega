@@ -41,7 +41,8 @@ class OceanState {
               HorzMesh *Mesh,          ///< [in] Horizontal mesh
               Halo *MeshHalo_,         ///< [in] Halo for Mesh
               const int NVertLayers_,  ///< [in] Number of vertical layers
-              const int NTimeLevels_   ///< [in] Number of time levels
+              const int NTimeLevels_,  ///< [in] Number of time levels
+              const bool UseModeSplit_ ///< [in] carry split velocity fields
    );
 
    // Forbid copy and move construction
@@ -50,6 +51,9 @@ class OceanState {
 
    /// Get the current time level index associated with a time level
    I4 getTimeIndex(const I4 TimeLevel) const;
+
+   /// Whether the mode-split velocity/pressure arrays are allocated
+   bool UseModeSplit = false;
 
  public:
    // Variables
@@ -128,8 +132,10 @@ class OceanState {
           HorzMesh *Mesh,          ///< [in] Horizontal mesh
           Halo *MeshHalo,          ///< [in] Halo for Mesh
           const int NVertLayers,   ///< [in] Number of vertical layers
-          const int NTimeLevels    ///< [in] Number of time levels
-   );
+          const int NTimeLevels,   ///< [in] Number of time levels
+          ///< [in] carry the mode-split velocity split and barotropic
+          ///< pressure; only the mode-split time steppers need them
+          const bool UseModeSplit = false);
 
    /// Get pseudo-thickness device array at given time level
    Array2DReal getPseudoThickness(const I4 TimeLevel) const;
@@ -147,7 +153,12 @@ class OceanState {
    /// Salinity after reading an IC or restart file
    void applyLayerMasks(const I4 TimeLevel);
 
+   /// True when this state carries the mode-split velocity split and
+   /// barotropic pressure; false leaves those arrays unallocated
+   bool isModeSplit() const { return UseModeSplit; }
+
    /// Get normal baroclinic velocity device array at given time level
+   /// Requires a mode-split state
    Array2DReal getNormalBaroclinicVelocity(const I4 TimeLevel) const;
 
    /// Get normal baroclinic velocity host array at given time level

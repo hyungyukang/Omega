@@ -600,6 +600,42 @@ void Tendencies::computeCoriolisAccelerationOnEdge(
 }
 
 //------------------------------------------------------------------------------
+// Write a base tendency plus f times tangential velocity reconstruction into a
+// separate output array, for iterative Coriolis solves
+void Tendencies::computeCoriolisAccelerationOnEdge(
+    const Array2DReal &Tend,          ///< [out] base plus Coriolis tendency
+    const Array2DReal &BaseTend,      ///< [in] tendency without Coriolis
+    const Array2DReal &NormalVelEdge, ///< [in] normal velocity on edges
+    const Array1DReal &FEdge          ///< [in] Coriolis parameter on edges
+) const {
+
+   // Coriolis acceleration should be turned off if the PV tendency is disabled,
+   // in which case the output is just the base tendency.
+   if (!PotentialVortHAdv.Enabled) {
+      deepCopy(Tend, BaseTend);
+      return;
+   }
+
+   OMEGA_SCOPE(LocCoriolisAcceleration, CoriolisAcceleration);
+   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
+   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+
+   Pacer::start("Tend:coriolisAccelerationOnEdge2DBase", 2);
+   parallelForOuter(
+       {Mesh->NEdgesAll}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          const int KMin   = MinLayerEdgeBot(IEdge);
+          const int KMax   = MaxLayerEdgeTop(IEdge);
+          const int KRange = vertRangeChunked(KMin, KMax);
+          parallelForInner(
+              Team, KRange, INNER_LAMBDA(int KChunk) {
+                 LocCoriolisAcceleration(Tend, BaseTend, IEdge, KChunk,
+                                         NormalVelEdge, FEdge);
+              });
+       });
+   Pacer::stop("Tend:coriolisAccelerationOnEdge2DBase", 2);
+}
+
+//------------------------------------------------------------------------------
 // Accumulate f times tangential velocity reconstruction for edge-centered 1D
 // fields
 void Tendencies::computeCoriolisAccelerationOnEdge(
@@ -735,8 +771,9 @@ void Tendencies::computeVelocityTendenciesOnly(
    VCoord->zeroEdgeField(NormalVelocityTend, Mesh->NEdgesAll);
 
    // Compute vorticity horizontal advection.
-   // With CoriolisTendMode::Separate only the relative vorticity is advected here; the time stepper adds the
-   // linear Coriolis acceleration itself so it can be iterated implicitly.
+   // With CoriolisTendMode::Separate only the relative vorticity is advected
+   // here; the time stepper adds the linear Coriolis acceleration itself so it
+   // can be iterated.
    const Array2DReal &FluxPseudoThickEdge =
        AuxState->PseudoThicknessAux.FluxPseudoThickEdge;
    const Array2DReal &NormRVortEdge = AuxState->VorticityAux.NormRelVortEdge;

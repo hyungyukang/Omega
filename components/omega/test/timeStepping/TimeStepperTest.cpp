@@ -225,10 +225,12 @@ int initTimeStepperTest(const std::string &mesh) {
    auto *DefPGrad = PressureGrad::getDefault();
    auto *DefVMix  = VertMix::getInstance();
 
-   int NTracers          = Tracers::getNumTracers();
-   const int NTimeLevels = 2;
-   auto *TestOceanState  = OceanState::create("TestState", DefMesh, DefHalo,
-                                              NVertLayers, NTimeLevels);
+   int NTracers            = Tracers::getNumTracers();
+   const int NTimeLevels   = 2;
+   const bool UseModeSplit = true;
+   auto *TestOceanState    = OceanState::create(
+       "TestState", DefMesh, DefHalo, NVertLayers, NTimeLevels, UseModeSplit);
+
    if (!TestOceanState) {
       Err++;
       LOG_ERROR("TimeStepperTest: error creating test state");

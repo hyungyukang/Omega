@@ -189,6 +189,33 @@ class CoriolisAccelerationOnEdge {
       }
    }
 
+   /// As above, but writes BaseTend plus the Coriolis acceleration into a
+   /// separate output array instead of accumulating in place.
+   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend,
+                                   const Array2DReal &BaseTend, I4 IEdge,
+                                   I4 KChunk, const Array2DReal &NormalVelEdge,
+                                   const Array1DReal &FEdge) const {
+
+      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
+      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+
+      Real AccelTmp[VecLength] = {0};
+
+      for (int J = 0; J < NEdgesOnEdge(IEdge); ++J) {
+         const I4 JEdge = EdgesOnEdge(IEdge, J);
+         for (int KVec = 0; KVec < KLen; ++KVec) {
+            const I4 K = KStart + KVec;
+            AccelTmp[KVec] += WeightsOnEdge(IEdge, J) *
+                              NormalVelEdge(JEdge, K) * FEdge(JEdge);
+         }
+      }
+
+      for (int KVec = 0; KVec < KLen; ++KVec) {
+         const I4 K     = KStart + KVec;
+         Tend(IEdge, K) = BaseTend(IEdge, K) + AccelTmp[KVec];
+      }
+   }
+
    /// The functor takes edge index, barotropic velocity on edges, and Coriolis
    /// parameter on edges as inputs, updates the barotropic tendency array
    KOKKOS_FUNCTION void operator()(const Array1DReal &Tend, I4 IEdge,

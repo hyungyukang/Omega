@@ -95,9 +95,7 @@ class Tendencies {
    std::string Name;
 
    /// Configure the velocity tendency for a mode-split time stepper
-   void setModeSplit(CoriolisTendMode Mode,
-                     Real SplitFactorIn
-   );
+   void setModeSplit(CoriolisTendMode Mode, Real SplitFactorIn);
 
    // Methods to compute tendency groups
    void computePseudoThicknessTendencies(const OceanState *State,
@@ -150,6 +148,12 @@ class Tendencies {
                                     const TimeInterval ProjDt);
    void computeCoriolisAccelerationOnEdge(
        const Array2DReal &Tend,          ///< [inout] velocity tendency
+       const Array2DReal &NormalVelEdge, ///< [in] normal velocity on edges
+       const Array1DReal &FEdge          ///< [in] Coriolis parameter on edges
+   ) const;
+   void computeCoriolisAccelerationOnEdge(
+       const Array2DReal &Tend,          ///< [out] base plus Coriolis tendency
+       const Array2DReal &BaseTend,      ///< [in] tendency without Coriolis
        const Array2DReal &NormalVelEdge, ///< [in] normal velocity on edges
        const Array1DReal &FEdge          ///< [in] Coriolis parameter on edges
    ) const;

@@ -20,19 +20,29 @@ class AuxiliaryState;
 
 class SplitExplicitBarotropicPCStepper {
  public:
+   void
+   init(const AuxiliaryState *InAuxState, ///< [in] provisional auxiliary state
+        SplitExplicitScratch *InScratch,  ///< [inout] split-explicit scratch
+        const SplitExplicitConfig *InConfig, ///< [in] split-explicit options
+        const HorzMesh *InMesh,              ///< [in] horizontal mesh
+        Halo *InMeshHalo,                    ///< [in] mesh halo exchange
+        const VertCoord *InVCoord            ///< [in] vertical coordinate
+   );
+
    void doBarotropicVelocityUpdate(
-       OceanState *State,              ///< [inout] model state
-       const AuxiliaryState *AuxState, ///< [in] provisional auxiliary state
-       SplitExplicitScratch &Scratch,  ///< [inout] split-explicit scratch data
-       const SplitExplicitConfig &Config, ///< [in] split-explicit options
-       const HorzMesh *Mesh,              ///< [in] horizontal mesh
-       Halo *MeshHalo,                    ///< [in] mesh halo exchange
-       const VertCoord *VCoord,           ///< [in] vertical coordinate
-       I4 CurLevel,                       ///< [in] state time level to update
-       I4 NextLevel,                      ///< [in] state time level to update
-       const TimeInstant &StageTime,      ///< [in] current stage time
-       const TimeInterval &StageTimeStep  ///< [in] current stage time step
+       OceanState *State,                ///< [inout] model state
+       I4 CurLevel,                      ///< [in] state time level to update
+       I4 NextLevel,                     ///< [in] state time level to update
+       const TimeInterval &StageTimeStep ///< [in] current stage time step
    ) const;
+
+ private:
+   const AuxiliaryState *AuxState      = nullptr;
+   SplitExplicitScratch *Scratch       = nullptr;
+   const SplitExplicitConfig *SEConfig = nullptr;
+   const HorzMesh *Mesh                = nullptr;
+   Halo *MeshHalo                      = nullptr;
+   const VertCoord *VCoord             = nullptr;
 };
 
 } // namespace OMEGA

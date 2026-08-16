@@ -43,8 +43,14 @@ void SplitExplicitRK2Stepper::finalizeInit() {
    // weight to use for the surface pressure gradient.
    Tend->setModeSplit(CoriolisTendMode::Separate, SEConfig.SplitFactor);
 
+   if (SEConfig.BtrTimeStepper !=
+       SplitExplicitBarotropicStepperType::PredictorCorrector)
+      LOG_CRITICAL("Invalid split-explicit barotropic time stepper");
+
    SplitExplicitInit::allocateScratch(SEScratch, Mesh, VCoord, Name);
-   initBarotropicStepper();
+
+   BarotropicPCStepper.init(AuxState, &SEScratch, &SEConfig, Mesh, MeshHalo,
+                            VCoord);
 }
 
 //------------------------------------------------------------------------------
@@ -73,24 +79,6 @@ void SplitExplicitRK2Stepper::initializeStateFromInput(OceanState *State,
 }
 
 //------------------------------------------------------------------------------
-void SplitExplicitRK2Stepper::initBarotropicStepper() {
-
-   if (SEConfig.BtrTimeStepper ==
-       SplitExplicitBarotropicStepperType::PredictorCorrector) {
-      BarotropicUpdate = [this](OceanState *State, I4 CurLevel, I4 NextLevel,
-                                const TimeInstant &StageTime,
-                                const TimeInterval &StageTimeStep) {
-         BarotropicPCStepper.doBarotropicVelocityUpdate(
-             State, AuxState, SEScratch, SEConfig, Mesh, MeshHalo, VCoord,
-             CurLevel, NextLevel, StageTime, StageTimeStep);
-      };
-      return;
-   }
-
-   LOG_CRITICAL("Invalid split-explicit barotropic time stepper");
-}
-
-//------------------------------------------------------------------------------
 void SplitExplicitRK2Stepper::doBaroclinicVelocityUpdate(
     OceanState *State, const Array3DReal &TendencyTracerArray, I4 CurLevel,
     I4 NextLevel, const TimeInstant &StageTime,
@@ -102,21 +90,13 @@ void SplitExplicitRK2Stepper::doBaroclinicVelocityUpdate(
    // prescribeState(State, CurLevel, State, CurLevel, StageTime);
 
    // Compute baroclinic velocity tendencies and update baroclinic velocity for
-   // the first half of the stage time step. This is the same entry point the
-   // unsplit time steppers use; the split-specific terms are selected by the
-   // mode set in finalizeInit.
+   // the first half of the stage time step
    Tend->computeVelocityTendencies(State, AuxState, TendencyTracerArray,
                                    NextLevel, NextLevel, NextLevel, StageTime,
                                    StageTimeStep);
 
-   // Save the baroclinic velocity tendencies before the baroclinic velocity
-   // update
-   // TODO: this can be optimized in the future.
-   deepCopy(SEScratch.BaseVelocityTend, Tend->NormalVelocityTend);
-
-   // Perform baroclinic velocity iteration with Coriolis acceleration.
-   doBaroclinicCoriolisIteration(State, SEScratch.BaseVelocityTend, CurLevel,
-                                 NextLevel, StageTimeStep);
+   // Perform baroclinic velocity iteration with Coriolis acceleration
+   doBaroclinicCoriolisIteration(State, CurLevel, NextLevel, StageTimeStep);
 
    Pacer::stop("SE-RK2:stage1Bcl", 2);
 }
@@ -173,17 +153,6 @@ void SplitExplicitRK2Stepper::doThicknessTracerUpdate(
    finalizeTimeStepIterationState(State, CurLevel, NextLevel, FinalIteration);
 
    Pacer::stop("SE-RK2:stage3TrThick", 2);
-}
-
-//------------------------------------------------------------------------------
-void SplitExplicitRK2Stepper::doBarotropicVelocityUpdate(
-    OceanState *State, I4 CurLevel, I4 NextLevel, const TimeInstant &StageTime,
-    const TimeInterval &StageTimeStep) const {
-
-   if (!BarotropicUpdate)
-      LOG_CRITICAL("Split-explicit barotropic time stepper not initialized");
-
-   BarotropicUpdate(State, CurLevel, NextLevel, StageTime, StageTimeStep);
 }
 
 //------------------------------------------------------------------------------
@@ -255,33 +224,33 @@ void SplitExplicitRK2Stepper::computeTransportVelocity(OceanState *State,
 
 //------------------------------------------------------------------------------
 void SplitExplicitRK2Stepper::doBaroclinicCoriolisIteration(
-    OceanState *State, const Array2DReal &BaseVelocityTend, I4 CurLevel,
-    I4 NextLevel, const TimeInterval &StageTimeStep) const {
+    OceanState *State, I4 CurLevel, I4 NextLevel,
+    const TimeInterval &StageTimeStep) const {
 
    Pacer::start("SE-RK2:bclCoriolisIter", 2);
 
    const Array1DReal &FEdge = Mesh->FEdge;
+
+   // The non-Coriolis tendency is left untouched so every iteration can re-read
+   // it; each iteration writes base plus Coriolis into scratch instead.
+   const Array2DReal BaseVelocityTend = Tend->NormalVelocityTend;
+   const Array2DReal IterVelocityTend = SEScratch.IterVelocityTend;
+
    for (I4 Iter = 0; Iter < SEConfig.NBclCoriolisIteration; ++Iter) {
 
       const bool FinalCoriolisIter = Iter + 1 == SEConfig.NBclCoriolisIteration;
 
-      if (Iter > 0) {
-         deepCopy(Tend->NormalVelocityTend, BaseVelocityTend);
-      }
-
       Array2DReal NormalBclVelEdge =
           State->getNormalBaroclinicVelocity(NextLevel);
 
-      // Compute the baroclinic part of the Coriolis acceleration
-      Tend->computeCoriolisAccelerationOnEdge(Tend->NormalVelocityTend,
-                                              NormalBclVelEdge, FEdge);
+      // IterVelocityTend = BaseVelocityTend + Coriolis(NormalBclVelEdge)
+      Tend->computeCoriolisAccelerationOnEdge(
+          IterVelocityTend, BaseVelocityTend, NormalBclVelEdge, FEdge);
 
-      // Compute the barotropic forcing
-      computeBarotropicForcing(State, CurLevel, NextLevel, StageTimeStep);
-
-      // Update the baroclinic velocity by tendency at (n+1/2)
-      updateBaroclinicVelocityByTend(State, NextLevel, State, CurLevel,
-                                     0.5 * StageTimeStep);
+      // Remove the barotropic forcing and update the baroclinic velocity to
+      // (n+1/2) in a single pass over the edge column.
+      updateBaroclinicVelocityWithBarotropicForcing(State, CurLevel, NextLevel,
+                                                    StageTimeStep);
 
       if (!FinalCoriolisIter) {
          Pacer::start("SE-RK2:haloBclVelIter", 3);
@@ -303,121 +272,83 @@ void SplitExplicitRK2Stepper::doBaroclinicCoriolisIteration(
 }
 
 //------------------------------------------------------------------------------
-void SplitExplicitRK2Stepper::computeBarotropicForcing(
+void SplitExplicitRK2Stepper::updateBaroclinicVelocityWithBarotropicForcing(
     OceanState *State, I4 CurLevel, I4 NextLevel,
     const TimeInterval &StageTimeStep) const {
 
+   Pacer::start("SE-RK2:bclVelUpdate", 2);
+
+   Array2DReal NormalBclVelCur  = State->getNormalBaroclinicVelocity(CurLevel);
+   Array2DReal NormalBclVelNext = State->getNormalBaroclinicVelocity(NextLevel);
+   Array2DReal IterVelocityTend = SEScratch.IterVelocityTend;
+   Array1DReal BtrForcing       = SEScratch.BarotropicForcing;
+
    const Real LocSplitFactor = SEConfig.SplitFactor;
-
-   // Return if the unsplit time stepper (i.e., BarotropicForcing = 0)
-   if (LocSplitFactor == 0._Real)
-      return;
-
-   Pacer::start("SE-RK2:barotropicForcing", 2);
-
-   Array2DReal NormalBclVelCur = State->getNormalBaroclinicVelocity(CurLevel);
-   Array2DReal PseudoThickCell = State->getPseudoThickness(NextLevel);
-   Array2DReal NormalVelTend   = Tend->NormalVelocityTend;
-   Array1DReal BtrForcing      = SEScratch.BarotropicForcing;
 
    R8 DtSecondsR8;
    StageTimeStep.get(DtSecondsR8, TimeUnits::Seconds);
+   const Real InvDtSeconds = 1._Real / DtSecondsR8;
    const Real DtSeconds    = DtSecondsR8;
-   const Real InvDtSeconds = 1._Real / DtSeconds;
 
+   R8 HalfDtSecondsR8;
+   TimeInterval HalfStageTimeStep = 0.5 * StageTimeStep;
+   HalfStageTimeStep.get(HalfDtSecondsR8, TimeUnits::Seconds);
+   const Real HalfDtSeconds = HalfDtSecondsR8;
+
+   OMEGA_SCOPE(MeanPseudoThickEdge,
+               AuxState->PseudoThicknessAux.MeanPseudoThickEdge);
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
-   OMEGA_SCOPE(CellsOnEdge, Mesh->CellsOnEdge);
 
    parallelForOuter(
-       "computeBarotropicForcing", {Mesh->NEdgesAll},
+       "updateBclVelWithBtrForcing", {Mesh->NEdgesAll},
        KOKKOS_LAMBDA(I4 IEdge, const TeamMember &Team) {
           const I4 KMin = MinLayerEdgeBot(IEdge);
           const I4 KMax = MaxLayerEdgeTop(IEdge);
 
-          if (KMax >= KMin) {
+          // The barotropic forcing is the thickness-weighted column mean of the
+          // provisional baroclinic tendency.It is zero for the UnsplitRK2
+          // stepper, which carries the barotropic mode here instead.
+          Real Forcing = 0._Real;
 
-             const I4 Cell0 = CellsOnEdge(IEdge, 0);
-             const I4 Cell1 = CellsOnEdge(IEdge, 1);
+          if (LocSplitFactor != 0._Real) {
 
-             Real ThicknessSum = 0._Real;
-             parallelReduceInner(
-                 Team, Range{KMin, KMax},
-                 INNER_LAMBDA(I4 K, Real & ThickAccum) {
-                    const Real ThickEdge =
-                        0.5_Real *
-                        (PseudoThickCell(Cell0, K) + PseudoThickCell(Cell1, K));
+             if (KMax >= KMin) {
+                Real ThicknessSum = 0._Real;
+                Real FluxSum      = 0._Real;
 
-                    ThickAccum += ThickEdge;
-                 },
-                 ThicknessSum);
+                parallelReduceInner(
+                    Team, Range{KMin, KMax},
+                    INNER_LAMBDA(I4 K, Real & ThickAccum, Real & FluxAccum) {
+                       const Real ThickEdge = MeanPseudoThickEdge(IEdge, K);
+                       const Real ProvisionalBclVel =
+                           NormalBclVelCur(IEdge, K) +
+                           DtSeconds * IterVelocityTend(IEdge, K);
+                       ThickAccum += ThickEdge;
+                       FluxAccum += ThickEdge * ProvisionalBclVel;
+                    },
+                    ThicknessSum, FluxSum);
 
-             Real NormalThicknessFluxSum = 0._Real;
-             parallelReduceInner(
-                 Team, Range{KMin, KMax},
-                 INNER_LAMBDA(I4 K, Real & FluxAccum) {
-                    const Real ProvisionalBclVel =
-                        NormalBclVelCur(IEdge, K) +
-                        DtSeconds * NormalVelTend(IEdge, K);
-
-                    const Real ThickEdge =
-                        0.5_Real *
-                        (PseudoThickCell(Cell0, K) + PseudoThickCell(Cell1, K));
-
-                    FluxAccum += (ThickEdge / ThicknessSum) * ProvisionalBclVel;
-                 },
-                 NormalThicknessFluxSum);
-
-             const Real Forcing =
-                 LocSplitFactor * NormalThicknessFluxSum * InvDtSeconds;
+                Forcing =
+                    LocSplitFactor * (FluxSum / ThicknessSum) * InvDtSeconds;
+             }
 
              Kokkos::single(
                  PerTeam(Team),
                  INNER_LAMBDA() { BtrForcing(IEdge) = Forcing; });
-
-             parallelForInner(
-                 Team, Range{KMin, KMax},
-                 INNER_LAMBDA(I4 K) { NormalVelTend(IEdge, K) -= Forcing; });
-
-          } else {
-
-             Kokkos::single(
-                 PerTeam(Team),
-                 INNER_LAMBDA() { BtrForcing(IEdge) = 0._Real; });
           }
-       });
 
-   Pacer::stop("SE-RK2:barotropicForcing", 2);
-}
-
-//------------------------------------------------------------------------------
-void SplitExplicitRK2Stepper::updateBaroclinicVelocityByTend(
-    OceanState *State1, I4 TimeLevel1, OceanState *State2, I4 TimeLevel2,
-    TimeInterval Coeff) const {
-
-   Array2DReal NormalBclVel1 = State1->getNormalBaroclinicVelocity(TimeLevel1);
-   Array2DReal NormalBclVel2 = State2->getNormalBaroclinicVelocity(TimeLevel2);
-
-   R8 CoeffSeconds;
-   Coeff.get(CoeffSeconds, TimeUnits::Seconds);
-
-   OMEGA_SCOPE(NormalVelTend, Tend->NormalVelocityTend);
-   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
-   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
-
-   parallelForOuter(
-       "updateBclVelByTend", {Mesh->NEdgesAll},
-       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
-          const int KMin = MinLayerEdgeBot(IEdge);
-          const int KMax = MaxLayerEdgeTop(IEdge);
-
+          // Update the baroclinic velocity to the stage midpoint, removing the
+          // barotropic forcing in the process.
           parallelForInner(
-              Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
-                 NormalBclVel1(IEdge, K) =
-                     NormalBclVel2(IEdge, K) +
-                     CoeffSeconds * NormalVelTend(IEdge, K);
+              Team, Range{KMin, KMax}, INNER_LAMBDA(I4 K) {
+                 NormalBclVelNext(IEdge, K) =
+                     NormalBclVelCur(IEdge, K) +
+                     HalfDtSeconds * (IterVelocityTend(IEdge, K) - Forcing);
               });
        });
+
+   Pacer::stop("SE-RK2:bclVelUpdate", 2);
 }
 
 //------------------------------------------------------------------------------
@@ -510,8 +441,9 @@ void SplitExplicitRK2Stepper::initializeNextState(
 }
 
 //------------------------------------------------------------------------------
-void SplitExplicitRK2Stepper::reconstructNormalVelocity(
-    OceanState *State, I4 CurLevel, I4 NextLevel, bool FinalIteration) const {
+void SplitExplicitRK2Stepper::reconstructNormalVelocity(OceanState *State,
+                                                        I4 CurLevel,
+                                                        I4 NextLevel) const {
 
    Array2DReal NormalVelNext    = State->getNormalVelocity(NextLevel);
    Array2DReal NormalBclVelCur  = State->getNormalBaroclinicVelocity(CurLevel);
@@ -521,39 +453,22 @@ void SplitExplicitRK2Stepper::reconstructNormalVelocity(
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
 
-   if (FinalIteration) {
+   // Extrapolate the baroclinic velocity from n+1/2 to n+1. Intermediate
+   // iterations need only NormalBclVel + NormalBtrVel, which
+   // computeTransportVelocity has already stored into NormalVelocity.
+   parallelForOuter(
+       "reconstructFinalNormalVelocity", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          const int KMin = MinLayerEdgeBot(IEdge);
+          const int KMax = MaxLayerEdgeTop(IEdge);
 
-      parallelForOuter(
-          "reconstructFinalNormalVelocity", {Mesh->NEdgesAll},
-          KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
-             const int KMin = MinLayerEdgeBot(IEdge);
-             const int KMax = MaxLayerEdgeTop(IEdge);
-
-             // Reconstruct NormalBclVel at n+1 if FinalIteration
-             parallelForInner(
-                 Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
-                    NormalVelNext(IEdge, K) =
-                        2._Real * NormalBclVelNext(IEdge, K) -
-                        NormalBclVelCur(IEdge, K) + NormalBtrVelNext(IEdge);
-                 });
-          });
-
-   } else {
-
-      parallelForOuter(
-          "reconstructFinalNormalVelocity", {Mesh->NEdgesAll},
-          KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
-             const int KMin = MinLayerEdgeBot(IEdge);
-             const int KMax = MaxLayerEdgeTop(IEdge);
-
-             // Reconstruct NormalVel at n+0.5
-             parallelForInner(
-                 Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
-                    NormalVelNext(IEdge, K) =
-                        NormalBclVelNext(IEdge, K) + NormalBtrVelNext(IEdge);
-                 });
-          });
-   } // FinalIteration
+          parallelForInner(
+              Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+                 NormalVelNext(IEdge, K) =
+                     2._Real * NormalBclVelNext(IEdge, K) -
+                     NormalBclVelCur(IEdge, K) + NormalBtrVelNext(IEdge);
+              });
+       });
 }
 
 //------------------------------------------------------------------------------
@@ -563,7 +478,8 @@ void SplitExplicitRK2Stepper::finalizeTimeStepIterationState(
    Pacer::start("SE-RK2:finalizeTimeStepIterationState", 2);
 
    // Reconstruction of NormalVelocity Next
-   reconstructNormalVelocity(State, CurLevel, NextLevel, FinalIteration);
+   if (FinalIteration)
+      reconstructNormalVelocity(State, CurLevel, NextLevel);
 
    if (SEConfig.SplitFactor == 0._Real) {
 
@@ -594,19 +510,6 @@ void SplitExplicitRK2Stepper::finalizeTimeStepIterationState(
 
       Pacer::stop("SE-RK2:finalizeTimeStepIterationState", 2);
    }
-}
-
-//------------------------------------------------------------------------------
-void SplitExplicitRK2Stepper::computeVerticalPseudoVelocity(
-    OceanState *State, I4 ThickTimeLevel, I4 VelTimeLevel,
-    TimeInterval StageTimeStep) const {
-
-   if (!State)
-      LOG_CRITICAL("Invalid State");
-
-   Array2DReal NormalVelEdge = State->getNormalVelocity(VelTimeLevel);
-   computeVerticalPseudoVelocity(State, ThickTimeLevel, NormalVelEdge,
-                                 StageTimeStep);
 }
 
 //------------------------------------------------------------------------------
@@ -683,8 +586,8 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
 
       if (SEConfig.SplitFactor != 0._Real) {
          // Stage 2: Barotropic velocity advance, explicitly subcycled
-         doBarotropicVelocityUpdate(State, CurLevel, NextLevel,
-                                    StageTime + 0.5 * TimeStep, TimeStep);
+         BarotropicPCStepper.doBarotropicVelocityUpdate(State, CurLevel,
+                                                        NextLevel, TimeStep);
       }
 
       // Compute physical total velocity and the corrected transport velocity

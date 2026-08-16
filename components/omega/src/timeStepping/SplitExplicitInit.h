@@ -51,13 +51,6 @@ class SplitExplicitInit {
        I4 TimeLevel                   ///< [in] state time level to initialize
    );
 
-   static void
-   combineVelocitySplit(OceanState *State,       ///< [inout] ocean state
-                        const HorzMesh *Mesh,    ///< [in] horizontal mesh
-                        const VertCoord *VCoord, ///< [in] vertical coordinate
-                        I4 TimeLevel ///< [in] state time level to update
-   );
-
  private:
    static SplitExplicitBarotropicStepperType getBtrTimeStepperFromStr(
        const std::string &InString ///< [in] barotropic stepping method

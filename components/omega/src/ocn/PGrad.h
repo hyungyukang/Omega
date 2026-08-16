@@ -203,10 +203,10 @@ class PressureGrad {
                             const Array2DReal &PseudoThick) const;
 
    // Compute the barotropic pressure anomaly gradient and add into Tend array
-   void computeBarotropicPressureGrad(
-       Array2DReal &Tend,
-       const Array1DReal &BtrPressAnomaly,
-       const Array1DReal &DepthMeanSpecVol ) const;
+   void
+   computeBarotropicPressureGrad(Array2DReal &Tend,
+                                 const Array1DReal &BtrPressAnomaly,
+                                 const Array1DReal &DepthMeanSpecVol) const;
 
  private:
    // Construct a new pressure gradient object

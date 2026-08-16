@@ -37,6 +37,12 @@ void SplitExplicitRK2Stepper::finalizeInit() {
    if (!MeshHalo)
       LOG_CRITICAL("Invalid MeshHalo");
 
+   // The velocity tendency is shared with the unsplit time steppers. Tell it
+   // to leave the linear Coriolis acceleration out of the vorticity flux, so
+   // that doBaroclinicCoriolisIteration can iterate it, and which barotropic
+   // weight to use for the surface pressure gradient.
+   Tend->setModeSplit(CoriolisTendMode::Separate, SEConfig.SplitFactor);
+
    SplitExplicitInit::allocateScratch(SEScratch, Mesh, VCoord, Name);
    initBarotropicStepper();
 }
@@ -96,10 +102,12 @@ void SplitExplicitRK2Stepper::doBaroclinicVelocityUpdate(
    // prescribeState(State, CurLevel, State, CurLevel, StageTime);
 
    // Compute baroclinic velocity tendencies and update baroclinic velocity for
-   // the first half of the stage time step.
-   Tend->computeBaroclinicVelocityTendencies(
-       State, AuxState, TendencyTracerArray, NextLevel, NextLevel, NextLevel,
-       NextLevel, SEConfig.SplitFactor, StageTime, StageTimeStep);
+   // the first half of the stage time step. This is the same entry point the
+   // unsplit time steppers use; the split-specific terms are selected by the
+   // mode set in finalizeInit.
+   Tend->computeVelocityTendencies(State, AuxState, TendencyTracerArray,
+                                   NextLevel, NextLevel, NextLevel, StageTime,
+                                   StageTimeStep);
 
    // Save the baroclinic velocity tendencies before the baroclinic velocity
    // update

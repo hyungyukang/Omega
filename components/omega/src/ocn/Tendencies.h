@@ -53,6 +53,12 @@
 
 namespace OMEGA {
 
+/// Describes how the Coriolis force enters the normal velocity tendency.
+enum class CoriolisTendMode {
+   PVFlux,  ///< planetary vorticity carried inside the PV flux term (default)
+   Separate ///< relative vorticity only, Coriolis applied by the time stepper
+};
+
 /// A class that can be used to calculate the thickness,
 /// velocity, and tracer tendencies within the timestepping algorithm.
 class Tendencies {
@@ -80,7 +86,18 @@ class Tendencies {
    TracerHyperDiffOnCell TracerHyperDiff;
    SurfaceTracerRestoringOnCell SurfaceTracerRestoring;
 
+   /// Mode-split configuration of the velocity tendency
+   ///  - Coriolis treatment in the vorticity flux term
+   CoriolisTendMode CoriolisMode = CoriolisTendMode::PVFlux;
+   //   - The split factor for the barotropic pressure anomaly gradient
+   Real SplitFactor = 0._Real;
+
    std::string Name;
+
+   /// Configure the velocity tendency for a mode-split time stepper
+   void setModeSplit(CoriolisTendMode Mode,
+                     Real SplitFactorIn
+   );
 
    // Methods to compute tendency groups
    void computePseudoThicknessTendencies(const OceanState *State,
@@ -119,16 +136,6 @@ class Tendencies {
                                       const Array3DReal &TracerArray,
                                       int ThickTimeLevel, int VelTimeLevel,
                                       int TracerTimeLevel, TimeInstant Time);
-   void computeBaroclinicVelocityTendencies(
-       const OceanState *State, const AuxiliaryState *AuxState,
-       const Array3DReal &TracerArray, int ThickTimeLevel, int VelTimeLevel,
-       int BarotropicVelocityTimeLevel, int BarotropicPressureTimeLevel,
-       Real SplitFactor, TimeInstant Time, TimeInterval ProjDt);
-   void computeBaroclinicVelocityTendenciesOnly(
-       const OceanState *State, const AuxiliaryState *AuxState,
-       const Array3DReal &TracerArray, int ThickTimeLevel, int VelTimeLevel,
-       int BarotropicVelocityTimeLevel, int BarotropicPressureTimeLevel,
-       Real SplitFactor, TimeInstant Time);
    void computeTracerTendenciesOnly(const OceanState *State,
                                     const AuxiliaryState *AuxState,
                                     const Array3DReal &TracerArray,

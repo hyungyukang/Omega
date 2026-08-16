@@ -276,46 +276,6 @@ class SSHGradOnEdge {
       }
    }
 
-   /// Computes depth-mean specific volume times the barotropic pressure
-   /// gradient on edges.
-   KOKKOS_FUNCTION void operator()(const Array1DReal &Tend, I4 IEdge,
-                                   const Array1DReal &BtrPressAnomaly,
-                                   const Array1DReal &DepthMeanSpecVol) const {
-
-      const I4 JCell0      = CellsOnEdge(IEdge, 0);
-      const I4 JCell1      = CellsOnEdge(IEdge, 1);
-      const Real InvDcEdge = 1._Real / DcEdge(IEdge);
-      const Real MeanSpecVol =
-          0.5_Real * (DepthMeanSpecVol(JCell0) + DepthMeanSpecVol(JCell1));
-
-      Tend(IEdge) += MeanSpecVol *
-                     (BtrPressAnomaly(JCell1) - BtrPressAnomaly(JCell0)) *
-                     InvDcEdge;
-   }
-
-   /// Computes depth-mean specific volume times the barotropic pressure
-   /// gradient on edges and adds it to every active vertical layer.
-   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
-                                   const Array1DReal &BtrPressAnomaly,
-                                   const Array1DReal &DepthMeanSpecVol) const {
-
-      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
-      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
-      const I4 JCell0 = CellsOnEdge(IEdge, 0);
-      const I4 JCell1 = CellsOnEdge(IEdge, 1);
-      const Real InvDcEdge = 1._Real / DcEdge(IEdge);
-      const Real MeanSpecVol =
-          0.5_Real * (DepthMeanSpecVol(JCell0) + DepthMeanSpecVol(JCell1));
-      const Real BtrPressGradTend =
-          MeanSpecVol * (BtrPressAnomaly(JCell1) - BtrPressAnomaly(JCell0)) *
-          InvDcEdge;
-
-      for (int KVec = 0; KVec < KLen; ++KVec) {
-         const I4 K = KStart + KVec;
-         Tend(IEdge, K) += EdgeMask(IEdge, K) * BtrPressGradTend;
-      }
-   }
-
  private:
    Array2DI4 CellsOnEdge;
    Array1DReal DcEdge;

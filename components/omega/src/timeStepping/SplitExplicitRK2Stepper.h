@@ -35,41 +35,10 @@ class SplitExplicitRK2Stepper : public TimeStepper {
        bool ReadRestart   ///< [in] true if restart input initialized the state
    ) const override;
 
- protected:
-   /// Performs additional initialization for split-explicit scratch fields.
-   void finalizeInit() override;
-
- private:
-   void doBaroclinicVelocityUpdate(
-       OceanState *State,                      ///< [inout] model state
-       const Array3DReal &TendencyTracerArray, ///< [in] tracers for tendencies
-       I4 CurLevel,                            ///< [in] current time level
-       I4 NextLevel,                           ///< [in] next time level
-       const TimeInstant &StageTime,           ///< [in] current stage time
-       const TimeInterval &StageTimeStep       ///< [in] current stage time step
-   ) const;
-
-   void doThicknessTracerUpdate(
-       OceanState *State,                  ///< [inout] model state
-       const Array3DReal &CurTracerArray,  ///< [in] current tracers
-       const Array3DReal &NextTracerArray, ///< [out] next tracers
-       I4 CurLevel,                        ///< [in] current time level
-       I4 NextLevel,                       ///< [in] next time level
-       const TimeInstant &StageTime,       ///< [in] current stage time
-       const TimeInterval &StageTimeStep,  ///< [in] current stage time step
-       bool FinalIteration ///< [in] true on the final time-step iteration
-   ) const;
 
    void
    computeTransportVelocity(OceanState *State, ///< [inout] model state
                             I4 TimeLevel ///< [in] time level for split velocity
-   ) const;
-
-   void doBaroclinicCoriolisIteration(
-       OceanState *State,                ///< [inout] model state
-       I4 CurLevel,                      ///< [in] current time level
-       I4 NextLevel,                     ///< [in] next time level
-       const TimeInterval &StageTimeStep ///< [in] current stage time step
    ) const;
 
    /// Removes the barotropic forcing from the iterated baroclinic tendency and
@@ -109,6 +78,38 @@ class SplitExplicitRK2Stepper : public TimeStepper {
        I4 CurLevel,        ///< [in] current time level
        I4 NextLevel,       ///< [in] next time level
        bool FinalIteration ///< [in] true on the final time-step iteration
+   ) const;
+
+ protected:
+   /// Performs additional initialization for split-explicit scratch fields.
+   void finalizeInit() override;
+
+ private:
+   void doBaroclinicVelocityUpdate(
+       OceanState *State,                      ///< [inout] model state
+       const Array3DReal &TendencyTracerArray, ///< [in] tracers for tendencies
+       I4 CurLevel,                            ///< [in] current time level
+       I4 NextLevel,                           ///< [in] next time level
+       const TimeInstant &StageTime,           ///< [in] current stage time
+       const TimeInterval &StageTimeStep       ///< [in] current stage time step
+   ) const;
+
+   void doThicknessTracerUpdate(
+       OceanState *State,                  ///< [inout] model state
+       const Array3DReal &CurTracerArray,  ///< [in] current tracers
+       const Array3DReal &NextTracerArray, ///< [out] next tracers
+       I4 CurLevel,                        ///< [in] current time level
+       I4 NextLevel,                       ///< [in] next time level
+       const TimeInstant &StageTime,       ///< [in] current stage time
+       const TimeInterval &StageTimeStep,  ///< [in] current stage time step
+       bool FinalIteration ///< [in] true on the final time-step iteration
+   ) const;
+
+   void doBaroclinicCoriolisIteration(
+       OceanState *State,                ///< [inout] model state
+       I4 CurLevel,                      ///< [in] current time level
+       I4 NextLevel,                     ///< [in] next time level
+       const TimeInterval &StageTimeStep ///< [in] current stage time step
    ) const;
 
    void computeVerticalPseudoVelocity(

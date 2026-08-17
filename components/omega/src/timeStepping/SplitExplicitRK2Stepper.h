@@ -35,7 +35,6 @@ class SplitExplicitRK2Stepper : public TimeStepper {
        bool ReadRestart   ///< [in] true if restart input initialized the state
    ) const override;
 
-
    void
    computeTransportVelocity(OceanState *State, ///< [inout] model state
                             I4 TimeLevel ///< [in] time level for split velocity

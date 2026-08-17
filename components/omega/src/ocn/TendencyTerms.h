@@ -454,6 +454,7 @@ class SfcTracerForcingOnCell {
        const Array1DReal &SeaIceHeatFlux, const Array1DReal &ShortWaveHeatFlux,
        const Array1DReal &SnowFlux, const Array1DReal &RainFlux,
        const Array1DReal &IceRunoffFlux, const Array1DReal &RiverRunoffFlux,
+       const Array1DReal &EvaporationFlux,
        const Array1DReal &SeaIceSaltFlux) const {
 
       const I4 KTop = MinLayerCell(ICell);
@@ -482,7 +483,7 @@ class SfcTracerForcingOnCell {
          //- We assume evaporation removes the same specific enthalpy as the
          // top ocean layer; not capped, to keep the mass flux CT-neutral.
          const Real PotEnthalpyFwIn  = Cp0Sw * Kokkos::max(Ct0Fw, CtTop);
-         const Real PotEnthalpyFwout = Cp0Sw * CtTop;
+         const Real PotEnthalpyFwOut = Cp0Sw * CtTop;
          const Real HeatFlux =
              LongWaveHeatFluxUp(ICell) + LongWaveHeatFluxDown(ICell) +
              ShortWaveHeatFlux(ICell) + SensibleHeatFlux(ICell) +

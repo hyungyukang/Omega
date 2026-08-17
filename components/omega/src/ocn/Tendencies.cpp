@@ -942,8 +942,10 @@ void Tendencies::computeTracerTendenciesOnly(
           ForcingState->TracerForcing.SeaIceHeatFluxCell;
       const auto &ShortWaveHeatFlux =
           ForcingState->TracerForcing.ShortWaveHeatFluxCell;
-      const auto &SnowFlux      = ForcingState->TracerForcing.SnowFluxCell;
-      const auto &RainFlux      = ForcingState->TracerForcing.RainFluxCell;
+      const auto &SnowFlux = ForcingState->TracerForcing.SnowFluxCell;
+      const auto &RainFlux = ForcingState->TracerForcing.RainFluxCell;
+      const auto &EvaporationFlux =
+          ForcingState->TracerForcing.EvaporationFluxCell;
       const auto &IceRunoffFlux = ForcingState->TracerForcing.IceRunoffFluxCell;
       const auto &RiverRunoffFlux =
           ForcingState->TracerForcing.RiverRunoffFluxCell;
@@ -958,7 +960,7 @@ void Tendencies::computeTracerTendenciesOnly(
                                  LongWaveHeatFluxUp, LongWaveHeatFluxDown,
                                  SeaIceHeatFlux, ShortWaveHeatFlux, SnowFlux,
                                  RainFlux, IceRunoffFlux, RiverRunoffFlux,
-                                 SeaIceSaltFlux);
+                                 EvaporationFlux, SeaIceSaltFlux);
           });
       Pacer::stop("Tend:sfcTracerForcing", 2);
    }

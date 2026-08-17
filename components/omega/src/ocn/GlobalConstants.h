@@ -52,6 +52,8 @@ constexpr Real TkTrip =
 constexpr Real TkFrz = pcd::pure_water_freezing_temperature_reference;
 // Freezing point of fresh water ~ K (from Physical Constants Dictionary)
 constexpr Real TkFrzSw = TkFrz - 1.8; // Freezing point of seawater ~ K
+constexpr Real Ct0Fw   = 0.0153;
+// Conservative Temperature of freshwater at 0 C (ref pressure) ~ C
 constexpr Real RhoAir =
     pcd::dry_air_density_at_standard_temperature_and_pressure;
 // Density of air ~ kg/m^3 (from Physical Constants Dictionary)

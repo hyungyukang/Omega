@@ -466,27 +466,31 @@ class SfcTracerForcingOnCell {
 
          const Real CtTop = TracerCell(TempIndex, ICell, KTop);
 
-         // Heat tendencies are due to direct heat fluxes + enthalpy fluxes
-         // The enthalpy of liquid water is assumed to be:
-         // - local SST for liquid mass fluxes (rain, rivers)
-         // - zero degrees for solid --> liq mass fluxes (snow, frozen
-         // runoff)
-         // - solid mass fluxes are locally melted by the ocean (constant Lat
-         // heat of fusion)
-         // Technically there is an enthalpy flux associated with solid water
-         // associated with the energy needed to bring the solid water to the
-         // freezing point, captured by a Cp0Sw * CtFrz term. We make the
-         // assumption that the incoming solid fresh water from snow and ice
-         // is at 0C and that this term is 0. Thus, the enthalpy flux associated
-         // with solid water is only captured by the latent heat of fusion term,
-         // LatIce.
+         // CT tendencies are due to direct heat fluxes + pot enthalpy fluxes
+         // Each mass flux has an associated potential enthalpy flux.
+         // Levels of simplification can be done here. For now:
+         // - We approximate PotEnthalpyIce(Tinsitu, P=0) ~ -LatIce (constant);
+         // Altrntively, we could use cnst PotEnthalpyIce(0, 0) ​= −333360
+         // J/kg a 0.1% / 340 J/kg difference with the LatIce value from pcd.
+         // The full expression is gsw_pot_enthalpy_ice(T, P).
+         const Real PotEnthalpyIce = -LatIce;
+         // - We assume dry snow and use the same PotEnthalpyIce for snow.
+         // - We assume liquid water comes in at the specific enthalpy as the
+         // top ocean layer, (i.e. mass flux is CT-neutral). The enthalpy is
+         // capped by a lower bound of pot enthalpy of freshwater at 0.0 C.
+         // Another choice would be to add it at the same in situ temp as ocean
+         // i.e. CT(Sa=0, max(0, T)).
+         //- We assume evaporation removes the same specific enthalpy as the
+         // top ocean layer; not capped, to keep the mass flux CT-neutral.
+         const Real PotEnthalpyFwIn  = Cp0Sw * Kokkos::max(Ct0Fw, CtTop);
+         const Real PotEnthalpyFwout = Cp0Sw * CtTop;
          const Real HeatFlux =
-             LatentHeatFlux(ICell) + SensibleHeatFlux(ICell) +
              LongWaveHeatFluxUp(ICell) + LongWaveHeatFluxDown(ICell) +
-             SeaIceHeatFlux(ICell) + ShortWaveHeatFlux(ICell) +
-             (RainFlux(ICell) + RiverRunoffFlux(ICell)) * Cp0Sw *
-                 Kokkos::max(0.0_Real, CtTop) -
-             (SnowFlux(ICell) + IceRunoffFlux(ICell)) * LatIce;
+             ShortWaveHeatFlux(ICell) + SensibleHeatFlux(ICell) +
+             SeaIceHeatFlux(ICell) + // includes enthalpy of meltwater already
+             (RainFlux(ICell) + RiverRunoffFlux(ICell)) * PotEnthalpyFwIn +
+             LatentHeatFlux(ICell) + EvaporationFlux(ICell) * PotEnthalpyFwOut +
+             (SnowFlux(ICell) + IceRunoffFlux(ICell)) * PotEnthalpyIce;
 
          Tend(TempIndex, ICell, KTop) += HeatFlux * HFluxFac;
       }

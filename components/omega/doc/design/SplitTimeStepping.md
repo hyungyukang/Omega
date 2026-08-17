@@ -1346,7 +1346,7 @@ TimeIntegration:
   All three are added to the `Restart` field group but not to the `State` group,
   so they are written to and read from restart files without appearing in default
   history output.
-- `Tendencies`: Exposes `computeCoriolisAccelerationOnEdge` in layered and 
+- `Tendencies`: Exposes `computeCoriolisAccelerationOnEdge` in layered and
   single-layer forms, so that the Coriolis term can be applied on
   its own inside the Stage-1 iteration and by the barotropic subcycle. Both
   forms return without acting when the potential-vorticity tendency is disabled.

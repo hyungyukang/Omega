@@ -324,7 +324,7 @@ rather than from the baroclinic velocity alone. $[F_s^{\bf u}]$ and
 $[F_b^{\bf u}]$ are the surface stress forcing and the explicit bottom drag,
 which the implementation includes in the baroclinic tendency alongside the
 terms of Eq. {eq}`split-discrete-velocity`. A user-registered custom velocity
-tendency, when present, is also added here.
+tendency, when present, is also added here. $Q$ is the surface freshwater flux.
 
 The vertical mixing term $[D_v^{\bf u}]$ does not appear in $\Gamma$. Vertical
 mixing of momentum and tracers is applied implicitly once per slow step, after
@@ -403,7 +403,7 @@ geometric height, and the target thickness.
 Compute the barotropic pressure:
 
 $$
-B_i = p_{i,K_{\max}+1} - p_{i,0}.
+B_i = p_{i,K_{\max}+1} - p_{i}^{\text {surf}}.
 $$ (split-initial-barotropic-pressure)
 
 Here $p_{i,0}$ is the surface pressure and $p_{i,K_{\max}+1}$ is the pressure at
@@ -416,8 +416,6 @@ Compute the barotropic pressure anomaly:
 $$
 B_i' = B_i - \rho_0 g b_i.
 $$ (split-initial-barotropic-pressure-anomaly)
-
-The three barotropic subcycle pressure buffers are seeded with this value.
 
 Time level 1 is then initialized from time level 0 for normal velocity,
 baroclinic velocity, barotropic velocity, pseudo thickness, and barotropic
@@ -458,8 +456,7 @@ Both terms are evaluated from the working state: the pseudo thickness, full
 normal velocity, barotropic velocity, and barotropic pressure anomaly are all
 taken at the working time level, and the momentum auxiliary variables are
 recomputed from that state first. The barotropic pressure-anomaly gradient term
-is gated on `SplitFactor` rather than on the shallow-water sea-surface-height
-tendency switch, because it exists solely to cancel the barotropic part of the
+is gated on `SplitFactor`, because it exists solely to cancel the barotropic part of the
 full pressure gradient and must be present whenever the mode split is active.
 The horizontal-advection term uses the relative vorticity alone, with the
 planetary contribution removed, so that the Coriolis acceleration can be
@@ -543,7 +540,7 @@ only the working baroclinic-velocity halo.
 
 #### 3.2.3 Stage 2: Barotropic velocity advance, explicitly subcycled
 
-This stage advances $B'$ and $\overline{u}$ as a coupled system through $2M$
+This stage advances $B'$ and $\overline{\bf {u}}$ as a coupled system through $2M$
 predictor-corrector passes, where $M=\text{NBtrSubcycles}$ and
 $\Delta t_{\mathrm{bt}}=\Delta t/M$. As in the MPAS-Ocean algorithm, the
 passes span an extended $2\Delta t$ barotropic averaging window. For
@@ -574,6 +571,10 @@ $$
 \right).
 $$ (split-stage2-discrete-momentum)
 
+Throughout this section a hat marks a quantity that lives inside the barotropic
+subcycle and changes from pass to pass, as distinct from the unhatted
+outer-iteration quantities carried by Stages 1 and 3.
+
 At the start of an outer iteration, initialize the subcycle variables and
 accumulators:
 
@@ -587,27 +588,48 @@ $$
 $$ (split-stage2-initialization)
 
 The barotropic mass flux is not formed directly from
-$(B'+\rho_0gb)\overline u$. Instead, the implementation uses the most recent
+$(B'+\rho_0gb){\overline {\bf{u}}}$. Instead, the implementation uses the most recent
 baroclinic edge pseudo thickness and a pressure-anomaly correction relative to
-the working outer-iteration state $B'^{\mathrm{ref}}$:
+the provisional outer-iteration state $B'^{*}$:
 
 $$
-{\cal P}_e(\widehat B')
+{\cal P}_e({\cal B}')
 = \rho_0g\sum_k[\tilde h_k^*]_e
-  + [\widehat B'-B'^{\mathrm{ref}}]_e.
+  + [{\cal B}'-B'^{*}]_e.
 $$ (split-stage2-effective-pressure)
+
+Here ${\cal B}'$ is a formal argument rather than a field: it stands for
+whichever subcycle-level pressure anomaly the caller supplies. It is set
+calligraphic rather than hatted so that it cannot be read as any one particular
+buffer, following the same convention as the other calligraphic symbols in this
+document, ${\cal P}_e$, ${\cal R}$, and ${\cal T}$, none of which is a prognostic
+field. Each pass forms a barotropic mass flux in three of its kernels, the $B'$
+predictor, the $B'$ corrector, and the transport accumulation, and each supplies
+a different blend of the subcycle buffers, given with the equations below.
+
+The two velocity kernels are not among them: they need the *gradient* of the
+pressure anomaly across an edge, not the edge pressure ${\cal P}_e$ that
+multiplies a velocity to make a flux. Only the bracketed difference in
+Eq. {eq}`split-stage2-effective-pressure` depends on ${\cal B}'$; the column
+sum is common to all three.
 
 The column sum $\sum_k[\tilde h_k^*]_e$ uses the flux pseudo thickness on edges
 produced by the pseudo-thickness auxiliary state, so it already carries the
 configured centered or upwind edge reconstruction. It is evaluated once, before
-the subcycle loop begins, and is held fixed for all $2M$ passes. The reference
-$B'^{\mathrm{ref}}$ is the barotropic pressure anomaly at the working time
-level on entry to Stage 2, that is, $B'^n$ on the first outer iteration and
-$\rho_0 g(\tilde H^{*}-b)$ left by the previous outer iteration afterward. It is
-likewise held fixed and is only overwritten by the final corrected anomaly after
-the last pass, so ${\cal P}_e$ measures the departure of the subcycled anomaly
-from the baroclinic column mass. This is what enforces the Hallberg and Adcroft
-(2009) consistency described in Section 3.2.4.
+the subcycle loop begins, and is held fixed for all $2M$ passes.
+
+The reference $B'^{*}$ is the provisional barotropic pressure anomaly at the
+working time level on entry to Stage 2, in the same sense the asterisk carries
+elsewhere in Section 3.2: $B'^n$ on the first outer iteration and the
+$\rho_0 g(\tilde H^{*}-b)$ of Eq. {eq}`split-reset-barotropic-pressure-anomaly`
+left by the previous outer iteration afterward. It is likewise held fixed and is
+only overwritten by the final corrected anomaly after the last pass, so
+${\cal P}_e$ measures the departure of the subcycled anomaly from the baroclinic
+column mass. This is what enforces the [Hallberg and Adcroft (2009)](https://adcroft.github.io/assets/pdf/hallberg_adcroft_OM_2009.pdf) consistency
+described in Section 3.2.4. Note that $B'^{*}$ is unhatted and so is an
+outer-iteration quantity; the hatted $\hat B^{\prime *}$ appearing in the
+predictor-corrector equations below is a different thing, the subcycle predictor
+output.
 
 The edge value of the anomaly correction uses the same centered or upwind choice
 selected for pseudo-thickness fluxes. With the upwind choice, ties at zero
@@ -617,11 +639,15 @@ The depth-mean specific volume $[\overline{\alpha}_i]_e$ is
 `Eos::DepthMeanSpecificVolume` averaged to the edge. It is computed from the
 working state during Stage 1 and is not updated during subcycling.
 
+`Predictor-Corrector` is the only barotropic time stepper currently implemented, so
+the passes below are specific to it. Section 4.2.3 gives the interface an
+alternative barotropic stepper would implement.
+
 For each predictor-corrector pass $m=0,\ldots,2M-1$, use the following steps.
 Both velocity updates are multiplied by the edge mask of the top active layer,
 and edges with no active layers are set to zero.
 
-**$\overline{u}$ predictor:**
+**$\overline{\bf {u}}$ predictor:**
 
 $$
 [\hat{\overline{{\bf u}}}^{*}_e]^{n+(m+1)/M}
@@ -660,12 +686,8 @@ $$
 [-\nabla \cdot [F^{*}_e]^{m+1}]_i.
 $$ (split-stage2-b-predictor)
 
-The surface freshwater flux $Q$ appears only in the pressure-anomaly predictor,
-where it is currently a compile-time zero; the pressure-anomaly corrector omits
-it entirely. Connecting a real $Q$ therefore requires adding the term to the
-corrector as well.
 
-**$\overline{u}$ corrector:**
+**$\overline{\bf {u}}$ corrector:**
 
 $$
 [\hat{\overline{{\bf u}}}_e]^{n+(m+1)/M}
@@ -716,12 +738,16 @@ $$
 [-\nabla \cdot [F_e]^{m+1}]_i.
 $$ (split-stage2-b-corrector)
 
-The asterisk denotes a different buffer depending on where it appears, so the
-mapping to the code is worth stating explicitly. Starred pressures are always
-the predictor output `Pre`. Starred velocities are the predictor output `Pre` in
-the $\overline u$ predictor, in the $B'$ predictor flux, and in the Coriolis term
-of the $\overline u$ corrector; they are the corrector output `Cor` in the $B'$
-corrector flux and in the transport accumulation. The coefficients are
+On *hatted* subcycle quantities the asterisk denotes a different buffer
+depending on where it appears, so the mapping to the code is worth stating
+explicitly. Starred hatted pressures are always the predictor output `Pre`.
+Starred hatted velocities are the predictor output `Pre` in the $\overline {\bf{u}}$
+predictor, in the $B'$ predictor flux, and in the Coriolis term of the
+$\overline {\bf {u}}$ corrector; they are the corrector output `Cor` in the $B'$
+corrector flux and in the transport accumulation. On unhatted quantities such as
+$B'^{*}$, $\tilde h^{*}$, and $\overline{\alpha}^{*}$, the asterisk keeps its
+Section 3.2 meaning of a provisional outer-iteration value, which is frozen for
+the whole of Stage 2. The coefficients are
 
 $$
 \gamma_1=0.5333,\qquad \gamma_2=0.5333,\qquad \gamma_3=1.
@@ -768,25 +794,9 @@ ${\cal P}_e$ with $(1-\gamma_2)\hat B^{\prime n+m/M}
 the $B'$ corrector flux above, where the second term is the predictor anomaly.
 Both accumulations run over owned edges only.
 
-At the end of each pass the corrector outputs become the state at the start of
-the next pass by exchanging the `Cur` and `Cor` buffer handles, so no data are
-copied. After the final pass, the corrected pressure anomaly becomes the working
-next-level $B'$, and the averaged velocity, averaged flux, and pressure anomaly
-receive halo updates.
-
-The subcycle is communication avoiding: each pass performs a single pair of halo
-exchanges, on the current barotropic velocity and the current pressure anomaly,
-and the four predictor/corrector kernels that follow operate on successively
-smaller halo ranges rather than exchanging between kernels. With $W$ the
-available halo width, the velocity predictor covers edges out to halo layer
-$W-1$, the pressure predictor cells out to $W-2$, the velocity corrector edges
-out to $W-2$, and the pressure corrector cells out to $W-3$. The last of these
-sets the floor: the stage requires `Decomp.HaloWidth >= 3` and aborts at run
-time if the available halo width is smaller.
-
 #### 3.2.4 Barotropic-baroclinic coupling and barotropic pressure consistency
 
-For the mode-split consistency of the barotropic pressure anomaly between $B'$ from the barotropic mode and $\rho_0 g(\tilde{H}-b)$ from the baroclinic mode, Omega follows the scheme from Hallberg and Adcroft (2009), as implemented in MPAS-Ocean.
+For the mode-split consistency of the barotropic pressure anomaly between $B'$ from the barotropic mode and $\rho_0 g(\tilde{H}-b)$ from the baroclinic mode, Omega follows the scheme from [Hallberg and Adcroft (2009)](https://adcroft.github.io/assets/pdf/hallberg_adcroft_OM_2009.pdf), as implemented in MPAS-Ocean.
 
 The barotropic update of $B'$ is given by
 
@@ -1599,8 +1609,7 @@ anomaly and break restart reproducibility.
 
 ### 5.1 Unit testing
 
-`TimeStepperTest` exercises both new time-stepper types with a manufactured
-velocity-decay tendency. It initializes each stepper through
+`TimeStepperTest` exercises both new time-stepper types with a velocity-decay tendency. It initializes each stepper through
 `initializeStateFromInput`, performs time-step refinement, and checks the
 observed convergence rate. The current expected rates in the implementation
 are first order for `SplitExplicitRK2` (tolerance 0.15) and second order for
@@ -1635,13 +1644,13 @@ widths smaller than three.
 
 ### 5.2 Polaris tests
 
-The following end-to-end verification cases are planned and are not yet part of
-the implementation branch:
+The following end-to-end verification cases are available in Polaris:
 
-- Inertial gravity wave
-- Internal tide
+- Overflow
 - Baroclinic channel
+- Realistic global ocean
 
+<!--
 ## References
 
 - Higdon, R. L. (2005). Reference used for the split-explicit
@@ -1651,3 +1660,4 @@ the implementation branch:
 - Griffies (2012) and Madec et al. (2015) are referenced for the steric
   sea-surface-height formulation in the
   [derivation above](#split-steric-height-griffies-madec).
+  -->

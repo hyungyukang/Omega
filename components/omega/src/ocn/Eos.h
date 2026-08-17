@@ -993,12 +993,12 @@ class Eos {
    std::string SpecVolDCtFldName; ///< Field name for temperature derivative
    std::string SpecVolDSaFldName; ///< Field name for salinity derivative
    std::string SpecVolDPFldName;  ///< Field name for pressure derivative
-   std::string DepthIntegSpecVolFldName;  ///< Field name for depth-integrated
-                                          ///< specific volume
-   std::string DepthMeanSpecVolFldName;   ///< Field name for depth-mean
-                                          ///< specific volume
-   std::string EosGroupName;              ///< EOS group name (for config)
-   std::string Name;                      ///< Name of this EOS instance
+   std::string DepthIntegSpecVolFldName; ///< Field name for depth-integrated
+                                         ///< specific volume
+   std::string DepthMeanSpecVolFldName;  ///< Field name for depth-mean
+                                         ///< specific volume
+   std::string EosGroupName;             ///< EOS group name (for config)
+   std::string Name;                     ///< Name of this EOS instance
 
    /// Compute specific volume for all cells/layers
    void computeSpecVol(const Array2DReal &ConservTemp,

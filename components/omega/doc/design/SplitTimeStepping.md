@@ -1342,61 +1342,35 @@ TimeIntegration:
   implementation is an empty no-op so that the other steppers are unaffected.
 - `OceanState`: Stores the additional split-explicit prognostic fields:
   `NormalBaroclinicVelocity` (edges, layered), `NormalBarotropicVelocity`
-  (edges, single value), and `BarotropicPressureAnomaly` (cells, single value).
-  Each has a host mirror, a per-time-level allocation, and getters analogous to
-  the existing state fields, and each participates in `copyToDevice`,
-  `copyToHost`, `exchangeHalo`, and `updateTimeLevels`. All three are added to
-  the `Restart` field group but not to the `State` group, so they are written to
-  and read from restart files without appearing in default history output.
-- `Tendencies`: Provides baroclinic velocity tendency wrappers used by the
-  split-explicit stepper.  The baroclinic velocity tendency includes the
-  kinetic-energy gradient, pressure gradient, relative-vorticity horizontal
-  advection without the Coriolis part, vertical advection, velocity diffusion,
-  velocity hyperdiffusion, surface stress forcing, explicit bottom drag, an
-  optional custom tendency, and the depth-mean-specific-volume times barotropic
-  pressure-anomaly gradient.  It also exposes `computeCoriolisAccelerationOnEdge`
-  in layered and single-layer forms, so that the Coriolis term can be applied on
+  (edges, single level), and `BarotropicPressureAnomaly` (cells, single level).
+  All three are added to the `Restart` field group but not to the `State` group,
+  so they are written to and read from restart files without appearing in default
+  history output.
+- `Tendencies`: Exposes `computeCoriolisAccelerationOnEdge` in layered and 
+  single-layer forms, so that the Coriolis term can be applied on
   its own inside the Stage-1 iteration and by the barotropic subcycle. Both
   forms return without acting when the potential-vorticity tendency is disabled.
 - `TendencyTerms`: Adds a `CoriolisAccelerationOnEdge` operator with layered and
   single-layer call operators; an overload of `PotentialVortHAdvOnEdge` that
   advects with relative vorticity only, leaving the planetary part to the
-  Coriolis operator; and overloads of `SSHGradOnEdge` that form the depth-mean
-  specific volume times the barotropic pressure-anomaly gradient, one writing a
-  single-layer tendency and one broadcasting to every active layer.
+  Coriolis operator.
 - `AuxiliaryState`: Adds `computePseudoThicknessTracerAux`, which computes just
   the pseudo-thickness and tracer auxiliary variables needed by Stage 3, in
-  time-level and explicit-velocity-array forms. `computeMomAux` gains an
-  overload taking an explicit normal-velocity array so that the corrected
-  transport velocity can be passed in place of a state time level, and
-  `computeMomVertAux` drops its velocity time-level argument, which it never
-  used, and additionally computes the depth-integrated specific volume and the
-  column-integrated geometric thickness.
+  time-level and explicit-velocity-array forms.
 - `Eos`: Stores `DepthIntegSpecificVolume`, the column integral of specific
   volume weighted by pseudo thickness, and `DepthMeanSpecificVolume`, that
   integral divided by the column-integrated pseudo thickness. Both are computed
   by `computeDepthIntegratedSpecificVolume` and are registered as `Eos` fields.
   `DepthMeanSpecificVolume` is the $\overline{\alpha}$ used by both the
   barotropic momentum equation and the barotropic pressure-anomaly contribution
-  to the baroclinic velocity tendency. Both arrays are initialized to a
-  reference state, $1/\rho_0$ for the mean, so that they are well defined before
-  the first equation-of-state evaluation.
+  to the baroclinic velocity tendency.
 - `VertCoord`: Stores `TotalPseudoThickness`, the column sum $\tilde H$, and
   `TotalGeometricThickness`, the column geometric depth $H=\rho_0 S$ of
-  Eq. {eq}`split-column-geometric-thickness`. `computeTotalPseudoThickness` is
-  called from `computePressure`, so $\tilde H$ is refreshed whenever pressure is,
-  and the split stepper also calls it directly when resetting $B'$.
-  `computeTotalGeometricThickness` is called from `computeMomVertAux`. Both
-  fields are registered in the `VertCoord` field group.
+  Eq. {eq}`split-column-geometric-thickness`.
 - `OceanInit`: `initStateForTimeStepper` calls
   `TimeStepper::initializeStateFromInput` after the initial-state or restart
   read and after `initUpdateHaloAndHostArrays`, then exchanges the state halo and
-  copies to the host. The halo exchange is required because the velocity split
-  is computed over all edges, and halo edges whose neighboring cells lie outside
-  the halo must be refreshed from their owners. It is a no-op for the
-  non-split steppers, and it is wired into both the standalone `ocnInit` path and
-  the coupled `ocnInit1`/`ocnInit2` path, the latter recording the start type so
-  that `ocnInit2` knows whether the state came from a restart.
+  copies to the host.
 
 ### 4.2 Methods
 

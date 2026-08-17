@@ -482,7 +482,9 @@ class SfcTracerForcingOnCell {
          // i.e. CT(Sa=0, max(0, T)).
          //- We assume evaporation removes the same specific enthalpy as the
          // top ocean layer; not capped, to keep the mass flux CT-neutral.
-         const Real PotEnthalpyFwIn  = Cp0Sw * Kokkos::max(Ct0Fw, CtTop);
+         const Real CtLim =
+             (EosChoice == EosType::Teos10Eos) ? Ct0Fw : 0.0_Real;
+         const Real PotEnthalpyFwIn  = Cp0Sw * Kokkos::max(CtLim, CtTop);
          const Real PotEnthalpyFwOut = Cp0Sw * CtTop;
          const Real HeatFlux =
              LongWaveHeatFluxUp(ICell) + LongWaveHeatFluxDown(ICell) +

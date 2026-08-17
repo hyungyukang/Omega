@@ -1,5 +1,5 @@
-(omega-v2-split-time-stepping)=
-# Omega V2: Split Time Stepping
+(split-time-stepping)=
+# Split Time Stepping
 
 <!--- use table of contents if desired for longer documents  -->
 **Table of Contents**

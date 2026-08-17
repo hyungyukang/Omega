@@ -55,7 +55,7 @@ the surface layer pseudo-thickness.
 **Tracer equation pathway:**
 
 1. External fields provide heat and salt flux components:
-   - `LatentHeatFlux`, `SensibleHeatFlux`
+   - `LatentHeatFluxEvap`, `SensibleHeatFlux`
    - `LongWaveHeatFluxUp`, `LongWaveHeatFluxDown`
    - `SeaIceHeatFlux`, `ShortWaveHeatFlux`
    - mass fluxes which add energy changes (`SnowFlux`, `RainFlux`, `IceRunoffFlux`, `RiverRunoffFlux`)
@@ -75,11 +75,11 @@ the surface layer pseudo-thickness.
   - Applied only at surface layer (top active layer) using `MinLayerCell`
 - `SfcTracerForcingOnCell` tendency term
   - For temperature: adds the direct heat fluxes
-    $Q_{\text{latent}} + Q_{\text{sensible}} + Q_{\text{lw,up}} + Q_{\text{lw,down}} + Q_{\text{ice}} + Q_{\text{sw}}$
-, the phase change and enthalpy of added mass $(\text{RainFlux} + \text{RiverRunoffFlux}) c^0_{p,sw} C_T^{\text{top}} + (\text{SnowFlux} + \text{IceRunoffFlux})(c^0_{p,sw} C_T^{\text{frz}} - L_{\text{ice}})$,
-    (where $C_T^{\text{frz}}$ is from EOS at top-layer salinity and pressure),
-    and scales by $H_{\text{FluxFac}}$.
-  - For salinity: applies salt flux with unit conversion: $\text{SeaIceSaltFlux} \times S_{\text{FluxFac}}$
+    Q_{\text{sensible}} + Q_{\text{lw,up}} + Q_{\text{lw,down}} + Q_{\text{sw}}$,
+    the enthalpy flux from sea-ice interactions (conduction, phase-change and enthalpy of mass flux)  Q_{\text{ice}}, the enthalpy of added freshwater mass $(\text{RainFlux} + \text{RiverRunoffFlux}) c^0_{p,sw} max(C_T(0,0,0),C_T^{\text{top}})$ (freshwater $T >= 0$), the evaporation terms ($Q_{\text{latentEvap}} + EvapFlux c^0_{p,sw} C_T^{\text{top}})
+, the enthalpy change for frozen mass $(\text{SnowFlux} + \text{IceRunoffFlux}) PotEnthalpyIce$, where PotEnthalpyIce is the potential enthalpy of solid ice (which includes phase change and enthalpy of the melted mass). To first order, $PotEnthalpyIce$ is approximated by $-LatIce$, the engineering handbook value, neglecting 0.1%.
+    These potential enthalpy terms are then scaled by $H_{\text{FluxFac}}$ to provide the layer tracer tendency.
+  - For salinity: applies the mass salt flux with the appropriate unit conversion: $\text{SeaIceSaltFlux} \times S_{\text{FluxFac}}$
   - Applied only at surface layer using `MinLayerCell`
   - Uses tracer index validation to apply to specific tracers only
 - `Forcing`

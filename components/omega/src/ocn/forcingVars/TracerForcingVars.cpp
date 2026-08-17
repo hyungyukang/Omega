@@ -17,7 +17,7 @@ TracerForcingVars::TracerForcingVars(const std::string &Suffix,
                                Mesh->NCellsSize),
       IceRunoffFluxCell("IceRunoffFlux" + Suffix, Mesh->NCellsSize),
       RiverRunoffFluxCell("RiverRunoffFlux" + Suffix, Mesh->NCellsSize),
-      LatentHeatFluxCell("LatentHeatFlux" + Suffix, Mesh->NCellsSize),
+      LatentHeatFluxEvapCell("LatentHeatFluxEvap" + Suffix, Mesh->NCellsSize),
       SensibleHeatFluxCell("SensibleHeatFlux" + Suffix, Mesh->NCellsSize),
       LongWaveHeatFluxUpCell("LongWaveHeatFluxUp" + Suffix, Mesh->NCellsSize),
       LongWaveHeatFluxDownCell("LongWaveHeatFluxDown" + Suffix,
@@ -31,7 +31,7 @@ TracerForcingVars::TracerForcingVars(const std::string &Suffix,
    deepCopy(SeaIceFreshWaterFluxCell, 0.0_Real);
    deepCopy(IceRunoffFluxCell, 0.0_Real);
    deepCopy(RiverRunoffFluxCell, 0.0_Real);
-   deepCopy(LatentHeatFluxCell, 0.0_Real);
+   deepCopy(LatentHeatFluxEvapCell, 0.0_Real);
    deepCopy(SensibleHeatFluxCell, 0.0_Real);
    deepCopy(LongWaveHeatFluxUpCell, 0.0_Real);
    deepCopy(LongWaveHeatFluxDownCell, 0.0_Real);
@@ -78,9 +78,9 @@ void TracerForcingVars::registerFields(const std::string &MeshName) const {
        "kg m^-2 s^-1", "", std::numeric_limits<Real>::lowest(),
        std::numeric_limits<Real>::max(), NDims, DimNames);
 
-   auto LatentHeatFluxField =
-       Field::create(LatentHeatFluxCell.label(), "latent heat flux", "W m^-2",
-                     "", std::numeric_limits<Real>::lowest(),
+   auto LatentHeatFluxEvapField =
+       Field::create(LatentHeatFluxEvapCell.label(), "latent heat flux",
+                     "W m^-2", "", std::numeric_limits<Real>::lowest(),
                      std::numeric_limits<Real>::max(), NDims, DimNames);
    auto SensibleHeatFluxField =
        Field::create(SensibleHeatFluxCell.label(), "sensible heat flux",
@@ -114,7 +114,7 @@ void TracerForcingVars::registerFields(const std::string &MeshName) const {
    FieldGroup::addFieldToGroup(SeaIceFreshWaterFluxCell.label(), "Forcing");
    FieldGroup::addFieldToGroup(IceRunoffFluxCell.label(), "Forcing");
    FieldGroup::addFieldToGroup(RiverRunoffFluxCell.label(), "Forcing");
-   FieldGroup::addFieldToGroup(LatentHeatFluxCell.label(), "Forcing");
+   FieldGroup::addFieldToGroup(LatentHeatFluxEvapCell.label(), "Forcing");
    FieldGroup::addFieldToGroup(SensibleHeatFluxCell.label(), "Forcing");
    FieldGroup::addFieldToGroup(LongWaveHeatFluxUpCell.label(), "Forcing");
    FieldGroup::addFieldToGroup(LongWaveHeatFluxDownCell.label(), "Forcing");
@@ -128,7 +128,7 @@ void TracerForcingVars::registerFields(const std::string &MeshName) const {
    SeaIceFreshWaterFluxField->attachData<Array1DReal>(SeaIceFreshWaterFluxCell);
    IceRunoffFluxField->attachData<Array1DReal>(IceRunoffFluxCell);
    RiverRunoffFluxField->attachData<Array1DReal>(RiverRunoffFluxCell);
-   LatentHeatFluxField->attachData<Array1DReal>(LatentHeatFluxCell);
+   LatentHeatFluxEvapField->attachData<Array1DReal>(LatentHeatFluxEvapCell);
    SensibleHeatFluxField->attachData<Array1DReal>(SensibleHeatFluxCell);
    LongWaveHeatFluxUpField->attachData<Array1DReal>(LongWaveHeatFluxUpCell);
    LongWaveHeatFluxDownField->attachData<Array1DReal>(LongWaveHeatFluxDownCell);
@@ -144,7 +144,7 @@ void TracerForcingVars::unregisterFields() const {
    Field::destroy(SeaIceFreshWaterFluxCell.label());
    Field::destroy(IceRunoffFluxCell.label());
    Field::destroy(RiverRunoffFluxCell.label());
-   Field::destroy(LatentHeatFluxCell.label());
+   Field::destroy(LatentHeatFluxEvapCell.label());
    Field::destroy(SensibleHeatFluxCell.label());
    Field::destroy(LongWaveHeatFluxUpCell.label());
    Field::destroy(LongWaveHeatFluxDownCell.label());

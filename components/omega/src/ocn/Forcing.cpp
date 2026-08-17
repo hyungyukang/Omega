@@ -203,7 +203,7 @@ void Forcing::resetArrays() {
       deepCopy(TracerForcing.SeaIceFreshWaterFluxCell, 0.0_Real);
       deepCopy(TracerForcing.IceRunoffFluxCell, 0.0_Real);
       deepCopy(TracerForcing.RiverRunoffFluxCell, 0.0_Real);
-      deepCopy(TracerForcing.LatentHeatFluxCell, 0.0_Real);
+      deepCopy(TracerForcing.LatentHeatFluxEvapCell, 0.0_Real);
       deepCopy(TracerForcing.SensibleHeatFluxCell, 0.0_Real);
       deepCopy(TracerForcing.LongWaveHeatFluxUpCell, 0.0_Real);
       deepCopy(TracerForcing.LongWaveHeatFluxDownCell, 0.0_Real);

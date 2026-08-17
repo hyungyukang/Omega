@@ -445,17 +445,16 @@ class SfcTracerForcingOnCell {
                           I4 TempTracerIndex, I4 SaltTracerIndex,
                           const Eos *EosInst);
 
-   KOKKOS_FUNCTION void
-   operator()(const Array3DReal &Tend, I4 ICell, const Array3DReal &TracerCell,
-              const Array2DReal &PressureMid, const Array1DReal &LatentHeatFlux,
-              const Array1DReal &SensibleHeatFlux,
-              const Array1DReal &LongWaveHeatFluxUp,
-              const Array1DReal &LongWaveHeatFluxDown,
-              const Array1DReal &SeaIceHeatFlux,
-              const Array1DReal &ShortWaveHeatFlux, const Array1DReal &SnowFlux,
-              const Array1DReal &RainFlux, const Array1DReal &IceRunoffFlux,
-              const Array1DReal &RiverRunoffFlux,
-              const Array1DReal &SeaIceSaltFlux) const {
+   KOKKOS_FUNCTION void operator()(
+       const Array3DReal &Tend, I4 ICell, const Array3DReal &TracerCell,
+       const Array2DReal &PressureMid, const Array1DReal &LatentHeatFluxEvap,
+       const Array1DReal &SensibleHeatFlux,
+       const Array1DReal &LongWaveHeatFluxUp,
+       const Array1DReal &LongWaveHeatFluxDown,
+       const Array1DReal &SeaIceHeatFlux, const Array1DReal &ShortWaveHeatFlux,
+       const Array1DReal &SnowFlux, const Array1DReal &RainFlux,
+       const Array1DReal &IceRunoffFlux, const Array1DReal &RiverRunoffFlux,
+       const Array1DReal &SeaIceSaltFlux) const {
 
       const I4 KTop = MinLayerCell(ICell);
       if (KTop > MaxLayerCell(ICell)) {
@@ -489,7 +488,8 @@ class SfcTracerForcingOnCell {
              ShortWaveHeatFlux(ICell) + SensibleHeatFlux(ICell) +
              SeaIceHeatFlux(ICell) + // includes enthalpy of meltwater already
              (RainFlux(ICell) + RiverRunoffFlux(ICell)) * PotEnthalpyFwIn +
-             LatentHeatFlux(ICell) + EvaporationFlux(ICell) * PotEnthalpyFwOut +
+             LatentHeatFluxEvap(ICell) +
+             EvaporationFlux(ICell) * PotEnthalpyFwOut +
              (SnowFlux(ICell) + IceRunoffFlux(ICell)) * PotEnthalpyIce;
 
          Tend(TempIndex, ICell, KTop) += HeatFlux * HFluxFac;

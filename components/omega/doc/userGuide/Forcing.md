@@ -76,9 +76,9 @@ Coupled tracer flux forcing uses 13 auxiliary fields organized by type:
 - `IceRunoffFlux`: runoff from land ice
 - `RiverRunoffFlux`: runoff from rivers
 
-**Heat fluxes (W m⁻²):**
-- `LatentHeatFlux`: latent heat transfer
-- `SensibleHeatFlux`: sensible heat transfer
+**Heat/Enthalpy fluxes (W m⁻²):**
+- `LatentHeatFluxEvap`: latent heat flux from evaporation phase change
+- `SensibleHeatFlux`: sensible heat flux
 - `LongWaveHeatFluxUp`: upward longwave radiation
 - `LongWaveHeatFluxDown`: downward longwave radiation
 - `SeaIceHeatFlux`: heat/energy from sea-ice interaction (incl. enthalpy of meltwater)

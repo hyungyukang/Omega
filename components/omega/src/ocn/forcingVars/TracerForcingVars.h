@@ -22,7 +22,7 @@ class TracerForcingVars {
    Array1DReal IceRunoffFluxCell;
    Array1DReal RiverRunoffFluxCell;
 
-   Array1DReal LatentHeatFluxCell;
+   Array1DReal LatentHeatFluxEvapCell;
    Array1DReal SensibleHeatFluxCell;
    Array1DReal LongWaveHeatFluxUpCell;
    Array1DReal LongWaveHeatFluxDownCell;

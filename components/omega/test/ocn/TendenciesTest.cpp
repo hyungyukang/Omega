@@ -393,7 +393,7 @@ int testSfcTracerForcing() {
 
    // Retrieve forcing field views
    auto &SensibleHeatFlux   = DefForcing->TracerForcing.SensibleHeatFluxCell;
-   auto &LatentHeatFlux     = DefForcing->TracerForcing.LatentHeatFluxCell;
+   auto &LatentHeatFluxEvap = DefForcing->TracerForcing.LatentHeatFluxEvapCell;
    auto &LongWaveHeatFluxUp = DefForcing->TracerForcing.LongWaveHeatFluxUpCell;
    auto &LongWaveHeatFluxDown =
        DefForcing->TracerForcing.LongWaveHeatFluxDownCell;
@@ -407,7 +407,7 @@ int testSfcTracerForcing() {
 
    // Initialize all fluxes to zero
    deepCopy(SensibleHeatFlux, 0._Real);
-   deepCopy(LatentHeatFlux, 0._Real);
+   deepCopy(LatentHeatFluxEvap, 0._Real);
    deepCopy(LongWaveHeatFluxUp, 0._Real);
    deepCopy(LongWaveHeatFluxDown, 0._Real);
    deepCopy(SeaIceHeatFlux, 0._Real);

@@ -930,8 +930,8 @@ void Tendencies::computeTracerTendenciesOnly(
    if (LocSfcTracerForcing.Enabled) {
       Pacer::start("Tend:sfcTracerForcing", 2);
       const auto *ForcingState = Forcing::getDefault();
-      const auto &LatentHeatFlux =
-          ForcingState->TracerForcing.LatentHeatFluxCell;
+      const auto &LatentHeatFluxEvap =
+          ForcingState->TracerForcing.LatentHeatFluxEvapCell;
       const auto &SensibleHeatFlux =
           ForcingState->TracerForcing.SensibleHeatFluxCell;
       const auto &LongWaveHeatFluxUp =
@@ -953,11 +953,12 @@ void Tendencies::computeTracerTendenciesOnly(
 
       parallelFor(
           {Mesh->NCellsAll}, KOKKOS_LAMBDA(int ICell) {
-             LocSfcTracerForcing(
-                 LocTracerTend, ICell, TracerArray, PressureMid, LatentHeatFlux,
-                 SensibleHeatFlux, LongWaveHeatFluxUp, LongWaveHeatFluxDown,
-                 SeaIceHeatFlux, ShortWaveHeatFlux, SnowFlux, RainFlux,
-                 IceRunoffFlux, RiverRunoffFlux, SeaIceSaltFlux);
+             LocSfcTracerForcing(LocTracerTend, ICell, TracerArray, PressureMid,
+                                 LatentHeatFluxEvap, SensibleHeatFlux,
+                                 LongWaveHeatFluxUp, LongWaveHeatFluxDown,
+                                 SeaIceHeatFlux, ShortWaveHeatFlux, SnowFlux,
+                                 RainFlux, IceRunoffFlux, RiverRunoffFlux,
+                                 SeaIceSaltFlux);
           });
       Pacer::stop("Tend:sfcTracerForcing", 2);
    }

@@ -476,6 +476,17 @@ class VertMix {
    void VertMixImplicit(OceanState *State, AuxiliaryState *AuxState,
                         Array3DReal &TracerArray, int NTracers, int TimeLevel);
 
+   /// Apply implicit vertical mixing to velocities
+   void applyVelVertMixImplicit(OceanState *State,
+                                const AuxiliaryState *AuxState,
+                                int ThickTimeLevel, int VelTimeLevel);
+
+   /// Apply implicit vertical mixing to tracers
+   void applyTracerVertMixImplicit(OceanState *State,
+                                   const AuxiliaryState *AuxState,
+                                   Array3DReal &TracerArray, int NTracers,
+                                   int ThickTimeLevel, int VelTimeLevel);
+
  private:
    /// Private constructor
    VertMix(const std::string &Name, const HorzMesh *Mesh,
@@ -497,17 +508,6 @@ class VertMix {
 
    // Define fields and metadata
    void defineFields();
-
-   /// Apply implicit vertical mixing to velocities
-   void applyVelVertMixImplicit(OceanState *State,
-                                const AuxiliaryState *AuxState,
-                                int ThickTimeLevel, int VelTimeLevel);
-
-   /// Apply implicit vertical mixing to tracers
-   void applyTracerVertMixImplicit(OceanState *State,
-                                   const AuxiliaryState *AuxState,
-                                   Array3DReal &TracerArray, int NTracers,
-                                   int ThickTimeLevel, int VelTimeLevel);
 
 }; // End class VertMix
 

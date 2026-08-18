@@ -701,17 +701,11 @@ void VertMix::VertMixImplicit(OceanState *State, AuxiliaryState *AuxState,
 
       Pacer::start("VertMix:computeKineticAuxForBottomDrag", 2);
       parallelForOuter(
-          "computeKineticAuxForBottomDrag", {Mesh->NCellsAll},
+          "computeKineticAuxForBottomDrag",
+          LaunchConfig({Mesh->NCellsAll},
+                       TeamScratch<Real>(2 * VCoord->NVertLayers)),
           KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
-             const int KMin   = MinLayerCell(ICell);
-             const int KMax   = MaxLayerCell(ICell);
-             const int KRange = vertRangeChunked(KMin, KMax);
-
-             parallelForInner(
-                 Team, KRange, INNER_LAMBDA(int KChunk) {
-                    LocKineticAux.computeVarsOnCell(ICell, KChunk,
-                                                    NormalVelEdge);
-                 });
+             LocKineticAux.computeVarsOnCell(Team, ICell, NormalVelEdge);
           });
       Pacer::stop("VertMix:computeKineticAuxForBottomDrag", 2);
    }

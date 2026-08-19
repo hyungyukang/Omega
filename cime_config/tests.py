@@ -1158,5 +1158,13 @@ _TESTS = {
             "ERS_Vmct_Ln5.TL319_EC30to60E2r2.COMEGA-JRA1p5.omega-jra_1958",
             #"PEM_Vmct_Ln5.TL319_EC30to60E2r2.COMEGA-JRA1p5.omega-jra_1958",
             )
+    "e3sm_test_bless" : {
+        "time"  : "10:00",
+        "tests" : (
+            "TESTRUNDIFF_P1.f19_g16.A",
+            "TESTRUNDIFF_P2.f19_g16.A",
+            "TESTRUNDIFF_P4.f19_g16.A",
+            "TESTRUNDIFF_P8.f19_g16.A",
+        )
     },
 }

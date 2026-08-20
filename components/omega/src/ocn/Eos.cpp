@@ -182,31 +182,27 @@ void Eos::computeDepthMeanSpecificVolume(
     const Array2DReal &PseudoThickness // [in] pseudo thickness
 ) {
    OMEGA_SCOPE(LocDepthMeanSpecificVolume, DepthMeanSpecificVolume);
-   OMEGA_SCOPE(LocSpecVol, SpecVol);
-   OMEGA_SCOPE(LocTotalPseudoThickness, VCoord->TotalPseudoThickness);
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
+   OMEGA_SCOPE(GeomZInterface, VCoord->GeomZInterface);
+   OMEGA_SCOPE(PressureInterface, VCoord->PressureInterface);
 
-   parallelForOuter(
+   parallelFor(
        "computeDepthMeanSpecificVolume", {Mesh->NCellsAll},
-       KOKKOS_LAMBDA(I4 ICell, const TeamMember &Team) {
+       KOKKOS_LAMBDA(I4 ICell) {
           const int KMin = MinLayerCell(ICell);
           const int KMax = MaxLayerCell(ICell);
 
-          Real DepthIntegSpecVol = 0._Real;
-          parallelReduceInner(
-              Team, Range{KMin, KMax},
-              INNER_LAMBDA(const int K, Real &Accum) {
-                 Accum += LocSpecVol(ICell, K) * PseudoThickness(ICell, K);
-              },
-              DepthIntegSpecVol);
+          const Real DepthIntegSpecVol =
+              (GeomZInterface(ICell, KMin) - GeomZInterface(ICell, KMax + 1)) /
+              RhoSw;
 
-          Kokkos::single(
-              PerTeam(Team), INNER_LAMBDA() {
-                 const Real ColumnThickness = LocTotalPseudoThickness(ICell);
-                 LocDepthMeanSpecificVolume(ICell) =
-                     DepthIntegSpecVol / ColumnThickness;
-              });
+          const Real ColumnThickness = (PressureInterface(ICell, KMax + 1) -
+                                        PressureInterface(ICell, KMin)) /
+                                       (Gravity * RhoSw);
+
+          LocDepthMeanSpecificVolume(ICell) =
+              DepthIntegSpecVol / ColumnThickness;
        });
 }
 

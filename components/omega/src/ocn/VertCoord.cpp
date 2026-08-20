@@ -1077,8 +1077,6 @@ void VertCoord::computePressure(
     const Array1DReal &SurfacePressure  // [in] surface pressure
 ) {
 
-   computeTotalPseudoThickness(PseudoThickness);
-
    OMEGA_SCOPE(LocMinLayerCell, MinLayerCell);
    OMEGA_SCOPE(LocMaxLayerCell, MaxLayerCell);
    OMEGA_SCOPE(LocPressInterf, PressureInterface);

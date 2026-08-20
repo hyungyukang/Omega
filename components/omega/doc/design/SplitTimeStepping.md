@@ -919,7 +919,7 @@ $$
 $$ (split-stage3-tracer-update)
 
 On a non-final outer iteration, pseudo thickness is updated with
-$\Delta t/2$: 
+$\Delta t/2$:
 
 $$
 \tilde h^{*}

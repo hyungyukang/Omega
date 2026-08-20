@@ -374,8 +374,8 @@ void testEosConstant() {
    return;
 }
 
-/// Test depth-integrated specific volume calculation
-void testDepthIntegratedSpecificVolume() {
+/// Test depth-mean specific volume calculation
+void testDepthMeanSpecificVolume() {
    const auto Mesh   = HorzMesh::getDefault();
    const auto VCoord = VertCoord::getDefault();
    Eos *TestEos      = Eos::getInstance();
@@ -385,27 +385,27 @@ void testDepthIntegratedSpecificVolume() {
 
    deepCopy(TestEos->SpecVol, 2._Real);
    deepCopy(LayerThickness, 3._Real);
-   deepCopy(TestEos->DepthIntegSpecificVolume, 0._Real);
+   deepCopy(TestEos->DepthMeanSpecificVolume, 0._Real);
+   VCoord->computeTotalPseudoThickness(LayerThickness);
 
-   TestEos->computeDepthIntegratedSpecificVolume(LayerThickness);
+   TestEos->computeDepthMeanSpecificVolume(LayerThickness);
 
-   auto DepthIntegSpecificVolumeH =
-       createHostMirrorCopy(TestEos->DepthIntegSpecificVolume);
+   auto DepthMeanSpecificVolumeH =
+       createHostMirrorCopy(TestEos->DepthMeanSpecificVolume);
 
    int NumMismatches = 0;
    for (int ICell = 0; ICell < Mesh->NCellsAll; ++ICell) {
-      const Real Expected = 6._Real * (VCoord->MaxLayerCellH(ICell) -
-                                       VCoord->MinLayerCellH(ICell) + 1);
-      if (!isApprox(DepthIntegSpecificVolumeH(ICell), Expected, RTol)) {
-         LOG_ERROR("EosTest: DepthIntegSpecificVolume Bad Value: "
-                   "DepthIntegSpecificVolume({}) = {}; Expected {}",
-                   ICell, DepthIntegSpecificVolumeH(ICell), Expected);
+      const Real Expected = 2._Real;
+      if (!isApprox(DepthMeanSpecificVolumeH(ICell), Expected, RTol)) {
+         LOG_ERROR("EosTest: DepthMeanSpecificVolume Bad Value: "
+                   "DepthMeanSpecificVolume({}) = {}; Expected {}",
+                   ICell, DepthMeanSpecificVolumeH(ICell), Expected);
          ++NumMismatches;
       }
    }
 
    if (NumMismatches != 0) {
-      ABORT_ERROR("EosTest: DepthIntegSpecificVolume FAIL with {} bad values",
+      ABORT_ERROR("EosTest: DepthMeanSpecificVolume FAIL with {} bad values",
                   NumMismatches);
    }
 
@@ -1531,7 +1531,7 @@ void eosTest(const std::string &MeshFile = "OmegaMesh.nc") {
    testEosLinear();
    testEosLinearDisplaced();
    testEosConstant();
-   testDepthIntegratedSpecificVolume();
+   testDepthMeanSpecificVolume();
    testBruntVaisalaFreqSqLinear();
    testEosTeos10();
    testEosTeos10Displaced();

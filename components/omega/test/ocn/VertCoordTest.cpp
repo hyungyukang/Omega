@@ -254,8 +254,6 @@ int main(int argc, char *argv[]) {
 
       Array2DReal SpecVol("SpecVol", NCellsSize, NVertLayers);
       Array1DReal BottomGeomDepth("BottomGeomDepth", NCellsSize);
-      Array1DReal DepthIntegSpecificVolume("DepthIntegSpecificVolume",
-                                           NCellsSize);
       Array1DReal MaxLyrCellReal("MaxLyrCellReal", NCellsSize);
       deepCopy(MaxLyrCellReal, DefVertCoord->MaxLayerCell);
 
@@ -280,11 +278,6 @@ int main(int argc, char *argv[]) {
       auto SshCellH     = createHostMirrorCopy(DefVertCoord->SshCell);
       OMEGA_SCOPE(MinLayerCell, DefVertCoord->MinLayerCell);
       OMEGA_SCOPE(MaxLayerCell, DefVertCoord->MaxLayerCell);
-      parallelFor(
-          {NCellsAll}, KOKKOS_LAMBDA(int ICell) {
-             DepthIntegSpecificVolume(ICell) =
-                 (MaxLayerCell(ICell) - MinLayerCell(ICell) + 1) / Rho0;
-          });
       DefVertCoord->computeGeomZHeight(PseudoThickness, SpecVol);
 
       /// Check results

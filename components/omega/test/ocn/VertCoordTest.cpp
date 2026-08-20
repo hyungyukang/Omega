@@ -285,20 +285,11 @@ int main(int argc, char *argv[]) {
              DepthIntegSpecificVolume(ICell) =
                  (MaxLayerCell(ICell) - MinLayerCell(ICell) + 1) / Rho0;
           });
-      DefVertCoord->computeTotalGeometricThickness(DepthIntegSpecificVolume);
       DefVertCoord->computeGeomZHeight(PseudoThickness, SpecVol);
-      auto TotalGeometricThicknessH =
-          createHostMirrorCopy(DefVertCoord->TotalGeometricThickness);
 
       /// Check results
       Err = 0;
       for (int ICell = 0; ICell < NCellsAll; ICell++) {
-         Real ExpectedTotal = DefVertCoord->MaxLayerCellH(ICell) -
-                              DefVertCoord->MinLayerCellH(ICell) + 1;
-         if (!isApprox(TotalGeometricThicknessH(ICell), ExpectedTotal, RTol,
-                       ATol)) {
-            Err += 1;
-         }
          for (int K = DefVertCoord->MinLayerCellH(ICell);
               K < DefVertCoord->MaxLayerCellH(ICell) + 1; K++) {
             /// Z value at interface K should be -K

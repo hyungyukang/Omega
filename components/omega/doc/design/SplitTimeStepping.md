@@ -885,15 +885,12 @@ Compute $\tilde{W}_{i,k}^{*}$ using ${\bf u}_{e,k}^{\text{tr}}$.
 Compute pseudo thickness tendencies using ${\bf u}_{e,k}^{\text{tr}}$:
 
 $$
-\tilde{h}_{i,k}^{n+1}
+{\cal T}_{\tilde h}
 =
-\tilde{h}_{i,k}^{n}
 -
-\Delta t\,
 \nabla \cdot
 \left([\tilde{h}_{k}^{*}]_e {\bf u}_{e,k}^{\text{tr}}\right)
 -
-\Delta t
 \left(
 [\tilde{W}_{tr}]^{\text{top}}_{k}
 -
@@ -904,11 +901,9 @@ $$ (split-stage3-pseudo-thickness-update)
 Compute tracer tendencies using ${\bf u}_{e,k}^{\text{tr}}$:
 
 $$
-\varphi_{i,k}^{n+1}
+{\cal T}_{\varphi}
 =
-\varphi_{i,k}^{n}
 -
-\Delta t\,
 \nabla \cdot
 \left([
 \tilde{h}_{i,k}^{*}]_e
@@ -916,7 +911,6 @@ $$
 {\bf u}_{e,k}^{\text{tr}}
 \right)
 -
-\Delta t
 \left(
 [\varphi^{*}\tilde{W}_{tr}]^{\text{top}}_{i,k}
 -
@@ -925,8 +919,17 @@ $$
 $$ (split-stage3-tracer-update)
 
 On a non-final outer iteration, pseudo thickness is updated with
-$\Delta t/2$. For each tracer, the implementation first forms the conservative
-provisional end concentration
+$\Delta t/2$: 
+
+$$
+\tilde h^{*}
+=
+\tilde h^n+\frac{\Delta t}{2}{\cal T}_{\tilde h}.
+$$ (split-reset-provisional-psi)
+
+
+For each tracer, the implementation first forms the conservative
+provisional end concentration:
 
 $$
 \varphi^{\mathrm{end}}
@@ -960,12 +963,10 @@ $$
 {\bf u}^{*} = \overline{{\bf u}}^{*} + u^{\prime *},
 $$ (split-reset-full-velocity)
 
-$$
-\tilde h^{*}
-=
-\tilde h^n+\frac{\Delta t}{2}{\cal T}_{\tilde h},
-\quad \text{with tracer concentration averaged as described above},
-$$ (split-reset-provisional-psi)
+with pseudo thickness and tracer concentration reset by
+Eqs. {eq}`split-reset-provisional-psi` and
+{eq}`split-stage3-provisional-tracer` of Section 3.2.5. The column totals then
+follow:
 
 $$
 \tilde{H}^{*} = \sum_{k=0}^{K} \tilde{h}_k^{*},
@@ -1141,88 +1142,42 @@ $$
 = {\bf u}_{e,k}^{n+0.5}.
 $$ (unsplit-transport-velocity)
 
-Compute $\tilde{W}_{i,k}^{*}$ using ${\bf u}_{e,k}^{\text{tr}}$.
+There is no barotropic mode to reconcile, so the velocity correction
+${\bf u}^{\text{co}}$ of Eq. {eq}`split-velocity-correction` is identically
+zero and the transport velocity is simply the midpoint velocity from Stage 1.
 
-Compute pseudo thickness tendencies using ${\bf u}_{e,k}^{\text{tr}}$:
-
-$$
-\tilde{h}_{i,k}^{n+1}
-=
-\tilde{h}_{i,k}^{n}
--
-\Delta t\,
-\nabla \cdot
-\left([\tilde{h}_{k}^{*}]_e {\bf u}_{e,k}^{\text{tr}}\right)
--
-\Delta t
-\left(
-[\tilde{W}_{tr}]^{\text{top}}_{k}
--
-[\tilde{W}_{tr}]^{\text{top}}_{k+1}
-\right).
-$$ (unsplit-pseudo-thickness-update)
-
-Compute tracer tendencies using ${\bf u}_{e,k}^{\text{tr}}$:
-
-$$
-\varphi_{i,k}^{n+1}
-=
-\varphi_{i,k}^{n}
--
-\Delta t\,
-\nabla \cdot
-\left([
-\tilde{h}_{i,k}^{*}]_e
-[\varphi_{i,k}^{*}]_e
-{\bf u}_{e,k}^{\text{tr}}
-\right)
--
-\Delta t
-\left(
-[\varphi^{*}\tilde{W}_{tr}]^{\text{top}}_{i,k}
--
-[\varphi^{*}\tilde{W}_{tr}]^{\text{top}}_{i,k+1}
-\right).
-$$ (unsplit-tracer-update)
+From this point Stage 3 is identical to the split case, because it depends on
+the mode split only through ${\bf u}^{\text{tr}}$. The same routine computes
+the pseudo-thickness and tracer auxiliary variables, diagnoses
+$\tilde{W}_{tr}$, and advances pseudo thickness and tracers, applying the
+half-step midpoint construction on a non-final outer iteration and retaining
+the full-step conservative update on the final one. Section 3.2.5 gives the
+equations.
 
 #### 3.3.5 Reset variables
 
-If iterating, reset the provisional variables as follows:
+Only the velocity handling differs from the split case, since the mode split
+enters Section 3.2.6 solely through the velocity. If iterating, the working full
+velocity is simply the Stage 1 midpoint,
 
 $$
 {\bf u}^{*} = {\bf u}^{n+0.5} \quad \text{from Stage 1},
 $$ (unsplit-reset-velocity)
 
-$$
-\tilde h^{*}
-=\tilde h^n+\frac{\Delta t}{2}{\cal T}_{\tilde h},
-\quad \text{with tracer concentration averaged as in Stage 3},
-$$ (unsplit-reset-provisional-psi)
-
-$$
-\tilde{H}^{*} = \sum_{k=0}^{K} \tilde{h}_k^{*}.
-$$ (unsplit-reset-column-pseudo-thickness)
-
-The working-state and tracer halos are exchanged before the next outer
-iteration.
-
-After the final iteration, reconstruct the physical full-step velocity from the
-midpoint working velocity:
+and after the final iteration the physical full-step velocity is reconstructed
+from it with no barotropic contribution:
 
 $$
 {\bf u}^{n+1}=2{\bf u}^{n+1/2}-{\bf u}^{n}.
 $$ (unsplit-final-velocity)
 
-$$
-\psi^{n+1} \quad \text{is retained for pseudo thickness and tracers},
-$$ (unsplit-final-psi)
-
-$$
-\tilde{H}^{n+1} = \sum_{k=0}^{K} \tilde{h}_k^{n+1}.
-$$ (unsplit-final-column-pseudo-thickness)
-
-Time-level rotation, diagnostics, implicit vertical mixing, state validation,
-and clock advancement follow the shared sequence in Section 3.2.6.
+Everything else follows Section 3.2.6 unchanged: the pseudo-thickness and tracer
+resets, the column totals $\tilde H^{*}$ and $\tilde H^{n+1}$, the working-state
+and tracer halo exchange between outer iterations, and the closing sequence of
+time-level rotation, kinetic diagnostics, implicit vertical mixing, state
+validation, and clock advancement. Because `SplitFactor` is zero, the routine
+skips the $B'$ reset of
+Eq. {eq}`split-reset-barotropic-pressure-anomaly`.
 
 ## 4. Design
 

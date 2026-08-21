@@ -110,19 +110,8 @@ static void initStateForTimeStepper(
    // Both split-explicit variants need their velocity split established
    // before the first step.
    TimeStepper *DefStepper = TimeStepper::getDefault();
-   if (!DefStepper->isSplit())
-      return;
-
-   OceanState *DefState  = OceanState::getDefault();
-   const I4 CurTimeLevel = 0;
-
+   OceanState *DefState    = OceanState::getDefault();
    DefStepper->initializeStateFromInput(DefState, ReadRestart);
-
-   // The velocity split is computed over all edges, so halo edges whose
-   // neighboring cells lie outside the halo must be refreshed from their
-   // owners before the newly split arrays are copied to the host
-   DefState->exchangeHalo(CurTimeLevel);
-   DefState->copyToHost(CurTimeLevel);
 }
 
 int ocnInit(MPI_Comm Comm ///< [in] ocean MPI communicator

@@ -386,7 +386,11 @@ void testDepthMeanSpecificVolume() {
    deepCopy(TestEos->SpecVol, 2._Real);
    deepCopy(LayerThickness, 3._Real);
    deepCopy(TestEos->DepthMeanSpecificVolume, 0._Real);
-   VCoord->computeTotalPseudoThickness(LayerThickness);
+   deepCopy(VCoord->SurfacePressure, 100._Real);
+   deepCopy(VCoord->BottomGeomDepth, 500._Real);
+
+   VCoord->computePressure(LayerThickness, VCoord->SurfacePressure);
+   VCoord->computeGeomZHeight(LayerThickness, TestEos->SpecVol);
 
    TestEos->computeDepthMeanSpecificVolume(LayerThickness);
 

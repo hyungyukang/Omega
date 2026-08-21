@@ -78,6 +78,12 @@ void SplitExplicitRK2Stepper::initializeStateFromInput(OceanState *State,
    }
 
    initializeNextState(State, CurLevel, NextLevel, SEConfig.SplitFactor, false);
+
+   // The velocity split is computed over all edges, so halo edges whose
+   // neighboring cells lie outside the halo must be refreshed from their
+   // owners before the newly split arrays are copied to the host
+   State->exchangeHalo(CurLevel);
+   State->copyToHost(CurLevel);
 }
 
 //------------------------------------------------------------------------------

@@ -24,6 +24,9 @@ class SplitExplicitRK2Stepper : public TimeStepper {
        ///< [in] stop time for time stepping, missing in coupled mode
        std::optional<TimeInstant> InStopTime = std::nullopt);
 
+   /// Indicate that this is a split time stepper
+   bool isSplit() const override;
+
    /// Advance the state by one split-explicit RK2 step.
    void doStep(OceanState *State,   ///< [inout] model state
                TimeInstant &SimTime ///< [inout] current simulation time

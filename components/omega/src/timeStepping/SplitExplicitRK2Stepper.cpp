@@ -25,6 +25,8 @@ SplitExplicitRK2Stepper::SplitExplicitRK2Stepper(
       SEConfig(SplitExplicitInit::readConfigOptions(
           InTimeStep, InType == TimeStepperType::UnsplitRK2)) {}
 
+bool SplitExplicitRK2Stepper::isSplit() const { return true; }
+
 //------------------------------------------------------------------------------
 void SplitExplicitRK2Stepper::finalizeInit() {
 

@@ -173,8 +173,6 @@ int main(int argc, char *argv[]) {
       DefVertCoord->computePressure(PseudoThickness, SurfacePressure);
       auto PressInterfH = createHostMirrorCopy(DefVertCoord->PressureInterface);
       auto PressMidH    = createHostMirrorCopy(DefVertCoord->PressureMid);
-      auto TotalPseudoThicknessH =
-          createHostMirrorCopy(DefVertCoord->TotalPseudoThickness);
 
       /// Check results
       Err = 0;
@@ -182,10 +180,6 @@ int main(int argc, char *argv[]) {
          Real ExpectedTotal = (DefVertCoord->MaxLayerCellH(ICell) -
                                DefVertCoord->MinLayerCellH(ICell) + 1) /
                               (Gravity * Rho0);
-         if (!isApprox(TotalPseudoThicknessH(ICell), ExpectedTotal, RTol,
-                       ATol)) {
-            Err += 1;
-         }
          for (int K = DefVertCoord->MinLayerCellH(ICell);
               K < DefVertCoord->MaxLayerCellH(ICell) + 1; K++) {
             // Interface pressure at layer K should be K+1

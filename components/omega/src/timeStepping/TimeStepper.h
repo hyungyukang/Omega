@@ -221,6 +221,9 @@ class TimeStepper {
    /// Get number of doStep calls made on this instance
    I8 getStepCount() const;
 
+   /// Is this a split time stepper. False by default
+   virtual bool isSplit() const;
+
    // these should be protected, they are public only because of CUDA
    // limitations
 

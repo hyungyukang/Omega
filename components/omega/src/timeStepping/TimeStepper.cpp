@@ -432,6 +432,10 @@ void TimeStepper::changeTimeStep(const TimeInterval &TimeStepIn) {
 I8 TimeStepper::getStepCount() const { return StepCount; }
 
 //------------------------------------------------------------------------------
+// Is this a split time stepper. False by default
+bool TimeStepper::isSplit() const { return false; }
+
+//------------------------------------------------------------------------------
 // Retrieval functions
 
 // Get the default time stepper

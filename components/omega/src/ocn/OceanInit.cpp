@@ -109,10 +109,8 @@ static void initStateForTimeStepper(
 ) {
    // Both split-explicit variants need their velocity split established
    // before the first step.
-   TimeStepper *DefStepper           = TimeStepper::getDefault();
-   const TimeStepperType StepperType = DefStepper->getType();
-   if (StepperType != TimeStepperType::SplitExplicitRK2 &&
-       StepperType != TimeStepperType::UnsplitRK2)
+   TimeStepper *DefStepper = TimeStepper::getDefault();
+   if (!DefStepper->isSplit())
       return;
 
    OceanState *DefState  = OceanState::getDefault();

@@ -83,6 +83,7 @@ int initState() {
 
    auto *Mesh              = HorzMesh::getDefault();
    auto *State             = OceanState::get("TestState");
+   auto *VCoord            = VertCoord::getDefault();
    Array3DReal TracerArray = Tracers::getAll(0);
 
    Array2DReal PseudoThickCell = State->getPseudoThickness(0);
@@ -92,6 +93,10 @@ int initState() {
    deepCopy(PseudoThickCell, 1);
    deepCopy(NormalVelEdge, 1);
    deepCopy(TracerArray, 1);
+
+   // Split-explicit time steppers need to have valid values for these
+   deepCopy(VCoord->SurfacePressure, 0._Real);
+   deepCopy(VCoord->BottomGeomDepth, 500._Real);
 
    return Err;
 }

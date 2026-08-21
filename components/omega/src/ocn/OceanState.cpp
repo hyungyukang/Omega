@@ -63,9 +63,7 @@ int OceanState::init() {
 
    // Only the mode-split time steppers carry the split velocity and barotropic
    // pressure fields; every other stepper leaves them unallocated.
-   const TimeStepperType StepperType = DefTimeStepper->getType();
-   const bool UseModeSplit = StepperType == TimeStepperType::SplitExplicitRK2 ||
-                             StepperType == TimeStepperType::UnsplitRK2;
+   const bool UseModeSplit = DefTimeStepper->isSplit();
 
    // Create the default state and set pointer to it
    OceanState::DefaultOceanState = create(

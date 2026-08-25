@@ -206,9 +206,8 @@ bool arraysEqual(const ArrayTypeA &A, const ArrayTypeB &B) {
 // This is safe when we know that the subview won't outlive the input view
 // and can be slightly faster
 template <class View, class... Args>
-KOKKOS_FUNCTION auto subviewUnmanaged(const View &A, Args &&...args) {
-   return Kokkos::subview(View(A.data(), A.layout()),
-                          std::forward<Args>(args)...);
+KOKKOS_FUNCTION auto subviewUnmanaged(const View &A, Args... args) {
+   return Kokkos::subview(View(A.data(), A.layout()), args...);
 }
 
 // Takes a functor that uses multidimensional indexing

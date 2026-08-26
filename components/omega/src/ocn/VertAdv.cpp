@@ -422,12 +422,48 @@ void VertAdv::computeVerticalPseudoVelocity(
     const Real Dt                           //< [in] time interval
 ) {
 
+   computeVerticalPseudoVelocityImpl(
+       VerticalPseudoVelocity, TotalVerticalPseudoVelocity, NormalVelocity,
+       FluxPseudoThickEdge, PseudoThickness, Dt);
+
+} // end computeVerticalPseudoVelocity
+
+//------------------------------------------------------------------------------
+// Compute VerticalTransportPseudoVelocity and
+// TotalVerticalTransportPseudoVelocity from the horizontal transport velocity
+// (NormalTransportVelocity), the pseudo-thickness used for fluxes through edges
+// (FluxPseudoThickEdge), and the cell-based PseudoThickness.
+void VertAdv::computeVerticalTransportPseudoVelocity(
+    const Array2DReal
+        &NormalTransportVelocity, //< [in] horizontal transport velocity
+    const Array2DReal &FluxPseudoThickEdge, //< [in] pseudo-thickness at edges
+    const Array2DReal &PseudoThickness,     //< [in] pseudo-thickness of layer
+    const Real Dt                           //< [in] time interval
+) {
+
+   computeVerticalPseudoVelocityImpl(
+       VerticalTransportPseudoVelocity, TotalVerticalTransportPseudoVelocity,
+       NormalTransportVelocity, FluxPseudoThickEdge, PseudoThickness, Dt);
+
+} // end computeVerticalTransportPseudoVelocity
+
+//------------------------------------------------------------------------------
+// Compute VertPseudoVel and TotalVertPseudoVel from the
+// horizontal velocity (NormalVelocity), the pseudo-thickness used for fluxes
+// through edges (FluxPseudoThickEdge), and the cell-based PseudoThickness.
+void VertAdv::computeVerticalPseudoVelocityImpl(
+    const Array2DReal &VertPseudoVel,       ///< [out] vertical velocity
+    const Array2DReal &TotalVertPseudoVel,  ///< [out] total vertical velocity
+    const Array2DReal &NormalVelocity,      //< [in] horizontal velocity
+    const Array2DReal &FluxPseudoThickEdge, //< [in] pseudo-thickness at edges
+    const Array2DReal &PseudoThickness,     //< [in] pseudo-thickness of layer
+    const Real Dt                           //< [in] time interval
+) {
+
    // Return if mesh only has a single vertical layer
    if (NVertLayers == 1)
       return;
 
-   OMEGA_SCOPE(LocVertVel, VerticalPseudoVelocity);
-   OMEGA_SCOPE(LocTotVertVel, TotalVerticalPseudoVelocity);
    OMEGA_SCOPE(LocPseudoThickTarget, VCoord->PseudoThicknessTarget);
    OMEGA_SCOPE(LocNVertLayers, NVertLayers);
    OMEGA_SCOPE(LocAreaCell, Mesh->AreaCell);
@@ -484,10 +520,10 @@ void VertAdv::computeVerticalPseudoVelocity(
           // Set velocity through top and bottom interfaces to zero
           Kokkos::single(
               PerTeam(Team), INNER_LAMBDA() {
-                 LocVertVel(ICell, KMin)        = 0.;
-                 LocVertVel(ICell, KMax + 1)    = 0.;
-                 LocTotVertVel(ICell, KMin)     = 0.;
-                 LocTotVertVel(ICell, KMax + 1) = 0.;
+                 VertPseudoVel(ICell, KMin)          = 0.;
+                 VertPseudoVel(ICell, KMax + 1)      = 0.;
+                 TotalVertPseudoVel(ICell, KMin)     = 0.;
+                 TotalVertPseudoVel(ICell, KMax + 1) = 0.;
               });
           KRange = vertRange(KMin + 1, KMax);
 
@@ -499,12 +535,12 @@ void VertAdv::computeVerticalPseudoVelocity(
                  Accum -= DivHU(KRev);
 
                  if (IsFinal) {
-                    LocVertVel(ICell, KRev) = Accum;
+                    VertPseudoVel(ICell, KRev) = Accum;
                  }
               });
 
           // Add contribution to transport pseudo-velocity from movement of
-          // layer interfaces, store in TotalVerticalPseudoVelocity.
+          // layer interfaces, store in TotalVertPseudoVel.
           parallelScanInner(
               Team, KRange, INNER_LAMBDA(int K, Real &Accum, bool IsFinal) {
                  const I4 KRev      = KMax - K;
@@ -515,12 +551,12 @@ void VertAdv::computeVerticalPseudoVelocity(
                  Accum -= DivHU(KRev) + AleTerm;
 
                  if (IsFinal) {
-                    LocTotVertVel(ICell, KRev) = Accum;
+                    TotalVertPseudoVel(ICell, KRev) = Accum;
                  }
               });
        });
 
-} // end computeVerticalPseudoVelocity
+} // end computeVerticalPseudoVelocityImpl
 
 //------------------------------------------------------------------------------
 // Compute thickness tendency due to vertical advection

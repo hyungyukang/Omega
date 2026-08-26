@@ -107,13 +107,32 @@ void AuxiliaryState::computeMomVertAux(const OceanState *State,
 }
 
 // Compute transport velocity for pseudo-thickness and tracers
-void AuxiliaryState::computeTransportVelocity(const OceanState *State,
-                                              int VelTimeLevel) const {
+void AuxiliaryState::computeTransportVelocity(
+    const OceanState *State, int VelTimeLevel,
+    const Array2DReal &TransportVelocityAdd) const {
    Pacer::start("AuxState:computeTransportVelocity", 2);
 
-   Array2DReal NormalVel = State->getNormalVelocity(VelTimeLevel);
+   Array2DReal NormalVelocity          = State->getNormalVelocity(VelTimeLevel);
+   const auto &NormalTransportVelocity = TransportAux.NormalTransportVelocity;
 
-   deep_copy(TransportAux.NormalTransportVelocity, NormalVel);
+   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
+   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
+
+   parallelForOuter(
+       "computeTransportVelocity", {Mesh->NEdgesAll},
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          const int KMin = MinLayerEdgeBot(IEdge);
+          const int KMax = MaxLayerEdgeTop(IEdge);
+
+          parallelForInner(
+              Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+                 NormalTransportVelocity(IEdge, K) = NormalVelocity(IEdge, K);
+                 if (TransportVelocityAdd.data()) {
+                    NormalTransportVelocity(IEdge, K) +=
+                        TransportVelocityAdd(IEdge, K);
+                 }
+              });
+       });
 
    Pacer::stop("AuxState:computeTransportVelocity", 2);
 }

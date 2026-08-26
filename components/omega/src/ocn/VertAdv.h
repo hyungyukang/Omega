@@ -63,14 +63,21 @@ class VertAdv {
    Real Coef3rdOrder;
 
    Array2DReal VerticalPseudoVelocity; ///< pseudo-velocity through top of cell
-   Array2DReal TotalVerticalPseudoVelocity; ///< transport pseudo-velocity
-                                            ///< through top of cell
-   Array3DReal VertFlux;                    ///< fluxes at vertical interfaces
-   Array3DReal LowOrderVertFlux;            ///< low-order fluxes for FCT
+   Array2DReal VerticalTransportPseudoVelocity; ///< transport pseudo-velocity
+                                                ///< through top of cell
+   Array2DReal TotalVerticalPseudoVelocity;     ///< total pseudo-velocity
+                                                ///< through top of cell
+   Array2DReal TotalVerticalTransportPseudoVelocity; ///< total transport
+                                                     ///< pseudo-velocity
+                                                     ///< through top of cell
+   Array3DReal VertFlux;         ///< fluxes at vertical interfaces
+   Array3DReal LowOrderVertFlux; ///< low-order fluxes for FCT
 
    // Arrays on host
    HostArray2DReal VerticalPseudoVelocityH;
+   HostArray2DReal VerticalTransportPseudoVelocityH;
    HostArray2DReal TotalVerticalPseudoVelocityH;
+   HostArray2DReal TotalVerticalTransportPseudoVelocityH;
    HostArray3DReal VertFluxH;
    HostArray3DReal LowOrderVertFluxH;
 
@@ -80,7 +87,9 @@ class VertAdv {
 
    // Field names
    std::string VerticalPseudoVelocityFldName;
+   std::string VerticalTransportPseudoVelocityFldName;
    std::string TotalVertPseudoVelocityFldName;
+   std::string TotalVertTransportPseudoVelocityFldName;
    std::string VertFluxFldName;
    std::string LowOrderVertFluxFldName;
 

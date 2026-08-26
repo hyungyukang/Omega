@@ -574,7 +574,7 @@ void VertAdv::computePseudoThicknessVAdvTend(
 
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
-   OMEGA_SCOPE(LocTotVertVelocity, TotalVerticalPseudoVelocity);
+   OMEGA_SCOPE(LocTotVertTransVel, TotalVerticalTransportPseudoVelocity);
 
    // Loop over every owned cell, pseudo-thickness tendency is simply
    // difference in pseudo velocity between bottom and top interface for
@@ -592,8 +592,8 @@ void VertAdv::computePseudoThicknessVAdvTend(
                  const I4 KLen   = chunkLength(KChunk, KStart, KMax);
                  for (int KVec = 0; KVec < KLen; ++KVec) {
                     const I4 K = KStart + KVec;
-                    ThickTend(ICell, K) += LocTotVertVelocity(ICell, K + 1) -
-                                           LocTotVertVelocity(ICell, K);
+                    ThickTend(ICell, K) += LocTotVertTransVel(ICell, K + 1) -
+                                           LocTotVertTransVel(ICell, K);
                  }
               });
        });
@@ -730,7 +730,7 @@ void VertAdv::computeVerticalFluxes(
 
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
-   OMEGA_SCOPE(LocTotVertVel, TotalVerticalPseudoVelocity);
+   OMEGA_SCOPE(LocTotVertTransVel, TotalVerticalTransportPseudoVelocity);
    OMEGA_SCOPE(LocVertFlux, VertFlux);
    OMEGA_SCOPE(LocLowOrderVertFlux, LowOrderVertFlux);
    OMEGA_SCOPE(LocCoef3rdOrder, Coef3rdOrder);
@@ -760,7 +760,7 @@ void VertAdv::computeVerticalFluxes(
                        const Real VerticalWeightKm1 =
                            PseudoThickness(ICell, K) * InvPseudoThickSum;
                        LocVertFlux(L, ICell, K) =
-                           LocTotVertVel(ICell, K) *
+                           LocTotVertTransVel(ICell, K) *
                            (VerticalWeightK * Tracers(L, ICell, K) +
                             VerticalWeightKm1 * Tracers(L, ICell, K - 1));
                     }
@@ -782,13 +782,13 @@ void VertAdv::computeVerticalFluxes(
                     for (int KVec = 0; KVec < KLen; ++KVec) {
                        const I4 K = KStart + KVec;
                        LocVertFlux(L, ICell, K) =
-                           (LocTotVertVel(ICell, K) *
+                           (LocTotVertTransVel(ICell, K) *
                                 (7._Real * (Tracers(L, ICell, K) +
                                             Tracers(L, ICell, K - 1)) -
                                  (Tracers(L, ICell, K + 1) +
                                   Tracers(L, ICell, K - 2))) -
                             LocCoef3rdOrder *
-                                std::abs(LocTotVertVel(ICell, K)) *
+                                std::abs(LocTotVertTransVel(ICell, K)) *
                                 ((Tracers(L, ICell, K + 1) -
                                   Tracers(L, ICell, K - 2)) -
                                  3._Real * (Tracers(L, ICell, K) -
@@ -813,7 +813,7 @@ void VertAdv::computeVerticalFluxes(
                     for (int KVec = 0; KVec < KLen; ++KVec) {
                        const I4 K = KStart + KVec;
                        LocVertFlux(L, ICell, K) =
-                           LocTotVertVel(ICell, K) *
+                           LocTotVertTransVel(ICell, K) *
                            (7._Real * (Tracers(L, ICell, K) +
                                        Tracers(L, ICell, K - 1)) -
                             (Tracers(L, ICell, K + 1) +
@@ -845,7 +845,7 @@ void VertAdv::computeVerticalFluxes(
              const Real VerticalWeightKm1 =
                  PseudoThickness(ICell, K) * InvPseudoThickSum;
              LocVertFlux(L, ICell, K) =
-                 LocTotVertVel(ICell, K) *
+                 LocTotVertTransVel(ICell, K) *
                  (VerticalWeightK * Tracers(L, ICell, K) +
                   VerticalWeightKm1 * Tracers(L, ICell, K - 1));
           }
@@ -871,9 +871,9 @@ void VertAdv::computeVerticalFluxes(
                     for (int KVec = 0; KVec < KLen; ++KVec) {
                        const I4 K = KStart + KVec;
                        LocLowOrderVertFlux(L, ICell, K) =
-                           Kokkos::min(0._Real, LocTotVertVel(ICell, K)) *
+                           Kokkos::min(0._Real, LocTotVertTransVel(ICell, K)) *
                                Tracers(L, ICell, K - 1) +
-                           Kokkos::max(0._Real, LocTotVertVel(ICell, K)) *
+                           Kokkos::max(0._Real, LocTotVertTransVel(ICell, K)) *
                                Tracers(L, ICell, K);
 
                        LocVertFlux(L, ICell, K) -=
@@ -932,7 +932,7 @@ void VertAdv::computeFCTVAdvTend(
 
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
-   OMEGA_SCOPE(LocTotVertVel, TotalVerticalPseudoVelocity);
+   OMEGA_SCOPE(LocTotVertTransVel, TotalVerticalTransportPseudoVelocity);
    OMEGA_SCOPE(LocVertFlux, VertFlux);
    OMEGA_SCOPE(LocLowOrderVertFlux, LowOrderVertFlux);
    OMEGA_SCOPE(LocNVertLayers, NVertLayers);
@@ -963,8 +963,8 @@ void VertAdv::computeFCTVAdvTend(
                     const I4 K = KStart + KVec;
                     InvNewProvThick(K) =
                         1._Real / (ProvPseudoThickness(ICell, K) +
-                                   Dt * (LocTotVertVel(ICell, K + 1) -
-                                         LocTotVertVel(ICell, K)));
+                                   Dt * (LocTotVertTransVel(ICell, K + 1) -
+                                         LocTotVertTransVel(ICell, K)));
                     Real TracerMax;
                     Real TracerMin;
                     // Determine bounds on tracer from neighbor values for

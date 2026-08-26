@@ -131,10 +131,22 @@ class VertAdv {
    /// Read and set config options
    void readConfigOptions(Config *Options);
 
-   /// Determine transport due to vertical advection from divergence of
-   /// horizontal advection and movement of vertical interfaces.
+   /// Determine pseudo-velocity for vertical advection of velocity from
+   /// divergence of horizontal velocity and movement of vertical interfaces.
    void computeVerticalPseudoVelocity(
        const Array2DReal &NormalVelocity, ///< [in] horizontal velocity
+       const Array2DReal
+           &FluxPseudoThickEdge,           ///< [in] pseudo-thickness at edges
+       const Array2DReal &PseudoThickness, ///< [in] pseudo-thickness of layer
+       const Real Dt                       ///< [in] time interval
+   );
+
+   /// Determine transport pseudo-velocity for vertical advection of
+   /// pseudo-thickness and tracers from divergence of horizontal transport
+   /// velocity and movement of vertical interfaces.
+   void computeVerticalTransportPseudoVelocity(
+       const Array2DReal
+           &NormalTransportVelocity, ///< [in] horizontal transport velocity
        const Array2DReal
            &FluxPseudoThickEdge,           ///< [in] pseudo-thickness at edges
        const Array2DReal &PseudoThickness, ///< [in] pseudo-thickness of layer
@@ -224,6 +236,18 @@ class VertAdv {
 
    /// define field metadata
    void defineFields();
+
+   /// implementation of vertical pseudo-velocity computation with output
+   /// arguments
+   void computeVerticalPseudoVelocityImpl(
+       const Array2DReal &VertPseudoVel,      ///< [out] vertical velocity
+       const Array2DReal &TotalVertPseudoVel, ///< [out] total vertical velocity
+       const Array2DReal &NormalVelocity,     ///< [in] horizontal velocity
+       const Array2DReal
+           &FluxPseudoThickEdge,           ///< [in] pseudo-thickness at edges
+       const Array2DReal &PseudoThickness, ///< [in] pseudo-thickness of layer
+       const Real Dt                       ///< [in] time interval
+   );
 
    // Forbid copy and move construction
    VertAdv(const VertAdv &) = delete;

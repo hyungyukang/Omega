@@ -88,8 +88,9 @@ class AuxiliaryState {
                           int VelTimeLevel) const;
 
    // Compute transport velocity for pseudo-thickness and tracers
-   void computeTransportVelocity(const OceanState *State,
-                                 int VelTimeLevel) const;
+   void computeTransportVelocity(
+       const OceanState *State, int VelTimeLevel,
+       const Array2DReal &TransportVelocityAdd = Array2DReal()) const;
 
    // Compute all auxiliary variables needed for momentum equation
    void computeMomAux(const OceanState *State, const Array3DReal &TracerArray,

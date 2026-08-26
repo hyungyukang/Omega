@@ -71,14 +71,22 @@ VertAdv::VertAdv(const std::string &Name_,  //< [in] name for new VertAdv
    // Allocate member arrays
    VerticalPseudoVelocity =
        Array2DReal("VerticalPseudoVelocity", NCellsSize, NVertLayersP1);
+   VerticalTransportPseudoVelocity = Array2DReal(
+       "VerticalTransportPseudoVelocity", NCellsSize, NVertLayersP1);
    TotalVerticalPseudoVelocity =
        Array2DReal("TotalVerticalPseudoVelocity", NCellsSize, NVertLayersP1);
+   TotalVerticalTransportPseudoVelocity = Array2DReal(
+       "TotalVerticalTransportPseudoVelocity", NCellsSize, NVertLayersP1);
    VertFlux = Array3DReal("VertFlux", NTracers, NCellsSize, NVertLayersP1);
 
    // Allocate host copies
    VerticalPseudoVelocityH = createHostMirrorCopy(VerticalPseudoVelocity);
+   VerticalTransportPseudoVelocityH =
+       createHostMirrorCopy(VerticalTransportPseudoVelocity);
    TotalVerticalPseudoVelocityH =
        createHostMirrorCopy(TotalVerticalPseudoVelocity);
+   TotalVerticalTransportPseudoVelocityH =
+       createHostMirrorCopy(TotalVerticalTransportPseudoVelocity);
    VertFluxH = createHostMirrorCopy(VertFlux);
 
    // Low-order flux array only needed for flux-corrected transport
@@ -128,10 +136,14 @@ VertAdv *VertAdv::create(const std::string &Name, //< [in] name for new VertAdv
 void VertAdv::defineFields() {
 
    // set field names (append Name if not default)
-   VerticalPseudoVelocityFldName  = "VerticalPseudoVelocity";
-   TotalVertPseudoVelocityFldName = "TotalVerticalPseudoVelocity";
-   VertFluxFldName                = "VertFlux";
-   LowOrderVertFluxFldName        = "LowOrderVertFlux";
+   VerticalPseudoVelocityFldName = VerticalPseudoVelocity.label();
+   VerticalTransportPseudoVelocityFldName =
+       VerticalTransportPseudoVelocity.label();
+   TotalVertPseudoVelocityFldName = TotalVerticalPseudoVelocity.label();
+   TotalVertTransportPseudoVelocityFldName =
+       TotalVerticalTransportPseudoVelocity.label();
+   VertFluxFldName         = "VertFlux";
+   LowOrderVertFluxFldName = "LowOrderVertFlux";
 
    if (Name != "Default") {
       VerticalPseudoVelocityFldName.append(Name);
@@ -158,6 +170,20 @@ void VertAdv::defineFields() {
        DimNames                          // dimension names
    );
 
+   auto VerticalTransportPseudoVelocityField =
+       Field::create(VerticalTransportPseudoVelocityFldName, // field name
+                     "Vertical transport pseudo-velocity across a "
+                     "pseudo-height surface",          // long name
+                                                       // or
+                                                       // description
+                     "m s^-1",                         // units
+                     "",                               // CF standard Name
+                     std::numeric_limits<Real>::min(), // min valid value
+                     std::numeric_limits<Real>::max(), // max valid value
+                     NDims,                            // number of dimensions
+                     DimNames                          // dimension names
+       );
+
    auto TotalVertPseudoVelocityField =
        Field::create(TotalVertPseudoVelocityFldName, // field name
                      "Total vertical pseudo-velocity across a moving, tilted "
@@ -169,6 +195,18 @@ void VertAdv::defineFields() {
                      NDims,                            // number of dimensions
                      DimNames                          // dimension names
        );
+
+   auto TotalVertTransportPseudoVelocityField = Field::create(
+       TotalVertTransportPseudoVelocityFldName, // field name
+       "Total vertical transport pseudo-velocity across a moving, tilted "
+       "pseudo-height surface",          // long name or description
+       "m s^-1",                         // units
+       "",                               // CF standard Name
+       std::numeric_limits<Real>::min(), // min valid value
+       std::numeric_limits<Real>::max(), // max valid value
+       NDims,                            // number of dimensions
+       DimNames                          // dimension names
+   );
 
    NDims = 3;
    DimNames.resize(NDims);
@@ -208,14 +246,20 @@ void VertAdv::defineFields() {
    auto VertAdvGroup = FieldGroup::create(GroupName);
 
    VertAdvGroup->addField(VerticalPseudoVelocityFldName);
+   VertAdvGroup->addField(VerticalTransportPseudoVelocityFldName);
    VertAdvGroup->addField(TotalVertPseudoVelocityFldName);
+   VertAdvGroup->addField(TotalVertTransportPseudoVelocityFldName);
    VertAdvGroup->addField(VertFluxFldName);
    VertAdvGroup->addField(LowOrderVertFluxFldName);
 
    // Associate Fields with data
    VerticalPseudoVelocityField->attachData<Array2DReal>(VerticalPseudoVelocity);
+   VerticalTransportPseudoVelocityField->attachData<Array2DReal>(
+       VerticalTransportPseudoVelocity);
    TotalVertPseudoVelocityField->attachData<Array2DReal>(
        TotalVerticalPseudoVelocity);
+   TotalVertTransportPseudoVelocityField->attachData<Array2DReal>(
+       TotalVerticalTransportPseudoVelocity);
    VertFluxField->attachData<Array3DReal>(VertFlux);
    LowOrderVertFluxField->attachData<Array3DReal>(LowOrderVertFlux);
 
@@ -227,7 +271,9 @@ VertAdv::~VertAdv() {
 
    if (FieldGroup::exists(GroupName)) {
       Field::destroy(VerticalPseudoVelocityFldName);
+      Field::destroy(VerticalTransportPseudoVelocityFldName);
       Field::destroy(TotalVertPseudoVelocityFldName);
+      Field::destroy(TotalVertTransportPseudoVelocityFldName);
       Field::destroy(VertFluxFldName);
       Field::destroy(LowOrderVertFluxFldName);
       FieldGroup::destroy(GroupName);

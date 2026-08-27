@@ -483,6 +483,18 @@ void AuxiliaryState::computePseudoThicknessTracerAux(
        });
    Pacer::stop("AuxState:cellTracerAux", 2);
 
+   computeTransportVelocity(State, VelTimeLevel, TransportVelocityAdd);
+
+   Pacer::start("AuxState:computeVerticalPseudoVelocity", 2);
+
+   const auto &FluxPseudoThickEdge     = PseudoThicknessAux.FluxPseudoThickEdge;
+   const auto &NormalTransportVelocity = TransportAux.NormalTransportVelocity;
+   VAdv->computeVerticalTransportPseudoVelocity(NormalTransportVelocity,
+                                                FluxPseudoThickEdge,
+                                                PseudoThickCell, ProjDtSeconds);
+
+   Pacer::stop("AuxState:computeVerticalPseudoVelocity", 2);
+
    Pacer::stop("AuxState:computePseudoThicknessTracerAux", 1);
 }
 

@@ -625,16 +625,11 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
    OMEGA_SCOPE(MinLayerCell, VCoord->MinLayerCell);
    OMEGA_SCOPE(MaxLayerCell, VCoord->MaxLayerCell);
    parallelForOuter(
-       "refreshFinalKineticAux", {Mesh->NCellsAll},
+       "refreshFinalKineticAux",
+       LaunchConfig({Mesh->NCellsAll},
+                    TeamScratch<Real>(2 * VCoord->NVertLayers)),
        KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
-          const int KMin   = MinLayerCell(ICell);
-          const int KMax   = MaxLayerCell(ICell);
-          const int KRange = vertRangeChunked(KMin, KMax);
-
-          parallelForInner(
-              Team, KRange, INNER_LAMBDA(int KChunk) {
-                 LocKineticAux.computeVarsOnCell(ICell, KChunk, NormalVelCur);
-              });
+          LocKineticAux.computeVarsOnCell(Team, ICell, NormalVelCur);
        });
 
    // Apply implicit vertical mixing

@@ -171,8 +171,8 @@ void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
        Array1DReal("BaroclinicPseudoThicknessEdge" + Name, Mesh->NEdgesSize);
    Scratch.IterVelocityTend = Array2DReal(
        "IterVelocityTend" + Name, Mesh->NEdgesSize, VCoord->NVertLayers);
-   Scratch.NormalTransportVelocity = Array2DReal(
-       "NormalTransportVelocity" + Name, Mesh->NEdgesSize, VCoord->NVertLayers);
+   Scratch.TransportVelocityAdd = Array2DReal(
+       "TransportVelocityAdd" + Name, Mesh->NEdgesSize, VCoord->NVertLayers);
 
    parallelFor(
        "initializeCell1D", {Mesh->NCellsAll}, KOKKOS_LAMBDA(I4 ICell) {
@@ -192,7 +192,7 @@ void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
        });
 
    deepCopy(Scratch.IterVelocityTend, 0.);
-   deepCopy(Scratch.NormalTransportVelocity, 0.);
+   deepCopy(Scratch.TransportVelocityAdd, 0.);
 }
 
 //------------------------------------------------------------------------------

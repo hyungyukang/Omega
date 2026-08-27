@@ -122,16 +122,13 @@ void SplitExplicitRK2Stepper::doThicknessTracerUpdate(
    // prescribeState(State, NextLevel, State, CurLevel,
    //               StageTime + 0.5 * StageTimeStep);
 
-   // NormalTransportVelocity is the corrected transport velocity provided by
+   // TransportVelocityAdd is the correction to transport velocity provided by
    // computeTransportVelocity before this stage.
-   const Array2DReal NormalTransportVelocity =
-       SEScratch.NormalTransportVelocity;
+   const Array2DReal TransportVelAdd = SEScratch.TransportVelocityAdd;
    // Compute thickness auxiliary variables at the new time level
    AuxState->computePseudoThicknessTracerAux(State, NextTracerArray, NextLevel,
-                                             NextLevel, StageTimeStep);
-
-   computeVerticalPseudoVelocity(State, NextLevel, NormalTransportVelocity,
-                                 StageTimeStep);
+                                             NextLevel, StageTimeStep,
+                                             TransportVelAdd);
 
    // Compute thickness and tracer tendencies at the new time level
    Tend->computePseudoThicknessTendenciesOnly(
@@ -167,8 +164,8 @@ void SplitExplicitRK2Stepper::computeTransportVelocity(OceanState *State,
 
    Pacer::start("SE-RK2:computeTransportVelocity", 2);
 
-   Array2DReal NormalVel          = State->getNormalVelocity(TimeLevel);
-   Array2DReal NormalTransportVel = SEScratch.NormalTransportVelocity;
+   Array2DReal NormalVel       = State->getNormalVelocity(TimeLevel);
+   Array2DReal TransportVelAdd = SEScratch.TransportVelocityAdd;
    Array2DReal NormalBclVel    = State->getNormalBaroclinicVelocity(TimeLevel);
    Array1DReal NormalBtrVel    = State->getNormalBarotropicVelocity(TimeLevel);
    Array2DReal PseudoThickCell = State->getPseudoThickness(TimeLevel);
@@ -220,8 +217,8 @@ void SplitExplicitRK2Stepper::computeTransportVelocity(OceanState *State,
                  const Real TotalVel =
                      NormalBtrVel(IEdge) + NormalBclVel(IEdge, K);
 
-                 NormalVel(IEdge, K)          = TotalVel;
-                 NormalTransportVel(IEdge, K) = TotalVel + VelCorrection;
+                 NormalVel(IEdge, K)       = TotalVel;
+                 TransportVelAdd(IEdge, K) = VelCorrection;
               });
        });
 

@@ -111,10 +111,10 @@ class AuxiliaryState {
                    int TimeLevel, const TimeInterval ProjDt) const;
 
    /// Compute auxiliary variables needed for thickness and tracer tendencies.
-   void computePseudoThicknessTracerAux(const OceanState *State,
-                                        const Array3DReal &TracerArray,
-                                        int ThickTimeLevel, int VelTimeLevel,
-                                        const TimeInterval ProjDt) const;
+   void computePseudoThicknessTracerAux(
+       const OceanState *State, const Array3DReal &TracerArray,
+       int ThickTimeLevel, int VelTimeLevel, const TimeInterval ProjDt,
+       const Array2DReal &TransportVelocityAdd = Array2DReal()) const;
 
  private:
    AuxiliaryState(const std::string &Name, const HorzMesh *Mesh, Halo *MeshHalo,

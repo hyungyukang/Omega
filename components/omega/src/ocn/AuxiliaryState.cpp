@@ -410,7 +410,8 @@ void AuxiliaryState::computeAll(const OceanState *State,
 
 void AuxiliaryState::computePseudoThicknessTracerAux(
     const OceanState *State, const Array3DReal &TracerArray, int ThickTimeLevel,
-    int VelTimeLevel, const TimeInterval ProjDt) const {
+    int VelTimeLevel, const TimeInterval ProjDt,
+    const Array2DReal &TransportVelocityAdd) const {
 
    Array2DReal PseudoThickCell = State->getPseudoThickness(ThickTimeLevel);
    Array2DReal NormalVelEdge   = State->getNormalVelocity(VelTimeLevel);

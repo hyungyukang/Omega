@@ -128,20 +128,18 @@ void SplitExplicitRK2Stepper::doThicknessTracerUpdate(
        SEScratch.NormalTransportVelocity;
    // Compute thickness auxiliary variables at the new time level
    AuxState->computePseudoThicknessTracerAux(State, NextTracerArray, NextLevel,
-                                             NormalTransportVelocity,
-                                             StageTimeStep);
+                                             NextLevel, StageTimeStep);
 
    computeVerticalPseudoVelocity(State, NextLevel, NormalTransportVelocity,
                                  StageTimeStep);
 
    // Compute thickness and tracer tendencies at the new time level
    Tend->computePseudoThicknessTendenciesOnly(
-       State, AuxState, NextLevel, NextLevel, NormalTransportVelocity,
-       StageTime + 0.5 * StageTimeStep);
+       State, AuxState, NextLevel, NextLevel, StageTime + 0.5 * StageTimeStep);
 
-   Tend->computeTracerTendenciesOnly(
-       State, AuxState, NextTracerArray, NextLevel, NormalTransportVelocity,
-       StageTime + 0.5 * StageTimeStep, StageTimeStep);
+   Tend->computeTracerTendenciesOnly(State, AuxState, NextTracerArray,
+                                     NextLevel, NextLevel,
+                                     StageTime + 0.5 * StageTimeStep);
 
    if (FinalIteration) {
       // Retain the full-step conservative update on the final iteration.

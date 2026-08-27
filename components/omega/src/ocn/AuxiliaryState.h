@@ -113,12 +113,7 @@ class AuxiliaryState {
    /// Compute auxiliary variables needed for thickness and tracer tendencies.
    void computePseudoThicknessTracerAux(const OceanState *State,
                                         const Array3DReal &TracerArray,
-                                        int ThickTimeLevel,
-                                        int VelTimeLevel) const;
-   void computePseudoThicknessTracerAux(const OceanState *State,
-                                        const Array3DReal &TracerArray,
-                                        int ThickTimeLevel,
-                                        const Array2DReal &NormalVelEdge,
+                                        int ThickTimeLevel, int VelTimeLevel,
                                         const TimeInterval ProjDt) const;
 
  private:

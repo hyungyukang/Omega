@@ -425,6 +425,8 @@ void AuxiliaryState::computePseudoThicknessTracerAux(
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
 
+   R8 TimeStepSeconds;
+   TimeStep.get(TimeStepSeconds, TimeUnits::Seconds);
    R8 ProjDtSeconds;
    ProjDt.get(ProjDtSeconds, TimeUnits::Seconds);
 
@@ -447,7 +449,7 @@ void AuxiliaryState::computePseudoThicknessTracerAux(
        LaunchConfig({Mesh->NCellsAll}, TeamScratch<Real>(VCoord->NVertLayers)),
        KOKKOS_LAMBDA(int ICell, const TeamMember &Team) {
           LocPseudoThicknessAux.computeVarsOnCells(
-              Team, ICell, PseudoThickCell, NormalVelEdge, ProjDtSeconds);
+              Team, ICell, PseudoThickCell, NormalVelEdge, TimeStepSeconds);
        });
    Pacer::stop("AuxState:cellThicknessAux", 2);
 

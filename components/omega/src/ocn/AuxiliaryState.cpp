@@ -323,8 +323,8 @@ void AuxiliaryState::computeTracerAux(const OceanState *State,
        LaunchConfig({NTracers, Mesh->NCellsAll},
                     TeamScratch<Real>(VCoord->NVertLayers)),
        KOKKOS_LAMBDA(int LTracer, int ICell, const TeamMember &Team) {
-          TracerAux.computeVarsOnCells(Team, LTracer, ICell,
-                                       MeanPseudoThickEdge, TracerArray);
+          LocTracerAux.computeVarsOnCells(Team, LTracer, ICell,
+                                          MeanPseudoThickEdge, TracerArray);
        });
    Pacer::stop("Tend:computeTracerAuxCell", 2);
 

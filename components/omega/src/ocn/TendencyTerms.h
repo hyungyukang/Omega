@@ -193,7 +193,8 @@ class PotentialVortHAdvOnEdge {
          parallelForInner(
              Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
                 const Real NormVort =
-                    (NormRVortEdge(IEdge, K) + NormRVortEdge(JEdge, K)) * 0.5_Real;
+                    (NormRVortEdge(IEdge, K) + NormRVortEdge(JEdge, K)) *
+                    0.5_Real;
 
                 VortTmp(K) += WeightsOnEdge(IEdge, J) *
                               FluxPseudoThickEdge(JEdge, K) *

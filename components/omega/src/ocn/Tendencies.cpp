@@ -905,8 +905,8 @@ void Tendencies::computeVelocityTendenciesOnly(
                           TeamScratch<Real>(VCoord->NVertLayers)),
              KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
                 LocPotentialVortHAdv(Team, LocNormalVelocityTend, IEdge,
-                                     NormRVortEdge, NormFEdge, FluxPseudoThickEdge,
-                                     NormVelEdge);
+                                     NormRVortEdge, NormFEdge,
+                                     FluxPseudoThickEdge, NormVelEdge);
              });
       }
       Pacer::stop("Tend:PotentialVortHAdv", 2);

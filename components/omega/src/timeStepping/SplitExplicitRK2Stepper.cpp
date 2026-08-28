@@ -516,29 +516,6 @@ void SplitExplicitRK2Stepper::finalizeTimeStepIterationState(
 }
 
 //------------------------------------------------------------------------------
-void SplitExplicitRK2Stepper::computeVerticalPseudoVelocity(
-    OceanState *State, I4 ThickTimeLevel, const Array2DReal &NormalVelEdge,
-    TimeInterval StageTimeStep) const {
-
-   if (!State)
-      LOG_CRITICAL("Invalid State");
-
-   Array2DReal PseudoThickCell = State->getPseudoThickness(ThickTimeLevel);
-
-   R8 DtSeconds;
-   StageTimeStep.get(DtSeconds, TimeUnits::Seconds);
-
-   VertAdv *VertAdvection = VertAdv::getDefault();
-   if (!VertAdvection)
-      LOG_CRITICAL("Invalid vertical advection");
-
-   const auto &FluxPseudoThickEdge =
-       AuxState->PseudoThicknessAux.FluxPseudoThickEdge;
-   VertAdvection->computeVerticalPseudoVelocity(
-       NormalVelEdge, FluxPseudoThickEdge, PseudoThickCell, DtSeconds);
-}
-
-//------------------------------------------------------------------------------
 void SplitExplicitRK2Stepper::doStep(OceanState *State,
                                      TimeInstant &SimTime) const {
 

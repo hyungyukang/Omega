@@ -114,13 +114,6 @@ class SplitExplicitRK2Stepper : public TimeStepper {
        const TimeInterval &StageTimeStep ///< [in] current stage time step
    ) const;
 
-   void computeVerticalPseudoVelocity(
-       OceanState *State,                ///< [inout] model state
-       I4 ThickTimeLevel,                ///< [in] thickness time level
-       const Array2DReal &NormalVelEdge, ///< [in] velocity on edges
-       TimeInterval StageTimeStep        ///< [in] current stage time step
-   ) const;
-
    SplitExplicitConfig SEConfig;
    mutable SplitExplicitScratch SEScratch;
    SplitExplicitBarotropicPCStepper BarotropicPCStepper;

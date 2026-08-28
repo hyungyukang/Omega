@@ -455,7 +455,9 @@ void AuxiliaryState::computePseudoThicknessTracerAux(
 
    Pacer::start("AuxState:cellTracerAux", 2);
    parallelForOuter(
-       "cellTracerAux", {NTracers, Mesh->NCellsAll},
+       "cellTracerAux",
+       LaunchConfig({NTracers, Mesh->NCellsAll},
+                    TeamScratch<Real>(VCoord->NVertLayers)),
        KOKKOS_LAMBDA(int LTracer, int ICell, const TeamMember &Team) {
           LocTracerAux.computeVarsOnCells(Team, LTracer, ICell,
                                           MeanPseudoThickEdge, TracerArray);

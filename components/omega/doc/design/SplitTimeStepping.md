@@ -13,7 +13,7 @@
 
 ## 1. Overview
 
-To enhance computational efficiency by allowing longer timesteps, ocean models require split barotropic-baroclinic time stepping methods. The implementation described here is based on the approach of [Higdon (2005)](https://www.sciencedirect.com/science/article/pii/S0021999104005236) and the MPAS-Ocean `split_explicit` scheme, with modifications for Omega's non-Boussinesq pseudo-height $\tilde{z}$ vertical coordinate, which is defined in the {ref}`Omega V1 governing equations <omega-design-governing-eqns-omega1>` design document.
+To enhance computational efficiency by allowing longer time steps, ocean models require split barotropic-baroclinic time-stepping methods. The implementation described here is based on the approach of [Higdon (2005)](https://www.sciencedirect.com/science/article/pii/S0021999104005236) and the MPAS-Ocean `split_explicit` scheme, with modifications for Omega's non-Boussinesq pseudo-height $\tilde{z}$ vertical coordinate. The pseudo-height coordinate and pseudo thickness $\tilde h$ are defined by Eqs. {eq}`pseudo-height` and {eq}`def-pseudo-thickness`, respectively, in the {ref}`Omega V1 governing equations <omega-design-governing-eqns-omega1>` design document.
 
 Omega currently implements two closely related steppers: `SplitExplicitRK2`, which explicitly subcycles the barotropic mode, and `UnsplitRK2`, which uses the same outer predictor-corrector framework without a barotropic split. The only implemented barotropic algorithm is `Predictor-Corrector`; implicit barotropic stepping and an Adams--Bashforth split-explicit method are future extensions.
 

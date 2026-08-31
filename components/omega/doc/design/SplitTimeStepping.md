@@ -266,6 +266,20 @@ $$
 \end{aligned}
 $$ (split-steric-height-derivation)
 
+The fourth line uses the definition of the pseudo-height coordinate, $\rho\,dz=\rho_0\,d\tilde{z}$, given in the {ref}`Omega V1 governing equations <omega-design-governing-eqns-omega1>` design document, and the fifth line uses Eqs. {eq}`split-column-pseudo-thickness` and {eq}`split-column-geometric-thickness`.
+
+The barotropic system is obtained from the layered equations of Section 3.1 by summing the mass equation over the column and by taking the pseudo-thickness-weighted vertical average of the momentum equation. Summing Eq. {eq}`split-discrete-mass` over $k$ cancels the vertical transport terms between adjacent interfaces, leaving only the surface value, which is the freshwater flux $Q$:
+
+$$
+\frac{\partial \tilde{H}_i}{\partial t}
++ \left[\nabla \cdot \sum_{k=0}^{K_{\max}}
+  \left([\tilde{h}_{k}]_e {\bf u}_{e,k}\right)\right]_i
+= -Q_i .
+$$ (split-column-integrated-mass)
+
+To advance the column mass in the non-Boussinesq system, the barotropic prognostic variable is taken to be the pressure anomaly $B'$ rather than $\tilde{H}$ itself. Replacing the column transport by $[\tilde{H}_i]_e\overline{{\bf u}}_e$ using Eq. {eq}`split-barotropic-velocity`, and $\tilde{H}$ by $(B'+\rho_0 g b)/(\rho_0 g)$ using Eq. {eq}`split-column-pseudo-thickness`, converts this into an equation for the barotropic pressure anomaly. The time-independent term $\rho_0 g b$ drops out of the time derivative, and multiplying through by $\rho_0 g$ gives the barotropic continuity equation below.
+
+Averaging Eq. {eq}`split-discrete-velocity` over the column in the same pseudo-thickness-weighted sense separates the pressure-gradient term into a depth-mean part, $-[\overline{\alpha}_i]_e[\nabla B_i']_e$, which is the fast surface-pressure-gradient term retained explicitly in the barotropic system, and a remainder. The planetary Coriolis term is also retained explicitly, because rotation modifies the surface gravity waves on the barotropic time scale. All remaining depth-averaged terms are collected into a single forcing $\overline{G}_e$ that is diagnosed once per outer iteration and held fixed through the barotropic subcycle. Subtracting the same $\overline{G}_e$ from the layered momentum equation gives the baroclinic momentum equation, so that the sum of the two subsystems recovers Eq. {eq}`split-discrete-velocity`.
 
 The barotropic continuity and momentum equations are written as follows.
 

@@ -180,57 +180,36 @@ class CoriolisAccelerationOnEdge {
    /// constructor declaration
    CoriolisAccelerationOnEdge(const HorzMesh *Mesh, const VertCoord *VCoord);
 
-   /// The functor takes edge index, vertical chunk index, velocity on edges,
-   /// and Coriolis parameter on edges as inputs, updates the tendency array
-   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend, I4 IEdge, I4 KChunk,
+   /// The functor takes thread team, edge index, base tendency, velocity on
+   /// edges, and Coriolis parameter on edges as inputs, updates the tendency
+   /// array with base tendency plus Coriolis acceleration
+   KOKKOS_FUNCTION void operator()(const TeamMember &Team,
+                                   const Array2DReal &Tend,
+                                   const Array2DReal &BaseTend, I4 IEdge,
                                    const Array2DReal &NormalVelEdge,
                                    const Array1DReal &FEdge) const {
 
-      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
-      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
+      ScratchArray1DReal AccelTmp(teamScratch(Team), NVertLayers);
 
-      Real AccelTmp[VecLength] = {0};
+      const int KMin = MinLayerEdgeBot(IEdge);
+      const int KMax = MaxLayerEdgeTop(IEdge);
 
-      for (int J = 0; J < NEdgesOnEdge(IEdge); ++J) {
-         const I4 JEdge = EdgesOnEdge(IEdge, J);
-         for (int KVec = 0; KVec < KLen; ++KVec) {
-            const I4 K = KStart + KVec;
-            AccelTmp[KVec] += WeightsOnEdge(IEdge, J) *
-                              NormalVelEdge(JEdge, K) * FEdge(JEdge);
-         }
-      }
-
-      for (int KVec = 0; KVec < KLen; ++KVec) {
-         const I4 K = KStart + KVec;
-         Tend(IEdge, K) += AccelTmp[KVec];
-      }
-   }
-
-   /// As above, but writes BaseTend plus the Coriolis acceleration into a
-   /// separate output array instead of accumulating in place.
-   KOKKOS_FUNCTION void operator()(const Array2DReal &Tend,
-                                   const Array2DReal &BaseTend, I4 IEdge,
-                                   I4 KChunk, const Array2DReal &NormalVelEdge,
-                                   const Array1DReal &FEdge) const {
-
-      const I4 KStart = chunkStart(KChunk, MinLayerEdgeBot(IEdge));
-      const I4 KLen   = chunkLength(KChunk, KStart, MaxLayerEdgeTop(IEdge));
-
-      Real AccelTmp[VecLength] = {0};
+      parallelForInner(
+          Team, NVertLayers, INNER_LAMBDA(int K) { AccelTmp(K) = 0; });
 
       for (int J = 0; J < NEdgesOnEdge(IEdge); ++J) {
          const I4 JEdge = EdgesOnEdge(IEdge, J);
-         for (int KVec = 0; KVec < KLen; ++KVec) {
-            const I4 K = KStart + KVec;
-            AccelTmp[KVec] += WeightsOnEdge(IEdge, J) *
-                              NormalVelEdge(JEdge, K) * FEdge(JEdge);
-         }
+         parallelForInner(
+             Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+                AccelTmp(K) += WeightsOnEdge(IEdge, J) *
+                               NormalVelEdge(JEdge, K) * FEdge(JEdge);
+             });
       }
 
-      for (int KVec = 0; KVec < KLen; ++KVec) {
-         const I4 K     = KStart + KVec;
-         Tend(IEdge, K) = BaseTend(IEdge, K) + AccelTmp[KVec];
-      }
+      parallelForInner(
+          Team, Range{KMin, KMax}, INNER_LAMBDA(int K) {
+             Tend(IEdge, K) = BaseTend(IEdge, K) + AccelTmp(K);
+          });
    }
 
    /// The functor takes edge index, barotropic velocity on edges, and Coriolis
@@ -254,6 +233,7 @@ class CoriolisAccelerationOnEdge {
    Array1DI4 NEdgesOnEdge;
    Array2DI4 EdgesOnEdge;
    Array2DReal WeightsOnEdge;
+   I4 NVertLayers;
    Array1DI4 MinLayerEdgeBot;
    Array1DI4 MaxLayerEdgeTop;
 };

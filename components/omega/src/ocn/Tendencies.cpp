@@ -660,27 +660,7 @@ void Tendencies::computeCoriolisAccelerationOnEdge(
     const Array1DReal &FEdge          ///< [in] Coriolis parameter on edges
 ) const {
 
-   // Coriolis acceleration should be turned off if the PV tendency is disabled.
-   if (!PotentialVortHAdv.Enabled)
-      return;
-
-   OMEGA_SCOPE(LocCoriolisAcceleration, CoriolisAcceleration);
-   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
-   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
-
-   Pacer::start("Tend:coriolisAccelerationOnEdge2D", 2);
-   parallelForOuter(
-       {Mesh->NEdgesAll}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
-          const int KMin   = MinLayerEdgeBot(IEdge);
-          const int KMax   = MaxLayerEdgeTop(IEdge);
-          const int KRange = vertRangeChunked(KMin, KMax);
-          parallelForInner(
-              Team, KRange, INNER_LAMBDA(int KChunk) {
-                 LocCoriolisAcceleration(Tend, IEdge, KChunk, NormalVelEdge,
-                                         FEdge);
-              });
-       });
-   Pacer::stop("Tend:coriolisAccelerationOnEdge2D", 2);
+   computeCoriolisAccelerationOnEdge(Tend, Tend, NormalVelEdge, FEdge);
 }
 
 //------------------------------------------------------------------------------
@@ -701,20 +681,13 @@ void Tendencies::computeCoriolisAccelerationOnEdge(
    }
 
    OMEGA_SCOPE(LocCoriolisAcceleration, CoriolisAcceleration);
-   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
-   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
 
    Pacer::start("Tend:coriolisAccelerationOnEdge2DBase", 2);
    parallelForOuter(
-       {Mesh->NEdgesAll}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
-          const int KMin   = MinLayerEdgeBot(IEdge);
-          const int KMax   = MaxLayerEdgeTop(IEdge);
-          const int KRange = vertRangeChunked(KMin, KMax);
-          parallelForInner(
-              Team, KRange, INNER_LAMBDA(int KChunk) {
-                 LocCoriolisAcceleration(Tend, BaseTend, IEdge, KChunk,
-                                         NormalVelEdge, FEdge);
-              });
+       LaunchConfig({Mesh->NEdgesAll}, TeamScratch<Real>(VCoord->NVertLayers)),
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          LocCoriolisAcceleration(Team, Tend, BaseTend, IEdge, NormalVelEdge,
+                                  FEdge);
        });
    Pacer::stop("Tend:coriolisAccelerationOnEdge2DBase", 2);
 }

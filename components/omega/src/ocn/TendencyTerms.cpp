@@ -38,7 +38,7 @@ PotentialVortHAdvOnEdge::PotentialVortHAdvOnEdge(const HorzMesh *Mesh,
 CoriolisAccelerationOnEdge::CoriolisAccelerationOnEdge(const HorzMesh *Mesh,
                                                        const VertCoord *VCoord)
     : NEdgesOnEdge(Mesh->NEdgesOnEdge), EdgesOnEdge(Mesh->EdgesOnEdge),
-      WeightsOnEdge(Mesh->WeightsOnEdge),
+      WeightsOnEdge(Mesh->WeightsOnEdge), NVertLayers(VCoord->NVertLayers),
       MinLayerEdgeBot(VCoord->MinLayerEdgeBot),
       MaxLayerEdgeTop(VCoord->MaxLayerEdgeTop) {}
 

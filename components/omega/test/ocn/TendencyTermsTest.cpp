@@ -566,15 +566,11 @@ int testCoriolisAccelerationOnEdge(int NVertLayers, Real RTol) {
    OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
    OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
    parallelForOuter(
-       {Mesh->NEdgesOwned}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
-          const int KMin   = MinLayerEdgeBot(IEdge);
-          const int KMax   = MaxLayerEdgeTop(IEdge);
-          const int KRange = vertRangeChunked(KMin, KMax);
-          parallelForInner(
-              Team, KRange, INNER_LAMBDA(int KChunk) {
-                 CoriolisAccelOnE(NumCoriolis2D, IEdge, KChunk, NormalVelEdge,
-                                  FEdge);
-              });
+       LaunchConfig({Mesh->NEdgesOwned},
+                    TeamScratch<Real>(VCoord->NVertLayers)),
+       KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
+          CoriolisAccelOnE(Team, NumCoriolis2D, NumCoriolis2D, IEdge,
+                           NormalVelEdge, FEdge);
        });
 
    OMEGA_SCOPE(NEdgesOnEdge, Mesh->NEdgesOnEdge);

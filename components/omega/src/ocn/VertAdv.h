@@ -153,6 +153,18 @@ class VertAdv {
        const Real Dt                       ///< [in] time interval
    );
 
+   /// Implementation of vertical pseudo-velocity computation with output
+   /// arguments. Public because of CUDA requirements.
+   void computeVerticalPseudoVelocityImpl(
+       const Array2DReal &VertPseudoVel,      ///< [out] vertical velocity
+       const Array2DReal &TotalVertPseudoVel, ///< [out] total vertical velocity
+       const Array2DReal &NormalVelocity,     ///< [in] horizontal velocity
+       const Array2DReal
+           &FluxPseudoThickEdge,           ///< [in] pseudo-thickness at edges
+       const Array2DReal &PseudoThickness, ///< [in] pseudo-thickness of layer
+       const Real Dt                       ///< [in] time interval
+   );
+
    /// Compute pseudo-thickness tendency due to vertical advection
    void computePseudoThicknessVAdvTend(
        const Array2DReal &ThickTend ///< [inout] thickness tendency
@@ -236,18 +248,6 @@ class VertAdv {
 
    /// define field metadata
    void defineFields();
-
-   /// implementation of vertical pseudo-velocity computation with output
-   /// arguments
-   void computeVerticalPseudoVelocityImpl(
-       const Array2DReal &VertPseudoVel,      ///< [out] vertical velocity
-       const Array2DReal &TotalVertPseudoVel, ///< [out] total vertical velocity
-       const Array2DReal &NormalVelocity,     ///< [in] horizontal velocity
-       const Array2DReal
-           &FluxPseudoThickEdge,           ///< [in] pseudo-thickness at edges
-       const Array2DReal &PseudoThickness, ///< [in] pseudo-thickness of layer
-       const Real Dt                       ///< [in] time interval
-   );
 
    // Forbid copy and move construction
    VertAdv(const VertAdv &) = delete;

@@ -33,7 +33,7 @@ The algorithm is based on Section 2.3 of [Higdon (2005)](https://www.sciencedire
 
 ### 2.2 Requirement: Stable time integration for long-term high-resolution simulations
 
-Stability constrains the maximum allowable timestep, which in turn affects computational cost. The implemented split-explicit time stepping methods must allow for reasonably long timesteps while preventing numerical instabilities, such as those arising from internal gravity waves and barotropic modes, which are particularly important in global-scale and high-resolution ocean modeling. At a minimum, the time-stepping approach used in Omega V2 should accommodate the same timestep sizes as MPAS-Ocean for both the baroclinic and barotropic subsystems since Omega V2 is non-Boussinesq but hydrostatic.
+Stability constrains the maximum allowable timestep, which in turn affects computational cost. The implemented split-explicit time stepping methods must allow for reasonably long timesteps while preventing numerical instabilities, such as those arising from internal gravity waves and barotropic modes, which are particularly important in global-scale and high-resolution ocean modeling. At a minimum, the time-stepping approach used in Omega V2 should accommodate the same timestep sizes as MPAS-Ocean for a given resolution for both the baroclinic and barotropic subsystems since Omega V2 is non-Boussinesq but remains hydrostatic.
 
 ### 2.3 Requirement: Modularization of baroclinic and barotropic time-stepping methods
 

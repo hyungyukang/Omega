@@ -118,7 +118,7 @@ void omega_ocn_init2(const double *cpl_to_ocn_data, double *ocn_to_cpl_data) {
    Pacer::stop("Init2", 0);
 }
 
-int omega_ocn_run(bool WriteRestart) {
+void omega_ocn_run(bool WriteRestart) {
 
    int ErrRun;
 
@@ -128,12 +128,12 @@ int omega_ocn_run(bool WriteRestart) {
 
    Pacer::start("Run", 0);
    ErrRun = OMEGA::ocnRun(CurrTime, WriteRestart);
+   if (ErrRun != 0)
+      LOG_ERROR("Error advancing Omega run interval");
    Pacer::stop("Run", 0);
-
-   return ErrRun;
 }
 
-int omega_ocn_finalize() {
+void omega_ocn_finalize() {
 
    int ErrFinalize;
 
@@ -154,8 +154,6 @@ int omega_ocn_finalize() {
 
    // finalize Kokkos
    Kokkos::finalize();
-
-   return ErrFinalize;
 }
 
 int omega_get_layout_mct() {

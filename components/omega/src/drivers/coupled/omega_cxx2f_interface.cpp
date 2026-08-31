@@ -142,7 +142,7 @@ int omega_ocn_finalize() {
    OMEGA::TimeInstant CurrTime    = ModelClock->getCurrentTime();
 
    Pacer::start("Finalize", 0);
-   OMEGA::ocnFinalize(CurrTime);
+   ErrFinalize = OMEGA::ocnFinalize(CurrTime);
    if (ErrFinalize != 0) {
       LOG_ERROR("Error finalizing OMEGA");
    } else {

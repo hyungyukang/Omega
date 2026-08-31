@@ -65,6 +65,10 @@ struct TestSetupPlane {
    ErrorMeasures ExpectedSfcStressForcingErrors = {0, 0};
    ErrorMeasures ExpectedBottomDragErrors       = {0.033848740052302935,
                                                    0.01000133508329411};
+   ErrorMeasures ExpectedCoriolis2DErrors       = {0.01322503349256595,
+                                                   0.011816356596905431};
+   ErrorMeasures ExpectedCoriolis1DErrors       = {0.012883757868753419,
+                                                   0.011805932389752003};
 
    KOKKOS_FUNCTION Real vectorX(Real X, Real Y) const {
       return std::sin(TwoPi * X / Lx) * std::cos(TwoPi * Y / Ly);
@@ -205,6 +209,10 @@ struct TestSetupSphere {
    ErrorMeasures ExpectedSfcStressForcingErrors = {0, 0};
    ErrorMeasures ExpectedBottomDragErrors       = {0.0015333449035655053,
                                                    0.0014897009917655022};
+   ErrorMeasures ExpectedCoriolis2DErrors       = {0.017830942909137566,
+                                                   0.00958613271059214};
+   ErrorMeasures ExpectedCoriolis1DErrors       = {0.01756710962800044,
+                                                   0.011526527317437694};
 
    KOKKOS_FUNCTION Real vectorX(Real Lon, Real Lat) const {
       return -Radius * std::pow(std::sin(Lon), 2) * std::pow(std::cos(Lat), 3);
@@ -531,6 +539,8 @@ int testCoriolisAccelerationOnEdge(int NVertLayers, Real RTol) {
    const auto Mesh   = HorzMesh::getDefault();
    const auto VCoord = VertCoord::getDefault();
 
+   // Set input arrays
+
    Array2DReal NormalVelEdge("NormalVelEdge", Mesh->NEdgesSize, NVertLayers);
    Err += setVectorEdge(
        KOKKOS_LAMBDA(Real(&VecField)[2], Real X, Real Y) {
@@ -541,30 +551,49 @@ int testCoriolisAccelerationOnEdge(int NVertLayers, Real RTol) {
 
    Array1DReal NormalBarotropicVelEdge("NormalBarotropicVelEdge",
                                        Mesh->NEdgesSize);
-   Err += setScalar(
-       KOKKOS_LAMBDA(Real X, Real Y) { return Setup.scalarB(X, Y); },
-       NormalBarotropicVelEdge, Geom, Mesh, OnEdge);
+   Err += setVectorEdge(
+       KOKKOS_LAMBDA(Real(&VecField)[2], Real X, Real Y) {
+          VecField[0] = Setup.vectorY(X, Y);
+          VecField[1] = Setup.vectorX(X, Y);
+       },
+       NormalBarotropicVelEdge, EdgeComponent::Normal, Geom, Mesh);
 
    Array1DReal FEdge("FEdge", Mesh->NEdgesSize);
    Err += setScalar(
        KOKKOS_LAMBDA(Real X, Real Y) { return Setup.planetaryVort(X, Y); },
        FEdge, Geom, Mesh, OnEdge);
 
-   Array2DReal NumCoriolis2D("NumCoriolis2D", Mesh->NEdgesOwned, NVertLayers);
+   // Compute exact results
+
    Array2DReal ExactCoriolis2D("ExactCoriolis2D", Mesh->NEdgesOwned,
                                NVertLayers);
-   Array1DReal NumCoriolis1D("NumCoriolis1D", Mesh->NEdgesOwned);
    Array1DReal ExactCoriolis1D("ExactCoriolis1D", Mesh->NEdgesOwned);
 
-   deepCopy(NumCoriolis2D, 0._Real);
-   deepCopy(ExactCoriolis2D, 0._Real);
-   deepCopy(NumCoriolis1D, 0._Real);
-   deepCopy(ExactCoriolis1D, 0._Real);
+   Err += setVectorEdge(
+       KOKKOS_LAMBDA(Real(&VecField)[2], Real X, Real Y) {
+          const Real PVort = Setup.planetaryVort(X, Y);
+          VecField[0]      = PVort * Setup.vectorX(X, Y);
+          VecField[1]      = PVort * Setup.vectorY(X, Y);
+       },
+       ExactCoriolis2D, EdgeComponent::Tangential, Geom, Mesh,
+       ExchangeHalos::No);
+
+   Err += setVectorEdge(
+       KOKKOS_LAMBDA(Real(&VecField)[2], Real X, Real Y) {
+          const Real PVort = Setup.planetaryVort(X, Y);
+          VecField[0]      = PVort * Setup.vectorY(X, Y);
+          VecField[1]      = PVort * Setup.vectorX(X, Y);
+       },
+       ExactCoriolis1D, EdgeComponent::Tangential, Geom, Mesh,
+       ExchangeHalos::No);
+
+   // Compute numerical results
+
+   Array2DReal NumCoriolis2D("NumCoriolis2D", Mesh->NEdgesOwned, NVertLayers);
+   Array1DReal NumCoriolis1D("NumCoriolis1D", Mesh->NEdgesOwned);
 
    CoriolisAccelerationOnEdge CoriolisAccelOnE(Mesh, VCoord);
 
-   OMEGA_SCOPE(MinLayerEdgeBot, VCoord->MinLayerEdgeBot);
-   OMEGA_SCOPE(MaxLayerEdgeTop, VCoord->MaxLayerEdgeTop);
    parallelForOuter(
        LaunchConfig({Mesh->NEdgesOwned},
                     TeamScratch<Real>(VCoord->NVertLayers)),
@@ -573,62 +602,25 @@ int testCoriolisAccelerationOnEdge(int NVertLayers, Real RTol) {
                            NormalVelEdge, FEdge);
        });
 
-   OMEGA_SCOPE(NEdgesOnEdge, Mesh->NEdgesOnEdge);
-   OMEGA_SCOPE(EdgesOnEdge, Mesh->EdgesOnEdge);
-   OMEGA_SCOPE(WeightsOnEdge, Mesh->WeightsOnEdge);
-   parallelForOuter(
-       {Mesh->NEdgesOwned}, KOKKOS_LAMBDA(int IEdge, const TeamMember &Team) {
-          const int KMin   = MinLayerEdgeBot(IEdge);
-          const int KMax   = MaxLayerEdgeTop(IEdge);
-          const int KRange = vertRangeChunked(KMin, KMax);
-          parallelForInner(
-              Team, KRange, INNER_LAMBDA(int KChunk) {
-                 const int KStart = chunkStart(KChunk, KMin);
-                 const int KLen   = chunkLength(KChunk, KStart, KMax);
-                 Real CoriolisTmp[VecLength] = {0};
-
-                 for (int J = 0; J < NEdgesOnEdge(IEdge); ++J) {
-                    const int JEdge = EdgesOnEdge(IEdge, J);
-                    for (int KVec = 0; KVec < KLen; ++KVec) {
-                       const int K = KStart + KVec;
-                       CoriolisTmp[KVec] += WeightsOnEdge(IEdge, J) *
-                                            NormalVelEdge(JEdge, K) *
-                                            FEdge(JEdge);
-                    }
-                 }
-
-                 for (int KVec = 0; KVec < KLen; ++KVec) {
-                    const int K = KStart + KVec;
-                    ExactCoriolis2D(IEdge, K) += CoriolisTmp[KVec];
-                 }
-              });
-       });
-
    parallelFor(
        {Mesh->NEdgesOwned}, KOKKOS_LAMBDA(int IEdge) {
           CoriolisAccelOnE(NumCoriolis1D, IEdge, NormalBarotropicVelEdge,
                            FEdge);
-
-          Real CoriolisTmp = 0._Real;
-          for (int J = 0; J < NEdgesOnEdge(IEdge); ++J) {
-             const int JEdge = EdgesOnEdge(IEdge, J);
-             CoriolisTmp += WeightsOnEdge(IEdge, J) *
-                            NormalBarotropicVelEdge(JEdge) * FEdge(JEdge);
-          }
-          ExactCoriolis1D(IEdge) += CoriolisTmp;
        });
+
+   // Compute errors and check error values
 
    ErrorMeasures Coriolis2DErrors;
    Err += computeErrors(Coriolis2DErrors, NumCoriolis2D, ExactCoriolis2D, Mesh,
                         OnEdge);
    Err += checkErrors("TendencyTermsTest", "CoriolisAcceleration2D",
-                      Coriolis2DErrors, {0, 0}, RTol);
+                      Coriolis2DErrors, Setup.ExpectedCoriolis2DErrors, RTol);
 
    ErrorMeasures Coriolis1DErrors;
    Err += computeErrors(Coriolis1DErrors, NumCoriolis1D, ExactCoriolis1D, Mesh,
                         OnEdge);
    Err += checkErrors("TendencyTermsTest", "CoriolisAcceleration1D",
-                      Coriolis1DErrors, {0, 0}, RTol);
+                      Coriolis1DErrors, Setup.ExpectedCoriolis1DErrors, RTol);
 
    if (Err == 0) {
       LOG_INFO("TendencyTermsTest: CoriolisAccelerationOnEdge PASS");

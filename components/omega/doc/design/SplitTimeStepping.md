@@ -13,27 +13,26 @@
 
 ## 1. Overview
 
-To enhance computational efficiency by allowing longer timesteps, ocean models require split barotropic-baroclinic time stepping methods. The implementation described here is based on the approach of [Higdon (2005)](https://www.sciencedirect.com/science/article/pii/S0021999104005236) and the MPAS-Ocean `split_explicit` scheme, with modifications for Omega's non-Boussinesq pseudo-height $\tilde{z}$ vertical coordinate.
+To enhance computational efficiency by allowing longer timesteps, ocean models require split barotropic-baroclinic time stepping methods. The implementation described here is based on the approach of [Higdon (2005)](https://www.sciencedirect.com/science/article/pii/S0021999104005236) and the MPAS-Ocean `split_explicit` scheme, with modifications for Omega's non-Boussinesq pseudo-height $\tilde{z}$ vertical coordinate, which is defined in the {ref}`Omega V1 governing equations <omega-design-governing-eqns-omega1>` design document.
 
 Omega currently implements two closely related steppers: `SplitExplicitRK2`, which explicitly subcycles the barotropic mode, and `UnsplitRK2`, which uses the same outer predictor-corrector framework without a barotropic split. The only implemented barotropic algorithm is `Predictor-Corrector`; implicit barotropic stepping and an Adams--Bashforth split-explicit method are future extensions.
 
 The split-explicit method involves the following sequence:
 
-- Decompose velocity into barotropic and baroclinic components.
-- Advance the baroclinic velocities using a large timestep, and compute the vertically averaged forcing, the $\overline{G}$ term.
-- Subcycle the barotropic velocity using small explicit timesteps.
-- Construct a corrected transport velocity, update pseudo thickness and tracers,
-  and reconstruct the physical velocity.
+- Decompose the velocity into barotropic and baroclinic components.
+- Advance the baroclinic velocity with the long baroclinic time step and form the depth-averaged forcing $\overline{G}$ Eq. {eq}`split-stage1-gbar` that drives the barotropic momentum equation, Eq. {eq}`split-barotropic-momentum`.
+- Subcycle the barotropic velocity with short explicit barotropic time steps.
+- Construct a corrected transport velocity, update pseudo thickness and tracers, and reconstruct the full velocity.
 
 ## 2. Requirements
 
 ### 2.1 Requirement: A split time-stepping method in the pseudo-height coordinate
 
-The algorithm is based on Section 2.3 of [Higdon (2005)](https://www.sciencedirect.com/science/article/pii/S0021999104005236), with modifications to accommodate the $\tilde{z}$-coordinate variables in the non-Boussinesq framework. It accepts the outer time step, requested barotropic time step, barotropic algorithm, number of outer predictor-corrector iterations, number of baroclinic Coriolis iterations, and an option to recompute the velocity split. The `UnsplitRK2` variant advances the full velocity through the baroclinic path and skips all barotropic operations.
+The algorithm is based on Section 2.3 of [Higdon (2005)](https://www.sciencedirect.com/science/article/pii/S0021999104005236), with modifications to accommodate the $\tilde{z}$-coordinate variables in the non-Boussinesq framework. It accepts the outer time step, requested barotropic time step, barotropic algorithm, number of outer predictor-corrector iterations, number of baroclinic Coriolis iterations, and an option to recompute the velocity split. The `UnsplitRK2` variant advances the full velocity ${\bf u}_{e,k}$ instead of the baroclinic velocity ${\bf u}'_{e,k}$, so the barotropic subcycle is redundant and is bypassed. Its stable time step is then set by the surface-gravity-wave CFL condition rather than by the internal-wave CFL condition, so `UnsplitRK2` is intended for verification and for idealized configurations rather than for production simulations.
 
 ### 2.2 Requirement: Stable time integration for long-term high-resolution simulations
 
-Stability constrains the maximum allowable timestep, which in turn affects computational cost. The implemented split-explicit time stepping methods must allow for reasonably long timesteps while preventing numerical instabilities, such as those arising from internal gravity waves and barotropic modes, which are particularly important in global-scale and high-resolution ocean modeling. At a minimum, the time-stepping approach used in Omega V2 should accommodate the same timestep sizes as MPAS-Ocean for a given resolution for both the baroclinic and barotropic subsystems since Omega V2 is non-Boussinesq but remains hydrostatic.
+Stability constrains the maximum allowable timestep, which in turn affects computational cost. The implemented split-explicit time stepping methods must allow for reasonably long timesteps while preventing numerical instabilities, such as those arising from internal gravity waves and barotropic modes, which are particularly important in global-scale and high-resolution ocean modeling. At a minimum, the time-stepping approach used in Omega V2 should accommodate the same timestep sizes as MPAS-Ocean for both the baroclinic and barotropic subsystems since Omega V2 is non-Boussinesq but hydrostatic.
 
 ### 2.3 Requirement: Modularization of baroclinic and barotropic time-stepping methods
 
@@ -43,7 +42,7 @@ Modularity ensures ease of testing and future-proofing of the Omega V2 codebase.
 
 ### 3.1 Barotropic (external) and baroclinic (internal) mode splitting
 
-The split-explicit method separates ocean velocity into depth-integrated barotropic and depth-dependent baroclinic components. This separation allows computationally expensive baroclinic modes to run at longer timesteps and computationally efficient barotropic modes to run at shorter timesteps, enhancing computational efficiency and accuracy.
+The split-explicit method separates ocean velocity into depth-integrated barotropic and depth-dependent baroclinic components. This separation allows the computationally expensive slow baroclinic modes to be advanced with a long time step, while the computationally inexpensive fast barotropic mode, which carries the surface gravity waves that impose the most restrictive CFL limit, is subcycled with short time steps. The benefit of the split is computational efficiency rather than accuracy. Mode splitting introduces a splitting error, since the two subsystems are coupled only once per baroclinic step. That error is controlled by the outer predictor-corrector iteration, by averaging the barotropic transport over the subcycles, and by the transport-velocity correction of Section 3.2.4, which restores consistency between the time-averaged barotropic transport and the layered thickness flux.
 
 The layered discrete governing equations for Omega V2 are described in the {ref}`Omega V1 governing equations <omega-design-governing-eqns-omega1>` design document. The mass, tracer, and velocity equations used as the starting point for the mode split are summarized below.
 

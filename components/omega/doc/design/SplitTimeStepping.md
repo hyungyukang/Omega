@@ -391,12 +391,14 @@ $$
 [\tilde{h}_{i,k}]_e {\bf u}_{e,k}.
 $$ (split-initial-barotropic-velocity)
 
-For a startup from initial conditions, the code computes this split using the
-arithmetic mean of the two neighboring cell pseudo thicknesses at every edge,
-and masks the result with the edge mask of the top active layer so that dry
-edges carry no barotropic velocity. For a restart, `NormalBarotropicVelocity`
-and `BarotropicPressureAnomaly` are preserved, while `NormalBaroclinicVelocity`
-is made consistent with the read full and barotropic velocities through
+On startup from initial conditions, the barotropic velocity of
+Eq. {eq}`split-initial-barotropic-velocity` is formed with the edge pseudo
+thickness $[\tilde{h}_{i,k}]_e$ taken as the arithmetic mean of the two
+neighboring cell values, and the result is masked with the edge mask of the top
+active layer so that dry edges carry no barotropic velocity. For a restart,
+`NormalBarotropicVelocity` and `BarotropicPressureAnomaly` are preserved, while
+`NormalBaroclinicVelocity` is made consistent with the full and barotropic
+velocities read from the restart file through
 ${\bf u}'={\bf u}-\overline{\bf u}$.
 
 Compute the baroclinic velocity:
@@ -437,8 +439,15 @@ pressure anomaly; tracers are copied at the start of `doStep`. If
 `NormalVelocity` at the beginning of each slow step, including a new depth mean
 for `NormalBarotropicVelocity`. When it is false, the existing barotropic
 velocity is retained and only baroclinic velocity is reconstructed from the
-other two velocity fields. In conceptual notation,
-the working state initially satisfies
+other two velocity fields.
+
+Throughout Section 3.2 an asterisk marks a *provisional*, or working, value: the
+most recent estimate of a field produced by the outer predictor-corrector
+iteration and stored at time level 1. It is distinct from the time-$n$ value at
+time level 0, which is held fixed for the whole slow step, and from the final
+$n+1$ value. All tendencies and auxiliary variables are evaluated from these
+starred quantities. At the start of a slow step the working state is a copy of
+the time-$n$ state,
 
 $$
 {\bf u}^{*}_{e,k} = {\bf u}^n_{e,k},
@@ -523,7 +532,7 @@ Here $[\tilde h_k^*]_e$ is the arithmetic mean of the two neighboring cell
 pseudo thicknesses at the working time level, and ${\bf u}^{\prime n}$ is the
 baroclinic velocity at time level 0, held fixed through the Coriolis iteration.
 The result is stored in `BarotropicForcing` and is the $\overline G$ used
-unchanged by every barotropic subcycle pass in Stage 2.
+unchanged by every barotropic subcycle step in Stage 2.
 
 The forcing is subtracted from every active layer of ${\cal R}^{*}$, ensuring
 that the tendency passed to the baroclinic update has its depth-mean component
@@ -554,9 +563,9 @@ only the working baroclinic-velocity halo.
 #### 3.2.3 Stage 2: Barotropic velocity advance, explicitly subcycled
 
 This stage advances $B'$ and $\overline{\bf {u}}$ as a coupled system through $2M$
-predictor-corrector passes, where $M=\text{NBtrSubcycles}$ and
+predictor-corrector subcycle steps, where $M=\text{NBtrSubcycles}$ and
 $\Delta t_{\mathrm{bt}}=\Delta t/M$. As in the MPAS-Ocean algorithm, the
-passes span an extended $2\Delta t$ barotropic averaging window. For
+subcycle steps span an extended $2\Delta t$ barotropic averaging window. For
 `UnsplitRK2`, this stage is skipped, $\overline u=0$, and $u=u'$.
 
 The discrete barotropic continuity equation is
@@ -585,7 +594,7 @@ $$
 $$ (split-stage2-discrete-momentum)
 
 Throughout this section a hat marks a quantity that lives inside the barotropic
-subcycle and changes from pass to pass, as distinct from the unhatted
+subcycle and is updated on every subcycle step, as distinct from the unhatted
 outer-iteration quantities carried by Stages 1 and 3.
 
 At the start of an outer iteration, initialize the subcycle variables and
@@ -653,12 +662,12 @@ The depth-mean specific volume $[\overline{\alpha}_i]_e$ is
 working state during Stage 1 and is not updated during subcycling.
 
 `Predictor-Corrector` is the only barotropic time stepper currently implemented, so
-the passes below are specific to it. Section 4.2.3 gives the interface an
+the subcycle steps below are specific to it. Section 4.2.3 gives the interface an
 alternative barotropic stepper would implement.
 
-For each predictor-corrector pass $m=0,\ldots,2M-1$, use the following steps.
-Both velocity updates are multiplied by the edge mask of the top active layer,
-and edges with no active layers are set to zero.
+For each predictor-corrector subcycle step $m=0,\ldots,2M-1$, apply the updates
+below. Both velocity updates are multiplied by the edge mask of the top active
+layer, and edges with no active layers are set to zero.
 
 **$\overline{\bf {u}}$ predictor:**
 
@@ -1250,7 +1259,7 @@ Missing keys retain the defaults in `SplitExplicitConfig`.
 
 If `ModeSplitShare` or `BtrTimeStep` is omitted from a user configuration, the
 requested barotropic step defaults to the slow `TimeStep`, giving one nominal
-subcycle and two predictor-corrector passes. `configs/Default.yml` supplies the
+subcycle and two predictor-corrector subcycle steps. `configs/Default.yml` supplies the
 whole subgroup, so the fallback applies only when a run configuration replaces
 rather than extends the defaults.
 
@@ -1490,10 +1499,11 @@ For `SplitExplicitRK2`, the barotropic stage is active and currently uses the
 predictor-corrector barotropic stepper.  For unsplit stepping, `SplitFactor` is
 zero and stage 2 is skipped. The predictor-corrector implementation owns three
 buffers (`Cur`, `Pre`, and `Cor`) for both barotropic velocity and pressure
-anomaly. It exchanges the current buffers once per pass, runs communication-
-avoiding kernels over shrinking halo ranges, accumulates corrected velocity and
-pressure transport, and exchanges the resulting averaged fields after the
-last pass.
+anomaly. It exchanges the `Cur` buffers once per subcycle step, evaluates the
+remaining kernels over progressively smaller halo ranges so that no further halo
+exchange is needed within a subcycle step, accumulates the corrected velocity and
+the pressure transport, and exchanges the resulting time-averaged fields after
+the last subcycle step.
 
 The callback signature takes only the state, the two time levels, the stage
 time, and the stage time step; the barotropic stepper reaches everything else it
@@ -1506,7 +1516,7 @@ algorithm therefore means adding an enumerator, a class implementing the same
 
 #### 4.2.4 Stage 3: thickness and tracers
 
-Before Stage 3, `computeTransportVelocity` reconstructs physical normal
+Before Stage 3, `computeTransportVelocity` reconstructs the full normal
 velocity from the split fields and adds a depth-uniform correction to a
 separate `NormalTransportVelocity` scratch field. Stage 3 computes
 pseudo-thickness and tracer auxiliary variables with this corrected transport,

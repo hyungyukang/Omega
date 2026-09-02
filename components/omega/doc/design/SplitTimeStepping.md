@@ -1021,8 +1021,11 @@ $$
 $$ (split-final-full-velocity)
 
 $$
-\psi^{n+1} \quad \text{is retained for pseudo thickness and tracers},
-$$ (split-final-psi)
+\tilde{h}^{n+1}_{i,k}
+\quad\text{and}\quad
+\varphi^{n+1}_{i,k}
+\quad \text{are the full-step values retained from Stage 3},
+$$ (split-final-thickness-tracer)
 
 $$
 \tilde{H}^{n+1} = \sum_{k=0}^{K} \tilde{h}_k^{n+1},
@@ -1280,6 +1283,13 @@ TimeIntegration:
 
 #### 4.1.2 Class/structs/data types
 
+The types below are grouped into those the split-explicit time stepper introduces
+and those that already exist in Omega. For the latter, only the additions this
+time stepper requires are listed; no existing member is removed or renamed, and the
+other time steppers are unaffected.
+
+**New types**
+
 - `SplitExplicitConfig`: Holds split-explicit configuration, including
   barotropic stepper selection, subcycle count, time-step iteration count,
   Coriolis iteration count, and `SplitFactor`.
@@ -1313,6 +1323,9 @@ TimeIntegration:
   barotropic stage interface.  This class owns the details of the barotropic
   algorithm so that `SplitExplicitRK2Stepper` can call a generic stage-2
   function.
+
+**Additions to existing classes**
+
 - `TimeStepper`: Gains the `SplitExplicitRK2` and `UnsplitRK2` enumerators, the
   matching strings in `getTimeStepperFromStr`, the construction cases in
   `TimeStepper::create`, and a virtual `initializeStateFromInput` whose base
@@ -1351,8 +1364,9 @@ TimeIntegration:
 
 ### 4.2 Methods
 
-The implemented `doStep` control flow is shown below. Pacer instrumentation and
-the communicator used only by its timing barriers are elided.
+The implemented `doStep` control flow is shown below. Pacer timer
+instrumentation, and the communicator used only by its timing barriers, are
+omitted for readability.
 
 ```c++
 void SplitExplicitRK2Stepper::doStep(OceanState *State,

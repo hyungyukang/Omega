@@ -649,13 +649,13 @@ only overwritten by the final corrected anomaly after the last pass, so
 ${\cal P}_e$ measures the departure of the subcycled anomaly from the baroclinic
 column mass. This is what enforces the [Hallberg and Adcroft (2009)](https://adcroft.github.io/assets/pdf/hallberg_adcroft_OM_2009.pdf) consistency
 described in Section 3.2.4. Note that $B'^{*}$ is unhatted and so is an
-outer-iteration quantity; the hatted $\hat B^{\prime *}$ appearing in the
-predictor-corrector equations below is a different thing, the subcycle predictor
-output.
+outer-iteration quantity, whereas the hatted $\hat B^{\prime *}$ appearing in the
+predictor-corrector equations below is the subcycle predictor output.
 
 The edge value of the anomaly correction uses the same centered or upwind choice
-selected for pseudo-thickness fluxes. With the upwind choice, ties at zero
-normal velocity take the larger of the two neighboring cell values.
+selected for pseudo-thickness fluxes. With the upwind choice the upwind
+direction is undefined where the normal velocity is exactly zero, and the
+implementation then takes the larger of the two neighboring cell values.
 
 The depth-mean specific volume $[\overline{\alpha}_i]_e$ is
 `Eos::DepthMeanSpecificVolume` averaged to the edge. It is computed from the
@@ -859,9 +859,6 @@ an edge. Here $[\tilde h_i^*]_{e,k}$ is the arithmetic mean of the two
 neighboring cell pseudo thicknesses at the working time level, not the flux
 pseudo thickness used by ${\cal P}_e$ in Stage 2.
 
-The asterisk indicates a provisional variable updated during the outer time-step
-iteration; the most recent available value is used for forcing terms.
-
 The same kernel that forms ${\bf u}^{\text{co}}$ also writes the uncorrected sum
 $\overline{{\bar{\bf u}}}^{\text{bt}}_e + {\bf u}^{\prime n+0.5}_{e,k}$ into the
 working `NormalVelocity`, which is what the Stage-3 auxiliary variables and
@@ -940,15 +937,21 @@ $$
 \right).
 $$ (split-stage3-tracer-update)
 
-On a non-final outer iteration, pseudo thickness is updated with
-$\Delta t/2$:
+On a non-final outer iteration, pseudo thickness is advanced to the midpoint
+with $\Delta t/2$:
 
 $$
 \tilde h^{*}
 =
 \tilde h^n+\frac{\Delta t}{2}{\cal T}_{\tilde h}.
-$$ (split-reset-provisional-psi)
+$$ (split-reset-provisional-thickness)
 
+This is the same midpoint state as the MPAS-Ocean form
+$\tilde h^{*}=\tfrac{1}{2}(\tilde h^{n}+\tilde h^{n+1})$, because
+$\tilde h^{n+1}=\tilde h^{n}+\Delta t\,{\cal T}_{\tilde h}$. Writing it as a
+half-step tendency update lets the same kernel that performs the full-step update
+on the final iteration be reused on the intermediate iterations, and avoids
+storing $\tilde h^{n+1}$ and averaging it in an extra loop.
 
 For each tracer, the implementation first forms the conservative
 provisional end concentration:
@@ -986,7 +989,7 @@ $$
 $$ (split-reset-full-velocity)
 
 with pseudo thickness and tracer concentration reset by
-Eqs. {eq}`split-reset-provisional-psi` and
+Eqs. {eq}`split-reset-provisional-thickness` and
 {eq}`split-stage3-provisional-tracer` of Section 3.2.5. The column totals then
 follow:
 
@@ -1296,7 +1299,7 @@ other time steppers are unaffected.
 - `SplitExplicitScratch`: Holds temporary arrays for barotropic subcycling and
   baroclinic updates:
   - `NormalBarotropicVelocitySubcycle{Cur,Pre,Cor}` and
-    `BarotropicPressureAnomalySubcycle{Cur,Pre,Cor}`, the three subcycle buffers
+    `BarotropicPressureAnomalySubcycle{Cur,Pre,Cor}`, the three subcycle work arrays
     per field described in Section 3.2.3.
   - `BarotropicPressure`, the diagnostic $B$ formed at initialization.
   - `BarotropicForcing`, the $\overline G$ produced by Stage 1 and consumed by

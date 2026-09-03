@@ -620,25 +620,23 @@ $$
   + [{\cal B}'-B'^{*}]_e.
 $$ (split-stage2-effective-pressure)
 
-Here ${\cal B}'$ is a formal argument rather than a field: it stands for
-whichever subcycle-level pressure anomaly the caller supplies. It is set
-calligraphic rather than hatted so that it cannot be read as any one particular
-buffer, following the same convention as the other calligraphic symbols in this
-document, ${\cal P}_e$, ${\cal R}$, and ${\cal T}$, none of which is a prognostic
-field. Each pass forms a barotropic mass flux in three of its kernels, the $B'$
-predictor, the $B'$ corrector, and the transport accumulation, and each supplies
-a different blend of the subcycle buffers, given with the equations below.
+${\cal P}_e$ is written as a function of ${\cal B}'$ because it is evaluated
+more than once per subcycle step with different arguments. ${\cal B}'$ is a placeholder
+for whichever barotropic pressure anomaly is passed in; it is not a stored field
+of its own. Three of the kernels in a subcycle step form a barotropic mass flux,
+the $B'$ predictor, the $B'$ corrector, and the transport accumulation, and each
+evaluates ${\cal P}_e$ with a different combination of the `Cur`, `Pre`, and
+`Cor` work arrays; the combinations are given with the equations below.
 
-The two velocity kernels are not among them: they need the *gradient* of the
-pressure anomaly across an edge, not the edge pressure ${\cal P}_e$ that
-multiplies a velocity to make a flux. Only the bracketed difference in
-Eq. {eq}`split-stage2-effective-pressure` depends on ${\cal B}'$; the column
-sum is common to all three.
-
-The column sum $\sum_k[\tilde h_k^*]_e$ uses the flux pseudo thickness on edges
-produced by the pseudo-thickness auxiliary state, so it already carries the
-configured centered or upwind edge reconstruction. It is evaluated once, before
-the subcycle loop begins, and is held fixed for all $2M$ passes.
+Only the bracketed difference in Eq. {eq}`split-stage2-effective-pressure`
+depends on ${\cal B}'$; the column sum $\sum_k[\tilde h_k^*]_e$ is identical in
+all three evaluations. That column sum is the pseudo thickness
+interpolated from cells to edges with the same centered or upwind reconstruction
+the pseudo-thickness auxiliary state uses when it forms layer thickness fluxes,
+then summed over the column. It is diagnosed once from the provisional state
+before the subcycle loop begins and is held fixed for all $2M$ passes; the
+barotropic subcycle neither updates it nor is it updated by the barotropic
+fluxes.
 
 The reference $B'^{*}$ is the provisional barotropic pressure anomaly at the
 working time level on entry to Stage 2, in the same sense the asterisk carries
@@ -760,7 +758,7 @@ $$
 [-\nabla \cdot [F_e]^{m+1}]_i.
 $$ (split-stage2-b-corrector)
 
-On *hatted* subcycle quantities the asterisk denotes a different buffer
+On *hatted* subcycle quantities the asterisk denotes a different work array
 depending on where it appears, so the mapping to the code is worth stating
 explicitly. Starred hatted pressures are always the predictor output `Pre`.
 Starred hatted velocities are the predictor output `Pre` in the $\overline {\bf{u}}$
@@ -1463,7 +1461,7 @@ initialization performs the following operations:
 1. Compute momentum vertical auxiliary variables needed for pressure.
 2. For a non-restart `SplitExplicitRK2` run, compute barotropic pressure and
    pressure anomaly from pressure-interface, surface-pressure, and bottom-depth
-   fields, then initialize all three barotropic subcycle pressure buffers.
+   fields, then initialize all three barotropic subcycle pressure work arrays.
 3. Initialize velocity split fields. For a non-restart run with
    `SplitExplicitRK2`, full normal velocity is split into barotropic and
    baroclinic components. For a restart run, barotropic velocity is preserved
@@ -1515,8 +1513,8 @@ be added without complicating the RK2 stage logic.
 For `SplitExplicitRK2`, the barotropic stage is active and currently uses the
 predictor-corrector barotropic stepper.  For unsplit stepping, `SplitFactor` is
 zero and stage 2 is skipped. The predictor-corrector implementation owns three
-buffers (`Cur`, `Pre`, and `Cor`) for both barotropic velocity and pressure
-anomaly. It exchanges the `Cur` buffers once per subcycle step, evaluates the
+work arrays (`Cur`, `Pre`, and `Cor`) for both barotropic velocity and pressure
+anomaly. It exchanges the `Cur` work arrays once per subcycle step, evaluates the
 remaining kernels over progressively smaller halo ranges so that no further halo
 exchange is needed within a subcycle step, accumulates the corrected velocity and
 the pressure transport, and exchanges the resulting time-averaged fields after

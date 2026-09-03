@@ -623,20 +623,21 @@ $$ (split-stage2-effective-pressure)
 ${\cal P}_e$ is written as a function of ${\cal B}'$ because it is evaluated
 more than once per subcycle step with different arguments. ${\cal B}'$ is a placeholder
 for whichever barotropic pressure anomaly is passed in; it is not a stored field
-of its own. Three of the kernels in a subcycle step form a barotropic mass flux,
-the $B'$ predictor, the $B'$ corrector, and the transport accumulation, and each
-evaluates ${\cal P}_e$ with a different combination of the `Cur`, `Pre`, and
-`Cor` work arrays; the combinations are given with the equations below.
+of its own. The $B'$ predictor, the $B'$ corrector, and the transport
+accumulation each form a barotropic mass flux, so each evaluates ${\cal P}_e$,
+passing a different combination of the three subcycle work arrays, `Cur`, `Pre`,
+and `Cor`, which hold the anomaly at the start of the step, the predictor
+output, and the corrector output; the combinations are written out in the
+equations below.
 
 Only the bracketed difference in Eq. {eq}`split-stage2-effective-pressure`
-depends on ${\cal B}'$; the column sum $\sum_k[\tilde h_k^*]_e$ is identical in
-all three evaluations. That column sum is the pseudo thickness
-interpolated from cells to edges with the same centered or upwind reconstruction
-the pseudo-thickness auxiliary state uses when it forms layer thickness fluxes,
-then summed over the column. It is diagnosed once from the provisional state
-before the subcycle loop begins and is held fixed for all $2M$ passes; the
-barotropic subcycle neither updates it nor is it updated by the barotropic
-fluxes.
+depends on ${\cal B}'$. The column sum $\sum_k[\tilde h_k^*]_e$ is identical in
+all three evaluations: it is the flux pseudo thickness on edges produced by the
+pseudo-thickness auxiliary state, so it already carries the configured centered
+or upwind edge reconstruction, summed over the column. It is diagnosed once from
+the provisional state before the subcycle loop begins and is held fixed for all
+$2M$ subcycles. The barotropic fluxes formed with ${\cal P}_e$ do not update the
+pseudo thickness, so the column sum does not change as the subcycles proceed.
 
 The reference $B'^{*}$ is the provisional barotropic pressure anomaly at the
 working time level on entry to Stage 2, in the same sense the asterisk carries
@@ -1616,15 +1617,3 @@ The following end-to-end verification cases are available in Polaris:
 - Overflow
 - Baroclinic channel
 - Realistic global ocean
-
-<!--
-## References
-
-- Higdon, R. L. (2005). Reference used for the split-explicit
-  barotropic-baroclinic time-stepping formulation.
-- Hallberg, R., & Adcroft, A. (2009). Barotropic-baroclinic coupling and
-  pressure consistency scheme. <https://doi.org/10.1016/j.ocemod.2009.02.008>
-- Griffies (2012) and Madec et al. (2015) are referenced for the steric
-  sea-surface-height formulation in the
-  [derivation above](#split-steric-height-griffies-madec).
-  -->

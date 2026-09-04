@@ -28,6 +28,7 @@ userGuide/Config
 userGuide/Broadcast
 userGuide/Logging
 userGuide/Driver
+userGuide/MpasMesh
 userGuide/Decomp
 userGuide/Dimension
 userGuide/EOS
@@ -76,6 +77,7 @@ devGuide/Driver
 devGuide/EOS
 devGuide/Broadcast
 devGuide/CMakeBuild
+devGuide/BuildNml
 devGuide/Logging
 devGuide/Decomp
 devGuide/Dimension

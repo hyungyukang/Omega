@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CIME buildnml and Configuration Validation &mdash; Omega develop documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+
+  
+      <script src="../_static/jquery.js"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+      <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+      <script src="../_static/doctools.js"></script>
+      <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Developing Omega Logging" href="Logging.html" />
+    <link rel="prev" title="Omega Build with CMake" href="CMakeBuild.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Omega
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User's guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/QuickStart.html">Quick Start for Users</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/OmegaBuild.html">CMake-based Omega Build</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/DataTypes.html">Data Types and Precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Config.html">Model Configuration (Config)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Broadcast.html">Broadcast</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Logging.html">Omega Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Driver.html">Driver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Driver.html#coupled-mode">Coupled mode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/MpasMesh.html">MPAS Mesh Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Decomp.html">Domain Decomposition (Decomp)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Dimension.html">Dimension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/EOS.html">Equation of State (EOS)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Error.html">Error handling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Field.html">Fields and Metadata (Field)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/IO.html">Parallel IO (IO)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/IOStreams.html">IO Streams (IOStream)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Halo.html">Halo Exchanges (Halo)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/HorzMesh.html">Horizontal Mesh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/HorzOperators.html">Horizontal Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/AuxiliaryVariables.html">Auxiliary Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/AuxiliaryState.html">Auxiliary State</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/TendencyTerms.html">Tendency Terms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Tendencies.html">Tendencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/OceanState.html">Ocean State</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/TimeMgr.html">Time Manager (TimeMgr)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/TimeStepping.html">Time stepping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Reductions.html">Global Reductions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Tracers.html">Tracers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/TridiagonalSolvers.html">Tridiagonal Solvers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/VertCoord.html">Vertical Coordinate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/PGrad.html">Pressure Gradient</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Timing.html">Timing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/VertAdv.html">Vertical Advection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Forcing.html">Forcing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/SfcCoupling.html">Surface Coupling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/Analysis.html">Analysis</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer's guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="QuickStart.html">Quick Start for Developers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CondaEnv.html">Development Conda Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Linting.html">Linting Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Docs.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildDocs.html">Building the Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Testing.html">Testing Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html">Data Types and Precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataTypes.html#arrays-and-kokkos">Arrays and Kokkos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParallelLoops.html">Parallel loops</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MachEnv.html">Machine Environment (MachEnv)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Config.html">Model Configuration (Config)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Driver.html">Driver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="EOS.html">Equation of State (EOS)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Broadcast.html">Broadcast</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CMakeBuild.html">Omega Build with CMake</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">CIME <code class="docutils literal notranslate"><span class="pre">buildnml</span></code> and Configuration Validation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#omega-buildnml-package"><code class="docutils literal notranslate"><span class="pre">omega_buildnml</span></code> package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#validation-and-ci">Validation and CI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-a-supported-mesh">Adding a supported mesh</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Logging.html">Developing Omega Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Decomp.html">Domain Decomposition (Decomp)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Dimension.html">Dimension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Error.html">Error Handler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Field.html">Fields and Metadata (Field)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="IO.html">Parallel IO (IO)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="IOStreams.html">IO Streams (IOStream)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Halo.html">Halo Exchanges (Halo)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HorzMesh.html">Horizontal Mesh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HorzOperators.html">Horizontal Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AuxiliaryVariables.html">Auxiliary Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AuxiliaryState.html">Auxiliary State</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TendencyTerms.html">Tendency Terms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Tendencies.html">Tendencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OceanState.html">Ocean State</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TimeMgr.html">Time Manager (TimeMgr)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TimeStepping.html">Time stepping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Reductions.html">Global Reductions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Tracers.html">Tracers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TridiagonalSolvers.html">Tridiagonal Solvers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="VertCoord.html">Vertical Coordinate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PGrad.html">Pressure Gradient (PGrad)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Timing.html">Timing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
+<li class="toctree-l1"><a class="reference internal" href="VertAdv.html">Vertical Advection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Forcing.html">Forcing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SfcCoupling.html">Surface Coupling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Analysis.html">Analysis</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Design documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../design/OmegaV0ShallowWater.html">Omega V0: Shallow Water</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/OmegaV1GoverningEqns.html">Omega V1: Governing Equations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Broadcast.html">Broadcast</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Config.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Coupling.html">Surface Coupling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/DataTypes.html">DataTypes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Decomp.html">Decomp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Driver.html">Driver and Component Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/EOS.html">Equation of State (EOS)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Error.html">ErrorHandler (Error)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/FillValues.html">Fill Values</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Halo.html">Halo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/HorzMeshClass.html">Horizontal Mesh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Logging.html">Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/MachEnv.html">MachineEnv</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Metadata.html">Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/PGrad.html">Pressure Gradient</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/IO.html">Input/Output (IO)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/IOStreams.html">IOStreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Reductions.html">Global Reductions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/State.html">State</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/StateValidation.html">Ocean State Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/SubmesoscaleEddies.html">Submesoscale Eddy Parameterization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Tendency.html">Tendency</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Tendencies.html">Tendencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/AuxiliaryVariables.html">Auxiliary variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/AuxiliaryState.html">AuxiliaryState</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/TimeMgr.html">TimeManager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Timers.html">Timers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/TimeStepping.html">Time Stepping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Tracers.html">Tracer Infrastructure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/TridiagonalSolver.html">Tridiagonal Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/VertAdv.html">Vertical Advection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/VertCoord.html">Vertical Coordinate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/Template.html">Template</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Omega</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">CIME <code class="docutils literal notranslate"><span class="pre">buildnml</span></code> and Configuration Validation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/devGuide/BuildNml.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="cime-buildnml-and-configuration-validation">
+<span id="omega-dev-buildnml"></span><h1>CIME <code class="docutils literal notranslate"><span class="pre">buildnml</span></code> and Configuration Validation<a class="headerlink" href="#cime-buildnml-and-configuration-validation" title="Permalink to this heading"></a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">components/omega/cime_config/buildnml</span></code> generates a case’s <code class="docutils literal notranslate"><span class="pre">omega.yml</span></code> by
+layering Omega’s defaults, coupled/mesh overrides, runtime overrides derived
+from the case, and <code class="docutils literal notranslate"><span class="pre">user_nl_omega</span></code> (see <a class="reference internal" href="../userGuide/Config.html#omega-user-config"><span class="std std-ref">Model Configuration (Config)</span></a>). This
+page covers the Python package behind <code class="docutils literal notranslate"><span class="pre">buildnml</span></code>, how its configuration is
+validated, and how to add support for a new mesh.</p>
+<section id="omega-buildnml-package">
+<h2><code class="docutils literal notranslate"><span class="pre">omega_buildnml</span></code> package<a class="headerlink" href="#omega-buildnml-package" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">components/omega/cime_config/omega_buildnml/</span></code> implements the merging and
+validation logic used by <code class="docutils literal notranslate"><span class="pre">buildnml</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">read_write.py</span></code> reads/writes YAML config files and packaged data.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">config.py</span></code> merges the configuration layers and resolves mesh input files.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">validate.py</span></code> validates overrides and <code class="docutils literal notranslate"><span class="pre">IOStreams</span></code> against <code class="docutils literal notranslate"><span class="pre">Default.yml</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">data/input_files.yaml</span></code> maps each supported mesh to its input file(s).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">data/config_overrides.yaml</span></code> holds the coupled and mesh-specific overrides.</p></li>
+</ul>
+<p>Validation runs whenever these files are read, so a bad edit fails fast at
+<code class="docutils literal notranslate"><span class="pre">case.setup</span></code> rather than surfacing as a confusing runtime error. Stream
+names are checked dynamically against <code class="docutils literal notranslate"><span class="pre">Default.yml</span></code> rather than a
+hardcoded list: the <code class="docutils literal notranslate"><span class="pre">coupled</span></code> section of <code class="docutils literal notranslate"><span class="pre">config_overrides.yaml</span></code> and a
+case’s <code class="docutils literal notranslate"><span class="pre">user_nl_omega</span></code> are free to define brand-new <code class="docutils literal notranslate"><span class="pre">IOStreams</span></code> entries,
+but a stream referenced in <code class="docutils literal notranslate"><span class="pre">input_files.yaml</span></code> must already exist in
+<code class="docutils literal notranslate"><span class="pre">Default.yml</span></code>, since <code class="docutils literal notranslate"><span class="pre">input_files.yaml</span></code> only supplies a <code class="docutils literal notranslate"><span class="pre">Filename</span></code>
+override for an existing <code class="docutils literal notranslate"><span class="pre">IOStreams</span></code> entry. <code class="docutils literal notranslate"><span class="pre">IOStreams</span></code> is not permitted
+under a mesh entry in <code class="docutils literal notranslate"><span class="pre">config_overrides.yaml</span></code>’s <code class="docutils literal notranslate"><span class="pre">meshes</span></code> section, since
+per-mesh IOStreams overrides aren’t a supported use case; put IOStreams
+that apply to every mesh under <code class="docutils literal notranslate"><span class="pre">coupled</span></code> instead. The required streams
+(<code class="docutils literal notranslate"><span class="pre">HorzMeshIn</span></code>, <code class="docutils literal notranslate"><span class="pre">InitialVertCoord</span></code>, <code class="docutils literal notranslate"><span class="pre">InitialState</span></code>) are always enforced.</p>
+</section>
+<section id="validation-and-ci">
+<h2>Validation and CI<a class="headerlink" href="#validation-and-ci" title="Permalink to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">components/omega/cime_config/validate_config.py</span></code> runs the same validation
+against every mesh and override entry (rather than just the ones needed for
+one case), so it catches problems anywhere in the packaged configuration:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>components/omega/cime_config
+./validate_config.py
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">omega-buildnml</span></code> GitHub Actions workflow runs this script, along with
+<code class="docutils literal notranslate"><span class="pre">omega_buildnml</span></code>’s pytest unit tests across supported Python versions, on
+every pull request touching <code class="docutils literal notranslate"><span class="pre">cime_config/</span></code> or <code class="docutils literal notranslate"><span class="pre">Default.yml</span></code>. Run both
+locally before opening a PR that changes either:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>components/omega/cime_config
+./validate_config.py
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>omega_buildnml/tests<span class="w"> </span>-v
+</pre></div>
+</div>
+</section>
+<section id="adding-a-supported-mesh">
+<h2>Adding a supported mesh<a class="headerlink" href="#adding-a-supported-mesh" title="Permalink to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>Confirm the mesh’s grid alias is already defined for E3SM in
+<code class="docutils literal notranslate"><span class="pre">cime_config/config_grids.xml</span></code> at the repository root; <code class="docutils literal notranslate"><span class="pre">buildnml</span></code> looks
+up input files by the case’s <code class="docutils literal notranslate"><span class="pre">OCN_GRID</span></code> value.</p></li>
+<li><p>Add an entry for the mesh to <code class="docutils literal notranslate"><span class="pre">data/input_files.yaml</span></code>, listing the input
+file(s) that provide its <code class="docutils literal notranslate"><span class="pre">HorzMeshIn</span></code>, <code class="docutils literal notranslate"><span class="pre">InitialVertCoord</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">InitialState</span></code> streams (split across multiple <code class="docutils literal notranslate"><span class="pre">inputs</span></code> entries if the
+initial condition is a separate file from the mesh).</p></li>
+<li><p>If the mesh needs overrides beyond Omega’s defaults and the coupled
+overrides, add a <code class="docutils literal notranslate"><span class="pre">meshes.&lt;mesh</span> <span class="pre">name&gt;</span></code> entry to <code class="docutils literal notranslate"><span class="pre">data/config_overrides.yaml</span></code>.</p></li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">./validate_config.py</span></code> to confirm the new entries are complete and
+consistent with <code class="docutils literal notranslate"><span class="pre">Default.yml</span></code>.</p></li>
+</ol>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="CMakeBuild.html" class="btn btn-neutral float-left" title="Omega Build with CMake" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Logging.html" class="btn btn-neutral float-right" title="Developing Omega Logging" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Energy Exascale Earth System Model Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

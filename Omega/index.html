@@ -54,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Logging.html">Omega Logging</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Driver.html">Driver</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Driver.html#coupled-mode">Coupled mode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userGuide/MpasMesh.html">MPAS Mesh Specification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Decomp.html">Domain Decomposition (Decomp)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Dimension.html">Dimension</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/EOS.html">Equation of State (EOS)</a></li>
@@ -100,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="devGuide/EOS.html">Equation of State (EOS)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Broadcast.html">Broadcast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/CMakeBuild.html">Omega Build with CMake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devGuide/BuildNml.html">CIME <code class="docutils literal notranslate"><span class="pre">buildnml</span></code> and Configuration Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Logging.html">Developing Omega Logging</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Decomp.html">Domain Decomposition (Decomp)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Dimension.html">Dimension</a></li>
@@ -220,7 +222,10 @@ component of E3SM for comparison purposes.</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/DataTypes.html">Data Types and Precision</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/MachEnv.html">Machine Environment (MachEnv)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="userGuide/Config.html">Model Configuration (Config)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userGuide/Config.html">Model Configuration (Config)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/Config.html#coupled-run-configuration-user-nl-omega">Coupled Run Configuration (<code class="docutils literal notranslate"><span class="pre">user_nl_omega</span></code>)</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Broadcast.html">Broadcast</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Logging.html">Omega Logging</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="userGuide/Logging.html#logging-in-standalone-build-mode">Logging in Standalone Build mode</a></li>
@@ -230,6 +235,17 @@ component of E3SM for comparison purposes.</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Driver.html">Driver</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Driver.html#coupled-mode">Coupled mode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userGuide/MpasMesh.html">MPAS Mesh Specification</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MpasMesh.html#summary">Summary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MpasMesh.html#definitions-and-conventions">Definitions and conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MpasMesh.html#grid-description">Grid description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MpasMesh.html#grid-dimensions">Grid dimensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MpasMesh.html#horizontal-mesh-fields">Horizontal mesh fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MpasMesh.html#edge-angles">Edge angles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MpasMesh.html#global-attributes">Global attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/MpasMesh.html#connectivity-and-ordering-requirements">Connectivity and ordering requirements</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Decomp.html">Domain Decomposition (Decomp)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Dimension.html">Dimension</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/EOS.html">Equation of State (EOS)</a><ul>
@@ -245,8 +261,14 @@ component of E3SM for comparison purposes.</p>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/IOStreams.html">IO Streams (IOStream)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Halo.html">Halo Exchanges (Halo)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/HorzMesh.html">Horizontal Mesh</a></li>
-<li class="toctree-l1"><a class="reference internal" href="userGuide/HorzOperators.html">Horizontal Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="userGuide/AuxiliaryVariables.html">Auxiliary Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userGuide/HorzOperators.html">Horizontal Operators</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/HorzOperators.html#interpolate-cells-to-edges">Interpolate cells to edges</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="userGuide/AuxiliaryVariables.html">Auxiliary Variables</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/AuxiliaryVariables.html#kinetic-energy-on-cells">Kinetic energy on cells</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/AuxiliaryState.html">Auxiliary State</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/TendencyTerms.html">Tendency Terms</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="userGuide/TendencyTerms.html#second-order-horizontal-advection-algorithm">Second Order Horizontal Advection Algorithm</a></li>
@@ -292,8 +314,9 @@ component of E3SM for comparison purposes.</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/Forcing.html">Forcing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="userGuide/Forcing.html#surface-stress-forcing">Surface stress forcing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/Forcing.html#surface-thickness-and-tracer-flux-forcing">Surface thickness and tracer flux forcing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="userGuide/Forcing.html#surface-tracer-restoring">Surface tracer restoring</a></li>
-<li class="toctree-l2"><a class="reference internal" href="userGuide/Forcing.html#notes">Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="userGuide/Forcing.html#id2">Notes</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="userGuide/SfcCoupling.html">Surface Coupling</a></li>
@@ -367,6 +390,12 @@ component of E3SM for comparison purposes.</p>
 <li class="toctree-l2"><a class="reference internal" href="devGuide/CMakeBuild.html#step-3-build">Step 3: Build</a></li>
 <li class="toctree-l2"><a class="reference internal" href="devGuide/CMakeBuild.html#step-4-output">Step 4: Output</a></li>
 <li class="toctree-l2"><a class="reference internal" href="devGuide/CMakeBuild.html#standalone-build-commands">Standalone Build Commands</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="devGuide/BuildNml.html">CIME <code class="docutils literal notranslate"><span class="pre">buildnml</span></code> and Configuration Validation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/BuildNml.html#omega-buildnml-package"><code class="docutils literal notranslate"><span class="pre">omega_buildnml</span></code> package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/BuildNml.html#validation-and-ci">Validation and CI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/BuildNml.html#adding-a-supported-mesh">Adding a supported mesh</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Logging.html">Developing Omega Logging</a><ul>
@@ -485,8 +514,10 @@ component of E3SM for comparison purposes.</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/Forcing.html">Forcing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="devGuide/Forcing.html#surface-stress-forcing-design">Surface stress forcing design</a></li>
-<li class="toctree-l2"><a class="reference internal" href="devGuide/Forcing.html#surface-tracer-restoring-design">Surface tracer restoring design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/Forcing.html#surface-thickness-and-tracer-flux-forcing-design">Surface thickness and tracer flux forcing design</a></li>
 <li class="toctree-l2"><a class="reference internal" href="devGuide/Forcing.html#notes">Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/Forcing.html#surface-tracer-restoring-design">Surface tracer restoring design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devGuide/Forcing.html#id1">Notes</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="devGuide/SfcCoupling.html">Surface Coupling</a><ul>

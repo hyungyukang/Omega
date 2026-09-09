@@ -66,7 +66,13 @@ void SplitExplicitRK2Stepper::initializeStateFromInput(OceanState *State,
    constexpr I4 NextLevel = 1;
 
    Array3DReal CurTracerArray = Tracers::getAll(CurLevel);
+
+   // This is the only call to computeMomVertAux outside of the time stepping
+   // loop Don't time it to make the time stepping timer stack easier to
+   // interpret
+   Pacer::disableTiming();
    AuxState->computeMomVertAux(State, CurTracerArray, CurLevel);
+   Pacer::enableTiming();
 
    if (SEConfig.SplitFactor == 0._Real) {
       SplitExplicitInit::computeUnsplitVelocitySplit(State, Mesh, VCoord,
@@ -576,6 +582,9 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
       const TimeInstant VelStageTime =
           TimeStepIteration == 0 ? StageTime : StageTime + 0.5 * TimeStep;
 
+      // Update KPP-related fields
+      updateKPPFields(State, CurLevel, CurLevel, CurLevel);
+
       // Stage 1: Baroclinic velocity advance, with long time step
       doBaroclinicVelocityUpdate(State, NextTracerArray, CurLevel, NextLevel,
                                  VelStageTime, TimeStep);
@@ -633,18 +642,7 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
        });
 
    // Apply implicit vertical mixing
-   CurTracerArray = Tracers::getAll(CurLevel);
-   if (VMix->VelVertMixSetup.Enabled or VMix->TracerVertMixSetup.Enabled) {
-      VMix->VertMixImplicit(State, AuxState, CurTracerArray, NTracers,
-                            CurLevel);
-
-      // Re-exchange halos after vertical mixing
-      Pacer::timingBarrier("SE-RK2:vMixHaloExchBarrier", 3, Comm);
-      Pacer::start("SE-RK2:vMixHaloExch", 3);
-      State->exchangeHalo(CurLevel);
-      Tracers::exchangeHalo(CurLevel);
-      Pacer::stop("SE-RK2:vMixHaloExch", 3);
-   }
+   applyImplicitVerticalMixing(State, CurLevel, CurLevel, CurLevel, "SE-RK2");
 
    validateOceanState(State, AuxState, VertCoord::getDefault(), CurLevel);
 

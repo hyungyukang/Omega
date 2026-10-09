@@ -19,7 +19,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Parallel IO (IO)" href="IO.html" />
+    <link rel="next" title="CFUnits" href="CFUnits.html" />
     <link rel="prev" title="Error Handler" href="Error.html" />
     <link href="../_static/style.css" rel="stylesheet" type="text/css">
 
@@ -81,6 +81,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/PGrad.html">Pressure Gradient</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Timing.html">Timing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/KPPMix.html">KPP Boundary Layer Mixing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/VertAdv.html">Vertical Advection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Forcing.html">Forcing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/SfcCoupling.html">Surface Coupling</a></li>
@@ -109,6 +110,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Dimension.html">Dimension</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Error.html">Error Handler</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Fields and Metadata (Field)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CFUnits.html">CFUnits</a></li>
 <li class="toctree-l1"><a class="reference internal" href="IO.html">Parallel IO (IO)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="IOStreams.html">IO Streams (IOStream)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Halo.html">Halo Exchanges (Halo)</a></li>
@@ -129,6 +131,7 @@
 <li class="toctree-l1"><a class="reference internal" href="PGrad.html">Pressure Gradient (PGrad)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Timing.html">Timing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
+<li class="toctree-l1"><a class="reference internal" href="KPPMix.html">KPP Boundary Layer Mixing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VertAdv.html">Vertical Advection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Forcing.html">Forcing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SfcCoupling.html">Surface Coupling</a></li>
@@ -170,6 +173,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../design/SplitTimeStepping.html">Split Time Stepping</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../design/Tracers.html">Tracer Infrastructure</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../design/TridiagonalSolver.html">Tridiagonal Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../design/KPPMix.html">KPP Boundary Layer Mixing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../design/VertAdv.html">Vertical Advection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../design/VertCoord.html">Vertical Coordinate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../design/VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
@@ -452,6 +456,38 @@ be deleted. Entire fields can be removed using:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="n">Field</span><span class="o">::</span><span class="n">clear</span><span class="p">();</span>
 </pre></div>
 </div>
+<p>Fields can optionally have a regional mask attached to support spatial subsetting
+in analysis operations. A regional mask is a 1D integer array (<code class="docutils literal notranslate"><span class="pre">Array1DI4</span></code>) over
+the horizontal dimension (cells, edges, or vertices) where mask values indicate
+inclusion (1) or exclusion (0) of each location.</p>
+<p>Regional masks are set, queried, and retrieved using:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">   </span><span class="c1">// Set a regional mask for a field (shallow copy - shares data with source)</span>
+<span class="w">   </span><span class="n">MyField</span><span class="o">-&gt;</span><span class="n">setRegionalMask</span><span class="p">(</span><span class="n">MaskArray</span><span class="p">);</span>
+
+<span class="w">   </span><span class="c1">// Check if a field has a regional mask attached</span>
+<span class="w">   </span><span class="kt">bool</span><span class="w"> </span><span class="n">HasMask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MyField</span><span class="o">-&gt;</span><span class="n">hasRegionalMask</span><span class="p">();</span>
+
+<span class="w">   </span><span class="c1">// Retrieve the regional mask (returns Array1DI4)</span>
+<span class="w">   </span><span class="n">Array1DI4</span><span class="w"> </span><span class="n">Mask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MyField</span><span class="o">-&gt;</span><span class="n">getRegionalMask</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>Key implementation details:</p>
+<ul class="simple">
+<li><p>The mask is stored as a shallow copy (Kokkos view), so the original mask array and the field’s mask share the same data</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hasRegionalMask()</span></code> returns true if <code class="docutils literal notranslate"><span class="pre">setRegionalMask()</span></code> was called, even if the pointer is null (used for lifetime bug detection)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">getRegionalMask()</span></code> validates pointer integrity and aborts if mask was set but deallocated</p></li>
+<li><p>Regional masks are automatically propagated through analysis operator chains:</p>
+<ul>
+<li><p>Binary operators (e.g., BinaryMultiplyOp) propagate mask from first input</p></li>
+<li><p>ExtractRegionOp attaches masks and can compute mask intersections</p></li>
+<li><p>Spatial reduction operators (e.g., BinnedAccumulatorOp) apply masks automatically</p></li>
+</ul>
+</li>
+</ul>
+<p>Regional masks are primarily used by the Analysis framework for regional statistics
+and diagnostics (e.g., Atlantic MOC, basin-averaged temperatures). The mask mechanism
+enables efficient spatial subsetting without modifying field data or creating separate
+regional field copies.</p>
 <p>As mentioned above, Fields can be assigned to groups to provide an easy way
 to reference fields that commonly appear together, especially when listing
 contents of fields in IO files. Internally, a field group is implemented as
@@ -517,7 +553,7 @@ groups before exiting.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="Error.html" class="btn btn-neutral float-left" title="Error Handler" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="IO.html" class="btn btn-neutral float-right" title="Parallel IO (IO)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="CFUnits.html" class="btn btn-neutral float-right" title="CFUnits" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

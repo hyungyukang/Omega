@@ -83,6 +83,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/PGrad.html">Pressure Gradient</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Timing.html">Timing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/KPPMix.html">KPP Boundary Layer Mixing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/VertAdv.html">Vertical Advection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Forcing.html">Forcing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/SfcCoupling.html">Surface Coupling</a></li>
@@ -111,6 +112,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Dimension.html">Dimension</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Error.html">Error Handler</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Field.html">Fields and Metadata (Field)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/CFUnits.html">CFUnits</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/IO.html">Parallel IO (IO)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/IOStreams.html">IO Streams (IOStream)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Halo.html">Halo Exchanges (Halo)</a></li>
@@ -131,6 +133,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/PGrad.html">Pressure Gradient (PGrad)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Timing.html">Timing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/KPPMix.html">KPP Boundary Layer Mixing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/VertAdv.html">Vertical Advection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Forcing.html">Forcing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/SfcCoupling.html">Surface Coupling</a></li>
@@ -245,6 +248,7 @@
 <li class="toctree-l1"><a class="reference internal" href="SplitTimeStepping.html">Split Time Stepping</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Tracers.html">Tracer Infrastructure</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TridiagonalSolver.html">Tridiagonal Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="KPPMix.html">KPP Boundary Layer Mixing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VertAdv.html">Vertical Advection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VertCoord.html">Vertical Coordinate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
@@ -482,11 +486,11 @@ However, for compatibility with the rest of E3SM, we have decided to use <span c
 = \rho_0 \varphi \left[ \tilde{w} - \tilde{w}_r - \tilde{ u} \right]
 \]</div>
 <p>so that the vertical flux terms correctly account for both the local motion of the fluid and the motion of the interface itself.</p>
-<p>The quantity <span class="math notranslate nohighlight">\(\tilde{w}\)</span> in equation <a class="reference internal" href="#equation-w-tilde">(10)</a> is the pseudo-velocity. The second term, <span class="math notranslate nohighlight">\(\tilde{ u} = {\bf u} \cdot \nabla \tilde{z}^{\text{top}}\)</span>, captures the component of horizontal velocity advecting material across a sloping pseudo-height interface. Together, the expression in brackets represents the <strong>net vertical transport</strong> through a surface of constant <span class="math notranslate nohighlight">\(\tilde{z}\)</span>. A schematic of how <span class="math notranslate nohighlight">\(\tilde{w}\)</span>, <span class="math notranslate nohighlight">\(\tilde{w}_{tr}\)</span>, and <span class="math notranslate nohighlight">\(\tilde{u}\)</span> relate to each other is shown in <a class="reference internal" href="#pseudo-vel-schematic"><span class="std std-numref">Fig. 11</span></a>:</p>
+<p>The quantity <span class="math notranslate nohighlight">\(\tilde{w}\)</span> in equation <a class="reference internal" href="#equation-w-tilde">(10)</a> is the pseudo-velocity. The second term, <span class="math notranslate nohighlight">\(\tilde{ u} = {\bf u} \cdot \nabla \tilde{z}^{\text{top}}\)</span>, captures the component of horizontal velocity advecting material across a sloping pseudo-height interface. Together, the expression in brackets represents the <strong>net vertical transport</strong> through a surface of constant <span class="math notranslate nohighlight">\(\tilde{z}\)</span>. A schematic of how <span class="math notranslate nohighlight">\(\tilde{w}\)</span>, <span class="math notranslate nohighlight">\(\tilde{w}_{tr}\)</span>, and <span class="math notranslate nohighlight">\(\tilde{u}\)</span> relate to each other is shown in <a class="reference internal" href="#pseudo-vel-schematic"><span class="std std-numref">Fig. 14</span></a>:</p>
 <figure class="align-center" id="pseudo-vel-schematic">
 <a class="reference internal image-reference" href="../_images/tilde_w.jpeg"><img alt="../_images/tilde_w.jpeg" src="../_images/tilde_w.jpeg" style="width: 300px;" /></a>
 <figcaption>
-<p><span class="caption-number">Fig. 11 </span><span class="caption-text">Schematic of pseudo-velocities.</span><a class="headerlink" href="#pseudo-vel-schematic" title="Permalink to this image"></a></p>
+<p><span class="caption-number">Fig. 14 </span><span class="caption-text">Schematic of pseudo-velocities.</span><a class="headerlink" href="#pseudo-vel-schematic" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
 <p>Because both terms are scaled by <span class="math notranslate nohighlight">\(1/\rho_0\)</span> in <a class="reference internal" href="#equation-vertical-flux">(15)</a>, the full flux is multiplied by <span class="math notranslate nohighlight">\(\rho_0\)</span> to recover a physical mass flux. This ensures dimensional consistency and physical equivalence to the traditional form <span class="math notranslate nohighlight">\(\rho w - \rho {\bf u} \cdot \nabla z\)</span> expressed in geometric-height coordinates.</p>

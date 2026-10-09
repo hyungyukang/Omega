@@ -144,7 +144,9 @@ A concrete derived operator is responsible for three things:
    record the input Field names, construct the output Field name(s), allocate
    the output data array, and register the output [Field](#omega-dev-field)
    with the appropriate metadata. Output Field names follow the convention
-   `<input>_<OperatorSuffix>` (for example, `Temperature_SpatialMax`).
+   `<input>_<OperatorSuffix>` (for example, `Temperature_SpatialMax`). The
+   output's CF metadata is derived from the input's, as described under
+   [Output metadata](#omega-dev-analysis-output-metadata).
 2. **Initialization**: `initialize()` is called by the orchestrator after all
    Fields exist. The base implementation stores the mesh, vertical
    coordinate, and communicator; operators may override to perform additional
@@ -197,9 +199,116 @@ field(s).
 | -------- | ------ | ------- | ----------- | ------------- | ----------------- | ----------- |
 | `SpatialMin` | 1 | 1 | scalar with same type as input (`Array1D<InType>`, dimension `Scalar`) | `_SpatialMin` | — | Global minimum of the input field. |
 | `SpatialMax` | 1 | 1 | scalar with same type as input (`Array1D<InType>`, dimension `Scalar`) | `_SpatialMax` | — | Global maximum of the input field. |
-| `SpatialMean` | 1 | 1 | scalar (`Array1DReal`, dimension `Scalar`) | `_SpatialMean` | — | Global mean of the input field. |
-| `SpatialStdDev` | 2 (the field and its `_SpatialMean`) | 1 | scalar (`Array1DReal`, dimension `Scalar`) | `_SpatialStdDev` | — | Global standard deviation of the input field. Requires the field's `SpatialMean` as an upstream input, which is added to its input list automatically. |
+| `SpatialMean` | 1 | 1 | scalar (`Array1DReal`, dimension `Scalar`) | `_SpatialMean` | — | Global weighted mean of the input field: by area for a horizontal field, by mass for a layered one (see [Spatial weights](#omega-dev-analysis-spatial-weights)). |
+| `SpatialStdDev` | 2 (the field and its `_SpatialMean`) | 1 | scalar (`Array1DReal`, dimension `Scalar`) | `_SpatialStdDev` | — | Global weighted standard deviation of the input field, with the same weights as `SpatialMean`. Requires the field's `SpatialMean` as an upstream input, which is added to its input list automatically. |
 | `TimeMean` | 1 | 1 | same rank and dimensions as the input (`Real`) | `_TimeMean<period>` | `Period` (string, e.g. `"1Day"`) | Time average of the input field over a configurable period (e.g. `1Day`). Accumulates every time step and finalizes the mean when the period alarm rings. Output name embeds the period, e.g. `_TimeMean1Day`. |
+| `BinaryMultiply` | 2 | 1 | same as first input | `_BinaryMultiply(<field2>)` | — | Element-wise multiplication of two fields. Supports vertical expansion (1D field replicated across vertical layers when multiplied with 2D/3D field). |
+| `HorzMean` | 1 | 1 | 1D Real (`Array1DReal`) over the input's vertical dimension | `_HorzMean` | `WeightField` (string, optional, default `AreaCell`) | Area-weighted horizontal mean per vertical layer/interface. |
+| `BinnedAccumulator` | 2 (data field, bin index field) | 1 | replaces horizontal dimension with `NumBins` | `_BinnedAccumulator(<binfield>)` | `NumBins` (I4) | Accumulates field values into spatial bins. Uses MPI reduction for global totals. Automatically applies regional mask if attached to input Field. |
+| `CoordinateBinning` | 1 | 1 | 1D integer (`Array1DI4`) | `_BinIndex` | `NumBins` (I4), `MinBin` (Real, optional), `MaxBin` (Real, optional) | Assigns mesh entities to bins based on coordinate values (e.g., latitude). Computed once during initialization and cached. |
+| `ExtractRegion` | 1 | 1 | same as input | `_<RegionName>` | `MaskName` (string) | Applies regional mask to field by multiplying values with mask. Attaches mask to output Field for downstream operators. Supports mask intersection. |
+| `PrefixSum` | 1 | 1 | same as input | `_PrefixSum` | `Dimension` (I4), `Reverse` (bool, default false) | Cumulative summation along specified dimension. Forward (start→end) or reverse (end→start) scan. |
+| `PseudoToGeometric` | 1 | 1 | same as input | `_Geometric` | — | Converts pseudo-height coordinates to geometric coordinates using specific volume. Handles vertical grid staggering automatically. |
+| `ScalarMultiply` | 1 | 1 | same as input | `_ScalarMultiply(<value>)` | `Scalar` (string, parsed to Real) | Multiplies field by scalar constant. Can be used for unit conversions (e.g., ×1e-6 for Sverdrups). |
+| `TransectAccumulator` | 3 (data field, mask field, sign field) | 1 | 1D vertical profile | `_TransectAccumulator(<transect>)` | `TransectName` (string) | Accumulates transport across transect edges. Only supports 2D Real arrays for the data field. Uses MPI reduction for global totals. |
+
+(omega-dev-analysis-spatial-weights)=
+### Spatial weights
+
+`SpatialMean` and `SpatialStdDev` weight each mesh entity by how much of the
+ocean it represents, so that the statistic does not depend on the mesh
+resolution. The weights are built by the `SpatialWeights` class in
+`analysis/SpatialWeights.h` from the input field's dimension names:
+
+- A horizontal field (rank 1) is weighted by area: `AreaCell` for cells,
+  `DcEdge * DvEdge` for edges and `AreaTriangle` for vertices.
+- A layered field (last dimension `NVertLayers`) is weighted by mass, the
+  area times the current `PseudoThickness` of the state, which is the layer's
+  renormalized mass per unit area. The pseudo-thickness at an edge is the mean
+  of its two cells and at a vertex the kite-area-weighted mean of its cells,
+  as in the auxiliary variables.
+- An interface field (last dimension `NVertLayersP1`) is weighted by half the
+  mass of each adjacent layer, so the weights sum to the column mass and the
+  result is the mass-weighted mean of the field taken as piecewise linear
+  between interfaces. The surface and bottom interfaces have one adjacent
+  layer each.
+
+Only active entries take part. The weights are built from the active masks
+of the vertical coordinate by selection rather than multiplication, and the
+reductions skip inactive entries, so the fill values in inactive layers are
+never read. Any leading extra dimensions of the field (e.g. tracers) share
+the same weights.
+
+An operator uses the weights by calling `init()` with the input field name
+in `initialize()`, `update()` in `compute()` (mass weights follow the state,
+so they are recomputed each time), and then `weightedSum()` or
+`weightedSquaredDeviation()` with the input array and `weightSum()` for the
+normalization. The sums accumulate each owned entity's terms in a fixed
+order and reduce them with `globalSum`, so they are as reproducible as
+Omega's other global sums.
+
+(omega-dev-analysis-output-metadata)=
+### Output metadata
+
+An output Field inherits its CF metadata from the input it is derived from.
+The base class provides the helpers that do this:
+
+- `inheritMetadata(InputName, CellMethod)` returns an `InheritedMetadata`
+  struct holding the input's `units`, `standard_name` and `cell_methods`,
+  each empty if the input has none, with `CellMethod` appended to the cell
+  methods. CF requires `cell_methods` to list the reductions in the order
+  they were applied, so a time mean of a spatial mean carries
+  `area: depth: mean time: mean`.
+- `spatialCellMethod(InputName, Method)` returns the cell method for a
+  reduction over all owned mesh entities and layers of the input:
+  `area: <Method>` for a horizontal (1D) field and `area: depth: <Method>`
+  for a field with a vertical dimension. `Method` is a CF cell method name
+  (`mean`, `minimum`, `maximum`, `standard_deviation`, `sum`).
+- `createOutputField(...)` calls `Field::create()` with the inherited units
+  and standard name and adds the `cell_methods` attribute when it is not
+  empty.
+- `getFieldAttribute(FieldName, AttName)` returns any string attribute of a
+  Field, or an empty string if the Field has none.
+
+The built-in reductions (mean, minimum, maximum, standard deviation, time
+mean) all have the units and standard name of the field they reduce, so
+they pass `inheritMetadata()` straight to `createOutputField()`:
+```c++
+auto CellMethod  = spatialCellMethod(InputNames[0], "mean");
+auto Meta        = inheritMetadata(InputNames[0], CellMethod);
+auto OutputField = createOutputField(OutputNames[0],
+                                     "Spatial mean of " + InputNames[0],
+                                     Meta, ValidMin, ValidMax, NDims, DimNames);
+```
+An operator whose result has different units derives them with
+[CFUnits](#omega-dev-cfunits) before creating the output, and clears the
+standard name if the result is no longer the same physical quantity. For
+example, an area-weighted sum multiplies the input's units by those of the
+cell area:
+```c++
+auto Meta  = inheritMetadata(InputNames[0],
+                             spatialCellMethod(InputNames[0], "sum"));
+Meta.Units = CFUnits::multiply(Meta.Units, "m2");
+Meta.StdName.clear();
+```
+The other operators derive their units the same way:
+
+- `BinaryMultiply` multiplies the units of its two inputs (a velocity in
+  `m s-1` times an area in `m2` is `m3 s-1`) and has no standard name or cell
+  methods, since the product is a new quantity.
+- `ScalarMultiply` scales the units by the reciprocal of its scalar with
+  `CFUnits::scale()`, so a flux in `m3 s-1` multiplied by `1e-6` is in
+  `1e+06 m3 s-1` (Sverdrups). A negative scalar also clears the standard
+  name, since it reverses the quantity.
+- `HorzMean` inherits the units and standard name and appends `area: mean`.
+- `BinnedAccumulator`, `TransectAccumulator` and `PrefixSum` sum their input,
+  and `ExtractRegion` and `PseudoToGeometric` multiply it by a mask or a
+  dimensionless factor, so all of them inherit its units. `PrefixSum` aborts
+  if its boundary condition field has different units from its input.
+- `CoordinateBinning` outputs a bin index, which is dimensionless (`1`).
+
+A field without units yields outputs without units, never with invented ones,
+and a malformed units string aborts the run when the operator is constructed.
 
 ## Operator factory and type dispatch
 
@@ -219,6 +328,19 @@ location, registering a creator lambda for each. The currently enabled ranks
 are 1 through 3 (the 4D and 5D entries are present but commented out because
 Omega currently utilizes no arrays with rank $>$ 3, and each registered
 operator variant increases compile time and binary size).
+
+For operators that only support specific array ranks, the factory provides
+specialized registration methods using SFINAE (Substitution Failure Is Not An
+Error) to prevent invalid template instantiations at compile time:
+
+- `register1DVariants` — registers only 1D array variants (horizontal fields without vertical structure)
+- `register2DVariants` — registers only 2D array variants (horizontal × vertical)
+- `register2DRealVariants` — registers only 2D Real array variants (excludes integer types)
+
+These methods use compile-time type checking to filter out incompatible array
+types, reducing compile time and binary size while catching type errors early.
+The SFINAE helpers (`register1DVariantHelper`, etc.) expand over all array types
+but only register the matching variants, with no-op branches for mismatched types.
 
 At creation time, the orchestrator calls:
 ```c++
@@ -249,6 +371,22 @@ operator kind is identified from the token (a `Spatial` prefix denotes a
 spatial reduction; a `Time` prefix denotes a temporal reduction, with the
 period parsed from the first digit in the token) and the operator is created
 via the factory and wrapped in an `OperatorNode`.
+
+**Parenthesized arguments:** The parser supports operators with parenthesized
+arguments for passing field names, scalar values, or other parameters. The
+parser respects parenthesis depth when splitting on underscores, so
+`Field_BinaryMultiply(OtherField)_ScalarMultiply(1.0e-6)` correctly parses as
+three tokens: `Field`, `BinaryMultiply(OtherField)`, and `ScalarMultiply(1.0e-6)`.
+Different operators interpret parenthesized arguments differently:
+- `BinaryMultiply(FieldName)` — second input field name
+- `ScalarMultiply(Value)` — scalar value (parsed from string to Real)
+- `ExtractRegion(MaskName)` — mask field name passed via Config
+- `BinnedAccumulator(BinIndexField)` — bin index field name
+- `TransectAccumulator(TransectName)` — transect name for mask lookup
+
+An optional `Config` parameter can be passed to `parseChainAndBuildOps()` to
+provide operator-specific configuration that applies to all operators in the
+chain (e.g., binning parameters, integration direction).
 
 After all groups have registered their chains, the constructor resolves the
 graph edges with `buildOperatorDependencies()`, which matches each node's
@@ -350,6 +488,61 @@ the discrete-sampling chain for instantaneous output. It then calls
 `createAnalysisGroupStreams()` to create the corresponding output streams. At
 least one of `ReductionPeriod` or `SnapshotPeriod` must be present.
 
+### MOC
+
+`MOC` computes the Meridional Overturning Circulation (MOC) streamfunction
+using two methods: latitude-binned regional MOC and transect-based MOC.
+Configuration specifies binning parameters, region/transect names, and output
+frequencies:
+
+```yaml
+MOC:
+  Enable: true
+  NumBins: 180                  # Number of latitude bins
+  MinLat: -90.0                 # Minimum latitude in degrees
+  MaxLat: 90.0                  # Maximum latitude in degrees
+  Regions: [Global, Atlantic]   # Regional MOC (latitude × depth)
+  Transects: [Drake, Atlantic26N]  # Transect MOC (depth only)
+  ReductionPeriod: [1Month]
+  SnapshotPeriod: [1Day]
+```
+
+**Latitude-binned MOC** computes the streamfunction as a function of latitude
+and depth for each specified region. The constructor builds a complex operator
+chain for each region:
+1. `LatCell_CoordinateBinning` — assigns cells to latitude bins (initialization only, shared across regions)
+2. `VerticalPseudoVelocity_PseudoToGeometric` — converts to geometric coordinates
+3. `VerticalVelocity_BinaryMultiply(AreaCell)` — computes vertical flux
+4. `[Optional] VerticalFlux_ExtractRegion(RegionMask)` — applies regional mask (for non-global regions)
+5. `VerticalFlux_BinnedAccumulator(LatCell_BinIndex)` — accumulates flux into latitude bins
+6. `BinnedFlux_PrefixSum` — horizontal integration (south to north)
+7. `MOC_ScalarMultiply(1.0e-6)` — converts to Sverdrups (Sv)
+
+**Transect-based MOC** computes the streamfunction across specific transects
+as a function of depth only. The constructor builds a chain for each transect:
+1. `PseudoThickness_PseudoToGeometric` — converts to geometric layer thickness
+2. `LayerThickness_BinaryMultiply(NormalVelocity)` — thickness × velocity
+3. `EdgeTransport_BinaryMultiply(DvEdge)` — transport × edge width
+4. `TransportField_TransectAccumulator(TransectName)` — accumulates across transect edges
+5. `TransectTransport_PrefixSum` — vertical integration (bottom to top, reverse)
+6. `TransectMOC_ScalarMultiply(1.0e-6)` — converts to Sverdrups
+
+For each chain, the constructor stores an operator configuration (`Config`)
+containing parameters like `NumBins`, `Dimension`, `Reverse`, and `TransectName`
+in a `ChainConfigs` vector. These configs are passed to `buildTemporalChains()`,
+which appends temporal operators and applies custom `IOName` metadata to
+produce user-friendly output variable names (e.g., `MOC_streamfunction_Global`
+instead of the full operator chain string). At least one of `Regions` or
+`Transects` must be specified.
+
+```{note}
+Regional and transect masks are not yet implemented in the Omega infrastructure.
+The `Regions` configuration currently only supports `[Global]`, and `Transects`
+is a placeholder. The operator infrastructure (ExtractRegionOp,
+TransectAccumulatorOp) is fully implemented and ready for use once mask fields
+become available.
+```
+
 ## Extensibility
 
 The module is designed so that new operators and new groups plug in through
@@ -365,9 +558,11 @@ To add a new operator:
    operator type name to the base constructor, set `InputNames`, build the
    output name as `<input>_<Suffix>`, set `OutputNames` and `InstanceName`,
    allocate the output data array, and register the output Field with
-   `Field::create()` plus `attachData()`. If the operator depends on another
-   operator's output (as `SpatialStdDev` depends on `SpatialMean`), append
-   that dependency to `InputNames`.
+   `createOutputField()` plus `attachData()`, deriving its units, standard
+   name and cell methods from the input as described under
+   [Output metadata](#omega-dev-analysis-output-metadata). If the operator
+   depends on another operator's output (as `SpatialStdDev` depends on
+   `SpatialMean`), append that dependency to `InputNames`.
 2. **Implement `compute()`** to retrieve the input array(s) from the Field
    registry, perform the transformation, write the output array(s), and update
    `LastComputed`/`FieldComputed`.

@@ -90,6 +90,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Timing.html">Timing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
 <li class="toctree-l1"><a class="reference internal" href="KPPMix.html">KPP Boundary Layer Mixing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SubmesoEddies.html">Submesoscale Eddy Parameterization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VertAdv.html">Vertical Advection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Forcing.html">Forcing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Frazil.html">Frazil</a></li>
@@ -141,6 +142,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Timing.html">Timing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/KPPMix.html">KPP Boundary Layer Mixing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devGuide/SubmesoEddies.html">Submesoscale Eddy Parameterization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/VertAdv.html">Vertical Advection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Forcing.html">Forcing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../devGuide/Frazil.html">Frazil</a></li>
@@ -242,6 +244,13 @@ temperature.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">calcCtFromPt(Sa,</span> <span class="pre">Pt)</span></code> converts potential temperature to Conservative
 Temperature.</p></li>
 </ul>
+<p>Negative absolute salinity is clamped to 0 g/kg in the TEOS-10 temperature
+conversion and freezing helpers, and in the linear EOS freezing calculation.
+The clamp is local to these helpers; it does not modify tracer salinity or
+apply to specific-volume and derivative calculations. This clamp is to avoid
+producing NaNs in the tracer tendencies (teos-10 functions) or produce a
+positive freezing temperature (linear case) that would trigger frazil formation
+if the ocean state reaches negative salinity.</p>
 <p>These helper methods are available through the EOS implementation but do not
 replace the standard <code class="docutils literal notranslate"><span class="pre">computeSpecVol</span></code>, <code class="docutils literal notranslate"><span class="pre">computeSpecVolDisp</span></code>, or
 <code class="docutils literal notranslate"><span class="pre">computeBruntVaisalaFreqSq</span></code> calculations.</p>

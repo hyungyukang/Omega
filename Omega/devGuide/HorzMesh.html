@@ -82,6 +82,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Timing.html">Timing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/KPPMix.html">KPP Boundary Layer Mixing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userGuide/SubmesoEddies.html">Submesoscale Eddy Parameterization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/VertAdv.html">Vertical Advection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Forcing.html">Forcing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userGuide/Frazil.html">Frazil</a></li>
@@ -133,6 +134,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Timing.html">Timing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VerticalMixingCoeff.html">Vertical Mixing Coefficients</a></li>
 <li class="toctree-l1"><a class="reference internal" href="KPPMix.html">KPP Boundary Layer Mixing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SubmesoEddies.html">Submesoscale Eddy Parameterization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VertAdv.html">Vertical Advection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Forcing.html">Forcing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Frazil.html">Frazil</a></li>
@@ -225,7 +227,9 @@ connectivity information from Decomp so this information can be passed among the
 computational routines, alongside the other local mesh information.  It then
 reads most of the remaining mesh variables (coordinates, lengths, areas)
 from the input HorzMeshIn IOStream. A few variables, like masks and operator
-scaling are computed internally. After reading, the init routine fills all
+scaling are computed internally; the mesh scaling is relative to
+the global median cell width, which is computed during initialization.
+After reading, the init routine fills all
 halos and synchronizes the host and device copies of the mesh variables.
 These tasks are organized into several private methods. Eventually,
 dependent mesh variables will be computed from the minimum set of required mesh

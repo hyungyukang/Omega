@@ -93,6 +93,8 @@ target_link_libraries(
     pacer
     stdc++fs
     cpptrace::cpptrace
+    SUNDIALS::arkode
+    SUNDIALS::nvecserial
 )
 
 if(GKlib_FOUND)
@@ -100,6 +102,14 @@ if(GKlib_FOUND)
         OmegaLibFlags
         INTERFACE
         gklib
+    )
+endif()
+
+if("${OMEGA_ARCH}" STREQUAL "HIP")
+    target_link_libraries(
+        OmegaLibFlags
+        INTERFACE
+        SUNDIALS::nvechip
     )
 endif()
 

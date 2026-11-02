@@ -536,6 +536,13 @@ add_omega_test(
     "-n;2"
 )
 
+add_omega_test(
+  SUNDIALS_TEST
+  testSundials.exe
+  timeStepping/SundialsTest.cpp
+    "-n;1"
+)
+
 #######################
 # Kokkos wrappers tests
 #######################

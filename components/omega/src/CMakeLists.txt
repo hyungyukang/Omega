@@ -1,97 +1,104 @@
-# build Omega
+# Omega Top-level CMakeLists.txt
+#
+# - supports two build modes:
+#    1) standalone build
+#    2) e3sm build
 
-# create library flag target for LibOmega
-add_library(OmegaLibFlags INTERFACE)
 
-target_include_directories(
-    OmegaLibFlags
-    INTERFACE
-    ${OMEGA_SOURCE_DIR}/src/analysis
-    ${OMEGA_SOURCE_DIR}/src/base
-    ${OMEGA_SOURCE_DIR}/src/infra
-    ${OMEGA_SOURCE_DIR}/src/ocn
-    ${OMEGA_SOURCE_DIR}/src/timeStepping
-    ${E3SM_ROOT}/share/timing
-    ${E3SM_ROOT}/share/pacer
-    ${E3SM_ROOT}/share/util_cxx
-    ${PIOC_SOURCE_DIR}
-    ${PIOC_BINARY_DIR}
-    ${Parmetis_INCLUDE_DIRS}
-    ${OMEGA_BUILD_DIR}/external/GSW-C
-)
+# Included scripts do automatic cmake_policy() PUSH and POP
+cmake_policy(SET CMP0011 NEW)
 
-target_compile_definitions(
-    OmegaLibFlags
-    INTERFACE
-    OMEGA_ARCH=${OMEGA_ARCH}
-    OMEGA_VECTOR_LENGTH=${OMEGA_VECTOR_LENGTH}
-)
+# list command no longer ignores empty elements
+cmake_policy(SET CMP0007 NEW)
 
-if(OMEGA_SINGLE_PRECISION)
-  target_compile_definitions(
-      OmegaLibFlags
-      INTERFACE
-      OMEGA_SINGLE_PRECISION=1
-  )
+# Only interpret if() arguments as variables or keywords when unquoted
+cmake_policy(SET CMP0054 NEW)
+
+#find_package() uses <PackageName>_ROOT variables.
+cmake_policy(SET CMP0074 NEW)
+
+###########################################################
+# STEP 1: Setup                                           #
+#                                                         #
+# Assign values to the Omega build-controlling variables  #
+###########################################################
+
+# define variables and macros for Omega build
+include(${CMAKE_CURRENT_SOURCE_DIR}/OmegaBuild.cmake)
+
+# common pre-processing for standalone and e3sm mode
+common()
+
+# handle build modes
+if (NOT DEFINED PROJECT_NAME)
+  # enter standalone build
+
+  cmake_minimum_required(VERSION 3.21) # the minimum version for HIP support
+
+  # Collect machine and compiler info from CIME
+  init_standalone_build()
+
+  set(CMAKE_CXX_STANDARD 20) # used in E3SM
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+  project(${OMEGA_PROJECT_NAME}
+          LANGUAGES C CXX
+         )
+
+  set(LINKER_LANGUAGE CXX)   # needed to support Cray C compiler wrapper
+
+  # update variables for standalone build
+  setup_standalone_build()
+
+else()
+  # enter embedded build
+
+  if(DEFINED E3SM_SOURCE_DIR) # E3SM_SOURCE_DIR = E3SM_ROOT/components
+
+    # update variables for e3sm build
+    setup_e3sm_build()
+
+  else()
+    message(FATAL_ERROR "UNKNOWN OMEGA BUILD MODE")
+
+  endif()
+
 endif()
 
+###########################################################
+# STEP 2: Update                                          #
+#                                                         #
+# update cmake & kokkos variables, and adjust               #
+# build-controlling variables                             #
+###########################################################
 
-target_link_options(
-    OmegaLibFlags
-    INTERFACE
-    ${OMEGA_LINK_OPTIONS}
-)
+# update CMake and Kokkos variables from the build-controlling variables
+update_variables()
 
-target_link_directories(
-	OmegaLibFlags
-	INTERFACE
-	${OMEGA_BUILD_DIR}/external/GSW-C
-)
+###########################################
+# place holder for further build-controls #
+###########################################
 
-target_link_libraries(
-    OmegaLibFlags
-    INTERFACE
-    Kokkos::kokkos
-    spdlog::spdlog
-    pioc
-    yaml-cpp::yaml-cpp
-    parmetis
-    metis
-    gptl
-    gswteos-10
-    pacer
-    stdc++fs
-    cpptrace::cpptrace
-)
+# check if all-required variables have proper values
+check_setup()
 
-if(GKlib_FOUND)
-    target_link_libraries(
-        OmegaLibFlags
-        INTERFACE
-        gklib
-    )
-endif()
 
-# Add source files for the library
-file(GLOB_RECURSE _LIBSRC_FILES analysis/*.cpp infra/*.cpp base/*.cpp ocn/*.cpp timeStepping/*.cpp)
+###########################################################
+# STEP 3: Build                                           #
+#                                                         #
+# build Omega, and generate tests                          #
+###########################################################
 
-add_library(${OMEGA_LIB_NAME} ${_LIBSRC_FILES})
+add_subdirectory(external)
+add_subdirectory(src)
 
 if(OMEGA_BUILD_TEST)
-  add_dependencies(${OMEGA_LIB_NAME} gswteos)
-endif()
 
-target_link_libraries(
-    ${OMEGA_LIB_NAME}
-    PRIVATE
-    OmegaLibFlags
-)
+  enable_testing()
 
-# some tests require single precision version of the library
-# if OmegaLib is configured to use double precision we need to
-# build another version
-if(OMEGA_BUILD_TEST AND NOT OMEGA_SINGLE_PRECISION)
-  add_library(${OMEGA_LIB_NAME}_SP ${_LIBSRC_FILES})
+  if (OMEGA_TEST_CDASH)
+    include(CTest)
+  endif()
 
   target_link_libraries(
       ${OMEGA_LIB_NAME}_SP
@@ -148,6 +155,8 @@ if("${OMEGA_BUILD_MODE}" STREQUAL "E3SM")
       csm_share
     )
 
+  add_subdirectory(test)
+
     if(MOAB_FOUND)
       target_compile_definitions(ocn PRIVATE HAVE_MOAB)
       target_include_directories(ocn PRIVATE ${MOAB_INCLUDE_DIRS})
@@ -156,23 +165,11 @@ if("${OMEGA_BUILD_MODE}" STREQUAL "E3SM")
 
 endif()
 
-# build Omega executable
-if(OMEGA_BUILD_EXECUTABLE)
+###########################################################
+# STEP 4: Output                                          #
+#                                                         #
+# prepare outputs according to the output-controlling     #
+# variables                                               #
+###########################################################
 
-  set(EXESRC_FILES
-    drivers/standalone/OceanDriver.cpp
-  )
-
-  # Create the executable target
-  add_executable(${OMEGA_EXE_NAME} ${EXESRC_FILES})
-
-  target_link_libraries(
-    ${OMEGA_EXE_NAME}
-    PRIVATE
-    ${OMEGA_LIB_NAME}
-    OmegaLibFlags
-  )
-
-  set_target_properties(${OMEGA_EXE_NAME} PROPERTIES LINKER_LANGUAGE CXX)
-
-endif()
+wrap_outputs()

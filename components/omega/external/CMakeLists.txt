@@ -261,3 +261,41 @@ endif()
 if (NOT TARGET cpptrace::cpptrace)
 	add_library(cpptrace::cpptrace ALIAS cpptrace-lib)
 endif()
+
+# Add the SUNDIALS library
+# Only ARKODE (with sundials_core and the serial N_Vector it brings along) is
+# built. SUNDIALS writes every option it reads back into the cache with FORCE,
+# so each one is set here rather than left to its default. BUILD_SHARED_LIBS
+# matters most: left unset, SUNDIALS caches its own default of ON, and every
+# later add_library() without a type, OmegaLib included, becomes shared.
+# The precision follows Omega's Real so that sunrealtype and Real agree.
+# A HIP build also gets the HIP N_Vector, which wraps Omega's device arrays;
+# SUNDIALS finds ROCm from ROCM_PATH, and hip::device compiles for the
+# GPU_TARGETS already in the cache.
+if (NOT TARGET SUNDIALS::arkode)
+	set(BUILD_STATIC_LIBS ON)
+	set(BUILD_SHARED_LIBS OFF)
+	set(SUNDIALS_ENABLE_ARKODE ON)
+	set(SUNDIALS_ENABLE_CVODE OFF)
+	set(SUNDIALS_ENABLE_CVODES OFF)
+	set(SUNDIALS_ENABLE_IDA OFF)
+	set(SUNDIALS_ENABLE_IDAS OFF)
+	set(SUNDIALS_ENABLE_KINSOL OFF)
+	set(SUNDIALS_ENABLE_C_EXAMPLES OFF)
+	set(SUNDIALS_ENABLE_CXX_EXAMPLES OFF)
+	set(SUNDIALS_ENABLE_MPI ON)
+	if (OMEGA_SINGLE_PRECISION)
+		set(SUNDIALS_PRECISION SINGLE)
+	else()
+		set(SUNDIALS_PRECISION DOUBLE)
+	endif()
+	if ("${OMEGA_ARCH}" STREQUAL "HIP")
+		set(SUNDIALS_ENABLE_HIP ON)
+	else()
+		set(SUNDIALS_ENABLE_HIP OFF)
+	endif()
+	add_subdirectory(
+	  ${OMEGA_SOURCE_DIR}/external/sundials
+	  ${CMAKE_CURRENT_BINARY_DIR}/external/sundials
+	)
+endif()

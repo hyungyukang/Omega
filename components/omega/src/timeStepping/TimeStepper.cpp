@@ -15,6 +15,7 @@
 #include "RungeKutta2Stepper.h"
 #include "RungeKutta4Stepper.h"
 #include "SplitExplicitRK2Stepper.h"
+#include "SundialsStepper.h"
 #include "VertMix.h"
 
 namespace OMEGA {
@@ -49,10 +50,12 @@ TimeStepperType getTimeStepperFromStr(const std::string &InString) {
       TimeStepperChoice = TimeStepperType::SplitExplicitRK2;
    } else if (InString == "UnsplitRK2") {
       TimeStepperChoice = TimeStepperType::UnsplitRK2;
+   } else if (InString == "Sundials") {
+      TimeStepperChoice = TimeStepperType::Sundials;
    } else {
       ABORT_ERROR("TimeStepper should be one of 'Forward-Backward', "
-                  "'RungeKutta4', 'RungeKutta2', 'SplitExplicitRK2' or "
-                  "'UnsplitRK2' but got {}:",
+                  "'RungeKutta4', 'RungeKutta2', 'SplitExplicitRK2', "
+                  "'UnsplitRK2' or 'Sundials' but got {}:",
                   InString);
    }
 
@@ -363,6 +366,11 @@ TimeStepper *TimeStepper::create(
       NewTimeStepper = new SplitExplicitRK2Stepper(
           InName, InType, InTimeStep, InStartType, InStartTime, InStopType,
           InStopTime, InDuration);
+      break;
+   case TimeStepperType::Sundials:
+      NewTimeStepper =
+          new SundialsStepper(InName, InTimeStep, InStartType, InStartTime,
+                              InStopType, InStopTime, InDuration);
       break;
    case TimeStepperType::Invalid:
       ABORT_ERROR("Invalid time stepping method");

@@ -19,7 +19,7 @@
 ///    CalendarType: No Leap
 ///    # Algorithm to use for the dynamics time integration
 ///    # Supported options are Forward-Backward (default), RungeKutta2,
-///    # RungeKutta4, SplitExplicitRK2 and UnsplitRK2
+///    # RungeKutta4, SplitExplicitRK2, UnsplitRK2 and Sundials
 ///    TimeStepper: Forward-Backward
 ///    # Time step to use, in form of DDDD_hh:mm:ss (days, hours, minutes, secs)
 ///    TimeStep: 0000_00:10:00
@@ -63,6 +63,13 @@
 ///      NBclCoriolisIteration: 2
 ///      # Recompute the velocity split from NormalVelocity at every slow step
 ///      ReinitSplitVelocity: false
+///    # Options for the Sundials time stepper, which takes explicit
+///    # Runge-Kutta steps with SUNDIALS ARKODE. The subgroup is required
+///    # when that stepper is selected; see SundialsStepper.h for the options.
+///    Sundials:
+///      # ForwardEuler, RK2, RK3, RK4, a SUNDIALS explicit Butcher table
+///      # name (eg ARKODE_HEUN_EULER_2_1_2) or Custom
+///      Method: RK4
 /// \EndConfigInput
 //
 //===----------------------------------------------------------------------===//
@@ -93,6 +100,7 @@ enum class TimeStepperType {
    RungeKutta2,
    SplitExplicitRK2,
    UnsplitRK2,
+   Sundials,
    Invalid
 };
 

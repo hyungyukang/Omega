@@ -6,9 +6,11 @@
 ///
 /// This driver tests the OMEGA time stepping module. It checks that every
 /// implemented time stepping scheme converges to an exact solution at
-/// the expected theoretical rate. To only measure time convergence,
-/// the initial conditions and tendency terms are set up such that for
-/// every mesh element an independent ODE is solved.
+/// the expected theoretical rate, including several methods selected by name
+/// for the Sundials stepper, and that the Sundials stepper gives the same
+/// result as RungeKutta4 and RungeKutta2 with the same methods. To only
+/// measure time convergence, the initial conditions and tendency terms are set
+/// up such that for every mesh element an independent ODE is solved.
 ///
 //
 //===-----------------------------------------------------------------------===/
@@ -16,6 +18,7 @@
 #include "TimeStepper.h"
 #include "../ocn/OceanTestCommon.h"
 #include "AuxiliaryState.h"
+#include "Config.h"
 #include "DataTypes.h"
 #include "Decomp.h"
 #include "Dimension.h"
@@ -40,8 +43,12 @@
 #include "VertMix.h"
 #include "mpi.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
+#include <limits>
+#include <utility>
+#include <vector>
 
 using namespace OMEGA;
 
@@ -141,6 +148,36 @@ ErrorMeasures computeErrors() {
    return VelErrors;
 }
 
+// Returns the Sundials subgroup of the in-memory config, where changes made
+// by the tests are seen by Sundials time steppers created afterwards
+Config getSundialsConfig() {
+   Config *OmegaConfig = Config::getOmegaConfig();
+   Config TimeIntConfig("TimeIntegration");
+   OmegaConfig->get(TimeIntConfig);
+   Config SundialsConfig("Sundials");
+   TimeIntConfig.get(SundialsConfig);
+   return SundialsConfig;
+}
+
+// Selects the method of Sundials time steppers created afterwards
+void setSundialsMethod(const std::string &Method) {
+   Config SundialsConfig = getSundialsConfig();
+   SundialsConfig.set("Method", Method);
+}
+
+// Adds Kutta's third-order method as the table used by the Custom method
+void addSundialsCustomTable() {
+   Config TableConfig("CustomTable");
+   TableConfig.add("Stages", 3);
+   TableConfig.add("Order", 3);
+   TableConfig.add("A", std::vector<R8>{0, 0, 0, 0.5, 0, 0, -1, 2, 0});
+   TableConfig.add("B", std::vector<R8>{1. / 6, 2. / 3, 1. / 6});
+   TableConfig.add("C", std::vector<R8>{0, 0.5, 1});
+
+   Config SundialsConfig = getSundialsConfig();
+   SundialsConfig.add(TableConfig);
+}
+
 //------------------------------------------------------------------------------
 // The initialization routine for time stepper testing
 int initTimeStepperTest(const std::string &mesh) {
@@ -171,6 +208,9 @@ int initTimeStepperTest(const std::string &mesh) {
    ModeSplitShareTestConfig.set(
        "BtrTimeStep",
        std::to_string(BaseTimeStepSeconds / BtrSubcyclesPerStep));
+
+   // A table for the Sundials stepper's Custom method
+   addSundialsCustomTable();
 
    // Note that the default time stepper is not used in subsequent tests
    // but is initialized here because the number of time levels is needed
@@ -421,6 +461,106 @@ int testTimeStepper(const std::string &Name, TimeStepperType Type,
    return Err;
 }
 
+// Final prognostic fields of the test state after a run
+struct FinalFields {
+   HostArray2DReal Thickness;
+   HostArray2DReal Velocity;
+   HostArray3DReal TracerArray;
+};
+
+// Copies an array to new host memory. createHostMirrorCopy alone returns the
+// array itself when it is already on the host, and the state arrays are
+// overwritten by later runs.
+template <class ArrayType> auto copyToHost(const ArrayType &Arr) {
+   auto Mirror = createHostMirrorCopy(Arr);
+   auto Copy   = Kokkos::create_mirror(Mirror);
+   deepCopy(Copy, Mirror);
+   return Copy;
+}
+
+// Runs the test problem to the end time at the base time step with a new
+// stepper. RungeKutta4Stepper registers a provisional state under its name
+// that outlives the stepper, so each stepper created here needs its own name.
+FinalFields runToEnd(const std::string &StepperName, TimeStepperType Type) {
+   auto *DefMesh        = HorzMesh::getDefault();
+   auto *DefVCoord      = VertCoord::getDefault();
+   auto *DefHalo        = Halo::getDefault();
+   auto *TestAuxState   = AuxiliaryState::get("TestAuxState");
+   auto *TestTendencies = Tendencies::get("TestTendencies");
+   auto *State          = OceanState::get("TestState");
+
+   const TimeInstant TimeStart(0, 0, 0, 0, 0, 0);
+   const Real TimeEnd = 1;
+   TimeInstant TimeEndTI(0, 0, 0, 0, 0, 1);
+   TimeInterval TimeStepTI(BaseTimeStepSeconds, TimeUnits::Seconds);
+
+   auto *Stepper = TimeStepper::create(
+       StepperName, Type, TestTendencies, TestAuxState, DefMesh, DefVCoord,
+       DefHalo, TimeStepTI, TimeStepperStartType::StartUp, TimeStart,
+       TimeStepperStopType::AtTime, TimeEndTI);
+
+   initState();
+   Stepper->initializeStateFromInput(State, false);
+   const int NSteps    = adjustTimeStep(Stepper, TimeEnd);
+   TimeInstant CurTime = Stepper->getStartTime();
+   for (int Step = 0; Step < NSteps; ++Step) {
+      Stepper->doStep(State, CurTime);
+   }
+
+   FinalFields Final{copyToHost(State->getPseudoThickness(0)),
+                     copyToHost(State->getNormalVelocity(0)),
+                     copyToHost(Tracers::getAll(0))};
+
+   TimeStepper::erase(StepperName);
+   return Final;
+}
+
+// Checks that the Sundials stepper with Method gives the same result as an
+// Omega stepper using the same Runge-Kutta method, to round-off
+int testSundialsMatchesNative(const std::string &Method,
+                              const std::string &NativeName,
+                              TimeStepperType NativeType) {
+   int Err = 0;
+
+   const FinalFields Native = runToEnd("Native" + NativeName, NativeType);
+   setSundialsMethod(Method);
+   const FinalFields Sundials =
+       runToEnd("Sundials" + Method, TimeStepperType::Sundials);
+
+   // Compare owned values, which the steps update and which have halo copies
+   const auto *Mesh  = HorzMesh::getDefault();
+   const int NLayers = Native.Thickness.extent_int(1);
+   Real MaxDiff      = 0;
+   for (int K = 0; K < NLayers; ++K) {
+      for (int ICell = 0; ICell < Mesh->NCellsOwned; ++ICell) {
+         MaxDiff = std::max(MaxDiff, std::abs(Native.Thickness(ICell, K) -
+                                              Sundials.Thickness(ICell, K)));
+         for (int L = 0; L < Native.TracerArray.extent_int(0); ++L) {
+            MaxDiff =
+                std::max(MaxDiff, std::abs(Native.TracerArray(L, ICell, K) -
+                                           Sundials.TracerArray(L, ICell, K)));
+         }
+      }
+      for (int IEdge = 0; IEdge < Mesh->NEdgesOwned; ++IEdge) {
+         MaxDiff = std::max(MaxDiff, std::abs(Native.Velocity(IEdge, K) -
+                                              Sundials.Velocity(IEdge, K)));
+      }
+   }
+
+   // The fields are of order one
+   const Real Tol = 100 * std::numeric_limits<Real>::epsilon();
+   LOG_INFO("TimeStepperTest: Sundials {} vs {}: max difference {:.3e}", Method,
+            NativeName, MaxDiff);
+   if (MaxDiff > Tol) {
+      Err++;
+      LOG_ERROR("TimeStepperTest: Sundials {} differs from {} by {:.3e} > "
+                "{:.3e}",
+                Method, NativeName, MaxDiff, Tol);
+   }
+
+   return Err;
+}
+
 int testOptionalStopTime(const std::string &Name, TimeStepperType Type) {
    int Err = 0;
 
@@ -521,12 +661,39 @@ int timeStepperTest(const std::string &MeshFile = "OmegaMesh.nc") {
    Err += testTimeStepper("UnsplitRK2", TimeStepperType::UnsplitRK2,
                           ExpectedOrder, ATol);
 
+   // Methods selected by name for the Sundials stepper: the shorthands,
+   // SUNDIALS tables (Bogacki-Shampine reuses its last stage, Zonneveld has
+   // five stages) and a custom table
+   const std::vector<std::pair<std::string, Real>> SundialsMethods = {
+       {"ForwardEuler", 1},
+       {"RK2", 2},
+       {"RK3", 3},
+       {"RK4", 4},
+       {"ARKODE_HEUN_EULER_2_1_2", 2},
+       {"ARKODE_BOGACKI_SHAMPINE_4_2_3", 3},
+       {"ARKODE_ZONNEVELD_5_3_4", 4},
+       {"Custom", 3}};
+   ATol = 0.1;
+   for (const auto &[Method, Order] : SundialsMethods) {
+      setSundialsMethod(Method);
+      Err += testTimeStepper("Sundials " + Method, TimeStepperType::Sundials,
+                             Order, ATol);
+   }
+
+   // The same Runge-Kutta methods through SUNDIALS and natively
+   Err += testSundialsMatchesNative("RK4", "RungeKutta4",
+                                    TimeStepperType::RungeKutta4);
+   Err += testSundialsMatchesNative("RK2", "RungeKutta2",
+                                    TimeStepperType::RungeKutta2);
+
    // Verify stepper operates correctly without StopTime/EndAlarm
 
    Err += testOptionalStopTime("ForwardBackward",
                                TimeStepperType::ForwardBackward);
    Err += testOptionalStopTime("SE-RK2", TimeStepperType::SplitExplicitRK2);
    Err += testOptionalStopTime("UnsplitRK2", TimeStepperType::UnsplitRK2);
+   setSundialsMethod("RK4");
+   Err += testOptionalStopTime("Sundials", TimeStepperType::Sundials);
 
    if (Err == 0) {
       LOG_INFO("------ Time Stepper Unit Test Successful ------");

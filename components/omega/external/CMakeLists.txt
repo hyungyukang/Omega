@@ -263,15 +263,15 @@ if (NOT TARGET cpptrace::cpptrace)
 endif()
 
 # Add the SUNDIALS library
-# Only ARKODE (with sundials_core and the serial N_Vector it brings along) is
-# built. SUNDIALS writes every option it reads back into the cache with FORCE,
-# so each one is set here rather than left to its default. BUILD_SHARED_LIBS
-# matters most: left unset, SUNDIALS caches its own default of ON, and every
-# later add_library() without a type, OmegaLib included, becomes shared.
-# The precision follows Omega's Real so that sunrealtype and Real agree.
-# A HIP build also gets the HIP N_Vector, which wraps Omega's device arrays;
-# SUNDIALS finds ROCm from ROCM_PATH, and hip::device compiles for the
-# GPU_TARGETS already in the cache.
+# Only ARKODE is built, with sundials_core, the serial and ManyVector
+# N_Vectors it is built from, and the MPI ManyVector N_Vector. SUNDIALS writes
+# every option it reads back into the cache with FORCE, so each one is set
+# here rather than left to its default. BUILD_SHARED_LIBS matters most: left
+# unset, SUNDIALS caches its own default of ON, and every later add_library()
+# without a type, OmegaLib included, becomes shared. The precision follows
+# Omega's Real so that sunrealtype and Real agree. Omega's device arrays are
+# wrapped in the header-only SUNDIALS Kokkos N_Vector, which uses Omega's
+# Kokkos, so no SUNDIALS GPU backend is built.
 if (NOT TARGET SUNDIALS::arkode)
 	set(BUILD_STATIC_LIBS ON)
 	set(BUILD_SHARED_LIBS OFF)
@@ -284,15 +284,17 @@ if (NOT TARGET SUNDIALS::arkode)
 	set(SUNDIALS_ENABLE_C_EXAMPLES OFF)
 	set(SUNDIALS_ENABLE_CXX_EXAMPLES OFF)
 	set(SUNDIALS_ENABLE_MPI ON)
+	set(SUNDIALS_ENABLE_NVECTOR_MANYVECTOR ON)
+	set(SUNDIALS_ENABLE_NVECTOR_MPIMANYVECTOR ON)
+	set(SUNDIALS_ENABLE_NVECTOR_MPIPLUSX OFF)
+	set(SUNDIALS_ENABLE_NVECTOR_PARALLEL OFF)
+	set(SUNDIALS_ENABLE_HIP OFF)
+	set(SUNDIALS_ENABLE_CUDA OFF)
+	set(SUNDIALS_ENABLE_KOKKOS OFF)
 	if (OMEGA_SINGLE_PRECISION)
 		set(SUNDIALS_PRECISION SINGLE)
 	else()
 		set(SUNDIALS_PRECISION DOUBLE)
-	endif()
-	if ("${OMEGA_ARCH}" STREQUAL "HIP")
-		set(SUNDIALS_ENABLE_HIP ON)
-	else()
-		set(SUNDIALS_ENABLE_HIP OFF)
 	endif()
 	add_subdirectory(
 	  ${OMEGA_SOURCE_DIR}/external/sundials

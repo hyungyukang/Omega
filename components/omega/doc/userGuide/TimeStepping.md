@@ -19,6 +19,8 @@ of the Omega configuration file:
       NTimeStepIteration: 2
       NBclCoriolisIteration: 2
       ReinitSplitVelocity: false
+    Sundials:
+      Method: RK4
 ```
 This configuration refers to the default time stepping used for the model
 dynamics (momentum and continuity equations). Additional time steppers can
@@ -39,10 +41,46 @@ The following time steppers are currently available:
 | RungeKutta4 | classic fourth-order four-stage Runge Kutta method |
 | SplitExplicitRK2 | mode-split RK2 with a subcycled barotropic mode |
 | UnsplitRK2 | the same RK2 scheme with mode splitting disabled |
+| Sundials | an explicit Runge-Kutta method from the SUNDIALS library, chosen with the `Sundials` subgroup |
 
 `SplitExplicitRK2` and `UnsplitRK2` use the `ModeSplitShare` configuration
 subgroup shown above. See [Split time stepping](#omega-user-split-time-stepping)
 for descriptions of these schemes and their configuration options.
+
+The `Sundials` time stepper takes explicit Runge-Kutta steps with the ERKStep
+integrator of the [SUNDIALS](https://computing.llnl.gov/projects/sundials)
+ARKODE package, so the method can be changed without changing Omega. It is
+chosen by the `Method` option of the `Sundials` subgroup, which is required
+when this time stepper is selected. `Method` is one of the shorthands
+
+| Method | SUNDIALS table | Scheme |
+| ------ | -------------- | ------ |
+| ForwardEuler | ARKODE_FORWARD_EULER_1_1 | forward Euler |
+| RK2 | ARKODE_EXPLICIT_MIDPOINT_EULER_2_1_2 | second-order midpoint method, as RungeKutta2 |
+| RK3 | ARKODE_SHU_OSHER_3_2_3 | third-order strong-stability-preserving method of Shu and Osher |
+| RK4 | ARKODE_KUTTA_RK4a_4_4 | classic fourth-order method, as RungeKutta4 |
+
+or the name of any explicit Butcher table SUNDIALS provides (they are listed
+in `external/sundials/include/arkode/arkode_butcher_erk.h`), such as
+`ARKODE_HEUN_EULER_2_1_2` or `ARKODE_SSP_ERK_10_3_4`. The numbers at
+the end of a table name are the number of stages, the order of the embedded
+method (unused, since Omega takes fixed steps) and the order of the method.
+`Method: Custom` uses a table given in a `CustomTable` subgroup:
+```yaml
+    Sundials:
+      Method: Custom
+      CustomTable:
+        Stages: 3
+        Order: 3
+        A: [0.0, 0.0, 0.0, 0.5, 0.0, 0.0, -1.0, 2.0, 0.0]
+        B: [0.16666666666666667, 0.66666666666666667, 0.16666666666666667]
+        C: [0.0, 0.5, 1.0]
+```
+where `A` is the Butcher matrix listed row by row, which must be strictly lower
+triangular, and Omega checks that the coefficients satisfy the order
+conditions for `Order`. The example is Kutta's third-order method. For every
+method, each stage after the first must have a positive `C`. The method,
+its number of stages and its order are written to the log at startup.
 
 The ``TimeStep`` refers to the main model time step used to advance the solution
 forward. The time step is specified as a formatted string and can be provided

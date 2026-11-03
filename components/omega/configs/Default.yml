@@ -18,6 +18,8 @@ Omega:
       NTimeStepIteration: 2
       NBclCoriolisIteration: 2
       ReinitSplitVelocity: false
+    Sundials:
+      Method: RK4
   Decomp:
     HaloWidth: 3
     DecompMethod: MetisKWay

@@ -13,7 +13,15 @@ enable sharing of common code and data, every time stepper inherits from the
 An enumeration listing all implemented schemes is provided. It needs to be extended every time a new time stepper
 is added. It is used to identify a time stepper at run time.
 ```c++
-enum class TimeStepperType { ForwardBackward, RungeKutta4, RungeKutta2 };
+enum class TimeStepperType {
+   ForwardBackward,
+   RungeKutta4,
+   RungeKutta2,
+   SplitExplicitRK2,
+   UnsplitRK2,
+   Sundials,
+   Invalid
+};
 ```
 
 ## TimeStepper base class
@@ -183,3 +191,49 @@ The following time steppers are currently implemented
 | ForwardBackwardStepper | TimeStepperType::ForwardBackward | forward-backward |
 | RungeKutta2Stepper | TimeStepperType::RungeKutta2 | second-order two-stage midpoint Runge Kutta method |
 | RungeKutta4Stepper | TimeStepperType::RungeKutta4 | classic fourth-order four-stage Runge Kutta method |
+| SundialsStepper | TimeStepperType::Sundials | explicit Runge-Kutta method chosen in the configuration, taken by SUNDIALS ARKODE |
+
+### SundialsStepper
+The `SundialsStepper` takes each step with the ERKStep integrator of the
+SUNDIALS ARKODE package, so any explicit Butcher table can be used. The table
+is loaded when the stepper is constructed, and the stage fractions `c` and the
+projection fractions passed to `computeAllTendencies` as `ProjDt` (the next
+stage's `c`, and 1 for the last stage, as in `RungeKutta4Stepper`) are derived
+from it. The ARKODE integrator is created on the first call to `doStep`.
+
+The state ARKODE advances is an MPI ManyVector of three pieces: pseudo-thickness,
+normal velocity and thickness-weighted tracers. Each piece is an Omega array
+wrapped, without copying, as a SUNDIALS Kokkos vector (`SundialsVector.h`), so
+SUNDIALS kernels run in Omega's execution space on every backend. The wrappers
+are created once per array, because Omega rotates time levels without moving
+arrays. `SundialsVector.h` also gives the Kokkos vector a fused linear
+combination, which forms each stage in one kernel and adds the terms in the
+order of Omega's own Runge-Kutta updates.
+
+Each `doStep`
+1. weights the current tracers by thickness into the next tracer time level,
+   prescribes the state and computes the KPP fields, as `RungeKutta4Stepper`
+   does before its first stage
+2. resets ARKODE to the current time level at `t = 0` and takes one fixed step
+   of length `TimeStep` into a vector wrapping the next time level, so ARKODE
+   forms every intermediate stage directly in Omega's arrays. The first stage
+   is evaluated on the current time level. Before each later stage, a stage
+   postprocessing function masks the velocity, prescribes the state at the
+   stage time, converts the tracers to concentrations and exchanges halos. The
+   right-hand side function computes the tendencies and copies them to ARKODE's
+   vector, with zeros outside the active layers so ARKODE leaves those values
+   unchanged.
+3. converts the tracers back to concentrations, rotates the time levels,
+   applies implicit vertical mixing, validates the state and advances the clock
+
+ARKODE allocates its work vectors (one per stage plus about six more) on the
+first steps only. In the time stepper unit test, `RK4` and `RK2` reproduce
+`RungeKutta4Stepper` and `RungeKutta2Stepper` to round-off; the test checks
+both, and the convergence order of several methods. With a prescribed thickness
+or velocity, `RK4` differs from `RungeKutta4Stepper`, which prescribes its
+later stages at the accumulated times `t + sum(RKA) dt` rather than at
+`t + c dt`.
+
+SUNDIALS is built in the precision of Omega's `Real`. The single-precision copy
+of the Omega library built for some tests cannot share vectors with it, so
+there the constructor aborts.

@@ -26,10 +26,14 @@ sunrealtype *deviceData(N_Vector Vec) {
 }
 
 // Clone that keeps the fused operations, so they carry over to every
-// vector ARKODE derives from a wrapped Omega array
+// vector ARKODE derives from a wrapped Omega array. Unlike
+// SundialsVector::Clone, it allocates no host copy of device memory.
+// N_VDestroy deletes the clone.
 N_Vector cloneWithFusedOps(N_Vector Template) {
-   SundialsVector *Clone = SundialsVector::Clone(
-       *sundials::kokkos::GetVec<SundialsVector>(Template), Template->sunctx);
+   SundialsVector::view_type View(
+       "SundialsWorkVector",
+       sundials::kokkos::GetVec<SundialsVector>(Template)->Length());
+   auto *Clone  = new SundialsVector(View, hostView(View), Template->sunctx);
    N_Vector Vec = Clone->get();
    enableFusedOps(Vec);
    return Vec;
@@ -85,6 +89,17 @@ SUNErrCode fusedLinearCombination(int NVec, sunrealtype *C, N_Vector *X,
 void enableFusedOps(N_Vector Vec) {
    Vec->ops->nvlinearcombination = fusedLinearCombination;
    Vec->ops->nvclone             = cloneWithFusedOps;
+}
+
+//------------------------------------------------------------------------------
+// Host view for a SundialsVector over View: empty for device memory
+SundialsVector::host_view_type hostView(const SundialsVector::view_type &View) {
+   if constexpr (Kokkos::SpaceAccessibility<Kokkos::HostSpace,
+                                            MemSpace>::accessible) {
+      return Kokkos::create_mirror_view(View);
+   } else {
+      return SundialsVector::host_view_type();
+   }
 }
 
 } // namespace OMEGA

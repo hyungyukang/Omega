@@ -37,8 +37,14 @@ SUNErrCode fusedLinearCombination(int NVec, sunrealtype *C, N_Vector *X,
                                   N_Vector Z);
 
 /// Gives a SundialsVector the fused linear combination. Vectors cloned from
-/// it, as ARKODE does for its work vectors, get it too.
+/// it, as ARKODE does for its work vectors, get it too, and no host copy of
+/// device memory.
 void enableFusedOps(N_Vector Vec);
+
+/// Host view for a SundialsVector over View. The Kokkos vector would
+/// otherwise allocate a host copy of a device array, which nothing here uses,
+/// so this is empty for device memory and shares host memory as it is.
+SundialsVector::host_view_type hostView(const SundialsVector::view_type &View);
 
 /// Wraps a contiguous Omega array of any rank as a SundialsVector that
 /// shares the array's memory. The array must outlive the vector.
@@ -56,15 +62,7 @@ std::unique_ptr<SundialsVector> wrapArray(const ArrayType &Arr,
    // A view built from a pointer does not own the memory
    SundialsVector::view_type View(Arr.data(), Arr.size());
 
-   // The Kokkos vector would otherwise allocate a host copy of a device
-   // array, which nothing here uses. Host memory is shared as it is.
-   SundialsVector::host_view_type HostView;
-   if constexpr (Kokkos::SpaceAccessibility<Kokkos::HostSpace,
-                                            MemSpace>::accessible) {
-      HostView = Kokkos::create_mirror_view(View);
-   }
-
-   auto Vec = std::make_unique<SundialsVector>(View, HostView, Ctx);
+   auto Vec = std::make_unique<SundialsVector>(View, hostView(View), Ctx);
    enableFusedOps(*Vec);
    return Vec;
 }

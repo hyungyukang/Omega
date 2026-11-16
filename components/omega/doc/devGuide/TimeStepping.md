@@ -239,8 +239,8 @@ Each `doStep`
 3. converts the tracers back to concentrations, rotates the time levels,
    applies implicit vertical mixing, validates the state and advances the clock
 
-ARKODE allocates its work vectors (one per stage plus about six more) on the
-first steps only. In the time stepper unit test, `RK4` and `RK2` reproduce
+ARKODE allocates its work vectors (one per stage plus seven more, in device
+memory only) on the first step only. In the time stepper unit test, `RK4` and `RK2` reproduce
 `RungeKutta4Stepper` and `RungeKutta2Stepper` to round-off; the test checks
 both, and the convergence order of several methods. With a prescribed thickness
 or velocity, `RK4` differs from `RungeKutta4Stepper`, which prescribes its

@@ -289,9 +289,12 @@ static void testKokkosVectors(const HostArray1DReal &Lambda, SUNContext Ctx,
 
 // Checks the fused linear combination against SUNDIALS' generic definition,
 // on vectors cloned from a wrapped array, which must keep the fused operation
+// and have no host copy of device memory
 void testFusedLinearCombination(SUNContext Ctx) {
    constexpr int Length = 1000;
    constexpr int NTerms = 5;
+   constexpr bool HostShared =
+       Kokkos::SpaceAccessibility<Kokkos::HostSpace, MemSpace>::accessible;
 
    Array1DReal Base("Base", Length);
    std::unique_ptr<SundialsVector> Wrapped = wrapArray(Base, Ctx);
@@ -301,6 +304,9 @@ void testFusedLinearCombination(SUNContext Ctx) {
       X[J] = N_VClone(*Wrapped);
       if (X[J]->ops->nvlinearcombination != fusedLinearCombination)
          ABORT_ERROR("SundialsTest: FAIL a clone lost the fused operation");
+      if (N_VGetArrayPointer(X[J]) !=
+          (HostShared ? N_VGetDeviceArrayPointer(X[J]) : nullptr))
+         ABORT_ERROR("SundialsTest: FAIL a clone has a separate host copy");
       const Array1DReal XArr(N_VGetDeviceArrayPointer(X[J]), Length);
       parallelFor(
           {Length}, KOKKOS_LAMBDA(int I) {

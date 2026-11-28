@@ -224,20 +224,26 @@ combination, which forms each stage in one kernel and adds the terms in the
 order of Omega's own Runge-Kutta updates.
 
 Each `doStep`
-1. weights the current tracers by thickness into the next tracer time level,
-   prescribes the state and computes the KPP fields, as `RungeKutta4Stepper`
-   does before its first stage
+1. resets the frazil fluxes and weights the current tracers by thickness into
+   the next tracer time level, as `RungeKutta4Stepper` does before its first
+   stage. `prepareFirstStep` or `prepareNextStep` has already prescribed the
+   state and computed the auxiliary state and KPP fields, with the first
+   stage's projection fraction as `FirstProjFactor`.
 2. resets ARKODE to the current time level at `t = 0` and takes one fixed step
    of length `TimeStep` into a vector wrapping the next time level, so ARKODE
    forms every intermediate stage directly in Omega's arrays. The first stage
-   is evaluated on the current time level. Before each later stage, a stage
-   postprocessing function masks the velocity, prescribes the state at the
-   stage time, converts the tracers to concentrations and exchanges halos. The
-   right-hand side function computes the tendencies and copies them to ARKODE's
-   vector, with zeros outside the active layers so ARKODE leaves those values
-   unchanged.
+   is evaluated on the current time level with `computeAllTendenciesOnly`.
+   Before each later stage, a stage postprocessing function masks the
+   velocity, prescribes the state at the stage time, converts the tracers to
+   concentrations and exchanges halos. The right-hand side function computes
+   the tendencies and copies them to ARKODE's vector, with zeros outside the
+   active layers so ARKODE leaves those values unchanged. Each stage passes its
+   weight `b` as `FinalUpdateWeight`, so the frazil fluxes are accumulated over
+   the step.
 3. converts the tracers back to concentrations, rotates the time levels,
-   applies implicit vertical mixing, validates the state and advances the clock
+   applies implicit vertical mixing, advances the clock and calls
+   `prepareNextStep`, which validates the new state and prepares the first
+   stage of the next step
 
 ARKODE allocates its work vectors (one per stage plus seven more, in device
 memory only) on the first step only. In the time stepper unit test, `RK4` and `RK2` reproduce

@@ -168,6 +168,10 @@ SundialsStepper::SundialsStepper(
 #endif
 
    loadTable();
+
+   // The auxiliary state for the first stage of each step is computed by
+   // prepareNextStep with this fraction of the time step
+   FirstProjFactor = ProjFrac[0];
 }
 
 //------------------------------------------------------------------------------
@@ -391,14 +395,20 @@ void SundialsStepper::computeStageTendencies(int Stage, N_Vector YDot) const {
    const TimeInstant StageTime = StepStart + StageFrac[Stage] * TimeStep;
    const TimeInterval ProjDt   = ProjFrac[Stage] * TimeStep;
 
+   // Weight of the stage in the step result, with which the frazil fluxes
+   // of the step are accumulated
+   const Real FinalUpdateWeight = Table->b[Stage];
+
    if (Stage == 0) {
-      // ARKODE's copy of the start state equals the current time level
-      Tend->computeAllTendencies(StepState, AuxState, Tracers::getAll(CurLevel),
-                                 CurLevel, CurLevel, CurLevel, StageTime,
-                                 ProjDt);
+      // ARKODE's copy of the start state equals the current time level,
+      // whose auxiliary state prepareNextStep has computed
+      Tend->computeAllTendenciesOnly(
+          StepState, AuxState, Tracers::getAll(CurLevel), CurLevel, CurLevel,
+          CurLevel, StageTime, FinalUpdateWeight);
    } else {
       Tend->computeAllTendencies(StepState, AuxState, StageTracers, NextLevel,
-                                 NextLevel, NextLevel, StageTime, ProjDt);
+                                 NextLevel, NextLevel, StageTime, ProjDt,
+                                 FinalUpdateWeight);
    }
 
    packTendencies(YDot);
@@ -472,6 +482,9 @@ void SundialsStepper::doStep(OceanState *State,   // model state
                              TimeInstant &SimTime // current simulation time
 ) const {
 
+   OMEGA_REQUIRE(PrepareFirstStepCalled,
+                 "prepareFirstStep was not called before doStep");
+
    const MPI_Comm Comm = MeshHalo->getComm();
 
    const int CurLevel  = 0;
@@ -480,12 +493,13 @@ void SundialsStepper::doStep(OceanState *State,   // model state
    Array3DReal CurTracerArray  = Tracers::getAll(CurLevel);
    Array3DReal NextTracerArray = Tracers::getAll(NextLevel);
 
-   // Work done before the first stage, as in RungeKutta4Stepper. ARKODE
-   // advances thickness-weighted tracers, which are kept in the next tracer
-   // time level.
+   resetFrazilFluxes();
+
+   // Work done before the first stage, as in RungeKutta4Stepper; the state
+   // was prescribed and the auxiliary state and KPP fields computed by
+   // prepareFirstStep or prepareNextStep. ARKODE advances thickness-weighted
+   // tracers, which are kept in the next tracer time level.
    weightTracers(NextTracerArray, CurTracerArray, State, CurLevel);
-   prescribeState(State, CurLevel, State, CurLevel, SimTime);
-   updateKPPFields(State, CurLevel, CurLevel, CurLevel);
 
    if (!Ctx) {
       if (SUNContext_Create(Comm, &Ctx) != SUN_SUCCESS)
@@ -537,12 +551,12 @@ void SundialsStepper::doStep(OceanState *State,   // model state
 
    applyImplicitVerticalMixing(State, CurLevel, CurLevel, CurLevel, "Sundials");
 
-   validateOceanState(State, AuxState, VertCoord::getDefault(), CurLevel);
-
    // Advance the clock and update the simulation time
    StepClock->advance();
    SimTime = StepClock->getCurrentTime();
    ++StepCount;
+
+   prepareNextStep(State, Tracers::getAll(CurLevel));
 }
 
 } // namespace OMEGA

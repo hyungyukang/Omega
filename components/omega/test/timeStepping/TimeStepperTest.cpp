@@ -496,7 +496,7 @@ FinalFields runToEnd(const std::string &StepperName, TimeStepperType Type) {
        TimeStepperStopType::AtTime, TimeEndTI);
 
    initState();
-   Stepper->initializeStateFromInput(State, false);
+   Stepper->prepareFirstStep(State, Tracers::getAll(0), false);
    const int NSteps    = adjustTimeStep(Stepper, TimeEnd);
    TimeInstant CurTime = Stepper->getStartTime();
    for (int Step = 0; Step < NSteps; ++Step) {

@@ -44,22 +44,50 @@ options for `SplitExplicitRK2` and `UnsplitRK2`:
       NTimeStepIteration: 2
       NBclCoriolisIteration: 2
       ReinitSplitVelocity: false
+      Barotropic:
+        ExplicitMethod: ForwardBackward
+        Theta: 0.5
+        LinearSolver: PCG
+        Preconditioner: Jacobi
+        RelTolerance: 1.0e-10
+        AbsTolerance: 0.0
+        MaxIterations: 1000
 ```
 
 The remaining `TimeIntegration` options are described in the [Time
 stepping](#omega-user-time-stepping) section, and the `ModeSplitShare` values
 shown are those of the default configuration. The `ModeSplitShare` subgroup is
 required whenever one of the two steppers is selected. Within it, only
-`BtrTimeStep` is required, and only for `SplitExplicitRK2`; the other options
-fall back to their defaults:
+`BtrTimeStep` is required, and only for the explicit barotropic steppers of
+`SplitExplicitRK2`; the other options fall back to their defaults:
 
 | Configuration name | Description | Default |
 | ------------------ | ----------- | ------- |
-| BtrTimeStepper | scheme for the barotropic subcycle; `Predictor-Corrector` is the only option | Predictor-Corrector |
-| BtrTimeStep | barotropic time step, in the same format as `TimeStep`; must be positive and shorter than it | required |
+| BtrTimeStepper | scheme for the barotropic mode: `Explicit` (subcycled), `Implicit` (one step per time step) or `Predictor-Corrector` (the same as `Explicit` with `ExplicitMethod: ForwardBackward`) | Predictor-Corrector |
+| BtrTimeStep | barotropic time step of the explicit schemes, in the same format as `TimeStep`; must be positive and shorter than it; ignored by `Implicit` | required for `Explicit` |
+| Barotropic | subgroup of barotropic scheme options, described below | defaults below |
 | NTimeStepIteration | positive integer number of predictor-corrector iterations per time step | 2 |
 | NBclCoriolisIteration | positive integer number of Coriolis iterations in the baroclinic velocity update; forced to 1 for `UnsplitRK2` | 2 |
 | ReinitSplitVelocity | recompute the velocity split at every time step; has no effect for `UnsplitRK2` | false |
+
+The `Barotropic` subgroup chooses the barotropic scheme:
+
+| Configuration name | Description | Default |
+| ------------------ | ----------- | ------- |
+| ExplicitMethod | `Explicit` only: `ForwardBackward` (the Omega forward-backward predictor-corrector), `RK2`, `RK3`, `RK4` or the name of any SUNDIALS explicit Butcher table, integrated with SUNDIALS ARKODE | ForwardBackward |
+| Theta | `Implicit` only: weight of the new time level, between 0.5 (Crank-Nicolson) and 1 (backward Euler) | 0.5 |
+| LinearSolver | `Implicit` only: SUNDIALS Krylov solver for the pseudo-thickness equation, `PCG` or `BiCGStab` | PCG |
+| Preconditioner | `Implicit` only: `None` or `Jacobi` | Jacobi |
+| RelTolerance | `Implicit` only: solver tolerance on the residual 2-norm, relative to the right-hand side | 1.0e-10 |
+| AbsTolerance | `Implicit` only: absolute solver tolerance added to the relative one | 0.0 |
+| MaxIterations | `Implicit` only: maximum number of solver iterations | 1000 |
+
+With `Implicit`, the pseudo thickness (barotropic pressure anomaly) is solved
+implicitly over one baroclinic time step and the barotropic velocity is then
+computed explicitly from its new value; mass is conserved independently of the
+solver tolerance. The explicit `RK2` method is weakly unstable for gravity
+waves, since two-stage Runge-Kutta methods do not contain the imaginary axis in
+their stability region; `RK3` and `RK4` are stable for them.
 
 `BtrTimeStepper` and `BtrTimeStep` are ignored by `UnsplitRK2`, which also
 always uses a single Coriolis iteration. If `NBclCoriolisIteration` is

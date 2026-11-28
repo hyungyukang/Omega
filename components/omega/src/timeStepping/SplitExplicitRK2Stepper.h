@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "SplitExplicitBarotropicPCStepper.h"
+#include "BarotropicStepper.h"
 #include "SplitExplicitTypes.h"
 #include "TimeStepper.h"
 
@@ -113,6 +113,13 @@ class SplitExplicitRK2Stepper : public TimeStepper {
        bool FinalIteration ///< [in] true on the final time-step iteration
    ) const;
 
+   /// Stage 2: advances the barotropic velocity and pressure anomaly from
+   /// the current to the next time level with the barotropic stepper
+   void doBarotropicVelocityUpdate(OceanState *State, ///< [inout] model state
+                                   I4 CurLevel, ///< [in] current time level
+                                   I4 NextLevel ///< [in] next time level
+   ) const;
+
    void doBaroclinicCoriolisIteration(
        OceanState *State,                ///< [inout] model state
        I4 CurLevel,                      ///< [in] current time level
@@ -122,7 +129,8 @@ class SplitExplicitRK2Stepper : public TimeStepper {
 
    SplitExplicitConfig SEConfig;
    mutable SplitExplicitScratch SEScratch;
-   SplitExplicitBarotropicPCStepper BarotropicPCStepper;
+   /// Barotropic stepper of Stage 2, selected by BtrTimeStepper
+   std::unique_ptr<BarotropicStepper> BtrStepper;
 };
 
 } // namespace OMEGA

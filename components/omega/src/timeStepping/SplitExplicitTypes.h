@@ -8,17 +8,16 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "BarotropicStepper.h"
 #include "DataTypes.h"
 #include "TimeMgr.h"
 
 namespace OMEGA {
 
-enum class SplitExplicitBarotropicStepperType { PredictorCorrector, Invalid };
-
 struct SplitExplicitConfig {
    TimeInterval BtrTimeStep;
-   SplitExplicitBarotropicStepperType BtrTimeStepper =
-       SplitExplicitBarotropicStepperType::PredictorCorrector;
+   // Barotropic stepper options (BtrTimeStepper and the Barotropic subgroup)
+   BarotropicStepperConfig BtrConfig;
    I4 NBtrSubcycles = 1;
    // Two iterations are required for the RK2 predictor-corrector structure;
    // a single iteration leaves only the predictor and degrades the scheme to
@@ -30,19 +29,9 @@ struct SplitExplicitConfig {
 };
 
 struct SplitExplicitScratch {
-   // The barotropic subcycle keeps three buffers per field:
-   //    - the state at the start of the subcycle (Cur)
-   //    - the predictor output (Pre)
-   //    - the corrector output (Cor).
-   Array1DReal NormalBarotropicVelocitySubcycleCur;
-   Array1DReal NormalBarotropicVelocitySubcyclePre;
-   Array1DReal NormalBarotropicVelocitySubcycleCor;
-   Array1DReal BarotropicPressureAnomalySubcycleCur;
-   Array1DReal BarotropicPressureAnomalySubcyclePre;
-   Array1DReal BarotropicPressureAnomalySubcycleCor;
+   // The barotropic subcycle buffers are owned by the barotropic stepper.
    Array1DReal BarotropicForcing;
    Array1DReal BarotropicFlux;
-   Array1DReal BaroclinicPseudoThicknessEdge;
    Array2DReal IterVelocityTend;
    Array2DReal TransportVelocityAdd;
 };

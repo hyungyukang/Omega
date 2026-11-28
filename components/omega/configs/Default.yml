@@ -18,6 +18,14 @@ Omega:
       NTimeStepIteration: 2
       NBclCoriolisIteration: 2
       ReinitSplitVelocity: false
+      Barotropic:
+        ExplicitMethod: ForwardBackward
+        Theta: 0.5
+        LinearSolver: PCG
+        Preconditioner: Jacobi
+        RelTolerance: 1.0e-10
+        AbsTolerance: 0.0
+        MaxIterations: 1000
     Sundials:
       Method: RK4
   Decomp:

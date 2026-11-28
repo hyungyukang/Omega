@@ -54,7 +54,10 @@
 ///    # and fall back to the SplitExplicitConfig defaults.
 ///    ModeSplitShare:
 ///      # BtrTimeStepper and BtrTimeStep are ignored by UnsplitRK2, which
-///      # has no barotropic subcycle
+///      # has no barotropic subcycle. BtrTimeStepper is Predictor-Corrector,
+///      # Explicit or Implicit; BtrTimeStep is ignored by Implicit. The
+///      # optional Barotropic subgroup selects the method within them; see
+///      # BarotropicStepper.h for its options.
 ///      BtrTimeStepper: Predictor-Corrector
 ///      BtrTimeStep: 0000_00:00:20
 ///      # Iterations over stages 1-3. Two are needed for the RK2 predictor-

@@ -4,47 +4,45 @@
 //
 /// \file
 /// \brief Forward-backward predictor-corrector barotropic subcycle framework.
+///
+/// This is the Omega forward-backward predictor-corrector barotropic stepper
+/// (BtrTimeStepper Predictor-Corrector, or Explicit with ExplicitMethod
+/// ForwardBackward). It subcycles the barotropic system with NSubsteps
+/// predictor-corrector steps over the window and returns the average of the
+/// corrected barotropic velocity and pressure flux over the subcycles.
 //
 //===----------------------------------------------------------------------===//
 
-#include "Halo.h"
-#include "HorzMesh.h"
-#include "OceanState.h"
-#include "SplitExplicitTypes.h"
-#include "TimeMgr.h"
-#include "VertCoord.h"
+#include "BarotropicStepper.h"
 
 namespace OMEGA {
 
-class AuxiliaryState;
-
-class SplitExplicitBarotropicPCStepper {
+class SplitExplicitBarotropicPCStepper : public BarotropicStepper {
  public:
-   void
-   init(const AuxiliaryState *InAuxState, ///< [in] provisional auxiliary state
-        SplitExplicitScratch *InScratch,  ///< [inout] split-explicit scratch
-        const SplitExplicitConfig *InConfig, ///< [in] split-explicit options
-        const HorzMesh *InMesh,              ///< [in] horizontal mesh
-        Halo *InMeshHalo,                    ///< [in] mesh halo exchange
-        const VertCoord *InVCoord            ///< [in] vertical coordinate
+   SplitExplicitBarotropicPCStepper(
+       const std::string &InName,        ///< [in] name of the owner
+       const AuxiliaryState *InAuxState, ///< [in] provisional auxiliary state
+       const HorzMesh *InMesh,           ///< [in] horizontal mesh
+       Halo *InMeshHalo,                 ///< [in] mesh halo exchange
+       const VertCoord *InVCoord         ///< [in] vertical coordinate
    );
 
-   void doBarotropicVelocityUpdate(
-       OceanState *State,                ///< [inout] model state
-       I4 CurLevel,                      ///< [in] state time level to update
-       I4 NextLevel,                     ///< [in] state time level to update
-       const TimeInterval &StageTimeStep ///< [in] current stage time step
-   ) const;
+   /// Subcycles the barotropic system over the window of In
+   void advance(const BarotropicInput &In,  ///< [in] inputs
+                const BarotropicOutput &Out ///< [out] outputs
+                ) override;
 
  private:
-   const AuxiliaryState *AuxState      = nullptr;
-   SplitExplicitScratch *Scratch       = nullptr;
-   const SplitExplicitConfig *SEConfig = nullptr;
-   const HorzMesh *Mesh                = nullptr;
-   Halo *MeshHalo                      = nullptr;
-   const VertCoord *VCoord             = nullptr;
+   // The subcycle keeps three buffers per field: the state at the start of
+   // the subcycle (Cur), the predictor output (Pre) and the corrector output
+   // (Cor).
+   Array1DReal VelSubcycleCur;
+   Array1DReal VelSubcyclePre;
+   Array1DReal VelSubcycleCor;
+   Array1DReal PressSubcycleCur;
+   Array1DReal PressSubcyclePre;
+   Array1DReal PressSubcycleCor;
 };
 
 } // namespace OMEGA
-
 #endif

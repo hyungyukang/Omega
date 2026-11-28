@@ -55,14 +55,11 @@ void SplitExplicitRK2Stepper::finalizeInit() {
    // weight to use for the surface pressure gradient.
    Tend->setModeSplit(CoriolisTendMode::Separate, SEConfig.SplitFactor);
 
-   if (SEConfig.BtrTimeStepper !=
-       SplitExplicitBarotropicStepperType::PredictorCorrector)
-      LOG_CRITICAL("Invalid split-explicit barotropic time stepper");
-
    SplitExplicitInit::allocateScratch(SEScratch, Mesh, VCoord, Name);
 
-   BarotropicPCStepper.init(AuxState, &SEScratch, &SEConfig, Mesh, MeshHalo,
-                            VCoord);
+   if (SEConfig.SplitFactor != 0._Real)
+      BtrStepper = BarotropicStepper::create(SEConfig.BtrConfig, Name, AuxState,
+                                             Mesh, MeshHalo, VCoord);
 }
 
 //------------------------------------------------------------------------------
@@ -81,8 +78,8 @@ void SplitExplicitRK2Stepper::initializeStateFromInput(OceanState *State,
       SplitExplicitInit::computeUnsplitVelocitySplit(State, Mesh, VCoord,
                                                      CurLevel, NextLevel);
    } else if (!ReadRestart) {
-      SplitExplicitInit::initializeBarotropicPressure(SEScratch, State, Mesh,
-                                                      VCoord, CurLevel);
+      SplitExplicitInit::initializeBarotropicPressure(State, Mesh, VCoord,
+                                                      CurLevel);
       SplitExplicitInit::computeVelocitySplit(State, Mesh, VCoord, CurLevel);
    }
 
@@ -130,6 +127,36 @@ void SplitExplicitRK2Stepper::doBaroclinicVelocityUpdate(
    doBaroclinicCoriolisIteration(State, CurLevel, NextLevel, StageTimeStep);
 
    Pacer::stop("SE-RK2:stage1Bcl", 2);
+}
+
+//------------------------------------------------------------------------------
+// Stage 2. The barotropic stepper starts from the current time level and
+// writes the next one: the explicit steppers return the barotropic velocity
+// averaged over [0, 2 dt] and the implicit stepper its value at n+1. On entry
+// the next level holds the provisional pressure anomaly, the reference of the
+// flux thickness, and the provisional barotropic velocity.
+void SplitExplicitRK2Stepper::doBarotropicVelocityUpdate(OceanState *State,
+                                                         I4 CurLevel,
+                                                         I4 NextLevel) const {
+
+   R8 TimeStepSeconds;
+   TimeStep.get(TimeStepSeconds, TimeUnits::Seconds);
+
+   BarotropicInput In;
+   In.VelStart   = State->getNormalBarotropicVelocity(CurLevel);
+   In.PressStart = State->getBarotropicPressureAnomaly(CurLevel);
+   In.PressRef   = State->getBarotropicPressureAnomaly(NextLevel);
+   In.VelRef     = State->getNormalBarotropicVelocity(NextLevel);
+   In.Forcing    = SEScratch.BarotropicForcing;
+   BtrStepper->getDefaultWindow(TimeStepSeconds, SEConfig.NBtrSubcycles,
+                                In.Window, In.NSubsteps);
+
+   BarotropicOutput Out;
+   Out.Vel     = State->getNormalBarotropicVelocity(NextLevel);
+   Out.Press   = State->getBarotropicPressureAnomaly(NextLevel);
+   Out.FluxAvg = SEScratch.BarotropicFlux;
+
+   BtrStepper->advance(In, Out);
 }
 
 //------------------------------------------------------------------------------
@@ -594,8 +621,7 @@ void SplitExplicitRK2Stepper::doStep(OceanState *State,
 
       if (SEConfig.SplitFactor != 0._Real) {
          // Stage 2: Barotropic velocity advance, explicitly subcycled
-         BarotropicPCStepper.doBarotropicVelocityUpdate(State, CurLevel,
-                                                        NextLevel, TimeStep);
+         doBarotropicVelocityUpdate(State, CurLevel, NextLevel);
       }
 
       // Compute physical total velocity and the corrected transport velocity

@@ -37,7 +37,10 @@ term is included in the potential-vorticity tendency (`CoriolisTendMode::PVFlux`
 | `SplitExplicitTypes.h` | `SplitExplicitConfig` and `SplitExplicitScratch` |
 | `SplitExplicitInit.{h,cpp}` | config reading, scratch allocation, velocity split |
 | `SplitExplicitRK2Stepper.{h,cpp}` | Stages 1 and 3, and the time-step iteration |
-| `SplitExplicitBarotropicPCStepper.{h,cpp}` | Stage 2, the barotropic subcycle |
+| `BarotropicStepper.{h,cpp}` | Stage 2 interface: options, creation and shared utilities of the barotropic steppers |
+| `SplitExplicitBarotropicPCStepper.{h,cpp}` | forward-backward predictor-corrector barotropic subcycle |
+| `SundialsBarotropicExplicitStepper.{h,cpp}` | explicit Runge-Kutta barotropic stepper on SUNDIALS ERKStep |
+| `SundialsBarotropicImplicitStepper.{h,cpp}` | implicit (theta / Crank-Nicolson) barotropic stepper with a SUNDIALS PCG or BiCGStab solver |
 
 ## Configuration
 
@@ -47,15 +50,32 @@ in a `SplitExplicitConfig` member of the stepper.
 
 | Option | Default | Notes |
 | ------ | ------- | ----- |
-| BtrTimeStepper | Predictor-Corrector | only choice; ignored by `UnsplitRK2` |
-| BtrTimeStep | none | required for `SplitExplicitRK2`, must satisfy `0 < BtrTimeStep < TimeStep` |
+| BtrTimeStepper | Predictor-Corrector | `Predictor-Corrector`, `Explicit` or `Implicit`; ignored by `UnsplitRK2` |
+| BtrTimeStep | none | required by the explicit barotropic steppers of `SplitExplicitRK2`, must satisfy `0 < BtrTimeStep < TimeStep`; ignored by `Implicit` |
+| Barotropic | see below | optional subgroup of barotropic stepper options, read by `BarotropicStepper::readConfig` into `SplitExplicitConfig::BtrConfig` |
 | NTimeStepIteration | 2 | positive integer iterations over Stages 1-3; 1 retains only the first-order predictor |
 | NBclCoriolisIteration | 2 | must be positive if supplied; then forced to 1 for `UnsplitRK2` |
 | ReinitSplitVelocity | false | recompute the velocity split every step; no effect for `UnsplitRK2` |
 
 `NBtrSubcycles` is not read from the config; it is derived as
-`ceil(TimeStep/BtrTimeStep)`, and the resolved options are reported with
-`LOG_INFO` at initialization.
+`ceil(TimeStep/BtrTimeStep)` (1 for `Implicit`), and the resolved options are
+reported with `LOG_INFO` at initialization.
+
+The `Barotropic` subgroup selects the barotropic stepper within the
+`BtrTimeStepper` choice:
+
+| Option | Default | Notes |
+| ------ | ------- | ----- |
+| ExplicitMethod | ForwardBackward | `Explicit` only: `ForwardBackward` (the predictor-corrector), `RK2`, `RK3`, `RK4` or a SUNDIALS explicit Butcher table name |
+| Theta | 0.5 | `Implicit` only: weight of the new time level, in [0.5, 1]; 0.5 is Crank-Nicolson |
+| LinearSolver | PCG | `Implicit` only: `PCG` or `BiCGStab` |
+| Preconditioner | Jacobi | `Implicit` only: `None` or `Jacobi` |
+| RelTolerance | 1.0e-10 | `Implicit` only: tolerance on the residual 2-norm relative to the right-hand side norm |
+| AbsTolerance | 0.0 | `Implicit` only: absolute tolerance added to the relative one |
+| MaxIterations | 1000 | `Implicit` only: maximum Krylov iterations |
+
+`BtrTimeStepper: Predictor-Corrector` is kept for compatibility and is the
+same as `Explicit` with `ExplicitMethod: ForwardBackward`.
 
 Two further requirements are enforced elsewhere. `Tendencies::setModeSplit`
 aborts if `SSHTendencyEnable` is true together with a nonzero split factor, and
@@ -70,7 +90,9 @@ scratch arrays and initializes the barotropic substepper:
 ```c++
 Tend->setModeSplit(CoriolisTendMode::Separate, SEConfig.SplitFactor);
 SplitExplicitInit::allocateScratch(SEScratch, Mesh, VCoord, Name);
-BarotropicPCStepper.init(AuxState, &SEScratch, &SEConfig, Mesh, MeshHalo, VCoord);
+if (SEConfig.SplitFactor != 0._Real)
+   BtrStepper = BarotropicStepper::create(SEConfig.BtrConfig, Name, AuxState,
+                                          Mesh, MeshHalo, VCoord);
 ```
 
 The first call tells the velocity tendency to leave the linear Coriolis
@@ -113,7 +135,7 @@ stages `NTimeStepIteration` times:
 ```c++
 doBaroclinicVelocityUpdate(State, NextTracerArray, CurLevel, NextLevel, VelStageTime, TimeStep);
 if (SEConfig.SplitFactor != 0._Real) {
-   BarotropicPCStepper.doBarotropicVelocityUpdate(State, CurLevel, NextLevel, TimeStep);
+   doBarotropicVelocityUpdate(State, CurLevel, NextLevel);
 }
 computeTransportVelocity(State, NextLevel);
 doThicknessTracerUpdate(State, CurTracerArray, NextTracerArray, CurLevel, NextLevel, StageTime, TimeStep, FinalIteration);
@@ -175,7 +197,45 @@ update is the plain half-step advance of the full velocity.
 
 ### Stage 2: barotropic velocity (split only)
 
-`SplitExplicitBarotropicPCStepper::doBarotropicVelocityUpdate` integrates the
+Stage 2 calls the barotropic stepper through the `BarotropicStepper` interface.
+Every input and output is an argument, so the same stepper can be called from
+any baroclinic stepper (a SUNDIALS baroclinic stepper can call it from its stage
+right-hand side with its own window):
+
+```c++
+BarotropicInput In;    // VelStart, PressStart (current level), PressRef,
+                       // VelRef (next level on entry), Forcing, Window, NSubsteps
+BarotropicOutput Out;  // Vel, Press (next level), FluxAvg (BarotropicFlux)
+BtrStepper->getDefaultWindow(TimeStepSeconds, SEConfig.NBtrSubcycles,
+                             In.Window, In.NSubsteps);
+BtrStepper->advance(In, Out);
+```
+
+`getDefaultWindow` gives `[0, 2*TimeStep]` in `2*NBtrSubcycles` substeps for the
+explicit steppers and `[0, TimeStep]` in one step for the implicit stepper.
+The outputs may alias `VelRef` and `PressRef` but not the start arrays. Three
+steppers implement the interface:
+
+- `SplitExplicitBarotropicPCStepper` (`ForwardBackward`), described below.
+- `SundialsBarotropicExplicitStepper` integrates the system with `NSubsteps`
+  fixed steps of an ERKStep method. Its state is `{ubar, B', PhiF, PhiU}`,
+  where `PhiF` and `PhiU` integrate the flux `P(B') ubar` and `ubar` in time,
+  so that the time averages `PhiF/W` and `PhiU/W` use the Runge-Kutta weights
+  and `B'(W) - B'(0) = W (-div FluxAvg)` holds exactly. The right-hand side
+  exchanges the `ubar` and `B'` halos once per stage.
+- `SundialsBarotropicImplicitStepper` takes one theta step over the window.
+  Eliminating the new velocity gives a symmetric positive definite Helmholtz
+  equation for `B'` (the pseudo thickness), which is solved with SUNDIALS PCG or
+  BiCGStab used without an ARKODE integrator, on vectors of the owned cells.
+  The new velocity is then computed explicitly from the new `B'`, the flux
+  `P (Theta ubar^{n+1} + (1-Theta) ubar^n)` is formed from it and `B'` is
+  recomputed from its divergence, so mass is conserved and the flux matches
+  the `B'` update whatever the solver tolerance. The flux thickness is held at
+  the start of the window and the Coriolis term is explicit, with the average
+  of `VelStart` and `VelRef`, which makes it trapezoidal over the two outer
+  iterations.
+
+`SplitExplicitBarotropicPCStepper::advance` integrates the
 barotropic mode with a forward-backward predictor-corrector scheme, subcycled
 over `2*NBtrSubcycles` steps of `TimeStep/NBtrSubcycles`, with the Stage 1
 barotropic forcing held fixed. Each subcycle applies a velocity predictor, a
@@ -257,15 +317,13 @@ state with `validateOceanState`, and advances the clock.
 
 The scratch arrays are allocated once by `SplitExplicitInit::allocateScratch`
 and are held in a `mutable SplitExplicitScratch` member, since `doStep` is
-const.
+const. The barotropic steppers own their work arrays (the predictor-corrector
+`Cur`/`Pre`/`Cor` buffers, the column flux thickness, the SUNDIALS vectors).
 
 | Array | Location | Purpose |
 | ----- | -------- | ------- |
-| NormalBarotropicVelocitySubcycle{Cur,Pre,Cor} | edge | subcycle state, predictor and corrector |
-| BarotropicPressureAnomalySubcycle{Cur,Pre,Cor} | cell | subcycle state, predictor and corrector |
 | BarotropicForcing | edge | column-mean forcing passed from Stage 1 to Stage 2 |
-| BarotropicFlux | edge | subcycle-mean barotropic transport |
-| BaroclinicPseudoThicknessEdge | edge | column sum of the flux pseudo-thickness |
+| BarotropicFlux | edge | time-mean barotropic transport returned by Stage 2 |
 | IterVelocityTend | edge, layer | base plus Coriolis tendency of the current iteration |
 | TransportVelocityAdd | edge, layer | transport velocity correction for Stage 3 |
 
@@ -278,4 +336,13 @@ currently checked for first order in that test configuration. This test
 expectation does not establish second-order accuracy of the full split scheme
 or isolate the source of its error. The test also exercises both types without
 a stop time/end alarm and checks that the step count increments across calls to
-`doStep`.
+`doStep`. `SplitExplicitRK2` is also run with the `Explicit` `RK3` and the
+`Implicit` barotropic steppers.
+
+`BarotropicStepperTest` tests the barotropic steppers on their own, on the
+sphere test mesh with a prescribed column thickness and the Earth's Coriolis
+parameter: reading the options, a state at rest staying at rest, mass
+conservation and the flux consistency of the SUNDIALS steppers, convergence of
+the pressure anomaly to an RK4 reference (second order for `RK2` and
+Crank-Nicolson, third for `RK3`), and the implicit stepper with PCG and
+BiCGStab, with and without Jacobi preconditioning.

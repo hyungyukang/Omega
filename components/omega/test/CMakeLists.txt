@@ -543,6 +543,13 @@ add_omega_test(
     "-n;1"
 )
 
+add_omega_test(
+  BAROTROPIC_STEPPER_TEST
+  testBarotropicStepper.exe
+  timeStepping/BarotropicStepperTest.cpp
+    "-n;2"
+)
+
 #######################
 # Kokkos wrappers tests
 #######################

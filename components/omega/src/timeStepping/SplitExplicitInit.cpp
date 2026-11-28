@@ -5,6 +5,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "SplitExplicitInit.h"
+#include "BarotropicStepper.h"
 #include "Config.h"
 #include "Error.h"
 #include "GlobalConstants.h"
@@ -40,18 +41,23 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep,
    }
 
    if (!IsUnsplit) {
-      std::string BtrTimeStepperStr;
-      if (ModeSplitShareConfig.get("BtrTimeStepper", BtrTimeStepperStr)
-              .isSuccess()) {
-         SEConfig.BtrTimeStepper = getBtrTimeStepperFromStr(BtrTimeStepperStr);
-      }
+      std::string BtrTimeStepperStr = "Predictor-Corrector";
+      ModeSplitShareConfig.get("BtrTimeStepper", BtrTimeStepperStr);
+      SEConfig.BtrConfig = BarotropicStepper::readConfig(BtrTimeStepperStr);
 
-      std::string BtrTimeStepStr;
-      Error BtrErr = ModeSplitShareConfig.get("BtrTimeStep", BtrTimeStepStr);
-      CHECK_ERROR_ABORT(BtrErr,
-                        "TimeIntegration::ModeSplitShare::BtrTimeStep not "
-                        "found in Config; it is required by SplitExplicitRK2");
-      SEConfig.BtrTimeStep = TimeInterval(BtrTimeStepStr);
+      // The implicit barotropic stepper takes one step per baroclinic step,
+      // so it needs no barotropic time step
+      if (SEConfig.BtrConfig.Method == BarotropicMethod::SundialsImplicit) {
+         SEConfig.BtrTimeStep = TimeStep;
+      } else {
+         std::string BtrTimeStepStr;
+         Error BtrErr = ModeSplitShareConfig.get("BtrTimeStep", BtrTimeStepStr);
+         CHECK_ERROR_ABORT(BtrErr,
+                           "TimeIntegration::ModeSplitShare::BtrTimeStep not "
+                           "found in Config; it is required by the explicit "
+                           "barotropic steppers of SplitExplicitRK2");
+         SEConfig.BtrTimeStep = TimeInterval(BtrTimeStepStr);
+      }
    }
 
    I4 NTimeStepIteration = SEConfig.NTimeStepIteration;
@@ -87,6 +93,13 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep,
    if (IsUnsplit) {
       LOG_INFO("UnsplitRK2: NTimeStepIteration={}, TimeStep={} s",
                SEConfig.NTimeStepIteration, TimeStepSeconds);
+   } else if (SEConfig.BtrConfig.Method == BarotropicMethod::SundialsImplicit) {
+      SEConfig.NBtrSubcycles = 1;
+      LOG_INFO("SplitExplicitRK2: TimeStep={} s, implicit barotropic step "
+               "with the baroclinic time step, NTimeStepIteration={}, "
+               "NBclCoriolisIteration={}",
+               TimeStepSeconds, SEConfig.NTimeStepIteration,
+               SEConfig.NBclCoriolisIteration);
    } else {
       SEConfig.NBtrSubcycles =
           computeSubcycleCount(TimeStep, SEConfig.BtrTimeStep);
@@ -102,19 +115,6 @@ SplitExplicitInit::readConfigOptions(const TimeInterval &TimeStep,
    }
 
    return SEConfig;
-}
-
-//------------------------------------------------------------------------------
-SplitExplicitBarotropicStepperType
-SplitExplicitInit::getBtrTimeStepperFromStr(const std::string &InString) {
-
-   if (InString == "Predictor-Corrector") {
-      return SplitExplicitBarotropicStepperType::PredictorCorrector;
-   }
-
-   ABORT_ERROR("BtrTimeStepper should be 'Predictor-Corrector' but got {}",
-               InString);
-   return SplitExplicitBarotropicStepperType::Invalid;
 }
 
 //------------------------------------------------------------------------------
@@ -151,45 +151,17 @@ void SplitExplicitInit::allocateScratch(SplitExplicitScratch &Scratch,
    if (!VCoord)
       LOG_CRITICAL("Invalid vertical coordinate");
 
-   Scratch.NormalBarotropicVelocitySubcycleCur = Array1DReal(
-       "NormalBarotropicVelocitySubcycleCur" + Name, Mesh->NEdgesSize);
-   Scratch.NormalBarotropicVelocitySubcyclePre = Array1DReal(
-       "NormalBarotropicVelocitySubcyclePre" + Name, Mesh->NEdgesSize);
-   Scratch.NormalBarotropicVelocitySubcycleCor = Array1DReal(
-       "NormalBarotropicVelocitySubcycleCor" + Name, Mesh->NEdgesSize);
-   Scratch.BarotropicPressureAnomalySubcycleCur = Array1DReal(
-       "BarotropicPressureAnomalySubcycleCur" + Name, Mesh->NCellsSize);
-   Scratch.BarotropicPressureAnomalySubcyclePre = Array1DReal(
-       "BarotropicPressureAnomalySubcyclePre" + Name, Mesh->NCellsSize);
-   Scratch.BarotropicPressureAnomalySubcycleCor = Array1DReal(
-       "BarotropicPressureAnomalySubcycleCor" + Name, Mesh->NCellsSize);
    Scratch.BarotropicForcing =
        Array1DReal("BarotropicForcing" + Name, Mesh->NEdgesSize);
    Scratch.BarotropicFlux =
        Array1DReal("BarotropicFlux" + Name, Mesh->NEdgesSize);
-   Scratch.BaroclinicPseudoThicknessEdge =
-       Array1DReal("BaroclinicPseudoThicknessEdge" + Name, Mesh->NEdgesSize);
    Scratch.IterVelocityTend = Array2DReal(
        "IterVelocityTend" + Name, Mesh->NEdgesSize, VCoord->NVertLayers);
    Scratch.TransportVelocityAdd = Array2DReal(
        "TransportVelocityAdd" + Name, Mesh->NEdgesSize, VCoord->NVertLayers);
 
-   parallelFor(
-       "initializeCell1D", {Mesh->NCellsAll}, KOKKOS_LAMBDA(I4 ICell) {
-          Scratch.BarotropicPressureAnomalySubcycleCur(ICell) = 0._Real;
-          Scratch.BarotropicPressureAnomalySubcyclePre(ICell) = 0._Real;
-          Scratch.BarotropicPressureAnomalySubcycleCor(ICell) = 0._Real;
-       });
-
-   parallelFor(
-       "initializeEdge1D", {Mesh->NEdgesAll}, KOKKOS_LAMBDA(I4 IEdge) {
-          Scratch.NormalBarotropicVelocitySubcycleCur(IEdge) = 0._Real;
-          Scratch.NormalBarotropicVelocitySubcyclePre(IEdge) = 0._Real;
-          Scratch.NormalBarotropicVelocitySubcycleCor(IEdge) = 0._Real;
-          Scratch.BarotropicForcing(IEdge)                   = 0._Real;
-          Scratch.BarotropicFlux(IEdge)                      = 0._Real;
-          Scratch.BaroclinicPseudoThicknessEdge(IEdge)       = 0._Real;
-       });
+   deepCopy(Scratch.BarotropicForcing, 0._Real);
+   deepCopy(Scratch.BarotropicFlux, 0._Real);
 
    deepCopy(Scratch.IterVelocityTend, 0.);
    deepCopy(Scratch.TransportVelocityAdd, 0.);
@@ -319,9 +291,10 @@ void SplitExplicitInit::computeUnsplitVelocitySplit(OceanState *State,
 }
 
 //------------------------------------------------------------------------------
-void SplitExplicitInit::initializeBarotropicPressure(
-    SplitExplicitScratch &Scratch, OceanState *State, const HorzMesh *Mesh,
-    const VertCoord *VCoord, I4 TimeLevel) {
+void SplitExplicitInit::initializeBarotropicPressure(OceanState *State,
+                                                     const HorzMesh *Mesh,
+                                                     const VertCoord *VCoord,
+                                                     I4 TimeLevel) {
 
    if (!State)
       LOG_CRITICAL("Invalid State");
@@ -345,12 +318,6 @@ void SplitExplicitInit::initializeBarotropicPressure(
               PressureInterface(ICell, KMax + 1) - SurfacePressure(ICell);
           BtrPressAnomaly(ICell) =
               Pressure - RhoSw * Gravity * BottomGeomDepth(ICell);
-          Scratch.BarotropicPressureAnomalySubcycleCur(ICell) =
-              BtrPressAnomaly(ICell);
-          Scratch.BarotropicPressureAnomalySubcyclePre(ICell) =
-              BtrPressAnomaly(ICell);
-          Scratch.BarotropicPressureAnomalySubcycleCor(ICell) =
-              BtrPressAnomaly(ICell);
        });
 }
 

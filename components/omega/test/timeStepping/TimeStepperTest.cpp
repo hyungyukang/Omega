@@ -165,6 +165,21 @@ void setSundialsMethod(const std::string &Method) {
    SundialsConfig.set("Method", Method);
 }
 
+// Selects the barotropic stepper of split-explicit time steppers created
+// afterwards
+void setBarotropicStepper(const std::string &BtrTimeStepper,
+                          const std::string &ExplicitMethod) {
+   Config *OmegaConfig = Config::getOmegaConfig();
+   Config TimeIntConfig("TimeIntegration");
+   OmegaConfig->get(TimeIntConfig);
+   Config ShareConfig("ModeSplitShare");
+   TimeIntConfig.get(ShareConfig);
+   ShareConfig.set("BtrTimeStepper", BtrTimeStepper);
+   Config BtrConfig("Barotropic");
+   ShareConfig.get(BtrConfig);
+   BtrConfig.set("ExplicitMethod", ExplicitMethod);
+}
+
 // Adds Kutta's third-order method as the table used by the Custom method
 void addSundialsCustomTable() {
    Config TableConfig("CustomTable");
@@ -651,6 +666,15 @@ int timeStepperTest(const std::string &MeshFile = "OmegaMesh.nc") {
    ATol          = 0.15;
    Err += testTimeStepper("SE-RK2", TimeStepperType::SplitExplicitRK2,
                           ExpectedOrder, ATol);
+
+   // SE-RK2 with the SUNDIALS barotropic steppers
+   setBarotropicStepper("Explicit", "RK3");
+   Err += testTimeStepper("SE-RK2-BtrRK3", TimeStepperType::SplitExplicitRK2,
+                          ExpectedOrder, ATol);
+   setBarotropicStepper("Implicit", "ForwardBackward");
+   Err += testTimeStepper("SE-RK2-BtrCN", TimeStepperType::SplitExplicitRK2,
+                          ExpectedOrder, ATol);
+   setBarotropicStepper("Predictor-Corrector", "ForwardBackward");
 
    ExpectedOrder = 2;
    ATol          = 0.1;

@@ -15,7 +15,7 @@
 
 To enhance computational efficiency by allowing longer time steps, ocean models require split barotropic-baroclinic time-stepping methods. The implementation described here is based on the approach of [Higdon (2005)](https://www.sciencedirect.com/science/article/pii/S0021999104005236) and the MPAS-Ocean `split_explicit` scheme, with modifications for Omega's non-Boussinesq pseudo-height $\tilde{z}$ vertical coordinate. The pseudo-height coordinate and pseudo thickness $\tilde h$ are defined by Eqs. {eq}`pseudo-height` and {eq}`def-pseudo-thickness`, respectively, in the {ref}`Omega V1 governing equations <omega-design-governing-eqns-omega1>` design document.
 
-Omega currently implements two closely related steppers: `SplitExplicitRK2`, which explicitly subcycles the barotropic mode, and `UnsplitRK2`, which uses the same outer predictor-corrector framework without a barotropic split. The only implemented barotropic algorithm is `Predictor-Corrector`; implicit barotropic stepping and an Adams--Bashforth split-explicit method are future extensions.
+Omega currently implements two closely related steppers: `SplitExplicitRK2`, which explicitly subcycles the barotropic mode, and `UnsplitRK2`, which uses the same outer predictor-corrector framework without a barotropic split. The barotropic mode is advanced through a `BarotropicStepper` interface by the `Predictor-Corrector` (forward-backward) subcycle described here, by explicit Runge--Kutta methods of the SUNDIALS ARKODE ERKStep integrator, or implicitly by a theta (Crank--Nicolson) step whose pseudo-thickness equation is solved with a SUNDIALS Krylov solver (Section 4.2.3); an Adams--Bashforth split-explicit method is a future extension.
 
 The split-explicit method involves the following sequence:
 
@@ -1218,7 +1218,9 @@ The implementation is spread across the following files.
 | `timeStepping/SplitExplicitTypes.h` | `SplitExplicitConfig` and `SplitExplicitScratch` |
 | `timeStepping/SplitExplicitInit.{h,cpp}` | Config reading, scratch allocation, velocity split and recombination, barotropic pressure initialization |
 | `timeStepping/SplitExplicitRK2Stepper.{h,cpp}` | Outer iteration, Stage 1, Stage 3, transport velocity, time-level management |
+| `timeStepping/BarotropicStepper.{h,cpp}` | Stage 2 interface, options and creation of the barotropic steppers |
 | `timeStepping/SplitExplicitBarotropicPCStepper.{h,cpp}` | Stage 2 predictor-corrector barotropic subcycle |
+| `timeStepping/SundialsBarotropic{Explicit,Implicit}Stepper.{h,cpp}` | Stage 2 barotropic steppers built on SUNDIALS (ERKStep, and PCG or BiCGStab) |
 | `timeStepping/TimeStepper.{h,cpp}` | New stepper types and the `initializeStateFromInput` hook |
 | `ocn/OceanState.{h,cpp}` | The three new split prognostic fields |
 | `ocn/Tendencies.{h,cpp}` | Baroclinic velocity tendency and standalone Coriolis acceleration |
@@ -1247,8 +1249,13 @@ Missing keys retain the defaults in `SplitExplicitConfig`.
   1 for unsplit stepping.
 - `BtrTimeStep`: Requested maximum barotropic subcycle time step. It must be
   positive and is ignored by `UnsplitRK2`.
-- `BtrTimeStepper`: Barotropic subcycle algorithm.  The initial implementation
-  supports `Predictor-Corrector`.
+- `BtrTimeStepper`: Barotropic algorithm: `Predictor-Corrector` (forward-backward
+  subcycle), `Explicit` (subcycled; the method is `ExplicitMethod` of the
+  optional `Barotropic` subgroup: `ForwardBackward`, `RK2`, `RK3`, `RK4` or a
+  SUNDIALS ERK table) or `Implicit` (one theta step per baroclinic step with the
+  `Theta`, `LinearSolver`, `Preconditioner`, `RelTolerance`, `AbsTolerance`
+  and `MaxIterations` options of the `Barotropic` subgroup). `BtrTimeStep` is
+  not used by `Implicit`.
 - `SplitFactor`: Internal factor multiplying the barotropic pressure-anomaly
   contribution to the baroclinic velocity tendency.  It is 1 for
   `SplitExplicitRK2` and 0 for unsplit stepping.
@@ -1525,10 +1532,22 @@ The callback signature takes only the state, the two time levels, the stage
 time, and the stage time step; the barotropic stepper reaches everything else it
 needs, including the scratch arrays, the configuration, the mesh, the halo, the
 vertical coordinate, and the equation of state, through the arguments the RK2
-stepper binds into the lambda. Adding an implicit or Adams--Bashforth barotropic
-algorithm therefore means adding an enumerator, a class implementing the same
-`doBarotropicVelocityUpdate` entry point, and a branch in
-`initBarotropicStepper`, with no change to the RK2 stage logic.
+stepper binds into the lambda. The barotropic steppers derive from `BarotropicStepper`, whose `advance` takes
+every input (start state, flux-thickness reference, provisional velocity,
+forcing, window and substeps) and output (velocity, pressure anomaly,
+time-averaged flux) as arguments, so the same steppers can also be called by
+other baroclinic steppers. `BarotropicStepper::create` builds the stepper chosen
+by `BtrTimeStepper`. The explicit SUNDIALS stepper integrates the flux and the
+velocity in time as extra ODE components, so that the averaged flux reproduces
+the pressure-anomaly change exactly. The implicit stepper eliminates the new
+velocity, solves the resulting symmetric positive definite Helmholtz equation
+for the pseudo thickness $B'$ over the window $W=\Delta t$, computes the
+velocity explicitly from the new $B'$ and recomputes $B'$ from the divergence of
+the flux $\mathcal P(\theta\overline{\bf u}^{n+1}+(1-\theta)\overline{\bf u}^n)$,
+which conserves mass and keeps the Hallberg--Adcroft consistency independent of
+the solver tolerance. Adding another barotropic algorithm means adding a class
+derived from `BarotropicStepper` and a branch in `BarotropicStepper::create`,
+with no change to the RK2 stage logic.
 
 #### 4.2.4 Stage 3: thickness and tracers
 

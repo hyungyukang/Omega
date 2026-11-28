@@ -17,76 +17,46 @@
 
 namespace OMEGA {
 
-namespace {
-
-/// Blends an old and a new subcycle value with the forward-backward feedback
-/// weight Gamma, i.e. (1-Gamma)*Old + Gamma*New.
-KOKKOS_INLINE_FUNCTION Real feedbackBlend(Real Gamma, Real Old, Real New) {
-   return (1._Real - Gamma) * Old + Gamma * New;
-}
-
-/// Edge value of the barotropic pressure deviation from the reference column,
-/// centered or upwinded to match the flux-thickness choice used elsewhere.
-KOKKOS_INLINE_FUNCTION Real deltaBtrPressureEdge(Real Delta0, Real Delta1,
-                                                 Real NormalBtrVelEdge,
-                                                 bool Upwind) {
-   if (!Upwind)
-      return 0.5_Real * (Delta0 + Delta1);
-   if (NormalBtrVelEdge > 0._Real)
-      return Delta0;
-   if (NormalBtrVelEdge < 0._Real)
-      return Delta1;
-   return Kokkos::max(Delta0, Delta1);
-}
-
-} // anonymous namespace
-
 //------------------------------------------------------------------------------
-void SplitExplicitBarotropicPCStepper::init(const AuxiliaryState *InAuxState,
-                                            SplitExplicitScratch *InScratch,
-                                            const SplitExplicitConfig *InConfig,
-                                            const HorzMesh *InMesh,
-                                            Halo *InMeshHalo,
-                                            const VertCoord *InVCoord) {
+SplitExplicitBarotropicPCStepper::SplitExplicitBarotropicPCStepper(
+    const std::string &InName, const AuxiliaryState *InAuxState,
+    const HorzMesh *InMesh, Halo *InMeshHalo, const VertCoord *InVCoord)
+    : BarotropicStepper(InName, "ForwardBackward", InAuxState, InMesh,
+                        InMeshHalo, InVCoord) {
 
-   if (!InAuxState)
-      LOG_CRITICAL("Invalid auxiliary state");
-   if (!InScratch)
-      LOG_CRITICAL("Invalid split-explicit scratch data");
-   if (!InConfig)
-      LOG_CRITICAL("Invalid split-explicit config");
-   if (!InMesh)
-      LOG_CRITICAL("Invalid mesh");
-   if (!InMeshHalo)
-      LOG_CRITICAL("Invalid MeshHalo");
-   if (!InVCoord)
-      LOG_CRITICAL("Invalid vertical coordinate");
-   if (InConfig->NBtrSubcycles < 1)
-      LOG_CRITICAL("Invalid split-explicit barotropic subcycle count");
-
-   AuxState = InAuxState;
-   Scratch  = InScratch;
-   SEConfig = InConfig;
-   Mesh     = InMesh;
-   MeshHalo = InMeshHalo;
-   VCoord   = InVCoord;
+   VelSubcycleCur   = Array1DReal("NormalBarotropicVelocitySubcycleCur" + Name,
+                                  Mesh->NEdgesSize);
+   VelSubcyclePre   = Array1DReal("NormalBarotropicVelocitySubcyclePre" + Name,
+                                  Mesh->NEdgesSize);
+   VelSubcycleCor   = Array1DReal("NormalBarotropicVelocitySubcycleCor" + Name,
+                                  Mesh->NEdgesSize);
+   PressSubcycleCur = Array1DReal("BarotropicPressureAnomalySubcycleCur" + Name,
+                                  Mesh->NCellsSize);
+   PressSubcyclePre = Array1DReal("BarotropicPressureAnomalySubcyclePre" + Name,
+                                  Mesh->NCellsSize);
+   PressSubcycleCor = Array1DReal("BarotropicPressureAnomalySubcycleCor" + Name,
+                                  Mesh->NCellsSize);
+   deepCopy(VelSubcycleCur, 0._Real);
+   deepCopy(VelSubcyclePre, 0._Real);
+   deepCopy(VelSubcycleCor, 0._Real);
+   deepCopy(PressSubcycleCur, 0._Real);
+   deepCopy(PressSubcyclePre, 0._Real);
+   deepCopy(PressSubcycleCor, 0._Real);
 }
 
 //------------------------------------------------------------------------------
-void SplitExplicitBarotropicPCStepper::doBarotropicVelocityUpdate(
-    OceanState *State, I4 CurLevel, I4 NextLevel,
-    const TimeInterval &StageTimeStep) const {
+void SplitExplicitBarotropicPCStepper::advance(const BarotropicInput &In,
+                                               const BarotropicOutput &Out) {
 
-   if (!Scratch)
-      LOG_CRITICAL("Split-explicit barotropic time stepper not initialized");
+   if (In.NSubsteps < 1)
+      LOG_CRITICAL("Invalid barotropic subcycle count {}", In.NSubsteps);
 
    Eos *EqState = Eos::getInstance();
 
-   R8 StageTimeStepSeconds;
-   StageTimeStep.get(StageTimeStepSeconds, TimeUnits::Seconds);
-
-   const I4 NBtrSubcycles = 2 * SEConfig->NBtrSubcycles;
-   const Real BtrDt       = StageTimeStepSeconds / SEConfig->NBtrSubcycles;
+   // NSubsteps predictor-corrector steps over the window, which for the
+   // split-explicit stepper is twice the baroclinic step
+   const I4 NBtrSubcycles        = In.NSubsteps;
+   const Real BtrDt              = In.Window / NBtrSubcycles;
    const Real InvBtrVelAvgCount  = 1._Real / (NBtrSubcycles + 1);
    const Real InvBtrFluxAvgCount = 1._Real / NBtrSubcycles;
    // Forward-backward feedback weights for the predictor-corrector subcycle.
@@ -97,41 +67,31 @@ void SplitExplicitBarotropicPCStepper::doBarotropicVelocityUpdate(
 
    Pacer::start("SE-RK2:stage2BtrPC", 2);
 
-   // Get array required
-   Array1DReal NormalBtrVelCur = State->getNormalBarotropicVelocity(CurLevel);
-   Array1DReal BtrPressAnomalyCur =
-       State->getBarotropicPressureAnomaly(CurLevel);
-   Array1DReal NormalBtrVelNext = State->getNormalBarotropicVelocity(NextLevel);
-   Array1DReal BtrPressAnomalyNext =
-       State->getBarotropicPressureAnomaly(NextLevel);
+   // Start of the window, reference pressure anomaly of the flux thickness,
+   // and the outputs. The reference is read throughout the subcycle and the
+   // pressure output is only written after it, so the two may alias.
+   Array1DReal NormalBtrVelCur     = In.VelStart;
+   Array1DReal BtrPressAnomalyCur  = In.PressStart;
+   Array1DReal BtrPressAnomalyRef  = In.PressRef;
+   Array1DReal NormalBtrVelNext    = Out.Vel;
+   Array1DReal BtrPressAnomalyNext = Out.Press;
 
    // Cur: the state at the start of the subcycle
    // Pre: the predictor output
    // Cor: the corrector output
-   Array1DReal NormalBtrVelSubcycleCur =
-       Scratch->NormalBarotropicVelocitySubcycleCur;
-   Array1DReal NormalBtrVelSubcyclePre =
-       Scratch->NormalBarotropicVelocitySubcyclePre;
-   Array1DReal NormalBtrVelSubcycleCor =
-       Scratch->NormalBarotropicVelocitySubcycleCor;
-   Array1DReal BtrPressAnomalySubcycleCur =
-       Scratch->BarotropicPressureAnomalySubcycleCur;
-   Array1DReal BtrPressAnomalySubcyclePre =
-       Scratch->BarotropicPressureAnomalySubcyclePre;
-   Array1DReal BtrPressAnomalySubcycleCor =
-       Scratch->BarotropicPressureAnomalySubcycleCor;
+   Array1DReal NormalBtrVelSubcycleCur    = VelSubcycleCur;
+   Array1DReal NormalBtrVelSubcyclePre    = VelSubcyclePre;
+   Array1DReal NormalBtrVelSubcycleCor    = VelSubcycleCor;
+   Array1DReal BtrPressAnomalySubcycleCur = PressSubcycleCur;
+   Array1DReal BtrPressAnomalySubcyclePre = PressSubcyclePre;
+   Array1DReal BtrPressAnomalySubcycleCor = PressSubcycleCor;
 
-   Array1DReal BtrForcing = Scratch->BarotropicForcing;
-   Array1DReal BtrFlux    = Scratch->BarotropicFlux;
+   Array1DReal BtrForcing = In.Forcing;
+   Array1DReal BtrFlux    = Out.FluxAvg;
 
-   Array1DReal BaroclinicPseudoThicknessEdge =
-       Scratch->BaroclinicPseudoThicknessEdge;
+   Array1DReal BaroclinicPseudoThicknessEdge = ColumnFluxThickEdge;
 
-   const Array2DReal FluxPseudoThickEdge =
-       AuxState->PseudoThicknessAux.FluxPseudoThickEdge;
-   const bool UpwindFluxThickness =
-       AuxState->PseudoThicknessAux.FluxThickEdgeChoice ==
-       FluxThickEdgeOption::Upwind;
+   const bool UpwindFluxThickness = upwindFluxThickness();
 
    OMEGA_SCOPE(CellsOnEdge, Mesh->CellsOnEdge);
    OMEGA_SCOPE(NEdgesOnCell, Mesh->NEdgesOnCell);
@@ -156,25 +116,7 @@ void SplitExplicitBarotropicPCStepper::doBarotropicVelocityUpdate(
    deepCopy(BtrFlux, 0._Real);
 
    // Compute the baroclinic pseudo thickness on edges
-   parallelForOuter(
-       "computeBtrBaroclinicPseudoThicknessEdge", {Mesh->NEdgesAll},
-       KOKKOS_LAMBDA(I4 IEdge, const TeamMember &Team) {
-          const I4 KMin = MinLayerEdgeBot(IEdge);
-          const I4 KMax = MaxLayerEdgeTop(IEdge);
-
-          Real PseudoThicknessSum = 0._Real;
-          parallelReduceInner(
-              Team, Range{KMin, KMax},
-              INNER_LAMBDA(I4 K, Real & Sum) {
-                 Sum += FluxPseudoThickEdge(IEdge, K);
-              },
-              PseudoThicknessSum);
-
-          Kokkos::single(
-              PerTeam(Team), INNER_LAMBDA() {
-                 BaroclinicPseudoThicknessEdge(IEdge) = PseudoThicknessSum;
-              });
-       });
+   computeColumnFluxThickness();
 
    //-----------------------------------------------------------------------
    // Communication-avoiding barotropic subcycling:
@@ -264,17 +206,17 @@ void SplitExplicitBarotropicPCStepper::doBarotropicVelocityUpdate(
                 const I4 Cell0 = CellsOnEdge(JEdge, 0);
                 const I4 Cell1 = CellsOnEdge(JEdge, 1);
                 const Real NormalBtrVelEdge =
-                    feedbackBlend(Gamma1, NormalBtrVelSubcycleCur(JEdge),
-                                  NormalBtrVelSubcyclePre(JEdge));
+                    btrFeedbackBlend(Gamma1, NormalBtrVelSubcycleCur(JEdge),
+                                     NormalBtrVelSubcyclePre(JEdge));
 
                 const Real DeltaBtrPressure0 =
                     BtrPressAnomalySubcycleCur(Cell0) -
-                    BtrPressAnomalyNext(Cell0);
+                    BtrPressAnomalyRef(Cell0);
                 const Real DeltaBtrPressure1 =
                     BtrPressAnomalySubcycleCur(Cell1) -
-                    BtrPressAnomalyNext(Cell1);
+                    BtrPressAnomalyRef(Cell1);
                 const Real DeltaBtrPressureEdge =
-                    deltaBtrPressureEdge(DeltaBtrPressure0, DeltaBtrPressure1,
+                    btrDeltaPressureEdge(DeltaBtrPressure0, DeltaBtrPressure1,
                                          NormalBtrVelEdge, UpwindFluxThickness);
 
                 const Real BtrPressureEdge =
@@ -316,12 +258,12 @@ void SplitExplicitBarotropicPCStepper::doBarotropicVelocityUpdate(
              }
 
              const Real BtrPressure0 =
-                 feedbackBlend(Gamma2, BtrPressAnomalySubcycleCur(Cell0),
-                               BtrPressAnomalySubcyclePre(Cell0));
+                 btrFeedbackBlend(Gamma2, BtrPressAnomalySubcycleCur(Cell0),
+                                  BtrPressAnomalySubcyclePre(Cell0));
 
              const Real BtrPressure1 =
-                 feedbackBlend(Gamma2, BtrPressAnomalySubcycleCur(Cell1),
-                               BtrPressAnomalySubcyclePre(Cell1));
+                 btrFeedbackBlend(Gamma2, BtrPressAnomalySubcycleCur(Cell1),
+                                  BtrPressAnomalySubcyclePre(Cell1));
 
              const Real MeanSpecVolEdge =
                  0.5_Real * (DepthMeanSpecVol(Cell0) + DepthMeanSpecVol(Cell1));
@@ -351,23 +293,23 @@ void SplitExplicitBarotropicPCStepper::doBarotropicVelocityUpdate(
                 const I4 Cell1 = CellsOnEdge(JEdge, 1);
 
                 const Real BtrPressure0 =
-                    feedbackBlend(Gamma2, BtrPressAnomalySubcycleCur(Cell0),
-                                  BtrPressAnomalySubcyclePre(Cell0));
+                    btrFeedbackBlend(Gamma2, BtrPressAnomalySubcycleCur(Cell0),
+                                     BtrPressAnomalySubcyclePre(Cell0));
 
                 const Real BtrPressure1 =
-                    feedbackBlend(Gamma2, BtrPressAnomalySubcycleCur(Cell1),
-                                  BtrPressAnomalySubcyclePre(Cell1));
+                    btrFeedbackBlend(Gamma2, BtrPressAnomalySubcycleCur(Cell1),
+                                     BtrPressAnomalySubcyclePre(Cell1));
 
                 const Real NormalBtrVelEdge =
-                    feedbackBlend(Gamma3, NormalBtrVelSubcycleCur(JEdge),
-                                  NormalBtrVelSubcycleCor(JEdge));
+                    btrFeedbackBlend(Gamma3, NormalBtrVelSubcycleCur(JEdge),
+                                     NormalBtrVelSubcycleCor(JEdge));
 
                 const Real DeltaBtrPressure0 =
-                    BtrPressure0 - BtrPressAnomalyNext(Cell0);
+                    BtrPressure0 - BtrPressAnomalyRef(Cell0);
                 const Real DeltaBtrPressure1 =
-                    BtrPressure1 - BtrPressAnomalyNext(Cell1);
+                    BtrPressure1 - BtrPressAnomalyRef(Cell1);
                 const Real DeltaBtrPressureEdge =
-                    deltaBtrPressureEdge(DeltaBtrPressure0, DeltaBtrPressure1,
+                    btrDeltaPressureEdge(DeltaBtrPressure0, DeltaBtrPressure1,
                                          NormalBtrVelEdge, UpwindFluxThickness);
 
                 const Real BtrPressureEdge =
@@ -400,23 +342,23 @@ void SplitExplicitBarotropicPCStepper::doBarotropicVelocityUpdate(
              const I4 Cell1 = CellsOnEdge(IEdge, 1);
 
              const Real BtrPressure0 =
-                 feedbackBlend(Gamma2, BtrPressAnomalySubcycleCur(Cell0),
-                               BtrPressAnomalySubcycleCor(Cell0));
+                 btrFeedbackBlend(Gamma2, BtrPressAnomalySubcycleCur(Cell0),
+                                  BtrPressAnomalySubcycleCor(Cell0));
 
              const Real BtrPressure1 =
-                 feedbackBlend(Gamma2, BtrPressAnomalySubcycleCur(Cell1),
-                               BtrPressAnomalySubcycleCor(Cell1));
+                 btrFeedbackBlend(Gamma2, BtrPressAnomalySubcycleCur(Cell1),
+                                  BtrPressAnomalySubcycleCor(Cell1));
 
              const Real NormalBtrVelEdge =
-                 feedbackBlend(Gamma3, NormalBtrVelSubcycleCur(IEdge),
-                               NormalBtrVelSubcycleCor(IEdge));
+                 btrFeedbackBlend(Gamma3, NormalBtrVelSubcycleCur(IEdge),
+                                  NormalBtrVelSubcycleCor(IEdge));
 
              const Real DeltaBtrPressure0 =
-                 BtrPressure0 - BtrPressAnomalyNext(Cell0);
+                 BtrPressure0 - BtrPressAnomalyRef(Cell0);
              const Real DeltaBtrPressure1 =
-                 BtrPressure1 - BtrPressAnomalyNext(Cell1);
+                 BtrPressure1 - BtrPressAnomalyRef(Cell1);
              const Real DeltaBtrPressureEdge =
-                 deltaBtrPressureEdge(DeltaBtrPressure0, DeltaBtrPressure1,
+                 btrDeltaPressureEdge(DeltaBtrPressure0, DeltaBtrPressure1,
                                       NormalBtrVelEdge, UpwindFluxThickness);
 
              const Real BtrPressureEdge =

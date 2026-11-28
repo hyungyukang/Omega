@@ -44,18 +44,13 @@ class SplitExplicitInit {
    );
 
    static void initializeBarotropicPressure(
-       SplitExplicitScratch &Scratch, ///< [inout] split-explicit scratch data
-       OceanState *State,             ///< [inout] ocean state
-       const HorzMesh *Mesh,          ///< [in] horizontal mesh
-       const VertCoord *VCoord,       ///< [in] vertical coordinate
-       I4 TimeLevel                   ///< [in] state time level to initialize
+       OceanState *State,       ///< [inout] ocean state
+       const HorzMesh *Mesh,    ///< [in] horizontal mesh
+       const VertCoord *VCoord, ///< [in] vertical coordinate
+       I4 TimeLevel             ///< [in] state time level to initialize
    );
 
  private:
-   static SplitExplicitBarotropicStepperType getBtrTimeStepperFromStr(
-       const std::string &InString ///< [in] barotropic stepping method
-   );
-
    static I4 computeSubcycleCount(
        const TimeInterval &TimeStep,   ///< [in] full baroclinic time step
        const TimeInterval &BtrTimeStep ///< [in] requested barotropic time step
